@@ -10,7 +10,7 @@ export default function PortalShell({ children, assistant = false }) {
     <div className="portal">
       <aside className={open ? 'sidebar open' : 'sidebar'}>
         <div className="side-top">
-          <Brand />
+          <Brand variant="monogram" />
           <button onClick={() => setOpen(false)}>×</button>
         </div>
         <div className="workspace">

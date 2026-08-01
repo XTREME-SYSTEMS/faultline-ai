@@ -37,7 +37,7 @@ export default function MarketingShell({ children }) {
           </div>
         </section>
         <div className="container footer-grid">
-          <Brand />
+          <Brand variant="light" />
           <div>
             <b>Product</b>
             <Link to="/product">Features</Link>

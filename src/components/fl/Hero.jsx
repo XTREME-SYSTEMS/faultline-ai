@@ -23,7 +23,7 @@ export default function Hero() {
           <div className="crack two" />
           <div className="crack three" />
           <div className="core">
-            <img src="/logo.svg" alt="" />
+            <img src="/assets/faultline/monogram/svg/monogram-gold-white-transparent.svg" alt="" />
             <b>FaultLine AI</b>
             <small>Diagnose → Repair → Grow</small>
           </div>

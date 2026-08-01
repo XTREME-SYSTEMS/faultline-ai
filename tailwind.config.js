@@ -61,8 +61,9 @@ module.exports = {
   				ring: 'hsl(var(--sidebar-ring))'
   			},
   			gold: {
-  				DEFAULT: '#b77a20',
-  				light: '#d4a75a'
+  				DEFAULT: '#C89B3C',
+  				light: '#E7C86E',
+  				dark: '#8A641C'
   			},
   			ink: '#0a0a0a'
   		},
