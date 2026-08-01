@@ -1,0 +1,20 @@
+{
+  "name": "NewsletterSubscriber",
+  "type": "object",
+  "properties": {
+    "email": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "default": "subscribed"
+    },
+    "source": {
+      "type": "string",
+      "default": "homepage"
+    }
+  },
+  "required": [
+    "email"
+  ]
+}

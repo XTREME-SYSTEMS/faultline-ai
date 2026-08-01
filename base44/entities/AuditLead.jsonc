@@ -1,0 +1,37 @@
+{
+  "name": "AuditLead",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "company": {
+      "type": "string"
+    },
+    "website": {
+      "type": "string"
+    },
+    "concern": {
+      "type": "string"
+    },
+    "plan": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "default": "new"
+    },
+    "source": {
+      "type": "string",
+      "default": "homepage"
+    }
+  },
+  "required": [
+    "name",
+    "email",
+    "company"
+  ]
+}

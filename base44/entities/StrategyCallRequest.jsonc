@@ -1,0 +1,35 @@
+{
+  "name": "StrategyCallRequest",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "company": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "preferred_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "status": {
+      "type": "string",
+      "default": "new"
+    },
+    "source": {
+      "type": "string",
+      "default": "homepage"
+    }
+  },
+  "required": [
+    "name",
+    "email",
+    "company"
+  ]
+}

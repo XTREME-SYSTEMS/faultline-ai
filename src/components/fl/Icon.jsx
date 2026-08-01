@@ -1,24 +1,7 @@
-import { useId } from 'react';
-
-/**
- * Inline SVG icon — references symbols defined in /public/icons.svg.
- * Usage: <Icon name="search" />
- */
-export default function Icon({ name, className = '', size = 20, strokeWidth = 1.6 }) {
-  const id = useId();
+export default function Icon({ name, title, className, ...props }) {
   return (
-    <svg
-      width={size}
-      height={size}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={strokeWidth}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      className={`icon ${className}`}
-      aria-hidden="true"
-    >
+    <svg className={className ?? 'icon'} aria-hidden={title ? undefined : true} role={title ? 'img' : undefined} {...props}>
+      {title ? <title>{title}</title> : null}
       <use href={`/icons.svg#${name}`} />
     </svg>
   );
