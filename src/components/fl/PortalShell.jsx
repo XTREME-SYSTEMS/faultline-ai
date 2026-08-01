@@ -43,7 +43,7 @@ export default function PortalShell({ children, assistant = false }) {
             <NavLink key={to} to={to} end={to === '/app'} onClick={() => setOpen(false)}>{label}</NavLink>
           ))}
         </nav>
-        <button onClick={handleLogout} className="btn outline" style={{ width: '100%', padding: '10px', fontSize: 13, marginTop: 16 }}>Sign out</button>
+        <button onClick={handleLogout} style={{ width: '100%', textAlign: 'left', padding: '8px 10px', borderRadius: 5, fontSize: 13, fontWeight: 600, color: '#bbb', background: 'none', border: 0, cursor: 'pointer', marginTop: 16, fontFamily: 'inherit' }}>Sign out</button>
         <div className="side-help">
           <b>Need help interpreting results?</b>
           <p>Book a strategy call with a human reviewer.</p>
