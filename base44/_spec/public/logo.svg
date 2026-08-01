@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-label="FaultLine AI logo">
+  <rect width="100" height="100" rx="24" fill="#090909"/>
+  <path d="M22 18h42v11H35v18h25v11H35v25H22z" fill="#fff"/>
+  <path d="M68 17 48 49h14L39 84l40-45H64z" fill="#c28a32"/>
+</svg>

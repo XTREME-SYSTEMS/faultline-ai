@@ -1,0 +1,25 @@
+{
+  "name": "FaultLine AI",
+  "framework": "Vite + React + TypeScript",
+  "source_of_truth": "Supabase for production; Base44 entities are preview-only until adapter approval",
+  "brand": {
+    "background": "#ffffff",
+    "ink": "#0a0a0a",
+    "gold": "#b77a20",
+    "sidebar": "#090909",
+    "display_font": "Libre Caslon Display",
+    "ui_font": "DM Sans"
+  },
+  "entrypoints": {
+    "marketing": "/",
+    "auth": "/sign-in",
+    "checkout": "/checkout",
+    "portal": "/app",
+    "admin": "/admin"
+  },
+  "cron": {"route": "/api/cron/orchestrator", "schedule": "*/5 * * * *"},
+  "production_gates": [
+    "default branch merge", "production deploy", "domain assignment", "secrets",
+    "database migration", "live payment", "live outreach", "destructive action"
+  ]
+}

@@ -1,0 +1,23 @@
+{
+  "entities": [
+    {"name":"Organization","fields":{"name":"string","slug":"string","sample_data":"boolean"},"rls":"members only"},
+    {"name":"Membership","fields":{"organization_id":"Organization","user_id":"User","role":"owner|admin|reviewer|member|billing"},"rls":"organization admins and self"},
+    {"name":"Company","fields":{"organization_id":"Organization","name":"string","domain":"string","industry":"string","status":"string","sample_data":"boolean"},"rls":"organization members"},
+    {"name":"Website","fields":{"organization_id":"Organization","company_id":"Company","url":"string","status":"string","last_scanned_at":"datetime"},"rls":"organization members"},
+    {"name":"Audit","fields":{"organization_id":"Organization","company_id":"Company","audit_type":"string","title":"string","status":"string","scope":"object"},"rls":"organization members"},
+    {"name":"Evidence","fields":{"organization_id":"Organization","audit_id":"Audit","source_type":"string","source_uri":"string","captured_at":"datetime","content_summary":"string","content_hash":"string"},"rls":"organization members"},
+    {"name":"Finding","fields":{"organization_id":"Organization","audit_id":"Audit","title":"string","description":"string","category":"string","severity":"critical|high|medium|low","evidence_state":"verified|supported_inference|needs_review","confidence":"number","business_impact":"string","recommended_repair":"string","approval_status":"string"},"rls":"members read; reviewer/admin approval"},
+    {"name":"Risk","fields":{"organization_id":"Organization","finding_id":"Finding","title":"string","likelihood":"number","impact":"number","controls":"array","status":"string"},"rls":"organization members"},
+    {"name":"RevenueLeak","fields":{"organization_id":"Organization","finding_id":"Finding","category":"string","annual_impact_min":"number","annual_impact_max":"number","confidence":"number"},"rls":"organization members"},
+    {"name":"SystemNode","fields":{"organization_id":"Organization","company_id":"Company","node_type":"string","name":"string","owner_role":"string","health_status":"string"},"rls":"organization members"},
+    {"name":"SystemEdge","fields":{"organization_id":"Organization","source_node_id":"SystemNode","target_node_id":"SystemNode","relationship":"string","risk_status":"string"},"rls":"organization members"},
+    {"name":"RepairPlan","fields":{"organization_id":"Organization","audit_id":"Audit","title":"string","horizon_days":"number","status":"string"},"rls":"members read; reviewer/admin approval"},
+    {"name":"RepairAction","fields":{"organization_id":"Organization","repair_plan_id":"RepairPlan","finding_id":"Finding","title":"string","priority":"number","owner_user_id":"User","status":"string","validation_result":"string"},"rls":"organization members"},
+    {"name":"Approval","fields":{"organization_id":"Organization","subject_type":"string","subject_id":"string","state":"string","decision_note":"string"},"rls":"reviewer/admin/owner"},
+    {"name":"OutreachDraft","fields":{"organization_id":"Organization","company_id":"Company","subject":"string","body":"string","evidence_refs":"array","approval_status":"string","send_status":"draft_only|approved_for_send"},"rls":"members draft; sending requires approved server workflow"},
+    {"name":"MonitoringRule","fields":{"organization_id":"Organization","name":"string","rule_type":"string","configuration":"object","active":"boolean"},"rls":"organization members"},
+    {"name":"MonitoringEvent","fields":{"organization_id":"Organization","monitoring_rule_id":"MonitoringRule","event_type":"string","severity":"string","payload":"object"},"rls":"organization members"},
+    {"name":"WorkflowRun","fields":{"organization_id":"Organization","workflow_name":"string","idempotency_key":"string","status":"string","input":"object","output":"object"},"rls":"members read; server/admin mutation"},
+    {"name":"Receipt","fields":{"organization_id":"Organization","system":"string","action":"string","status":"string","summary":"string","evidence":"object","rollback":"object"},"rls":"members read; server/admin mutation"}
+  ]
+}

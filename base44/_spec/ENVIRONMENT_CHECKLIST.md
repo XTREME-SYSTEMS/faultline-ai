@@ -1,0 +1,21 @@
+# Environment Checklist
+
+## Client-safe
+- `VITE_APP_URL`
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_PUBLISHABLE_KEY`
+- `VITE_STRIPE_PUBLISHABLE_KEY`
+
+## Server-only
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `AI_GATEWAY_API_KEY`
+- `CRON_SECRET`
+- `WORKFLOW_SECRET`
+- `STRIPE_SECRET_KEY`
+- `STRIPE_WEBHOOK_SECRET`
+- `GOOGLE_DRIVE_FOLDER_ID`
+- `GOOGLE_CHAT_WEBHOOK_URL`
+- `BASE44_APP_ID`
+- `BASE44_EDITOR_URL`
+
+Never prefix server-only variables with `VITE_` or place them in browser code.
