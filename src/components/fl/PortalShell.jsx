@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import Brand from './Brand';
@@ -9,7 +9,13 @@ import { portalNav } from './data';
 export default function PortalShell({ children, assistant = false }) {
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [orgName, setOrgName] = useState('Loading…');
+
+  const handleLogout = async () => {
+    await base44.auth.logout();
+    navigate('/login');
+  };
 
   useEffect(() => {
     if (user?.data?.organization_id) {
@@ -49,6 +55,7 @@ export default function PortalShell({ children, assistant = false }) {
           <input placeholder="Search audits, issues, opportunities…" />
           <button className="btn dark">+ New audit</button>
           <span className="avatar">AM</span>
+          <button onClick={handleLogout} className="btn outline" style={{ padding: '8px 14px', fontSize: 12 }}>Sign out</button>
         </header>
         <div className={assistant ? 'portal-content with-ai' : 'portal-content'}>
           <div className="portal-page">{children}</div>
