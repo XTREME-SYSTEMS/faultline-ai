@@ -4,6 +4,8 @@ import PortalShell from '@/components/fl/PortalShell';
 import PageHead from '@/components/fl/PageHead';
 import { base44 } from '@/api/base44Client';
 import { modules } from '@/components/fl/data';
+import RepairPlansView from '@/components/fl/RepairPlansView';
+import OutreachView from '@/components/fl/OutreachView';
 
 const moduleDataMap = {
   audits: { entity: 'Audit', sort: '-created_date', limit: 50, columns: [['Title', 'title'], ['Type', 'audit_type'], ['Status', 'status'], ['Date', 'created_date']] },
@@ -86,7 +88,17 @@ export default function Module() {
         </div>
       </section>
 
-      {config ? (
+      {slug === 'repair-plans' ? (
+        <section className="finding" style={{ marginTop: 13 }}>
+          <h2>Repair plans</h2>
+          <RepairPlansView />
+        </section>
+      ) : slug === 'outreach' ? (
+        <section className="finding" style={{ marginTop: 13 }}>
+          <h2>Outreach drafts</h2>
+          <OutreachView />
+        </section>
+      ) : config ? (
         <section className="finding" style={{ marginTop: 13 }}>
           <h2>{config.entity} records</h2>
           {loading ? (

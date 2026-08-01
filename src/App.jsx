@@ -21,6 +21,9 @@ import Module from '@/pages/Module';
 import Admin from '@/pages/Admin';
 import DriveSync from '@/pages/DriveSync';
 import DiscoveryEngine from '@/pages/DiscoveryEngine';
+import CompanyDetail from '@/pages/CompanyDetail';
+import Chat from '@/pages/Chat';
+import Trends from '@/pages/Trends';
 import NotFound from '@/pages/NotFound';
 
 const AuthenticatedApp = () => {
@@ -63,6 +66,9 @@ const AuthenticatedApp = () => {
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/app" element={<Overview />} />
         <Route path="/app/discovery-engine" element={<DiscoveryEngine />} />
+        <Route path="/app/chat" element={<Chat />} />
+        <Route path="/app/trends" element={<Trends />} />
+        <Route path="/app/companies/:id" element={<CompanyDetail />} />
         <Route path="/app/drive-sync" element={<DriveSync />} />
         <Route path="/app/:slug" element={<Module />} />
         <Route path="/admin" element={<Admin />} />
