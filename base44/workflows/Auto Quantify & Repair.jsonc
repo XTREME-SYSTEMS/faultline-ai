@@ -1,0 +1,56 @@
+{
+  "name": "Auto Quantify & Repair",
+  "description": "When an audit completes, automatically quantifies dollar impact and generates a repair plan",
+  "trigger": {
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "Audit",
+      "events": [
+        "update"
+      ]
+    },
+    "condition": "${ .trigger.data.status == \"completed\" and .trigger.old_data.status != \"completed\" }"
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "auto_quantify_repair",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "quantify": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "quantifyFindings",
+            "args": {
+              "audit_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "repair_plan",
+          "x-base44": {
+            "title": "Quantify findings",
+            "description": "Dollar-impact analysis"
+          }
+        }
+      },
+      {
+        "repair_plan": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "generateRepairPlan",
+            "args": {
+              "audit_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Generate repair plan",
+            "description": "Prioritized actions"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -86,6 +86,8 @@ Prioritize by severity (critical first) and effort (quick wins first).`,
       });
     }
 
+    await base44.asServiceRole.entities.Audit.update(auditId, { status: 'analyzed' });
+
     await base44.asServiceRole.entities.Receipt.create({
       organization_id: orgId,
       system: 'planner',
