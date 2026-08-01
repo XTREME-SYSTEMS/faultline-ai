@@ -14,23 +14,6 @@ export const portalNav = [
   ['Integrations', '/app/integrations'], ['Drive Sync', '/app/drive-sync'], ['Billing', '/app/billing'], ['Settings', '/app/settings']
 ];
 
-export const metrics = [
-  ['Business health', '72/100', 'Strong foundation', '+14 pts'],
-  ['Annual revenue at risk', '$1.82M', '12.6% of modeled revenue', '-4.2%'],
-  ['Critical failures', '18', 'Across seven systems', '-3'],
-  ['Opportunities', '47', '$3.91M modeled impact', '+9'],
-  ['Fixes in progress', '12', 'Across five workflows', '+5'],
-  ['Completed this month', '23', '92% on time', '+18%']
-];
-
-export const findings = [
-  { id: 'FL-1042', title: 'Lead follow-up has no accountable owner', severity: 'Critical', evidence: 'Verified', confidence: 96, impact: '$420K–$690K', owner: 'Revenue Operations', status: 'In progress' },
-  { id: 'FL-1038', title: 'Pricing exceptions bypass approval controls', severity: 'High', evidence: 'Verified', confidence: 91, impact: '$250K–$410K', owner: 'Finance', status: 'Open' },
-  { id: 'FL-1031', title: 'Website trust signals are below category benchmark', severity: 'High', evidence: 'Supported inference', confidence: 84, impact: '8–14% lift', owner: 'Marketing', status: 'In review' },
-  { id: 'FL-1029', title: 'Project status is duplicated across four tools', severity: 'Medium', evidence: 'Verified', confidence: 93, impact: '310 hrs/year', owner: 'Operations', status: 'In progress' },
-  { id: 'FL-1020', title: 'Customer onboarding lacks a documented SLA', severity: 'Medium', evidence: 'Needs review', confidence: 67, impact: 'Retention risk', owner: 'Customer Success', status: 'Open' }
-];
-
 export const modules = {
   audits: { title: 'AI Audits', eyebrow: 'Diagnose', description: 'Run scoped business, website, operational, and AI-readiness audits with evidence-backed findings.', outcomes: ['Audit scope builder', 'Evidence timeline', 'Human review queue', 'Executive report'] },
   'website-intelligence': { title: 'Website Intelligence', eyebrow: 'Analyze', description: 'Evaluate positioning, content, conversion, accessibility, trust, mobile experience, and technical fundamentals.', outcomes: ['Page inventory', 'Conversion gap map', 'Trust review', 'Repair brief'] },
