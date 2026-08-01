@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 640" role="img" aria-label="Fractured systems becoming a connected network">
+  <defs>
+    <radialGradient id="bg" cx="62%" cy="48%" r="55%">
+      <stop offset="0" stop-color="#C89B3C" stop-opacity=".22"/>
+      <stop offset="0.4" stop-color="#C89B3C" stop-opacity=".06"/>
+      <stop offset="1" stop-color="#C89B3C" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8A641C"/><stop offset="0.5" stop-color="#E7C86E"/><stop offset="1" stop-color="#B9872F"/>
+    </linearGradient>
+    <pattern id="dots" width="26" height="26" patternUnits="userSpaceOnUse">
+      <circle cx="2" cy="2" r="1.2" fill="#C9A66B" opacity=".25"/>
+    </pattern>
+  </defs>
+  <rect width="800" height="640" fill="url(#bg)"/>
+  <rect width="800" height="640" fill="url(#dots)"/>
+
+  <!-- fracture lines (left side - broken) -->
+  <g stroke="#1A1A1A" stroke-width="3" fill="none" opacity=".85">
+    <path d="M40 180 L300 210" />
+    <path d="M40 180 L180 120" />
+    <path d="M180 120 L300 210" />
+    <path d="M60 420 L280 380" />
+    <path d="M60 420 L200 500" />
+    <path d="M200 500 L280 380" />
+  </g>
+
+  <!-- core node -->
+  <g transform="translate(400,320)">
+    <circle r="92" fill="#0B0B0B" stroke="#fff" stroke-width="6"/>
+    <circle r="92" fill="none" stroke="url(#gold)" stroke-width="1.5" opacity=".5" transform="scale(1.12)"/>
+    <text y="-6" text-anchor="middle" fill="#fff" font-family="Georgia,serif" font-size="34" font-weight="500">FaultLine</text>
+    <text y="22" text-anchor="middle" fill="url(#gold)" font-family="Georgia,serif" font-size="30" font-weight="500">AI</text>
+    <text y="48" text-anchor="middle" fill="#D9AA55" font-family="Arial,sans-serif" font-size="9" letter-spacing="2.5">CORE ENGINE</text>
+  </g>
+
+  <!-- connected nodes (right side - repaired) -->
+  <g stroke="url(#gold)" stroke-width="1.5" fill="none" opacity=".7" stroke-dasharray="4 4">
+    <path d="M492 320 Q580 250 660 180"/>
+    <path d="M492 320 Q580 320 670 320"/>
+    <path d="M492 320 Q580 390 660 460"/>
+    <path d="M492 320 Q540 420 580 520"/>
+  </g>
+
+  <g font-family="Arial,sans-serif" font-size="11" font-weight="700">
+    <g transform="translate(660,150)"><rect x="-58" y="-22" width="116" height="44" rx="8" fill="#fff" stroke="#C9A66B"/><text text-anchor="middle" y="4" fill="#111">Website</text></g>
+    <g transform="translate(670,320)"><rect x="-58" y="-22" width="116" height="44" rx="8" fill="#fff" stroke="#C9A66B"/><text text-anchor="middle" y="4" fill="#111">Revenue</text></g>
+    <g transform="translate(660,470)"><rect x="-58" y="-22" width="116" height="44" rx="8" fill="#fff" stroke="#C9A66B"/><text text-anchor="middle" y="4" fill="#111">Workflows</text></g>
+    <g transform="translate(580,540)"><rect x="-58" y="-22" width="116" height="44" rx="8" fill="#fff" stroke="#C9A66B"/><text text-anchor="middle" y="4" fill="#111">AI Ready</text></g>
+  </g>
+
+  <!-- broken nodes (left side) -->
+  <g font-family="Arial,sans-serif" font-size="11" font-weight="700" opacity=".55">
+    <g transform="translate(120,120)"><rect x="-50" y="-18" width="100" height="36" rx="7" fill="#f4f1eb" stroke="#bbb"/><text text-anchor="middle" y="4" fill="#666">Leads</text></g>
+    <g transform="translate(120,400)"><rect x="-50" y="-18" width="100" height="36" rx="7" fill="#f4f1eb" stroke="#bbb"/><text text-anchor="middle" y="4" fill="#666">Tools</text></g>
+    <g transform="translate(140,540)"><rect x="-50" y="-18" width="100" height="36" rx="7" fill="#f4f1eb" stroke="#bbb"/><text text-anchor="middle" y="4" fill="#666">Approvals</text></g>
+  </g>
+</svg>

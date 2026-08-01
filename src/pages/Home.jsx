@@ -1,72 +1,85 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import '@/components/fl/faultline-homepage.css';
-
-const A = 'https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633';
-const ICONS = {
-  'ai-readiness': `${A}/3883d433d_ai-readiness.svg`,
-  'analytics': `${A}/c24a35f69_analytics.svg`,
-  'audits': `${A}/28e114c34_audits.svg`,
-  'business-builder': `${A}/38dcc3399_business-builder.svg`,
-  'monitoring': `${A}/0dac5c193_monitoring.svg`,
-  'outreach': `${A}/1b3475502_outreach.svg`,
-  'projects': `${A}/34036019e_projects.svg`,
-  'repair-plans': `${A}/93b318c92_repair-plans.svg`,
-  'reports': `${A}/b3c4b6770_reports.svg`,
-  'revenue-leaks': `${A}/f1d567de0_revenue-leaks.svg`,
-  'risk-register': `${A}/b21753da1_risk-register.svg`,
-  'search': `${A}/e79ddbd0b_search.svg`,
-  'security': `${A}/29d05d2ac_security.svg`,
-  'system-map': `${A}/bdb4f776b_system-map.svg`,
-  'team': `${A}/6ee08dc85_team.svg`,
-  'website-intelligence': `${A}/bc2152f9a_website-intelligence.svg`
-};
+import Icon from '@/components/fl/Icon';
+import DeliverablePreview from '@/components/fl/DeliverablePreview';
+import '@/components/fl/production-homepage.css';
 
 const PROBLEMS = [
-  ['Missed Leads', 'outreach'],
-  ['Weak Websites', 'website-intelligence'],
-  ['Broken Workflows', 'system-map'],
-  ['Pricing Leaks', 'revenue-leaks'],
-  ['Slow Approvals', 'audits'],
-  ['Unbilled Work', 'reports'],
-  ['Redundant Tools', 'projects'],
-  ['AI Unprepared', 'ai-readiness']
+  { icon: 'lead', label: 'Missed Leads', text: 'Inbound interest that never gets a timely response.' },
+  { icon: 'website', label: 'Weak Websites', text: 'Slow, unclear pages that quietly repel buyers.' },
+  { icon: 'workflow', label: 'Broken Workflows', text: 'Manual hand-offs that stall deals and deliveries.' },
+  { icon: 'pricing', label: 'Pricing Leaks', text: 'Discounts and quotes that erode margin silently.' },
+  { icon: 'clock', label: 'Slow Approvals', text: 'Bottlenecks that delay every revenue moment.' },
+  { icon: 'invoice', label: 'Unbilled Work', text: 'Effort delivered but never invoiced or tracked.' },
+  { icon: 'tools', label: 'Redundant Tools', text: 'Overlapping subscriptions draining budget.' },
+  { icon: 'ai', label: 'AI Unprepared', text: 'No strategy to capture AI productivity gains.' }
 ];
 
 const PLATFORM = [
-  ['Website Intelligence', 'website-intelligence'],
-  ['Operational Audit', 'audits'],
-  ['System Mapping', 'system-map'],
-  ['Revenue Leak Detection', 'revenue-leaks'],
-  ['Risk Register', 'risk-register'],
-  ['AI Readiness', 'ai-readiness'],
-  ['Repair Roadmap', 'repair-plans'],
-  ['Business Builder', 'business-builder'],
-  ['Outreach Assistance', 'outreach'],
-  ['Continuous Monitoring', 'monitoring']
+  { icon: 'website', label: 'Website Intelligence' },
+  { icon: 'audit', label: 'Operational Audit' },
+  { icon: 'map', label: 'System Mapping' },
+  { icon: 'revenue', label: 'Revenue Leak Detection' },
+  { icon: 'risk', label: 'Risk Register' },
+  { icon: 'readiness', label: 'AI Readiness' },
+  { icon: 'roadmap', label: 'Repair Roadmap' },
+  { icon: 'builder', label: 'Business Builder' },
+  { icon: 'outreach', label: 'Outreach Assistance' },
+  { icon: 'monitor', label: 'Continuous Monitoring' }
 ];
 
 const STEPS = [
-  ['Connect & Discover', 'search'],
-  ['Analyze & Diagnose', 'analytics'],
-  ['Quantify & Prioritize', 'revenue-leaks'],
-  ['Repair & Improve', 'repair-plans'],
-  ['Monitor & Scale', 'monitoring']
+  { icon: 'search', label: 'Connect & Discover', text: 'Point FaultLine at your domain and systems — no code, no install.' },
+  { icon: 'audit', label: 'Analyze & Diagnose', text: 'Multi-pass scans surface what is broken and why.' },
+  { icon: 'revenue', label: 'Quantify & Prioritize', text: 'Every finding gets a dollar impact and confidence score.' },
+  { icon: 'roadmap', label: 'Repair & Improve', text: 'A 90-day plan with owners, actions, and validation.' },
+  { icon: 'monitor', label: 'Monitor & Scale', text: 'Continuous checks keep the system honest as you grow.' }
 ];
 
-const DELIVERABLES = ['Executive Summary', 'Failure Map', 'Revenue Leak Report', 'Risk Register', 'AI Readiness Score', '90-Day Repair Plan'];
-const INDUSTRIES = ['Construction', 'Contractors', 'Manufacturing', 'Distribution', 'Multi-Location Services', 'Agencies & Consultants', 'Professional Services', 'And More'];
-const PLANS = [['Diagnostic', '$0'], ['Growth', '$299/mo'], ['Operating System', '$699/mo'], ['Enterprise', 'Custom']];
+const DELIVERABLES = [
+  { label: 'Executive Summary', metric: '01', variant: 'dark' },
+  { label: 'Failure Map', metric: '02', variant: 'dark' },
+  { label: 'Revenue Leak Report', metric: '$1.8M', variant: 'light' },
+  { label: 'Risk Register', metric: '04', variant: 'light' },
+  { label: 'AI Readiness Score', metric: '62', variant: 'dark' },
+  { label: '90-Day Repair Plan', metric: '06', variant: 'dark' }
+];
+
+const INDUSTRIES = [
+  { icon: 'construction', label: 'Construction' },
+  { icon: 'contractor', label: 'Contractors' },
+  { icon: 'manufacturing', label: 'Manufacturing' },
+  { icon: 'distribution', label: 'Distribution' },
+  { icon: 'locations', label: 'Multi-Location Services' },
+  { icon: 'agency', label: 'Agencies & Consultants' },
+  { icon: 'professional', label: 'Professional Services' },
+  { icon: 'more', label: 'And More' }
+];
+
+const SECURITY = [
+  { icon: 'lock', title: 'SOC 2 Aligned', text: 'Evidence handled with audit-grade controls.' },
+  { icon: 'shield', title: 'Encrypted at Rest', text: 'All data encrypted in transit and storage.' },
+  { icon: 'evidence', title: 'Evidence-Backed', text: 'Every finding links to verifiable source data.' }
+];
+
+const PLANS = [
+  { name: 'Diagnostic', price: '$0', sub: 'Free forever', desc: 'Start with a free audit and see what is broken.', features: ['1 company scan', 'Executive summary', 'Top 5 findings', 'Self-serve portal'], cta: 'Start Free', variant: 'dark' },
+  { name: 'Growth', price: '$299', sub: 'per month', desc: 'For growing teams that need to fix and scale.', features: ['5 company scans', 'Full finding library', '90-day repair plan', 'Revenue leak report', 'Email support'], cta: 'Choose Growth', variant: 'dark', featured: false },
+  { name: 'Operating System', price: '$699', sub: 'per month', desc: 'The complete growth operating system.', features: ['Unlimited scans', 'Continuous monitoring', 'AI readiness score', 'Outreach assistance', 'Priority support', 'Quarterly review'], cta: 'Choose OS', variant: 'gold', featured: true },
+  { name: 'Enterprise', price: 'Custom', sub: 'talk to us', desc: 'For multi-location and complex operations.', features: ['Everything in OS', 'Dedicated reviewer', 'Custom integrations', 'SLA & onboarding', 'Team training'], cta: 'Contact Sales', variant: 'outline' }
+];
 
 export default function Home() {
   const [navOpen, setNavOpen] = useState(false);
 
   return (
-    <div className="faultline-homepage">
+    <div className="site-shell">
       <header className="site-header">
-        <div className="wrap header-row">
-          <Link className="brand" to="/"><img src={`${A}/e3b8ba1d2_logo-horizontal.svg`} alt="FaultLine AI" /></Link>
-          <nav className={navOpen ? 'nav open' : 'nav'}>
+        <div className="container header-inner">
+          <Link className="brand" to="/" onClick={() => setNavOpen(false)}>
+            <img src="/logo-horizontal.svg" alt="FaultLine AI" />
+          </Link>
+          <nav className={navOpen ? 'primary-nav is-open' : 'primary-nav'}>
             <Link to="/product" onClick={() => setNavOpen(false)}>Product</Link>
             <Link to="/solutions" onClick={() => setNavOpen(false)}>Solutions</Link>
             <Link to="/industries" onClick={() => setNavOpen(false)}>Industries</Link>
@@ -75,238 +88,289 @@ export default function Home() {
             <Link to="/resources" onClick={() => setNavOpen(false)}>Resources</Link>
           </nav>
           <div className="header-actions">
-            <Link to="/login">Sign In</Link>
-            <Link className="fl-button dark" to="/register">Start Free Audit</Link>
-            <button className="menu" onClick={() => setNavOpen(!navOpen)}>☰</button>
+            <Link className="text-link" to="/login">Sign In</Link>
+            <Link className="button button--dark" to="/register">Start Free Audit</Link>
+            <button className="menu-button" onClick={() => setNavOpen(!navOpen)} aria-label="Toggle menu">
+              <Icon name="search" size={22} />
+            </button>
           </div>
         </div>
       </header>
 
       <main>
+        {/* Hero */}
         <section className="hero">
-          <div className="wrap hero-grid">
+          <div className="container hero-grid">
             <div className="hero-copy">
-              <p className="eyebrow">AI-Powered Business Intelligence</p>
+              <span className="eyebrow">AI-Powered Business Intelligence</span>
               <h1>Expose What's Broken.<br /><span>Build What Works.</span></h1>
-              <p className="lead">FaultLine AI uncovers hidden failures, revenue leaks, and operational risks across your website, systems, and workflows, then delivers an evidence-backed plan to fix them.</p>
-              <div className="hero-actions">
-                <Link className="fl-button dark" to="/register">Start Free Audit</Link>
-                <Link className="fl-button outline" to="/contact">Book a Strategy Call</Link>
+              <p className="hero-lead">FaultLine AI uncovers hidden failures, revenue leaks, and operational risks across your website, systems, and workflows — then delivers an evidence-backed plan to fix them.</p>
+              <div className="button-row">
+                <Link className="button button--dark" to="/register">Start Free Audit</Link>
+                <Link className="button button--outline" to="/contact">Book a Strategy Call</Link>
               </div>
-              <div className="trust-row">
-                <span><b>▣</b>No credit card required</span>
-                <span><b>◇</b>Confidential analysis</span>
-                <span><b>⌘</b>Evidence-backed recommendations</span>
-              </div>
+              <ul className="trust-list">
+                <li><Icon name="check" size={16} /> No credit card required</li>
+                <li><Icon name="shield" size={16} /> Confidential analysis</li>
+                <li><Icon name="evidence" size={16} /> Evidence-backed recommendations</li>
+              </ul>
             </div>
-            <div className="hero-art">
-              <img src={`${A}/e7dffd655_hero-fracture-network.jpg`} alt="Fractured systems becoming connected" />
-              <span className="hero-tag tag1">Disconnected Systems</span>
-              <span className="hero-tag tag2">Lost Revenue</span>
-              <span className="hero-tag tag3">Operational Gaps</span>
-              <span className="hero-tag dark tag4">Connected Systems</span>
-              <span className="hero-tag dark tag5">Revenue Recovered</span>
-              <span className="hero-tag dark tag6">Business Optimized</span>
+            <div className="hero-visual">
+              <img src="/hero-network.svg" alt="Fractured systems becoming a connected network" />
+              <span className="signal signal--one"><span className="dot" /> Disconnected Systems</span>
+              <span className="signal signal--two"><span className="dot" /> Lost Revenue</span>
+              <span className="signal signal--three"><span className="dot" /> Operational Gaps</span>
+              <span className="signal signal--dark signal--four"><span className="dot" /> Connected Systems</span>
+              <span className="signal signal--dark signal--five"><span className="dot" /> Revenue Recovered</span>
+              <span className="signal signal--dark signal--six"><span className="dot" /> Business Optimized</span>
             </div>
           </div>
         </section>
 
-        <section className="logo-strip">
-          <div className="wrap">
-            <small>Trusted by growing businesses across industries</small>
-            <div className="logos">
-              <strong>◇ PIVOT EAST</strong>
-              <strong>⬡ NEXORA</strong>
-              <strong>◈ VERIDIAN</strong>
-              <strong>⬢ ALTIVY</strong>
-              <strong>⌁ LUMENIX</strong>
-            </div>
-          </div>
-        </section>
+        {/* Customer logos */}
+        <div className="container customer-logos">
+          <span>◇ PIVOT EAST</span>
+          <span>⬡ NEXORA</span>
+          <span>◈ VERIDIAN</span>
+          <span>⬢ ALTIVY</span>
+          <span>⌁ LUMENIX</span>
+        </div>
 
-        <section className="section">
-          <div className="wrap problem-layout">
-            <div className="section-head">
-              <p className="eyebrow">The Problem</p>
+        {/* Problem */}
+        <section className="content-section">
+          <div className="container">
+            <div className="section-intro">
+              <span className="eyebrow">The Problem</span>
               <h2>Most Businesses Lose More Than They Realize</h2>
-              <p>Hidden failures and inefficiencies silently drain revenue, limit growth, and create unnecessary risk.</p>
+              <p>Hidden failures and inefficiencies silently drain revenue, limit growth, and create unnecessary risk — every day they go unfixed.</p>
             </div>
             <div className="problem-grid">
-              {PROBLEMS.map(([label, icon]) => (
-                <article className="problem-card" key={label}>
-                  <img src={ICONS[icon]} alt="" />
-                  <div>
-                    <h3>{label}</h3>
-                    <p>Evidence-backed analysis and a practical path to repair.</p>
-                  </div>
+              {PROBLEMS.map(p => (
+                <article className="problem-card" key={p.label}>
+                  <Icon name={p.icon} size={28} />
+                  <h3>{p.label}</h3>
+                  <p>{p.text}</p>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="section" id="platform">
-          <div className="wrap platform-layout">
-            <div className="section-head">
-              <p className="eyebrow">The Platform</p>
+        {/* Platform */}
+        <section className="content-section content-section--soft">
+          <div className="container">
+            <div className="section-intro">
+              <span className="eyebrow">The Platform</span>
               <h2>Everything You Need to Fix, Build, and Scale</h2>
-              <p>Complete visibility and guidance to run a stronger business.</p>
+              <p>Complete visibility and guidance to run a stronger business — from diagnosis to repair to continuous monitoring.</p>
             </div>
             <div className="platform-grid">
-              {PLATFORM.map(([label, icon]) => (
-                <article className="platform-item" key={label}>
-                  <img src={ICONS[icon]} alt="" />
-                  <strong>{label}</strong>
+              {PLATFORM.map(p => (
+                <article className="platform-item" key={p.label}>
+                  <Icon name={p.icon} size={22} />
+                  <strong>{p.label}</strong>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="section process" id="process">
-          <div className="wrap">
-            <div className="section-head center">
-              <p className="eyebrow">How It Works</p>
+        {/* Process */}
+        <section className="content-section">
+          <div className="container">
+            <div className="section-intro center">
+              <span className="eyebrow">How It Works</span>
               <h2>A Simple Process. Real Results.</h2>
+              <p>From first scan to continuous improvement in five clear steps.</p>
             </div>
             <div className="steps">
-              {STEPS.map(([label, icon]) => (
-                <article className="step" key={label}>
-                  <div className="step-icon">
-                    <img src={ICONS[icon]} alt="" />
-                  </div>
-                  <h3>{label}</h3>
-                  <p>Clear evidence, accountable actions, and measurable results.</p>
+              {STEPS.map(s => (
+                <article className="step" key={s.label}>
+                  <div className="step-icon"><Icon name={s.icon} size={26} /></div>
+                  <h3>{s.label}</h3>
+                  <p>{s.text}</p>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="section soft" id="reports">
-          <div className="wrap">
-            <div className="section-head center">
-              <p className="eyebrow">Sample Deliverables</p>
+        {/* Deliverables */}
+        <section className="content-section content-section--soft">
+          <div className="container">
+            <div className="section-intro center">
+              <span className="eyebrow">Sample Deliverables</span>
               <h2>Clear Reports. Actionable Insight.</h2>
+              <p>Every engagement ends with evidence-backed documents your team can act on immediately.</p>
             </div>
-            <div className="deliverables">
-              {DELIVERABLES.map((label, i) => (
-                <article className="deliverable" key={label}>
-                  <div className={`preview ${i > 1 ? 'light' : ''}`}>
-                    <small>FAULTLINE AI</small>
-                    <span className="metric">{i === 4 ? '62' : i === 2 ? '$1.82M' : `0${i + 1}`}</span>
-                    <div className="preview-lines"><i /><i /><i /></div>
-                  </div>
-                  <h3>{label}</h3>
-                  <p>Evidence, confidence, and next actions.</p>
+            <div className="deliverable-grid">
+              {DELIVERABLES.map(d => (
+                <article className="deliverable" key={d.label}>
+                  <DeliverablePreview label={d.label} metric={d.metric} variant={d.variant} />
+                  <h3>{d.label}</h3>
+                  <p>Evidence, confidence, and next actions — ready to share with your team.</p>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="section" id="industries">
-          <div className="wrap">
-            <div className="section-head center">
-              <p className="eyebrow">Industries We Serve</p>
+        {/* Industries */}
+        <section className="content-section">
+          <div className="container">
+            <div className="section-intro center">
+              <span className="eyebrow">Industries We Serve</span>
               <h2>Built for Businesses That Build</h2>
+              <p>Field-tested with operations that have real systems, real teams, and real revenue on the line.</p>
             </div>
-            <div className="industries">
-              {INDUSTRIES.map(label => (
-                <article className="industry" key={label}>
-                  <span>◇</span>
-                  <strong>{label}</strong>
+            <div className="industry-grid">
+              {INDUSTRIES.map(i => (
+                <article className="industry-card" key={i.label}>
+                  <Icon name={i.icon} size={30} />
+                  <strong>{i.label}</strong>
                 </article>
               ))}
             </div>
           </div>
         </section>
 
-        <section className="section soft" id="pricing">
-          <div className="wrap">
-            <div className="section-head center">
-              <p className="eyebrow">Pricing</p>
+        {/* Security */}
+        <section className="content-section content-section--dark">
+          <div className="container">
+            <div className="security-grid">
+              <div>
+                <span className="eyebrow">Trust & Security</span>
+                <h2>Evidence You Can Trust. Controls You Can Audit.</h2>
+                <p>FaultLine AI is built for operators who need defensible, verifiable analysis — not black-box guesses. Every finding links back to source evidence.</p>
+              </div>
+              <ul>
+                {SECURITY.map(s => (
+                  <li key={s.title}>
+                    <Icon name={s.icon} size={28} />
+                    <strong>{s.title}</strong>
+                    <span>{s.text}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+        </section>
+
+        {/* Pricing */}
+        <section className="content-section content-section--soft" id="pricing">
+          <div className="container">
+            <div className="section-intro center">
+              <span className="eyebrow">Pricing</span>
               <h2>Choose the Right Plan for Your Business</h2>
+              <p>Start free. Upgrade when you are ready to repair and scale.</p>
             </div>
-            <div className="pricing">
-              {PLANS.map(([name, price], i) => (
-                <article className={`plan ${i === 2 ? 'featured' : ''}`} key={name}>
-                  {i === 2 && <em>Most Popular</em>}
-                  <h3>{name}</h3>
-                  <p>Built for the next stage of your business.</p>
-                  <div className="price">{price}</div>
+            <div className="pricing-grid">
+              {PLANS.map(plan => (
+                <article className={`pricing-card ${plan.featured ? 'pricing-card--featured' : ''}`} key={plan.name}>
+                  {plan.featured && <span className="popular">Most Popular</span>}
+                  <h3>{plan.name}</h3>
+                  <p>{plan.desc}</p>
+                  <div className="price">{plan.price}</div>
+                  <small>{plan.sub}</small>
                   <ul>
-                    <li>Evidence-backed findings</li>
-                    <li>Repair roadmap</li>
-                    <li>Customer portal</li>
+                    {plan.features.map(f => (
+                      <li key={f}><Icon name="check" size={16} /> {f}</li>
+                    ))}
                   </ul>
-                  <Link className={`fl-button ${i === 2 ? 'gold' : 'dark'}`} to="/checkout">Choose Plan</Link>
+                  <Link className={`button button--${plan.variant}`} to={plan.name === 'Enterprise' ? '/contact' : '/checkout'}>
+                    {plan.cta}
+                  </Link>
                 </article>
               ))}
             </div>
+            <p className="pricing-note">All plans include the customer portal. Cancel anytime. No credit card required for the Diagnostic plan.</p>
           </div>
         </section>
 
-        <section className="closing">
-          <div className="wrap closing-row">
+        {/* Closing CTA */}
+        <section className="closing-cta">
+          <div className="container closing-grid">
             <div>
-              <h2>Stop Guessing. Start Fixing.<br /><span>Build a Stronger Business.</span></h2>
-              <p>Get your free audit and discover what is holding your business back.</p>
+              <h2>Stop Guessing.<br /><span>Start Fixing.</span></h2>
+              <p>Get your free audit and discover what is holding your business back — with a clear plan to move forward.</p>
+              <ul className="cta-trust">
+                <li><Icon name="check" size={16} /> Free audit</li>
+                <li><Icon name="shield" size={16} /> Confidential</li>
+                <li><Icon name="evidence" size={16} /> Evidence-backed</li>
+              </ul>
             </div>
-            <div className="closing-actions">
-              <Link className="fl-button gold" to="/register">Start Free Audit</Link>
-              <Link className="fl-button dark" to="/contact">Book a Strategy Call</Link>
+            <div className="button-row">
+              <Link className="button button--gold" to="/register">Start Free Audit</Link>
+              <Link className="button button--ghost-light" to="/contact">Book a Strategy Call</Link>
             </div>
           </div>
         </section>
       </main>
 
-      <footer className="footer">
-        <div className="wrap footer-grid">
-          <div>
-            <img className="footer-logo" src={`${A}/52739e021_logo-horizontal-light.svg`} alt="FaultLine AI" />
-            <p>Expose what's broken.<br />Build what works.</p>
-          </div>
-          <div>
-            <h4>Product</h4>
-            <Link to="/product">Features</Link>
-            <Link to="/how-it-works">How It Works</Link>
-            <Link to="/pricing">Pricing</Link>
-            <Link to="/app/integrations">Integrations</Link>
-          </div>
-          <div>
-            <h4>Solutions</h4>
-            <Link to="/app/website-intelligence">Website Intelligence</Link>
-            <Link to="/app/audits">Operational Audit</Link>
-            <Link to="/app/revenue-leaks">Revenue Leak Detection</Link>
-            <Link to="/app/ai-readiness">AI Readiness</Link>
-          </div>
-          <div>
-            <h4>Resources</h4>
-            <Link to="/resources">Case Studies</Link>
-            <Link to="/resources">Guides & Templates</Link>
-            <Link to="/resources">Blog</Link>
-            <Link to="/contact">Help Center</Link>
-          </div>
-          <div>
-            <h4>Company</h4>
-            <Link to="/about">About Us</Link>
-            <Link to="/about">Careers</Link>
-            <Link to="/about">Partners</Link>
-            <Link to="/security">Trust Center</Link>
-          </div>
-          <div>
-            <h4>Newsletter</h4>
-            <p>Insights to help you fix, build, and grow your business.</p>
+      {/* Footer */}
+      <footer className="site-footer">
+        <div className="container">
+          <div className="footer-grid">
+            <div className="footer-brand">
+              <img src="/logo-horizontal-light.svg" alt="FaultLine AI" />
+              <p>Expose what's broken.<br />Build what works.</p>
+              <div className="socials">
+                <a href="#" aria-label="LinkedIn">in</a>
+                <a href="#" aria-label="X">𝕏</a>
+                <a href="#" aria-label="YouTube">▶</a>
+              </div>
+            </div>
+            <div>
+              <h3>Product</h3>
+              <Link to="/product">Features</Link>
+              <Link to="/how-it-works">How It Works</Link>
+              <Link to="/pricing">Pricing</Link>
+              <Link to="/product">Integrations</Link>
+              <Link to="/product">Roadmap</Link>
+            </div>
+            <div>
+              <h3>Solutions</h3>
+              <Link to="/solutions">Website Intelligence</Link>
+              <Link to="/solutions">Operational Audit</Link>
+              <Link to="/solutions">Revenue Leak Detection</Link>
+              <Link to="/solutions">AI Readiness</Link>
+              <Link to="/solutions">Repair Plans</Link>
+            </div>
+            <div>
+              <h3>Resources</h3>
+              <Link to="/resources">Case Studies</Link>
+              <Link to="/resources">Guides & Templates</Link>
+              <Link to="/resources">Blog</Link>
+              <Link to="/resources">Webinars</Link>
+              <Link to="/contact">Help Center</Link>
+            </div>
+            <div>
+              <h3>Company</h3>
+              <Link to="/about">About Us</Link>
+              <Link to="/about">Careers</Link>
+              <Link to="/about">Partners</Link>
+              <Link to="/security">Trust Center</Link>
+              <Link to="/contact">Contact</Link>
+            </div>
             <div className="newsletter">
-              <input aria-label="Email" placeholder="Enter your email" />
-              <button>→</button>
+              <h3>Newsletter</h3>
+              <p>Insights to help you fix, build, and grow your business.</p>
+              <form onSubmit={(e) => e.preventDefault()}>
+                <input aria-label="Email" placeholder="Enter your email" />
+                <button type="submit" aria-label="Subscribe"><Icon name="arrow-right" size={18} /></button>
+              </form>
             </div>
           </div>
-        </div>
-        <div className="wrap legal">
-          <span>© 2026 FaultLine AI. All rights reserved.</span>
-          <span>Privacy Policy &nbsp;&nbsp; Terms of Service &nbsp;&nbsp; Cookie Policy &nbsp;&nbsp; Acceptable Use</span>
+          <div className="footer-bottom">
+            <span>© 2026 FaultLine AI. All rights reserved.</span>
+            <nav>
+              <a href="#">Privacy Policy</a>
+              <a href="#">Terms of Service</a>
+              <a href="#">Cookie Policy</a>
+              <a href="#">Acceptable Use</a>
+            </nav>
+            <span className="compliance"><Icon name="shield" size={20} /> SOC 2 Aligned</span>
+          </div>
         </div>
       </footer>
     </div>
