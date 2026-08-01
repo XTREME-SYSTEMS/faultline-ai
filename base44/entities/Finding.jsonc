@@ -1,0 +1,76 @@
+{
+  "name": "Finding",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "audit_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "severity": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "high",
+        "medium",
+        "low"
+      ]
+    },
+    "evidence_state": {
+      "type": "string",
+      "enum": [
+        "verified",
+        "supported_inference",
+        "needs_review"
+      ]
+    },
+    "confidence": {
+      "type": "number"
+    },
+    "business_impact": {
+      "type": "string"
+    },
+    "recommended_repair": {
+      "type": "string"
+    },
+    "approval_status": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id",
+    "audit_id",
+    "title",
+    "severity"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

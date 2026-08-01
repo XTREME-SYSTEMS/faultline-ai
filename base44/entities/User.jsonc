@@ -7,6 +7,10 @@
         "admin",
         "user"
       ]
+    },
+    "organization_id": {
+      "type": "string",
+      "description": "The organization this user belongs to (tenant anchor for RLS)"
     }
   },
   "required": [

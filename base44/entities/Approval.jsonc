@@ -1,0 +1,47 @@
+{
+  "name": "Approval",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "subject_type": {
+      "type": "string"
+    },
+    "subject_id": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "decision_note": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id",
+    "subject_type",
+    "subject_id",
+    "state"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

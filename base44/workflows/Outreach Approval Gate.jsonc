@@ -1,0 +1,40 @@
+{
+  "name": "Outreach Approval Gate",
+  "description": "When an outreach draft is approved, record the approval but keep send_status draft-only. No live outreach is sent in preview.",
+  "trigger": {
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "OutreachDraft",
+      "events": [
+        "update"
+      ]
+    },
+    "condition": "${ .trigger.data.approval_status == \"approved\" and .trigger.old_data.approval_status != \"approved\" }"
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "outreach_approval_gate",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "gate": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "outreachGate",
+            "args": {
+              "draft_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Outreach approval gate",
+            "description": "Keep send draft-only"
+          }
+        }
+      }
+    ]
+  }
+}
