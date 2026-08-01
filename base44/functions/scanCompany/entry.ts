@@ -1,62 +1,11 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-
-function extractData(html, url) {
-  const get = (re) => { const m = html.match(re); return m ? m[1].trim() : ''; };
-  const count = (re) => (html.match(re) || []).length;
-  const test = (re) => re.test(html);
-
-  const title = get(/<title[^>]*>([^<]*)<\/title>/i);
-  const description = get(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']*)["']/i) || get(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']*)["']/i);
-  const hasViewport = test(/<meta[^>]+name=["']viewport["']/i);
-  const h1Count = count(/<h1[^>]*>/gi);
-  const h2Count = count(/<h2[^>]*>/gi);
-  const linkCount = count(/<a[^>]+href=/gi);
-  const imageCount = count(/<img[^>]*>/gi);
-  const imagesWithoutAlt = count(/<img(?![^>]*\salt=)[^>]*>/gi);
-  const scriptCount = count(/<script[^>]*>/gi);
-  const formCount = count(/<form[^>]*>/gi);
-  const hasGA = test(/google-analytics|gtag\(|googletagmanager/i);
-  const hasFB = test(/facebook\.com\/tr|fbq\(/i);
-  const hasHotjar = test(/hotjar/i);
-  const hasSchema = test(/application\/ld\+json|schema\.org/i);
-  const hasFacebook = test(/facebook\.com/i);
-  const hasTwitter = test(/twitter\.com|x\.com/i);
-  const hasLinkedIn = test(/linkedin\.com/i);
-  const hasInstagram = test(/instagram\.com/i);
-  const hasPhone = test(/(\+\d{1,3}[\s.-]?)?\(?\d{3}\)?[\s.-]?\d{3,4}[\s.-]?\d{4}/);
-  const hasEmail = test(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-  const ctaCount = count(/get started|contact us|request a quote|sign up|book a call|schedule|free consultation|learn more|get a demo|start free|try free/gi);
-  const hasPrivacy = test(/privacy policy/i);
-  const hasTerms = test(/terms of service|terms and conditions/i);
-  const hasSSL = url.startsWith('https://');
-  const hasReviews = test(/review|testimonial|rating/i);
-  const hasCertifications = test(/certified|certification|accredited|award/i);
-  const hasMixedContent = hasSSL && test(/<img[^>]+src=["']http:\/\//i);
-  const textContent = html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-  const wordCount = textContent.split(' ').length;
-
-  return {
-    title, description, hasViewport,
-    h1Count, h2Count, linkCount, imageCount, imagesWithoutAlt,
-    scriptCount, formCount, ctaCount,
-    hasAnalytics: hasGA || hasFB || hasHotjar,
-    analyticsTools: { google: hasGA, facebook: hasFB, hotjar: hasHotjar },
-    hasStructuredData: hasSchema,
-    socialLinks: { facebook: hasFacebook, twitter: hasTwitter, linkedin: hasLinkedIn, instagram: hasInstagram },
-    contactInfo: { phone: hasPhone, email: hasEmail },
-    trustSignals: { privacy: hasPrivacy, terms: hasTerms, ssl: hasSSL, reviews: hasReviews, certifications: hasCertifications },
-    hasMixedContent,
-    pageSize: html.length, wordCount,
-    textSample: textContent.substring(0, 3000)
-  };
-}
+import { extractData, fetchPage, discoverPageLinks, detectTechStack, calcHealthScore } from '../../shared/scraper.ts';
 
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
-
     const orgId = user.data?.organization_id;
     if (!orgId) return Response.json({ error: 'No organization found on user profile' }, { status: 400 });
 
@@ -65,91 +14,84 @@ export default async function(req) {
     if (!companyId) return Response.json({ error: 'company_id required' }, { status: 400 });
 
     const company = await base44.asServiceRole.entities.Company.get(companyId);
-    if (!company || company.organization_id !== orgId) {
-      return Response.json({ error: 'Company not found' }, { status: 404 });
-    }
+    if (!company || company.organization_id !== orgId) return Response.json({ error: 'Company not found' }, { status: 404 });
 
     const websites = await base44.asServiceRole.entities.Website.filter({ organization_id: orgId, company_id: companyId });
-    if (websites.length === 0) {
-      return Response.json({ error: 'No website found for company' }, { status: 400 });
-    }
+    if (websites.length === 0) return Response.json({ error: 'No website found for company' }, { status: 400 });
     const website = websites[0];
 
-    // Phase 1: Scrape website
-    let html = '';
-    let extracted = null;
-    let fetchOk = false;
-    let httpStatus = 0;
-    try {
-      const fetchRes = await fetch(website.url, {
-        headers: { 'User-Agent': 'FaultLine-AI-Scanner/1.0 (+https://faultline.ai)' },
-        signal: AbortSignal.timeout(15000),
-        redirect: 'follow'
-      });
-      httpStatus = fetchRes.status;
-      html = await fetchRes.text();
-      extracted = extractData(html, website.url);
-      fetchOk = true;
-    } catch (e) {
-      html = `Unable to fetch website: ${e.message}`;
-      extracted = null;
+    // Phase 1: Fetch homepage
+    const homeResult = await fetchPage(website.url);
+    let pages = [{ url: website.url, label: 'homepage', ...homeResult }];
+
+    // Phase 2: Discover and fetch subpages in parallel
+    if (homeResult.ok && homeResult.html) {
+      const subLinks = discoverPageLinks(homeResult.html, website.url);
+      const subResults = await Promise.all(subLinks.map(l => fetchPage(l.url)));
+      pages = pages.concat(subLinks.map((l, i) => ({ url: l.url, label: l.label, ...subResults[i] })));
     }
 
-    // Phase 2: Create audit
+    // Phase 3: Extract data from each page + detect tech stack
+    const pageData = pages.map(p => ({
+      url: p.url,
+      label: p.label,
+      status: p.status,
+      ok: p.ok,
+      extracted: p.ok && p.html ? extractData(p.html, p.url) : null,
+      htmlSample: p.ok && p.html ? p.html.substring(0, 5000) : ''
+    }));
+    const techStack = pageData[0]?.extracted ? detectTechStack(pages[0].html) : [];
+
+    // Phase 4: Create audit
     const audit = await base44.asServiceRole.entities.Audit.create({
       organization_id: orgId,
       company_id: companyId,
       audit_type: 'website_intelligence',
       title: `Website Intelligence Audit — ${company.name}`,
       status: 'scanning',
-      scope: { url: website.url, industry: company.industry, http_status: httpStatus, fetch_ok: fetchOk, extracted: extracted }
+      scope: { url: website.url, industry: company.industry, pages_crawled: pages.length, tech_stack: techStack, page_data: pageData.map(p => ({ url: p.url, label: p.label, status: p.status, extracted: p.extracted })) }
     });
 
-    // Phase 3: Record evidence
+    // Phase 5: Record evidence
     await base44.asServiceRole.entities.Evidence.create({
       organization_id: orgId,
       audit_id: audit.id,
-      source_type: 'website_capture',
+      source_type: 'website_crawl',
       source_uri: website.url,
       captured_at: new Date().toISOString(),
-      content_summary: extracted
-        ? `Scraped ${company.name}: ${extracted.wordCount} words, ${extracted.h1Count} H1s, ${extracted.imageCount} images (${extracted.imagesWithoutAlt} without alt), ${extracted.ctaCount} CTAs, analytics: ${extracted.hasAnalytics}, SSL: ${extracted.trustSignals.ssl}, structured data: ${extracted.hasStructuredData}`
-        : `Fetch failed for ${company.name}: ${html}`,
-      content_hash: html.length.toString()
+      content_summary: `Crawled ${pages.length} pages for ${company.name}. Tech stack: ${techStack.join(', ') || 'unknown'}. Homepage: ${pageData[0]?.extracted?.wordCount || 0} words, ${pageData[0]?.extracted?.h1Count || 0} H1s, ${pageData[0]?.extracted?.imageCount || 0} images.`,
+      content_hash: pages.map(p => p.html?.length || 0).join(',').toString()
     });
 
-    // Phase 4: LLM analysis with extracted data
+    // Phase 6: LLM analysis with all page data
     const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `You are a business diagnostic expert. Analyze this website for ${company.name} (a ${company.industry} company).
+      prompt: `You are a business diagnostic expert. Analyze this multi-page website crawl for ${company.name} (a ${company.industry} company).
 
-Website URL: ${website.url}
-HTTP Status: ${httpStatus}
+PAGES CRAWLED: ${pages.length}
+TECH STACK: ${techStack.join(', ') || 'Not detected'}
 
-EXTRACTED TECHNICAL DATA:
-${JSON.stringify(extracted || {}, null, 2)}
-
-RAW HTML (truncated):
-${html.substring(0, 10000)}
+PAGE DATA:
+${JSON.stringify(pageData.map(p => ({ url: p.url, label: p.label, status: p.status, extracted: p.extracted, htmlSample: p.htmlSample })), null, 2)}
 
 Identify 5-10 specific, actionable findings across these categories:
 - positioning: Is the value proposition clear within seconds?
-- conversion: Are there effective CTAs, forms, and conversion paths?
-- trust: SSL, reviews, privacy policy, certifications, contact info
-- technical: Performance indicators, mobile readiness, structured data, analytics
+- conversion: CTAs, forms, conversion paths across pages
+- trust: SSL, reviews, privacy, certifications, contact info
+- technical: Performance, mobile, structured data, analytics, tech stack issues
 - content: Quality, clarity, completeness, heading structure
 - mobile: Viewport, responsive indicators
 - operations: Business process signals, lead capture, service clarity
 
-For each finding provide:
+For each finding:
 - title: Short specific name
 - category: One of the above
 - severity: critical, high, medium, or low
 - description: 2-3 sentences citing specific evidence from the extracted data
 - business_impact: What this costs the business
 - recommended_repair: Specific actionable fix
-- confidence: 0-100 based on evidence strength
+- confidence: 0-100
 
-Only report real issues evidenced by the data. Be specific and cite actual values from the extracted data.`,
+Only report real issues evidenced by the data.`,
       response_json_schema: {
         type: 'object',
         properties: {
@@ -172,7 +114,7 @@ Only report real issues evidenced by the data. Be specific and cite actual value
       }
     });
 
-    // Phase 5: Create findings
+    // Phase 7: Create findings
     const findings = llmResponse.findings || [];
     for (const f of findings) {
       await base44.asServiceRole.entities.Finding.create({
@@ -190,7 +132,20 @@ Only report real issues evidenced by the data. Be specific and cite actual value
       });
     }
 
-    // Phase 6: Update statuses
+    // Phase 8: Create scan snapshot
+    const healthScore = calcHealthScore(findings);
+    const criticalCount = findings.filter(f => f.severity === 'critical').length;
+    await base44.asServiceRole.entities.ScanSnapshot.create({
+      organization_id: orgId,
+      company_id: companyId,
+      audit_id: audit.id,
+      health_score: healthScore,
+      finding_count: findings.length,
+      critical_count: criticalCount,
+      scanned_at: new Date().toISOString()
+    });
+
+    // Phase 9: Update statuses
     await base44.asServiceRole.entities.Audit.update(audit.id, { status: 'completed' });
     await base44.asServiceRole.entities.Website.update(website.id, { status: 'scanned', last_scanned_at: new Date().toISOString() });
     await base44.asServiceRole.entities.Company.update(companyId, { status: 'scanned' });
@@ -200,11 +155,11 @@ Only report real issues evidenced by the data. Be specific and cite actual value
       system: 'scanner',
       action: 'scan_company',
       status: 'success',
-      summary: `Scanned ${company.name} — ${findings.length} findings identified (${httpStatus ? 'HTTP ' + httpStatus : 'fetch failed'})`,
-      evidence: { company_id: companyId, audit_id: audit.id, website_url: website.url, http_status: httpStatus, fetch_ok: fetchOk }
+      summary: `Crawled ${pages.length} pages for ${company.name} — ${findings.length} findings, health score ${healthScore}, tech: ${techStack.join(', ') || 'unknown'}`,
+      evidence: { company_id: companyId, audit_id: audit.id, pages_crawled: pages.length, tech_stack: techStack, health_score: healthScore }
     });
 
-    return Response.json({ status: 'success', company_id: companyId, audit_id: audit.id, findings_created: findings.length, http_status: httpStatus });
+    return Response.json({ status: 'success', company_id: companyId, audit_id: audit.id, findings_created: findings.length, pages_crawled: pages.length, tech_stack: techStack, health_score: healthScore });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

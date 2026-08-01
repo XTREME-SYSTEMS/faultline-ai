@@ -1,33 +1,33 @@
 {
-  "name": "Company",
+  "name": "ScanSnapshot",
   "type": "object",
   "properties": {
     "organization_id": {
       "type": "string"
     },
-    "name": {
+    "company_id": {
       "type": "string"
     },
-    "domain": {
+    "audit_id": {
       "type": "string"
     },
-    "industry": {
-      "type": "string"
+    "health_score": {
+      "type": "number"
     },
-    "status": {
-      "type": "string"
+    "finding_count": {
+      "type": "number"
     },
-    "sample_data": {
-      "type": "boolean",
-      "default": false
+    "critical_count": {
+      "type": "number"
     },
-    "competitor_scores": {
-      "type": "object"
+    "scanned_at": {
+      "type": "string",
+      "format": "date-time"
     }
   },
   "required": [
     "organization_id",
-    "name"
+    "company_id"
   ],
   "rls": {
     "read": {
