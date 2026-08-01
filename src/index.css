@@ -109,8 +109,8 @@
 /* ===== FaultLine AI component system ===== */
 .container { width: min(1440px, calc(100% - 64px)); margin: auto; }
 .brand { display: flex; align-items: center; gap: 11px; }
-.brand img { height: 64px; width: auto; }
-.brand img.mono { width: 54px; height: 54px; }
+.brand img { height: 82px; width: auto; }
+.brand img.mono { width: 64px; height: 64px; }
 .brand span { display: flex; flex-direction: column; }
 .brand b { font: 400 21px 'Libre Caslon Display', serif; }
 .brand i { font-style: normal; color: var(--gold); }
