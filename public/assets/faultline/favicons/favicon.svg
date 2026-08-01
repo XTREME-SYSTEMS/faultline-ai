@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-label="FaultLine AI brand asset"><defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8A641C"/><stop offset="0.34" stop-color="#E7C86E"/><stop offset="0.62" stop-color="#B9872F"/><stop offset="1" stop-color="#F1D98A"/></linearGradient></defs><rect width="512" height="512" rx="88" fill="#FFFFFF"/>
+    <text x="72" y="382" fill="url(#gold)" font-family="Georgia,Times New Roman,serif" font-size="340" font-weight="600">F</text>
+    <text x="246" y="412" fill="url(#gold)" font-family="Georgia,Times New Roman,serif" font-size="330" font-weight="600">L</text>
+    <path d="M99 420L410 83" stroke="#0B0B0B" stroke-width="22" stroke-linecap="square"/>
+    <path d="M113 420L424 83" stroke="rgba(255,255,255,.5)" stroke-width="2" opacity=".35"/>
+    </svg>

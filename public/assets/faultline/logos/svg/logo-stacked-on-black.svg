@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="900" viewBox="0 0 900 900" role="img" aria-label="FaultLine AI brand asset"><defs><linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8A641C"/><stop offset="0.34" stop-color="#E7C86E"/><stop offset="0.62" stop-color="#B9872F"/><stop offset="1" stop-color="#F1D98A"/></linearGradient></defs><rect width="900" height="900" fill="#0B0B0B"/><g transform="translate(194,40)">
+    <text x="72" y="382" fill="url(#gold)" font-family="Georgia,Times New Roman,serif" font-size="340" font-weight="600">F</text>
+    <text x="246" y="412" fill="url(#gold)" font-family="Georgia,Times New Roman,serif" font-size="330" font-weight="600">L</text>
+    <path d="M99 420L410 83" stroke="#FFFFFF" stroke-width="22" stroke-linecap="square"/>
+    <path d="M113 420L424 83" stroke="rgba(255,255,255,.5)" stroke-width="2" opacity=".35"/>
+    </g>
+    <text x="450" y="675" text-anchor="middle" fill="#FFFFFF" font-family="Georgia,Times New Roman,serif" font-size="100" letter-spacing="-2">FaultLine <tspan fill="url(#gold)">AI</tspan></text>
+    <line x1="170" y1="720" x2="730" y2="720" stroke="url(#gold)" stroke-width="2" opacity=".65"/>
+    <text x="450" y="775" text-anchor="middle" fill="#D6D6D6" font-family="Arial,Helvetica,sans-serif" font-size="24" letter-spacing="1.4">EXPOSE WHAT'S BROKEN. BUILD WHAT WORKS.</text></svg>

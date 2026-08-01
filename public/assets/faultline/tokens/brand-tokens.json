@@ -1,0 +1,22 @@
+{
+  "colors": {
+    "black": "#0B0B0B",
+    "charcoal": "#171717",
+    "white": "#FFFFFF",
+    "ivory": "#FAF8F2",
+    "gold": "#C89B3C",
+    "gold_dark": "#8A641C",
+    "gold_light": "#E7C86E",
+    "silver": "#C9CDD3",
+    "muted": "#6B6B6B",
+    "line": "#E8E5DE",
+    "success": "#237A4B",
+    "warning": "#B88214",
+    "danger": "#C63D34"
+  },
+  "typography": {
+    "display": "Georgia, Times New Roman, serif",
+    "ui": "Inter, system-ui, sans-serif"
+  },
+  "tagline": "Expose What's Broken. Build What Works."
+}

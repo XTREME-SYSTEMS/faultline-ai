@@ -1,0 +1,21 @@
+{
+  "brand": "FaultLine AI",
+  "version": "1.0.0",
+  "generated_for": "Base44 Vite handoff",
+  "primary_logo": "logos/svg/logo-horizontal-dark-transparent.svg",
+  "dark_background_logo": "logos/svg/logo-horizontal-light-transparent.svg",
+  "primary_monogram": "monogram/svg/monogram-gold-black-transparent.svg",
+  "favicon": "favicons/favicon.svg",
+  "og_image": "social/og-image-1200x630.png",
+  "icons_manifest": "icons/icon-manifest.json",
+  "tokens": "tokens/brand-tokens.json",
+  "rules": [
+    "Use the horizontal logo in public navigation and footer.",
+    "Use the monogram for favicons, app icons, compact sidebars, and loading states.",
+    "Use SVG whenever possible. PNG is fallback only.",
+    "Use currentColor SVG icons so Base44 can theme states without replacing assets.",
+    "Do not recolor the gold into yellow, orange, blue, purple, or neon.",
+    "Do not distort, stretch, rotate, or add shadows to the logo.",
+    "Maintain clear space equal to the width of the F vertical stem."
+  ]
+}

@@ -1,0 +1,325 @@
+{
+  "icon_style": "1.8px outline, round caps, currentColor",
+  "icons": [
+    {
+      "name": "overview",
+      "svg": "icons/svg/overview.svg",
+      "png_black": "icons/png/black/overview-64.png",
+      "png_gold": "icons/png/gold/overview-64.png",
+      "png_white": "icons/png/white/overview-64.png",
+      "usage": "Overview"
+    },
+    {
+      "name": "audits",
+      "svg": "icons/svg/audits.svg",
+      "png_black": "icons/png/black/audits-64.png",
+      "png_gold": "icons/png/gold/audits-64.png",
+      "png_white": "icons/png/white/audits-64.png",
+      "usage": "Audits"
+    },
+    {
+      "name": "website-intelligence",
+      "svg": "icons/svg/website-intelligence.svg",
+      "png_black": "icons/png/black/website-intelligence-64.png",
+      "png_gold": "icons/png/gold/website-intelligence-64.png",
+      "png_white": "icons/png/white/website-intelligence-64.png",
+      "usage": "Website Intelligence"
+    },
+    {
+      "name": "company-discovery",
+      "svg": "icons/svg/company-discovery.svg",
+      "png_black": "icons/png/black/company-discovery-64.png",
+      "png_gold": "icons/png/gold/company-discovery-64.png",
+      "png_white": "icons/png/white/company-discovery-64.png",
+      "usage": "Company Discovery"
+    },
+    {
+      "name": "system-map",
+      "svg": "icons/svg/system-map.svg",
+      "png_black": "icons/png/black/system-map-64.png",
+      "png_gold": "icons/png/gold/system-map-64.png",
+      "png_white": "icons/png/white/system-map-64.png",
+      "usage": "System Map"
+    },
+    {
+      "name": "revenue-leaks",
+      "svg": "icons/svg/revenue-leaks.svg",
+      "png_black": "icons/png/black/revenue-leaks-64.png",
+      "png_gold": "icons/png/gold/revenue-leaks-64.png",
+      "png_white": "icons/png/white/revenue-leaks-64.png",
+      "usage": "Revenue Leaks"
+    },
+    {
+      "name": "risk-register",
+      "svg": "icons/svg/risk-register.svg",
+      "png_black": "icons/png/black/risk-register-64.png",
+      "png_gold": "icons/png/gold/risk-register-64.png",
+      "png_white": "icons/png/white/risk-register-64.png",
+      "usage": "Risk Register"
+    },
+    {
+      "name": "ai-readiness",
+      "svg": "icons/svg/ai-readiness.svg",
+      "png_black": "icons/png/black/ai-readiness-64.png",
+      "png_gold": "icons/png/gold/ai-readiness-64.png",
+      "png_white": "icons/png/white/ai-readiness-64.png",
+      "usage": "Ai Readiness"
+    },
+    {
+      "name": "repair-plans",
+      "svg": "icons/svg/repair-plans.svg",
+      "png_black": "icons/png/black/repair-plans-64.png",
+      "png_gold": "icons/png/gold/repair-plans-64.png",
+      "png_white": "icons/png/white/repair-plans-64.png",
+      "usage": "Repair Plans"
+    },
+    {
+      "name": "business-builder",
+      "svg": "icons/svg/business-builder.svg",
+      "png_black": "icons/png/black/business-builder-64.png",
+      "png_gold": "icons/png/gold/business-builder-64.png",
+      "png_white": "icons/png/white/business-builder-64.png",
+      "usage": "Business Builder"
+    },
+    {
+      "name": "outreach",
+      "svg": "icons/svg/outreach.svg",
+      "png_black": "icons/png/black/outreach-64.png",
+      "png_gold": "icons/png/gold/outreach-64.png",
+      "png_white": "icons/png/white/outreach-64.png",
+      "usage": "Outreach"
+    },
+    {
+      "name": "leads",
+      "svg": "icons/svg/leads.svg",
+      "png_black": "icons/png/black/leads-64.png",
+      "png_gold": "icons/png/gold/leads-64.png",
+      "png_white": "icons/png/white/leads-64.png",
+      "usage": "Leads"
+    },
+    {
+      "name": "tasks",
+      "svg": "icons/svg/tasks.svg",
+      "png_black": "icons/png/black/tasks-64.png",
+      "png_gold": "icons/png/gold/tasks-64.png",
+      "png_white": "icons/png/white/tasks-64.png",
+      "usage": "Tasks"
+    },
+    {
+      "name": "projects",
+      "svg": "icons/svg/projects.svg",
+      "png_black": "icons/png/black/projects-64.png",
+      "png_gold": "icons/png/gold/projects-64.png",
+      "png_white": "icons/png/white/projects-64.png",
+      "usage": "Projects"
+    },
+    {
+      "name": "workflows",
+      "svg": "icons/svg/workflows.svg",
+      "png_black": "icons/png/black/workflows-64.png",
+      "png_gold": "icons/png/gold/workflows-64.png",
+      "png_white": "icons/png/white/workflows-64.png",
+      "usage": "Workflows"
+    },
+    {
+      "name": "reports",
+      "svg": "icons/svg/reports.svg",
+      "png_black": "icons/png/black/reports-64.png",
+      "png_gold": "icons/png/gold/reports-64.png",
+      "png_white": "icons/png/white/reports-64.png",
+      "usage": "Reports"
+    },
+    {
+      "name": "monitoring",
+      "svg": "icons/svg/monitoring.svg",
+      "png_black": "icons/png/black/monitoring-64.png",
+      "png_gold": "icons/png/gold/monitoring-64.png",
+      "png_white": "icons/png/white/monitoring-64.png",
+      "usage": "Monitoring"
+    },
+    {
+      "name": "team",
+      "svg": "icons/svg/team.svg",
+      "png_black": "icons/png/black/team-64.png",
+      "png_gold": "icons/png/gold/team-64.png",
+      "png_white": "icons/png/white/team-64.png",
+      "usage": "Team"
+    },
+    {
+      "name": "integrations",
+      "svg": "icons/svg/integrations.svg",
+      "png_black": "icons/png/black/integrations-64.png",
+      "png_gold": "icons/png/gold/integrations-64.png",
+      "png_white": "icons/png/white/integrations-64.png",
+      "usage": "Integrations"
+    },
+    {
+      "name": "billing",
+      "svg": "icons/svg/billing.svg",
+      "png_black": "icons/png/black/billing-64.png",
+      "png_gold": "icons/png/gold/billing-64.png",
+      "png_white": "icons/png/white/billing-64.png",
+      "usage": "Billing"
+    },
+    {
+      "name": "settings",
+      "svg": "icons/svg/settings.svg",
+      "png_black": "icons/png/black/settings-64.png",
+      "png_gold": "icons/png/gold/settings-64.png",
+      "png_white": "icons/png/white/settings-64.png",
+      "usage": "Settings"
+    },
+    {
+      "name": "help",
+      "svg": "icons/svg/help.svg",
+      "png_black": "icons/png/black/help-64.png",
+      "png_gold": "icons/png/gold/help-64.png",
+      "png_white": "icons/png/white/help-64.png",
+      "usage": "Help"
+    },
+    {
+      "name": "search",
+      "svg": "icons/svg/search.svg",
+      "png_black": "icons/png/black/search-64.png",
+      "png_gold": "icons/png/gold/search-64.png",
+      "png_white": "icons/png/white/search-64.png",
+      "usage": "Search"
+    },
+    {
+      "name": "notifications",
+      "svg": "icons/svg/notifications.svg",
+      "png_black": "icons/png/black/notifications-64.png",
+      "png_gold": "icons/png/gold/notifications-64.png",
+      "png_white": "icons/png/white/notifications-64.png",
+      "usage": "Notifications"
+    },
+    {
+      "name": "security",
+      "svg": "icons/svg/security.svg",
+      "png_black": "icons/png/black/security-64.png",
+      "png_gold": "icons/png/gold/security-64.png",
+      "png_white": "icons/png/white/security-64.png",
+      "usage": "Security"
+    },
+    {
+      "name": "evidence",
+      "svg": "icons/svg/evidence.svg",
+      "png_black": "icons/png/black/evidence-64.png",
+      "png_gold": "icons/png/gold/evidence-64.png",
+      "png_white": "icons/png/white/evidence-64.png",
+      "usage": "Evidence"
+    },
+    {
+      "name": "approval",
+      "svg": "icons/svg/approval.svg",
+      "png_black": "icons/png/black/approval-64.png",
+      "png_gold": "icons/png/gold/approval-64.png",
+      "png_white": "icons/png/white/approval-64.png",
+      "usage": "Approval"
+    },
+    {
+      "name": "admin",
+      "svg": "icons/svg/admin.svg",
+      "png_black": "icons/png/black/admin-64.png",
+      "png_gold": "icons/png/gold/admin-64.png",
+      "png_white": "icons/png/white/admin-64.png",
+      "usage": "Admin"
+    },
+    {
+      "name": "ai-assistant",
+      "svg": "icons/svg/ai-assistant.svg",
+      "png_black": "icons/png/black/ai-assistant-64.png",
+      "png_gold": "icons/png/gold/ai-assistant-64.png",
+      "png_white": "icons/png/white/ai-assistant-64.png",
+      "usage": "Ai Assistant"
+    },
+    {
+      "name": "failure-map",
+      "svg": "icons/svg/failure-map.svg",
+      "png_black": "icons/png/black/failure-map-64.png",
+      "png_gold": "icons/png/gold/failure-map-64.png",
+      "png_white": "icons/png/white/failure-map-64.png",
+      "usage": "Failure Map"
+    },
+    {
+      "name": "benchmark",
+      "svg": "icons/svg/benchmark.svg",
+      "png_black": "icons/png/black/benchmark-64.png",
+      "png_gold": "icons/png/gold/benchmark-64.png",
+      "png_white": "icons/png/white/benchmark-64.png",
+      "usage": "Benchmark"
+    },
+    {
+      "name": "automation",
+      "svg": "icons/svg/automation.svg",
+      "png_black": "icons/png/black/automation-64.png",
+      "png_gold": "icons/png/gold/automation-64.png",
+      "png_white": "icons/png/white/automation-64.png",
+      "usage": "Automation"
+    },
+    {
+      "name": "analytics",
+      "svg": "icons/svg/analytics.svg",
+      "png_black": "icons/png/black/analytics-64.png",
+      "png_gold": "icons/png/gold/analytics-64.png",
+      "png_white": "icons/png/white/analytics-64.png",
+      "usage": "Analytics"
+    },
+    {
+      "name": "calendar",
+      "svg": "icons/svg/calendar.svg",
+      "png_black": "icons/png/black/calendar-64.png",
+      "png_gold": "icons/png/gold/calendar-64.png",
+      "png_white": "icons/png/white/calendar-64.png",
+      "usage": "Calendar"
+    },
+    {
+      "name": "files",
+      "svg": "icons/svg/files.svg",
+      "png_black": "icons/png/black/files-64.png",
+      "png_gold": "icons/png/gold/files-64.png",
+      "png_white": "icons/png/white/files-64.png",
+      "usage": "Files"
+    },
+    {
+      "name": "comments",
+      "svg": "icons/svg/comments.svg",
+      "png_black": "icons/png/black/comments-64.png",
+      "png_gold": "icons/png/gold/comments-64.png",
+      "png_white": "icons/png/white/comments-64.png",
+      "usage": "Comments"
+    },
+    {
+      "name": "export",
+      "svg": "icons/svg/export.svg",
+      "png_black": "icons/png/black/export-64.png",
+      "png_gold": "icons/png/gold/export-64.png",
+      "png_white": "icons/png/white/export-64.png",
+      "usage": "Export"
+    },
+    {
+      "name": "filter",
+      "svg": "icons/svg/filter.svg",
+      "png_black": "icons/png/black/filter-64.png",
+      "png_gold": "icons/png/gold/filter-64.png",
+      "png_white": "icons/png/white/filter-64.png",
+      "usage": "Filter"
+    },
+    {
+      "name": "link",
+      "svg": "icons/svg/link.svg",
+      "png_black": "icons/png/black/link-64.png",
+      "png_gold": "icons/png/gold/link-64.png",
+      "png_white": "icons/png/white/link-64.png",
+      "usage": "Link"
+    },
+    {
+      "name": "logout",
+      "svg": "icons/svg/logout.svg",
+      "png_black": "icons/png/black/logout-64.png",
+      "png_gold": "icons/png/gold/logout-64.png",
+      "png_white": "icons/png/white/logout-64.png",
+      "usage": "Logout"
+    }
+  ]
+}
