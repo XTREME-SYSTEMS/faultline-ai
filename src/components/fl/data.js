@@ -11,7 +11,7 @@ export const portalNav = [
   ['Business Builder', '/app/business-builder'], ['Outreach', '/app/outreach'],
   ['Leads', '/app/leads'], ['Tasks', '/app/tasks'], ['Projects', '/app/projects'],
   ['Reports', '/app/reports'], ['Monitoring', '/app/monitoring'], ['Team', '/app/team'],
-  ['Integrations', '/app/integrations'], ['Billing', '/app/billing'], ['Settings', '/app/settings']
+  ['Integrations', '/app/integrations'], ['Drive Sync', '/app/drive-sync'], ['Billing', '/app/billing'], ['Settings', '/app/settings']
 ];
 
 export const metrics = [

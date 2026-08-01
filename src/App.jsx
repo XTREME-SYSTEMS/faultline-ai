@@ -19,6 +19,7 @@ import Checkout from '@/pages/Checkout';
 import Overview from '@/pages/Overview';
 import Module from '@/pages/Module';
 import Admin from '@/pages/Admin';
+import DriveSync from '@/pages/DriveSync';
 import NotFound from '@/pages/NotFound';
 
 const AuthenticatedApp = () => {
@@ -60,6 +61,7 @@ const AuthenticatedApp = () => {
       {/* Protected portal */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/app" element={<Overview />} />
+        <Route path="/app/drive-sync" element={<DriveSync />} />
         <Route path="/app/:slug" element={<Module />} />
         <Route path="/admin" element={<Admin />} />
       </Route>
