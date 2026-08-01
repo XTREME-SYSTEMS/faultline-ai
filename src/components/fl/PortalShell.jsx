@@ -43,6 +43,7 @@ export default function PortalShell({ children, assistant = false }) {
             <NavLink key={to} to={to} end={to === '/app'} onClick={() => setOpen(false)}>{label}</NavLink>
           ))}
         </nav>
+        <button onClick={handleLogout} className="btn outline" style={{ width: '100%', padding: '10px', fontSize: 13, marginTop: 16 }}>Sign out</button>
         <div className="side-help">
           <b>Need help interpreting results?</b>
           <p>Book a strategy call with a human reviewer.</p>
@@ -55,7 +56,6 @@ export default function PortalShell({ children, assistant = false }) {
           <input placeholder="Search audits, issues, opportunities…" />
           <button className="btn dark">+ New audit</button>
           <span className="avatar">AM</span>
-          <button onClick={handleLogout} className="btn outline" style={{ padding: '8px 14px', fontSize: 12 }}>Sign out</button>
         </header>
         <div className={assistant ? 'portal-content with-ai' : 'portal-content'}>
           <div className="portal-page">{children}</div>
