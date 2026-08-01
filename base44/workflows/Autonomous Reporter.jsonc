@@ -1,0 +1,40 @@
+{
+  "name": "Autonomous Reporter",
+  "description": "When an audit completes scanning, automatically generates an executive report from the findings.",
+  "trigger": {
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "Audit",
+      "events": [
+        "update"
+      ]
+    },
+    "condition": "${ .trigger.data.status == \"completed\" and .trigger.old_data.status != \"completed\" }"
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "autonomous_reporter",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "report": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "generateReport",
+            "args": {
+              "audit_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Generate report",
+            "description": "Create executive report from findings"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "name": "Autonomous Scanner",
+  "description": "When a new company is discovered, automatically scans its website for business faults and creates findings.",
+  "trigger": {
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "Company",
+      "events": [
+        "create"
+      ]
+    },
+    "condition": "${ .trigger.data.status == \"discovered\" }"
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "autonomous_scanner",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "scan": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "scanCompany",
+            "args": {
+              "company_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Scan company website",
+            "description": "Analyze for business faults"
+          }
+        }
+      }
+    ]
+  }
+}

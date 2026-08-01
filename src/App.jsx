@@ -20,6 +20,7 @@ import Overview from '@/pages/Overview';
 import Module from '@/pages/Module';
 import Admin from '@/pages/Admin';
 import DriveSync from '@/pages/DriveSync';
+import DiscoveryEngine from '@/pages/DiscoveryEngine';
 import NotFound from '@/pages/NotFound';
 
 const AuthenticatedApp = () => {
@@ -61,6 +62,7 @@ const AuthenticatedApp = () => {
       {/* Protected portal */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/app" element={<Overview />} />
+        <Route path="/app/discovery-engine" element={<DiscoveryEngine />} />
         <Route path="/app/drive-sync" element={<DriveSync />} />
         <Route path="/app/:slug" element={<Module />} />
         <Route path="/admin" element={<Admin />} />

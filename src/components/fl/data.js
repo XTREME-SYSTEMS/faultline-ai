@@ -4,7 +4,7 @@ export const publicNav = [
 ];
 
 export const portalNav = [
-  ['Overview', '/app'], ['Audits', '/app/audits'], ['Website Intelligence', '/app/website-intelligence'],
+  ['Overview', '/app'], ['Discovery Engine', '/app/discovery-engine'], ['Audits', '/app/audits'], ['Website Intelligence', '/app/website-intelligence'],
   ['Company Discovery', '/app/company-discovery'], ['System Map', '/app/system-map'],
   ['Revenue Leaks', '/app/revenue-leaks'], ['Risk Register', '/app/risk-register'],
   ['AI Readiness', '/app/ai-readiness'], ['Repair Plans', '/app/repair-plans'],

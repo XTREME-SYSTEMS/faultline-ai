@@ -19,6 +19,9 @@
     },
     "scope": {
       "type": "object"
+    },
+    "report_url": {
+      "type": "string"
     }
   },
   "required": [
