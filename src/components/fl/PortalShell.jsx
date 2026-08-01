@@ -1,11 +1,26 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useAuth } from '@/lib/AuthContext';
+import { base44 } from '@/api/base44Client';
 import Brand from './Brand';
 import AiPanel from './AiPanel';
 import { portalNav } from './data';
 
 export default function PortalShell({ children, assistant = false }) {
   const [open, setOpen] = useState(false);
+  const { user } = useAuth();
+  const [orgName, setOrgName] = useState('Loading…');
+
+  useEffect(() => {
+    if (user?.data?.organization_id) {
+      base44.entities.Organization.get(user.data.organization_id)
+        .then(org => setOrgName(org?.name || 'Your workspace'))
+        .catch(() => setOrgName('Your workspace'));
+    } else if (user) {
+      setOrgName('Your workspace');
+    }
+  }, [user]);
+
   return (
     <div className="portal">
       <aside className={open ? 'sidebar open' : 'sidebar'}>
@@ -14,7 +29,7 @@ export default function PortalShell({ children, assistant = false }) {
           <button onClick={() => setOpen(false)}>×</button>
         </div>
         <div className="workspace">
-          <b>Acme Manufacturing</b>
+          <b>{orgName}</b>
           <small>Growth operating system</small>
         </div>
         <nav>
