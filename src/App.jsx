@@ -1,17 +1,29 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
-// Add page imports here
+import ProtectedRoute from '@/components/ProtectedRoute';
+// Auth pages
+import Login from '@/pages/Login';
+import Register from '@/pages/Register';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
+// FaultLine pages
+import Home from '@/pages/Home';
+import MarketingPage from '@/pages/MarketingPage';
+import Checkout from '@/pages/Checkout';
+import Overview from '@/pages/Overview';
+import Module from '@/pages/Module';
+import Admin from '@/pages/Admin';
+import NotFound from '@/pages/NotFound';
 
 const AuthenticatedApp = () => {
-  const { isLoadingAuth, isLoadingPublicSettings, authError, navigateToLogin } = useAuth();
+  const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
 
-  // Show loading spinner while checking app public settings or auth
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center">
@@ -20,22 +32,39 @@ const AuthenticatedApp = () => {
     );
   }
 
-  // Handle authentication errors
-  if (authError) {
-    if (authError.type === 'user_not_registered') {
-      return <UserNotRegisteredError />;
-    } else if (authError.type === 'auth_required') {
-      // Redirect to login automatically
-      navigateToLogin();
-      return null;
-    }
+  if (authError && authError.type === 'user_not_registered') {
+    return <UserNotRegisteredError />;
   }
 
-  // Render the main app
   return (
     <Routes>
-      {/* Add your page Route elements here */}
-      <Route path="*" element={<PageNotFound />} />
+      {/* Public marketing */}
+      <Route path="/" element={<Home />} />
+      <Route path="/product" element={<MarketingPage page="product" />} />
+      <Route path="/solutions" element={<MarketingPage page="solutions" />} />
+      <Route path="/industries" element={<MarketingPage page="industries" />} />
+      <Route path="/how-it-works" element={<MarketingPage page="how-it-works" />} />
+      <Route path="/pricing" element={<MarketingPage page="pricing" />} />
+      <Route path="/resources" element={<MarketingPage page="resources" />} />
+      <Route path="/security" element={<MarketingPage page="security" />} />
+      <Route path="/about" element={<MarketingPage page="about" />} />
+      <Route path="/contact" element={<MarketingPage page="contact" />} />
+      <Route path="/checkout" element={<Checkout />} />
+
+      {/* Auth */}
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
+
+      {/* Protected portal */}
+      <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route path="/app" element={<Overview />} />
+        <Route path="/app/:slug" element={<Module />} />
+        <Route path="/admin" element={<Admin />} />
+      </Route>
+
+      <Route path="*" element={<NotFound />} />
     </Routes>
   );
 };
