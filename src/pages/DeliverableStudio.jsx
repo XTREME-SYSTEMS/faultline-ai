@@ -9,14 +9,14 @@ const GENERATORS = [
     label: 'Client Proposal',
     icon: '📄',
     description: 'Compiles security scan results and cloning analysis into a professional, ready-to-send proposal document.',
-    accent: '#C89B3C'
+    accent: '#1a1a1a'
   },
   {
     type: 'website',
     label: 'Website Generator',
     icon: '🌐',
     description: 'Generates a complete, production-ready website tailored to the client\'s industry and security profile.',
-    accent: '#237A4B'
+    accent: '#2563eb'
   },
   {
     type: 'brand',
@@ -140,8 +140,8 @@ export default function DeliverableStudio() {
             <button
               className="btn dark"
               onClick={() => generate(gen.type)}
-              disabled={!selectedCompany || generating === gen.type}
-              style={{ marginTop: 14, opacity: (!selectedCompany || generating === gen.type) ? 0.5 : 1, background: gen.accent, color: '#fff' }}
+              disabled={generating === gen.type}
+              style={{ marginTop: 14, opacity: generating === gen.type ? 0.6 : 1, background: gen.accent, color: '#fff' }}
             >
               {generating === gen.type ? '⏳ Generating…' : `Generate ${gen.label}`}
             </button>
