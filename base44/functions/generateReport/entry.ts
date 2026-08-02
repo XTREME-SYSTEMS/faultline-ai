@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { runMandatoryQA } from '../../shared/mandatoryQA.ts';
 
 export default async function(req) {
   try {
@@ -76,16 +77,22 @@ Be specific, evidence-based, and actionable. No placeholder text.`,
       scope: { ...audit.scope, report_generated_at: new Date().toISOString() }
     });
 
+    // MANDATORY QA GATE — validate the report before it reaches anyone
+    const qa = await runMandatoryQA(base44, orgId, {
+      target_type: 'report', target_id: auditId, target_title: `Executive Report — ${company?.name || 'Audit'}`,
+      content: reportContent, auto: true
+    });
+
     await base44.asServiceRole.entities.Receipt.create({
       organization_id: orgId,
       system: 'report_generator',
       action: 'generate_report',
       status: 'success',
-      summary: `Generated executive report for ${company?.name || 'audit'} — ${findings.length} findings`,
-      evidence: { audit_id: auditId, report_url: reportUrl, finding_count: findings.length }
+      summary: `Generated executive report for ${company?.name || 'audit'} — ${findings.length} findings — QA ${qa.status} (${qa.score}/100)`,
+      evidence: { audit_id: auditId, report_url: reportUrl, finding_count: findings.length, qa_report_id: qa.report_id, qa_status: qa.status }
     });
 
-    return Response.json({ status: 'success', audit_id: auditId, report_url: reportUrl, finding_count: findings.length });
+    return Response.json({ status: 'success', audit_id: auditId, report_url: reportUrl, finding_count: findings.length, qa });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

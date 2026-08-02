@@ -23,6 +23,19 @@ export default async function(req) {
       return Response.json({ error: 'Outreach draft is not approved for send. Set send_status to approved_for_send first.' }, { status: 403 });
     }
 
+    // MANDATORY QA GATE — no email leaves this system without a passed QA report
+    const qaReports = await base44.asServiceRole.entities.QAReport.filter(
+      { organization_id: orgId, target_type: 'outreach', target_id: draftId },
+      '-created_date', 10
+    );
+    const passedQa = qaReports.find(r => r.status === 'passed' || r.status === 'warnings');
+    if (!passedQa) {
+      return Response.json({
+        error: 'MANDATORY QA GATE BLOCKED: This email has no passed QA validation report. Run qaValidateStep on this draft (target_type=outreach, target_id=' + draftId + ') and ensure it passes before sending. No email can be sent without passing the mandatory validator.',
+        draft_id: draftId
+      }, { status: 403 });
+    }
+
     const company = draft.company_id ? await base44.asServiceRole.entities.Company.get(draft.company_id) : null;
     const toEmail = body.to || company?.domain ? `info@${company.domain}` : null;
     if (!toEmail) return Response.json({ error: 'No recipient email. Provide a "to" field.' }, { status: 400 });

@@ -1,11 +1,18 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
-// Headless User-POV Testing — simulates a real user walking through a generated
-// frontend/backend system and reports UX issues, broken flows, missing states,
-// accessibility problems, and error-handling gaps. Since a Deno function cannot
-// launch a real browser, this uses an AI-driven "headless" review: it models the
-// user journey step-by-step and flags where the generated system would fail the
-// user. Accepts a deliverable_id (fetches content) or direct content/description.
+// Headless User-POV Testing — simulates a real user operating the entire system
+// end-to-end: navigating pages, filling forms, typing into inputs, scrolling,
+// clicking buttons, and completing full flows. Since a Deno function cannot
+// launch a real browser, this uses an AI-driven simulation that models each
+// interaction step-by-step and reports UX issues, broken flows, missing states,
+// accessibility problems, and error-handling gaps.
+//
+// Accepts:
+//   - target_id (fetches a Deliverable's content), OR direct content/title
+//   - interactions: an array of steps to simulate, each { action, ... }
+//       actions: navigate | fill | type | scroll | click | wait | verify
+//   - user_persona: who the simulated user is
+//   - flow_goal: what the user is trying to accomplish end-to-end
 
 export default async function(req) {
   try {
@@ -16,7 +23,7 @@ export default async function(req) {
     if (!orgId) return Response.json({ error: 'No organization found' }, { status: 400 });
 
     const body = await req.json().catch(() => ({}));
-    const { target_id, content, title, user_persona } = body;
+    const { target_id, content, title, user_persona, interactions, flow_goal } = body;
 
     let targetContent = content || '';
     let targetTitle = title || '';
@@ -33,46 +40,71 @@ export default async function(req) {
       }
     }
 
-    if (!targetContent.trim()) return Response.json({ error: 'No content to test — pass content or a valid deliverable target_id' }, { status: 400 });
+    if (!targetContent.trim() && !interactions) {
+      return Response.json({ error: 'No content to test — pass content, a valid deliverable target_id, or an interactions script' }, { status: 400 });
+    }
 
     const persona = user_persona || 'a first-time non-technical end user on mobile';
+    const goal = flow_goal || 'complete the primary action successfully end-to-end';
+
+    // Build the interaction script description. If the caller provided explicit
+    // interactions (navigate/fill/type/scroll/click), describe them so the LLM
+    // simulates each one. Otherwise let the LLM map the journey itself.
+    let interactionScript = '';
+    if (interactions && Array.isArray(interactions) && interactions.length > 0) {
+      interactionScript = interactions.map((step, i) => {
+        const a = step.action || 'step';
+        const detail = [
+          step.url ? `url: ${step.url}` : '',
+          step.selector ? `target: ${step.selector}` : '',
+          step.value !== undefined ? `value: "${step.value}"` : '',
+          step.text ? `text: "${step.text}"` : '',
+          step.direction ? `direction: ${step.direction}` : '',
+          step.expectation ? `expect: ${step.expectation}` : ''
+        ].filter(Boolean).join(', ');
+        return `${i + 1}. ${a} — ${detail || '(no detail)'}`;
+      }).join('\n');
+    }
 
     const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `You are the FaultLine AI Headless Test Engine. You simulate ${persona} interacting with a generated frontend + backend system. You walk through the complete user journey step-by-step and report every place the system would fail, confuse, or frustrate the user.
+      prompt: `You are the FaultLine AI Headless Test Engine. You simulate ${persona} operating a generated frontend + backend system END-TO-END. You can navigate through pages, fill forms, type into inputs, scroll, click buttons, and verify outcomes — exactly like a real user driving the whole system.
 
 SYSTEM UNDER TEST: ${targetTitle || 'Generated system'}
+USER GOAL: ${goal}
+
 SYSTEM DESCRIPTION/CONTENT:
 """
-${targetContent.substring(0, 12000)}
+${targetContent.substring(0, 10000)}
 """
 
-Perform a thorough user-POV test:
-1. Map the primary user journey (landing → signup/onboarding → core action → completion)
-2. For EACH step, evaluate:
-   - Can the user figure out what to do? (clarity, affordances, instructions)
-   - Does the flow have all required states? (loading, empty, error, success)
-   - Are there dead-ends or broken paths?
-   - Is it accessible? (contrast, text size, keyboard nav, screen-reader labels)
-   - Does it work on mobile? (touch targets, layout, responsive)
-   - Are errors handled gracefully with actionable messages?
-   - Is data validation present on inputs?
-3. Test edge cases: empty data, very long input, network failure, concurrent actions
-4. Check backend assumptions: missing auth checks, unvalidated data, race conditions, no rate limiting
-5. Report any security issues visible from the user POV (data exposure, missing logout, etc.)
+${interactionScript ? `INTERACTION SCRIPT (simulate each step in order):\n${interactionScript}\n` : 'Map the primary user journey yourself (landing → signup/onboarding → core action → completion).'}
 
-For each issue found, assign severity (critical/high/medium/low), category (ux/accessibility/error-handling/backend/security/mobile), description, and recommendation.
+Perform a thorough end-to-end user-POV test by simulating EVERY interaction:
+1. For EACH step in the journey (or script), act it out as the user and evaluate:
+   - NAVIGATE: Does the page load? Is the route reachable? Are there broken links/404s?
+   - FILL/TYPE: Can the user figure out what to enter? Is there validation? Are errors clear? Does the field accept the input?
+   - SCROLL: Is all content reachable by scroll? Are there infinite-scroll or lazy-load failures? Is important content below the fold without cues?
+   - CLICK: Does the button do what it says? Are there dead buttons? Does it show a loading state? Does it lead to the right next step?
+   - VERIFY: Did the step achieve its expected outcome? Is there confirmation feedback?
+2. For each step check: required states (loading, empty, error, success), dead-ends, broken paths, accessibility (contrast, text size, keyboard nav, screen-reader labels), mobile (touch targets, layout, responsive), error handling, and data validation.
+3. Test edge cases at each step: empty data, very long input, network failure, concurrent actions, browser back button.
+4. Check backend assumptions visible from the user POV: missing auth checks, unvalidated data, race conditions, no rate limiting, data exposure.
+5. End with a verdict: did the user achieve the goal end-to-end? Where did the flow break?
+
+For each issue found, assign severity (critical/high/medium/low), category (ux/accessibility/error-handling/backend/security/mobile/navigation/form-validation), the step where it occurred, description, and recommendation.
 
 Compute a user-experience score (0-100) and status:
 - "passed" if score >= 80 and no critical issues
 - "warnings" if score >= 60 and no critical issues
 - "failed" if score < 60 OR any critical issue
 
-Provide a summary of the simulated journey and top recommendations.`,
+Provide a step-by-step summary of the simulated journey, where it broke (if anywhere), and top recommendations.`,
       response_json_schema: {
         type: 'object',
         properties: {
           score: { type: 'number' },
           status: { type: 'string', enum: ['passed', 'failed', 'warnings'] },
+          goal_achieved: { type: 'boolean' },
           summary: { type: 'string' },
           issues: {
             type: 'array',
@@ -81,6 +113,7 @@ Provide a summary of the simulated journey and top recommendations.`,
               properties: {
                 severity: { type: 'string', enum: ['critical', 'high', 'medium', 'low'] },
                 category: { type: 'string' },
+                step: { type: 'string' },
                 description: { type: 'string' },
                 recommendation: { type: 'string' }
               }
@@ -106,8 +139,12 @@ Provide a summary of the simulated journey and top recommendations.`,
     return Response.json({
       status: 'success',
       report_id: report.id,
-      score: result.score, test_status: result.status,
-      summary: result.summary, issues: result.issues, recommendations: result.recommendations
+      score: result.score,
+      test_status: result.status,
+      goal_achieved: result.goal_achieved,
+      summary: result.summary,
+      issues: result.issues,
+      recommendations: result.recommendations
     });
   } catch (error) {
     console.error('runHeadlessTest error:', error);

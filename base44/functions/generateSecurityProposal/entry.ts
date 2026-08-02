@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { runMandatoryQA } from '../../shared/mandatoryQA.ts';
 
 // Generates automated pricing + a full security proposal document for a company.
 // Combines: audit findings, system clone, enhanced system, and pricing into a
@@ -160,13 +161,23 @@ Be specific, professional, and evidence-based. Use the actual numbers above.`,
       evidence: { company_id: companyId, proposal_id: proposal.id, total_price: totalPrice, plan: recommendedPlan }
     });
 
+    // MANDATORY QA GATE — validate the proposal before it reaches the client
+    const qa = await runMandatoryQA(base44, orgId, {
+      target_type: 'repair_plan', target_id: proposal.id, target_title: `Security Proposal — ${company.name}`,
+      content: proposalText, auto: true
+    });
+    if (!qa.passed) {
+      await base44.asServiceRole.entities.SecurityProposal.update(proposal.id, { status: 'needs_revision' });
+    }
+
     return Response.json({
       status: 'success',
       proposal_id: proposal.id,
       pricing_breakdown: pricing,
       total_price: totalPrice,
       recommended_plan: recommendedPlan,
-      proposal_text: proposalText
+      proposal_text: proposalText,
+      qa
     });
   } catch (error) {
     console.error('generateSecurityProposal error:', error);

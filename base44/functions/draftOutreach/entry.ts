@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { runMandatoryQA } from '../../shared/mandatoryQA.ts';
 
 export default async function(req) {
   try {
@@ -69,16 +70,31 @@ Return:
       send_status: 'draft_only'
     });
 
+    // MANDATORY QA GATE — validate the email before anyone sees it
+    const emailContent = `Subject: ${llmResponse.subject}\n\nBody:\n${llmResponse.body}`;
+    const qa = await runMandatoryQA(base44, orgId, {
+      target_type: 'outreach', target_id: draft.id, target_title: llmResponse.subject,
+      content: emailContent, auto: true
+    });
+    const approvalStatus = qa.passed ? 'pending' : 'needs_revision';
+    await base44.asServiceRole.entities.OutreachDraft.update(draft.id, {
+      approval_status: approvalStatus,
+      evidence_refs: [...(llmResponse.evidence_refs || []), `_qa_report:${qa.report_id}`]
+    });
+
     await base44.asServiceRole.entities.Receipt.create({
       organization_id: orgId,
       system: 'outreach',
       action: 'draft_outreach',
       status: 'success',
-      summary: `Drafted outreach to ${company.name} — pending approval`,
-      evidence: { company_id: companyId, draft_id: draft.id, findings_referenced: (llmResponse.evidence_refs || []).length }
+      summary: `Drafted outreach to ${company.name} — ${qa.status} (QA ${qa.score}/100)`,
+      evidence: { company_id: companyId, draft_id: draft.id, findings_referenced: (llmResponse.evidence_refs || []).length, qa_report_id: qa.report_id, qa_status: qa.status }
     });
 
-    return Response.json({ status: 'success', draft_id: draft.id, subject: llmResponse.subject, approval_status: 'pending' });
+    return Response.json({
+      status: 'success', draft_id: draft.id, subject: llmResponse.subject,
+      approval_status: approvalStatus, qa
+    });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { runMandatoryQA } from '../../shared/mandatoryQA.ts';
 
 export default async function(req) {
   try {
@@ -97,7 +98,14 @@ Prioritize by severity (critical first) and effort (quick wins first).`,
       evidence: { audit_id: auditId, plan_id: plan.id, action_count: actions.length }
     });
 
-    return Response.json({ status: 'success', audit_id: auditId, plan_id: plan.id, actions_created: actions.length });
+    // MANDATORY QA GATE — validate the repair plan before it reaches anyone
+    const planContent = `${plan.title} (${plan.horizon_days} days)\nActions:\n${actions.map((a, i) => `${i + 1}. [P${a.priority}] ${a.title} — Owner: ${a.owner_role}, Effort: ${a.effort_estimate}\n   Validation: ${a.validation_criteria}`).join('\n')}`;
+    const qa = await runMandatoryQA(base44, orgId, {
+      target_type: 'repair_plan', target_id: plan.id, target_title: plan.title,
+      content: planContent, auto: true
+    });
+
+    return Response.json({ status: 'success', audit_id: auditId, plan_id: plan.id, actions_created: actions.length, qa });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }
