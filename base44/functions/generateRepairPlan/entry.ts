@@ -31,20 +31,26 @@ ${JSON.stringify(findings.map(f => ({ id: f.id, title: f.title, severity: f.seve
 Create a repair plan with:
 - title: Plan name
 - horizon_days: Total implementation window (30, 60, or 90)
+- summary: A 2-3 sentence executive summary of the plan's goal, expected outcomes, and total estimated impact
+- expected_outcomes: 3-5 measurable business outcomes this plan will deliver (e.g., "Reduce critical findings from 4 to 0", "Improve health score by 20+ points")
 - actions: 5-15 specific repair actions, each with:
   - title: Action name
   - priority: 1 (highest) to 5 (lowest)
-  - owner_role: Who should own it (e.g., "Marketing", "Operations", "IT", "Finance")
+  - owner_role: A specific named role who should own it (e.g., "IT Security Lead", "Marketing Director", "Operations Manager" — not a generic department)
   - effort_estimate: "low", "medium", or "high"
-  - validation_criteria: How to verify the fix worked
+  - target_day: Target completion day within the horizon (e.g., 15 = day 15)
+  - success_metric: A measurable KPI with a target value to verify success (e.g., "SPF record present and valid", "Health score +10 points", "Lead form conversion tracked")
+  - validation_criteria: How to verify the fix worked (specific test or re-scan method)
   - finding_id: Which finding this addresses
 
-Prioritize by severity (critical first) and effort (quick wins first).`,
+Prioritize by severity (critical first) and effort (quick wins first). Every action MUST have a named owner role, a measurable success metric with a target value, and a target completion day. No unowned or unmeasurable actions.`,
       response_json_schema: {
         type: 'object',
         properties: {
           title: { type: 'string' },
           horizon_days: { type: 'number' },
+          summary: { type: 'string' },
+          expected_outcomes: { type: 'array', items: { type: 'string' } },
           actions: {
             type: 'array',
             items: {
@@ -54,6 +60,8 @@ Prioritize by severity (critical first) and effort (quick wins first).`,
                 priority: { type: 'number' },
                 owner_role: { type: 'string' },
                 effort_estimate: { type: 'string' },
+                target_day: { type: 'number' },
+                success_metric: { type: 'string' },
                 validation_criteria: { type: 'string' },
                 finding_id: { type: 'string' }
               }
@@ -99,7 +107,7 @@ Prioritize by severity (critical first) and effort (quick wins first).`,
     });
 
     // MANDATORY QA GATE — validate the repair plan before it reaches anyone
-    const planContent = `${plan.title} (${plan.horizon_days} days)\nActions:\n${actions.map((a, i) => `${i + 1}. [P${a.priority}] ${a.title} — Owner: ${a.owner_role}, Effort: ${a.effort_estimate}\n   Validation: ${a.validation_criteria}`).join('\n')}`;
+    const planContent = `${plan.title} (${plan.horizon_days} days)\nSummary: ${llmResponse.summary || ''}\nExpected outcomes: ${(llmResponse.expected_outcomes || []).join('; ')}\nActions:\n${actions.map((a, i) => `${i + 1}. [P${a.priority}] ${a.title} — Owner: ${a.owner_role}, Effort: ${a.effort_estimate}, Target: Day ${a.target_day || '?'}\n   Success metric: ${a.success_metric || '—'}\n   Validation: ${a.validation_criteria}`).join('\n')}`;
     const qa = await runMandatoryQA(base44, orgId, {
       target_type: 'repair_plan', target_id: plan.id, target_title: plan.title,
       content: planContent, auto: true

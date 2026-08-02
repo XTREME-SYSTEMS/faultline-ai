@@ -43,21 +43,27 @@ ${findingsSummary}
 
 Generate a structured executive report in markdown with these sections:
 ## Executive Summary
-(2-3 paragraphs summarizing the overall state and most critical issues)
+(2-3 paragraphs summarizing the overall state, most critical issues, and the quantified business risk)
 
 ## Key Findings
-(Prioritized by severity — critical first. For each: title, severity, impact, and recommended repair)
+(Prioritized by severity — critical first. For each: title, severity, confidence level, specific evidence/observation, business impact, and recommended repair)
 
 ## Business Impact Assessment
-(Assess the cumulative financial and operational risk)
+(Quantify the cumulative financial and operational risk — include estimated annual revenue exposure ranges, operational cost, and risk of inaction. Use specific dollar ranges where possible.)
 
 ## Recommended Repair Plan
-(30-day quick wins, 60-day priorities, 90-day strategic improvements)
+(30-day quick wins, 60-day priorities, 90-day strategic improvements. For EACH initiative include: a named owner role (e.g., "IT Lead", "Marketing Director"), a measurable success metric / KPI with a target value, and an effort estimate.)
+
+## KPIs & Success Metrics
+(A dedicated table or list of 5-8 measurable KPIs with current baseline, target value, and measurement method — e.g., "Health Score: 62 → 85+ (via re-scan)", "Critical findings: 4 → 0 (via remediation audit)")
+
+## Compliance & Risk Notes
+(Relevant compliance considerations — GDPR, CCPA, SOC 2, accessibility/WCAG — and any regulatory exposure identified in the findings. Note where compliance gaps exist and the remediation priority.)
 
 ## Confidence Notes
-(Which findings are verified vs. inferred, and what additional evidence would increase confidence)
+(Which findings are verified vs. inferred, the evidence state for each, and what additional evidence would increase confidence. Be explicit about any assumptions made.)
 
-Be specific, evidence-based, and actionable. No placeholder text.`,
+Be specific, evidence-based, and actionable. Include named owner roles, measurable KPIs with target values, and quantified impact estimates throughout. No placeholder text, no vague language, no unowned recommendations.`,
     });
 
     const reportContent = typeof llmResponse === 'string' ? llmResponse : JSON.stringify(llmResponse);
