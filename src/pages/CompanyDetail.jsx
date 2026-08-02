@@ -59,6 +59,9 @@ export default function CompanyDetail() {
           <h1>{company.name}</h1>
           <p>{company.domain} · {company.industry} · Status: {company.status}</p>
         </div>
+        <a href={`/portal/${company.id}`} target="_blank" rel="noopener noreferrer" className="btn gold" style={{ fontSize: 13 }}>
+          Open client portal →
+        </a>
       </div>
 
       <div className="metrics" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>

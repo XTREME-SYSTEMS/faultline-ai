@@ -25,6 +25,7 @@ import SetupWizard from '@/pages/SetupWizard';
 import CompanyDetail from '@/pages/CompanyDetail';
 import Chat from '@/pages/Chat';
 import Trends from '@/pages/Trends';
+import CustomerPortal from '@/pages/CustomerPortal';
 import NotFound from '@/pages/NotFound';
 
 const AuthenticatedApp = () => {
@@ -56,6 +57,7 @@ const AuthenticatedApp = () => {
       <Route path="/about" element={<MarketingPage page="about" />} />
       <Route path="/contact" element={<MarketingPage page="contact" />} />
       <Route path="/checkout" element={<Checkout />} />
+      <Route path="/portal/:companyId" element={<CustomerPortal />} />
 
       {/* Auth */}
       <Route path="/login" element={<Login />} />

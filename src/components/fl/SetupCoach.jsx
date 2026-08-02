@@ -8,6 +8,18 @@ function extractConfig(text) {
   try { return JSON.parse(m[1]); } catch { return null; }
 }
 
+// Extract [CHOICES]opt1|opt2|opt3[/CHOICES] from AI response
+function extractChoices(text) {
+  const m = text.match(/\[CHOICES\]([^\]]+)\[\/CHOICES\]/);
+  if (!m) return null;
+  return m[1].split('|').map(s => s.trim()).filter(Boolean);
+}
+
+// Strip all markup tags from display text
+function cleanText(text) {
+  return text.replace(/\[CONFIG\][\s\S]*?\[\/CONFIG\]/g, '').replace(/\[CHOICES\][^\]]*\[\/CHOICES\]/g, '').trim();
+}
+
 export default function SetupCoach({ phase, phaseIndex, config, onComplete, existingConfig }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -36,7 +48,8 @@ ${knownContext || '(nothing yet)'}
 
 Start by greeting the user for this phase and asking your first question. Do NOT output [CONFIG] yet — you need to collect answers first.`;
         const res = await base44.integrations.Core.InvokeLLM({ prompt });
-        setMessages([{ role: 'coach', text: res.replace(/\[CONFIG\][\s\S]*?\[\/CONFIG\]/g, '').trim() }]);
+        const choices = extractChoices(res);
+        setMessages([{ role: 'coach', text: cleanText(res), choices }]);
       } catch {
         setMessages([{ role: 'coach', text: `Let's set up your ${phase.title.toLowerCase()}. ${phase.desc}. Tell me — what's your company name?` }]);
       } finally {
@@ -68,10 +81,10 @@ ${conversation}
 Coach:`;
       const res = await base44.integrations.Core.InvokeLLM({ prompt });
       const cfg = extractConfig(res);
-      const clean = res.replace(/\[CONFIG\][\s\S]*?\[\/CONFIG\]/g, '').trim();
-      setMessages(prev => [...prev, { role: 'coach', text: clean, config: cfg }]);
+      const choices = extractChoices(res);
+      const display = cleanText(res);
+      setMessages(prev => [...prev, { role: 'coach', text: display, config: cfg, choices }]);
       if (cfg) {
-        // small delay so user can read the confirmation
         setTimeout(() => onComplete(cfg), 800);
       }
     } catch {
@@ -94,6 +107,26 @@ Coach:`;
               whiteSpace: 'pre-wrap'
             }}>
               {m.text}
+              {m.choices && m.choices.length > 0 && !m.config && (
+                <div style={{ marginTop: 12, display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {m.choices.map(opt => (
+                    <button
+                      key={opt}
+                      onClick={() => send(opt)}
+                      disabled={thinking}
+                      style={{
+                        padding: '9px 16px', borderRadius: 20, fontSize: 13, fontWeight: 600, fontFamily: 'inherit',
+                        background: 'rgba(200,155,60,.12)', border: '1px solid #59411e', color: 'var(--gold2)',
+                        cursor: thinking ? 'wait' : 'pointer', transition: 'all .15s'
+                      }}
+                      onMouseEnter={e => { if (!thinking) { e.target.style.background = 'var(--gold)'; e.target.style.color = '#111'; } }}
+                      onMouseLeave={e => { e.target.style.background = 'rgba(200,155,60,.12)'; e.target.style.color = 'var(--gold2)'; }}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              )}
               {m.config && (
                 <div style={{ marginTop: 10, fontSize: 12, color: '#9ad8b6', display: 'flex', alignItems: 'center', gap: 6 }}>
                   <span>✓ Saved — moving to next step…</span>

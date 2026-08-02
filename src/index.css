@@ -348,6 +348,12 @@ td small { color: #888; margin-top: 4px; }
 @keyframes fl-dot { 0%, 80%, 100% { opacity: .3; } 40% { opacity: 1; } }
 .dot-anim span, .dot-anim { letter-spacing: 3px; animation: fl-dot 1.4s infinite; }
 
+/* Customer portal responsive */
+@media (max-width: 900px) {
+  .customer-shell main { grid-template-columns: 1fr !important; }
+  .customer-shell aside { display: none !important; }
+}
+
 @media (max-width: 1200px) {
   .metrics { grid-template-columns: repeat(3, 1fr); }
   .with-ai { grid-template-columns: 1fr; }
