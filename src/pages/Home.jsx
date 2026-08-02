@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import DeliverablePreview from '@/components/fl/DeliverablePreview';
 import Icon from '@/components/fl/Icon';
 import { submitFaultLineForm } from '@/lib/faultlineForms';
@@ -142,7 +143,7 @@ export default function Home() {
             <a href="#how-it-works">How It Works</a>
             <a href="#pricing">Pricing</a>
           </nav>
-          <div className="header-actions"><a href="#footer">Sign In</a><button className="button button--dark button--small" type="button" onClick={() => openAudit()}>Start Free Audit <Icon name="arrow-right" /></button></div>
+          <div className="header-actions"><Link to="/login">Sign In</Link><button className="button button--dark button--small" type="button" onClick={() => openAudit()}>Start Free Audit <Icon name="arrow-right" /></button></div>
         </div>
       </header>
 
