@@ -28,6 +28,7 @@ import SecurityPipeline from '@/pages/SecurityPipeline';
 import IndustryOpportunities from '@/pages/IndustryOpportunities';
 import AiControlPanel from '@/pages/AiControlPanel';
 import ClientDemoPortal from '@/pages/ClientDemoPortal';
+import DeliverableStudio from '@/pages/DeliverableStudio';
 import CompanyDetail from '@/pages/CompanyDetail';
 import RepairBoard from '@/pages/RepairBoard';
 import Chat from '@/pages/Chat';
@@ -88,6 +89,7 @@ const AuthenticatedApp = () => {
         <Route path="/app/industry-opportunities" element={<IndustryOpportunities />} />
         <Route path="/app/ai-control" element={<AiControlPanel />} />
         <Route path="/app/demo-portal" element={<ClientDemoPortal />} />
+        <Route path="/app/deliverable-studio" element={<DeliverableStudio />} />
         <Route path="/app/demo-portal/:companyId" element={<ClientDemoPortal />} />
         <Route path="/app/drive-sync" element={<DriveSync />} />
         <Route path="/app/:slug" element={<Module />} />
