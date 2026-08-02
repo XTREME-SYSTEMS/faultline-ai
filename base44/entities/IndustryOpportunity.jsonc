@@ -5,6 +5,9 @@
     "organization_id": {
       "type": "string"
     },
+    "company_id": {
+      "type": "string"
+    },
     "industry": {
       "type": "string"
     },
@@ -16,6 +19,19 @@
     },
     "opportunity_description": {
       "type": "string"
+    },
+    "opportunity_type": {
+      "type": "string",
+      "enum": [
+        "automation",
+        "revenue",
+        "system_integration",
+        "competitive_gap",
+        "ai_enhancement",
+        "marketing_growth",
+        "customer_experience",
+        "operational_efficiency"
+      ]
     },
     "automation_potential": {
       "type": "number"

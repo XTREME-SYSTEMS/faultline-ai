@@ -3,9 +3,14 @@ import PortalShell from '@/components/fl/PortalShell';
 import { base44 } from '@/api/base44Client';
 import ReactMarkdown from 'react-markdown';
 
-const AGENT_NAME = 'faultline_assistant';
+const AGENTS = [
+  { name: 'faultline_assistant', label: 'FaultLine Assistant', desc: 'Ask about your findings, scores, revenue leaks, and recommended actions.' },
+  { name: 'faultline_qa', label: 'QA & Validation Agent', desc: 'Double-checks every generated step for gaps, faults, and compliance. Runs deep discovery, headless tests, and security audits.' },
+  { name: 'faultline_builder', label: 'Guided Build Agent', desc: 'Walks you through building every missing opportunity for a company using the generator — step by step, with QA gating.' }
+];
 
 export default function Chat() {
+  const [agentName, setAgentName] = useState('faultline_assistant');
   const [conversation, setConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -13,14 +18,18 @@ export default function Chat() {
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef(null);
 
+  const activeAgent = AGENTS.find(a => a.name === agentName);
+
   useEffect(() => {
     let cancelled = false;
+    setLoading(true);
+    setConversation(null); setMessages([]);
     (async () => {
       try {
-        const convos = await base44.agents.listConversations({ agent_name: AGENT_NAME });
+        const convos = await base44.agents.listConversations({ agent_name: agentName });
         let convo = convos && convos.length > 0
           ? convos[0]
-          : await base44.agents.createConversation({ agent_name: AGENT_NAME, metadata: { name: 'FaultLine Assistant' } });
+          : await base44.agents.createConversation({ agent_name: agentName, metadata: { name: activeAgent.label } });
         if (!cancelled) {
           setConversation(convo);
           setMessages(convo.messages || []);
@@ -31,7 +40,7 @@ export default function Chat() {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [agentName]);
 
   useEffect(() => {
     if (!conversation) return;
@@ -67,9 +76,16 @@ export default function Chat() {
       <div className="page-head">
         <div>
           <p className="eyebrow">Intelligence</p>
-          <h1>FaultLine Assistant</h1>
-          <p>Ask about your findings, scores, revenue leaks, and recommended actions.</p>
+          <h1>{activeAgent.label}</h1>
+          <p>{activeAgent.desc}</p>
         </div>
+        <select
+          value={agentName}
+          onChange={(e) => setAgentName(e.target.value)}
+          style={{ padding: '10px 14px', borderRadius: 6, border: '1px solid #ddd', fontSize: 13, fontFamily: 'inherit', background: '#fff', cursor: 'pointer' }}
+        >
+          {AGENTS.map(a => <option key={a.name} value={a.name}>{a.label}</option>)}
+        </select>
       </div>
 
       <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, height: 'calc(100vh - 220px)', display: 'flex', flexDirection: 'column' }}>

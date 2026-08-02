@@ -205,6 +205,61 @@ export default async function(req) {
       evidence: { company_id, deliverable_id: record.id, file_url: fileUrl }
     });
 
+    // ===== QA GATE — double-check every generated output before presenting to client =====
+    let qaResult = null;
+    let qaStatus = 'passed';
+    try {
+      qaResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
+        prompt: `You are the FaultLine AI QA Validator. Rigorously double-check this generated ${deliverable_type} for problems, gaps, weaknesses, faults, and missing requirements before it is presented to the client. Be critical — assume there ARE issues until verified.
+
+TARGET TYPE: ${deliverable_type}
+TITLE: ${titles[deliverable_type]}
+
+CONTENT:
+"""
+${content.substring(0, 12000)}
+"""
+
+Check for: logical gaps, factual weaknesses, incomplete/stub sections, consistency problems, actionability gaps (missing owners/timelines/metrics), compliance/ethics issues, and quality faults.
+For each issue: severity (critical/high/medium/low), category, description, recommendation.
+Compute a score (0-100) and status: passed (>=80, no critical), warnings (>=60, no critical), failed (<60 or any critical).
+Provide a summary and top recommendations.`,
+        response_json_schema: {
+          type: 'object',
+          properties: {
+            score: { type: 'number' },
+            status: { type: 'string', enum: ['passed', 'failed', 'warnings'] },
+            summary: { type: 'string' },
+            issues: { type: 'array', items: { type: 'object', properties: {
+              severity: { type: 'string', enum: ['critical', 'high', 'medium', 'low'] },
+              category: { type: 'string' },
+              description: { type: 'string' },
+              recommendation: { type: 'string' }
+            } } },
+            recommendations: { type: 'array', items: { type: 'string' } }
+          }
+        }
+      });
+
+      qaStatus = qaResult.status || 'warnings';
+      await base44.asServiceRole.entities.QAReport.create({
+        organization_id: orgId,
+        target_type: 'deliverable', target_id: record.id, target_title: titles[deliverable_type],
+        check_type: 'qa_validation',
+        status: qaStatus,
+        score: qaResult.score || 0,
+        issues: qaResult.issues || [],
+        summary: qaResult.summary || '',
+        recommendations: qaResult.recommendations || [],
+        auto_generated: true
+      });
+
+      const finalStatus = qaStatus === 'failed' ? 'needs_revision' : 'qa_passed';
+      await base44.asServiceRole.entities.Deliverable.update(record.id, { status: finalStatus });
+    } catch (e) {
+      console.error('QA gate error:', e);
+    }
+
     return Response.json({
       status: 'success',
       deliverable_id: record.id,
@@ -212,7 +267,8 @@ export default async function(req) {
       title: titles[deliverable_type],
       file_url: fileUrl,
       content: content.substring(0, 500),
-      metadata
+      metadata,
+      qa: qaResult ? { score: qaResult.score, status: qaStatus, issues: qaResult.issues, summary: qaResult.summary } : null
     });
   } catch (error) {
     console.error('generateDeliverable error:', error);
