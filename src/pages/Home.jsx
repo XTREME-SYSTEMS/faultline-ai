@@ -7,22 +7,22 @@ import '@/components/fl/approved-homepage.css';
 
 const navGroups = [
   { label: 'Solutions', links: [
-    { label: 'Website Intelligence', href: '#platform' },
-    { label: 'Operational Audit', href: '#platform' },
-    { label: 'Revenue Leak Detection', href: '#deliverables' },
-    { label: 'AI Readiness', href: '#deliverables' },
+    { label: 'Website Intelligence', to: '/solutions' },
+    { label: 'Operational Audit', to: '/solutions' },
+    { label: 'Revenue Leak Detection', to: '/solutions' },
+    { label: 'AI Readiness', to: '/solutions' },
   ]},
   { label: 'Industries', links: [
-    { label: 'Construction', href: '#industries' },
-    { label: 'Manufacturing', href: '#industries' },
-    { label: 'Distribution', href: '#industries' },
-    { label: 'Professional Services', href: '#industries' },
+    { label: 'Construction', to: '/industries' },
+    { label: 'Manufacturing', to: '/industries' },
+    { label: 'Distribution', to: '/industries' },
+    { label: 'Professional Services', to: '/industries' },
   ]},
   { label: 'Resources', links: [
-    { label: 'Sample Reports', href: '#deliverables' },
-    { label: 'How It Works', href: '#how-it-works' },
-    { label: 'Pricing', href: '#pricing' },
-    { label: 'Trust Center', href: '#footer' },
+    { label: 'Sample Reports', to: '/resources' },
+    { label: 'How It Works', to: '/how-it-works' },
+    { label: 'Pricing', to: '/pricing' },
+    { label: 'Trust Center', to: '/security' },
   ]},
 ];
 
@@ -131,17 +131,17 @@ export default function Home() {
           <a className="brand" href="#top" aria-label="FaultLine AI home"><img src="/logo-horizontal.svg" alt="FaultLine AI" /></a>
           <button className="menu-button" type="button" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(v => !v)}><span /><span /><span /></button>
           <nav className={`primary-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Primary navigation">
-            <a href="#platform">Product</a>
+            <Link to="/product">Product</Link>
             {navGroups.map(group => (
               <div className="nav-group" key={group.label} onMouseLeave={() => setActiveDropdown(null)}>
                 <button type="button" aria-expanded={activeDropdown === group.label} onClick={() => setActiveDropdown(activeDropdown === group.label ? null : group.label)}>{group.label}<span className="chevron" aria-hidden="true">⌄</span></button>
                 <div className={`nav-dropdown ${activeDropdown === group.label ? 'is-open' : ''}`}>
-                  {group.links.map(link => <a key={link.label} href={link.href} onClick={() => { setActiveDropdown(null); setMenuOpen(false); }}>{link.label}</a>)}
+                  {group.links.map(link => <Link key={link.label} to={link.to} onClick={() => { setActiveDropdown(null); setMenuOpen(false); }}>{link.label}</Link>)}
                 </div>
               </div>
             ))}
-            <a href="#how-it-works">How It Works</a>
-            <a href="#pricing">Pricing</a>
+            <Link to="/how-it-works">How It Works</Link>
+            <Link to="/pricing">Pricing</Link>
           </nav>
           <div className="header-actions"><Link to="/login">Sign In</Link><button className="button button--dark button--small" type="button" onClick={() => openAudit()}>Start Free Audit <Icon name="arrow-right" /></button></div>
         </div>
