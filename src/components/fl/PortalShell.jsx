@@ -27,6 +27,24 @@ export default function PortalShell({ children, assistant = false }) {
     }
   }, [user]);
 
+  // One-time token refresh: push organization_id into the session so RLS sees it
+  useEffect(() => {
+    if (!user?.data?.organization_id) return;
+    if (sessionStorage.getItem('fl_org_refreshed')) return;
+    sessionStorage.setItem('fl_org_refreshed', 'true');
+    base44.auth.updateMe({ organization_id: user.data.organization_id })
+      .then(() => window.location.reload())
+      .catch(() => {});
+  }, [user]);
+
+  const initials = (user?.full_name || user?.email?.split('@')[0] || 'U')
+    .split(/[ ._-]/)
+    .filter(Boolean)
+    .map(w => w[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+
   return (
     <div className="portal">
       <aside className={open ? 'sidebar open' : 'sidebar'}>
@@ -55,7 +73,7 @@ export default function PortalShell({ children, assistant = false }) {
           <button className="mobile-menu" onClick={() => setOpen(true)}>☰</button>
           <input placeholder="Search audits, issues, opportunities…" />
           <button className="btn dark">+ New audit</button>
-          <span className="avatar">AM</span>
+          <span className="avatar">{initials}</span>
         </header>
         <div className={assistant ? 'portal-content with-ai' : 'portal-content'}>
           <div className="portal-page">{children}</div>
