@@ -1,21 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PortalShell from '@/components/fl/PortalShell';
 import PageHead from '@/components/fl/PageHead';
 import { base44 } from '@/api/base44Client';
 
 export default function Overview() {
+  const navigate = useNavigate();
   const [data, setData] = useState({ companies: [], audits: [], findings: [], receipts: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const fetchAll = useCallback(async () => {
     try {
-      const [companies, audits, findings, receipts] = await Promise.all([
-        base44.entities.Company.list('-created_date', 100),
-        base44.entities.Audit.list('-created_date', 50),
-        base44.entities.Finding.list('-created_date', 50),
-        base44.entities.Receipt.list('-created_date', 20)
-      ]);
+      const res = await base44.functions.invoke('getPortalData', {});
+      const { companies = [], audits = [], findings = [], receipts = [] } = res.data || {};
       setData({ companies, audits, findings, receipts });
     } catch (e) {
       setError(e.message);
@@ -49,7 +47,7 @@ export default function Overview() {
 
   return (
     <PortalShell assistant>
-      <PageHead eyebrow="Business operating system" title="Welcome back." text="Live pipeline status — discovered companies, scanned websites, findings, and generated reports." />
+      <PageHead eyebrow="Business operating system" title="Welcome back." text="Live pipeline status — discovered companies, scanned websites, findings, and generated reports." onAction={() => navigate('/app/discovery-engine')} actionLabel="Start workflow →" />
 
       {error && (
         <div style={{ background: '#f5d8d5', color: '#a52d23', padding: '14px 18px', borderRadius: 6, marginBottom: 13, border: '1px solid #e3b8b3' }}>

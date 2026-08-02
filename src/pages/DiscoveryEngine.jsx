@@ -15,14 +15,11 @@ export default function DiscoveryEngine() {
 
   const fetchAll = useCallback(async () => {
     try {
-      const [cos, aus, recs] = await Promise.all([
-        base44.entities.Company.list('-created_date', 50),
-        base44.entities.Audit.list('-created_date', 20),
-        base44.entities.Receipt.list('-created_date', 30)
-      ]);
-      setCompanies(cos);
-      setAudits(aus);
-      setReceipts(recs.filter(r => ['discovery_engine', 'scanner', 'report_generator'].includes(r.system)));
+      const res = await base44.functions.invoke('getPortalData', {});
+      const { companies = [], audits = [], receipts = [] } = res.data || {};
+      setCompanies(companies);
+      setAudits(audits);
+      setReceipts(receipts.filter(r => ['discovery_engine', 'scanner', 'report_generator'].includes(r.system)));
     } catch (e) {
       setError(e.message);
     } finally {
@@ -58,7 +55,7 @@ export default function DiscoveryEngine() {
 
   return (
     <PortalShell>
-      <PageHead eyebrow="Autonomous pipeline" title="Discovery Engine" text="The system autonomously discovers businesses, scans their websites for faults, and generates executive reports — no outreach, no external contact." />
+      <PageHead eyebrow="Autonomous pipeline" title="Discovery Engine" text="The system autonomously discovers businesses, scans their websites for faults, and generates executive reports — no outreach, no external contact." onAction={() => run('discoverCompanies', { industry }, 'discovery')} actionLabel="Discover now →" />
 
       {error && (
         <div style={{ background: '#f5d8d5', color: '#a52d23', padding: '14px 18px', borderRadius: 6, marginBottom: 13, border: '1px solid #e3b8b3' }}>

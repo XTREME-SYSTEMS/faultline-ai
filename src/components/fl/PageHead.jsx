@@ -1,4 +1,4 @@
-export default function PageHead({ eyebrow, title, text }) {
+export default function PageHead({ eyebrow, title, text, onAction, actionLabel = 'Start workflow' }) {
   return (
     <div className="page-head">
       <div>
@@ -6,7 +6,7 @@ export default function PageHead({ eyebrow, title, text }) {
         <h1>{title}</h1>
         <p>{text}</p>
       </div>
-      <button className="btn dark">Start workflow</button>
+      <button className="btn dark" onClick={onAction}>{actionLabel}</button>
     </div>
   );
 }
