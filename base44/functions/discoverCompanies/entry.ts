@@ -10,10 +10,15 @@ export default async function(req) {
     if (!orgId) return Response.json({ error: 'No organization found on user profile' }, { status: 400 });
 
     const body = await req.json().catch(() => ({}));
-    const industry = body.industry || 'manufacturing';
+    const industry = body.industry || '';
+    const location = body.location || '';
+
+    const locationPhrase = location ? ` located in "${location}"` : '';
+    const industryPhrase = industry ? ` in the "${industry}" industry` : '';
+    const prompt = `Find 10 real, currently operating businesses${locationPhrase}${industryPhrase} that have active websites. For each business provide the company name, website domain (full URL), a one-sentence description, and the specific sub-industry or niche. Focus on businesses with operational complexity — field operations, multi-location services, distribution, or fragmented systems — that would benefit from a diagnostic audit. Only return businesses you can verify have live websites.`;
 
     const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
-      prompt: `Find 10 real, currently operating businesses in the "${industry}" industry that have active websites. For each business provide the company name, website domain (full URL), a one-sentence description, and the specific sub-industry or niche. Focus on businesses with operational complexity — field operations, multi-location services, distribution, or fragmented systems — that would benefit from a diagnostic audit. Only return businesses you can verify have live websites.`,
+      prompt,
       add_context_from_internet: true,
       response_json_schema: {
         type: 'object',
@@ -51,7 +56,7 @@ export default async function(req) {
         organization_id: orgId,
         name: biz.name,
         domain,
-        industry: biz.sub_industry || industry,
+        industry: biz.sub_industry || industry || 'General',
         status: 'discovered'
       });
 
@@ -69,11 +74,11 @@ export default async function(req) {
       system: 'discovery_engine',
       action: 'discover_companies',
       status: 'success',
-      summary: `Discovered ${created} new companies in the ${industry} industry (${skipped} skipped as duplicates)`,
-      evidence: { industry, found: businesses.length, created, skipped }
+      summary: `Discovered ${created} new companies${location ? ' in ' + location : ''}${industry ? ' (' + industry + ')' : ''} (${skipped} skipped as duplicates)`,
+      evidence: { industry, location, found: businesses.length, created, skipped }
     });
 
-    return Response.json({ status: 'success', industry, found: businesses.length, created, skipped });
+    return Response.json({ status: 'success', industry, location, found: businesses.length, created, skipped });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

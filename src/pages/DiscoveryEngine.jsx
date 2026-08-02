@@ -9,7 +9,8 @@ export default function DiscoveryEngine() {
   const [receipts, setReceipts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(null);
-  const [industry, setIndustry] = useState('manufacturing');
+  const [industry, setIndustry] = useState('');
+  const [location, setLocation] = useState('Pompano Beach, FL');
   const [result, setResult] = useState(null);
   const [error, setError] = useState(null);
 
@@ -55,7 +56,7 @@ export default function DiscoveryEngine() {
 
   return (
     <PortalShell>
-      <PageHead eyebrow="Autonomous pipeline" title="Discovery Engine" text="The system autonomously discovers businesses, scans their websites for faults, and generates executive reports — no outreach, no external contact." onAction={() => run('discoverCompanies', { industry }, 'discovery')} actionLabel="Discover now →" />
+      <PageHead eyebrow="Autonomous pipeline" title="Discovery Engine" text="The system autonomously discovers businesses, scans their websites for faults, and generates executive reports — no outreach, no external contact." onAction={() => run('discoverCompanies', { industry, location }, 'discovery')} actionLabel="Discover now →" />
 
       {error && (
         <div style={{ background: '#f5d8d5', color: '#a52d23', padding: '14px 18px', borderRadius: 6, marginBottom: 13, border: '1px solid #e3b8b3' }}>
@@ -86,14 +87,25 @@ export default function DiscoveryEngine() {
         </p>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
           <input
-            value={industry}
-            onChange={e => setIndustry(e.target.value)}
-            placeholder="Industry (e.g. manufacturing, logistics, healthcare)"
+            value={location}
+            onChange={e => setLocation(e.target.value)}
+            placeholder="Location (e.g. Pompano Beach, FL / Florida / United States)"
             style={{ padding: '11px 14px', border: '1px solid #ddd', borderRadius: 6, minWidth: 280, fontSize: 14 }}
           />
-          <button className="btn dark" onClick={() => run('discoverCompanies', { industry }, 'discovery')} disabled={!!busy}>
+          <input
+            value={industry}
+            onChange={e => setIndustry(e.target.value)}
+            placeholder="Industry (optional, e.g. manufacturing, logistics)"
+            style={{ padding: '11px 14px', border: '1px solid #ddd', borderRadius: 6, minWidth: 240, fontSize: 14 }}
+          />
+          <button className="btn dark" onClick={() => run('discoverCompanies', { industry, location }, 'discovery')} disabled={!!busy}>
             {busy === 'discovery' ? 'Discovering…' : 'Discover now →'}
           </button>
+        </div>
+        <div style={{ display: 'flex', gap: 8, marginTop: 10, flexWrap: 'wrap' }}>
+          {['Pompano Beach, FL', 'Florida', 'United States'].map(loc => (
+            <button key={loc} onClick={() => setLocation(loc)} style={{ padding: '6px 12px', fontSize: 12, border: `1px solid ${location === loc ? 'var(--gold)' : '#ddd'}`, borderRadius: 20, background: location === loc ? '#f8f4ea' : '#fff', cursor: 'pointer', fontWeight: 600 }}>{loc}</button>
+          ))}
         </div>
       </section>
 
