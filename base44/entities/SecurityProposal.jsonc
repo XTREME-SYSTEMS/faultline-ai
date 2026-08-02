@@ -1,0 +1,79 @@
+{
+  "name": "SecurityProposal",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "company_id": {
+      "type": "string"
+    },
+    "audit_id": {
+      "type": "string"
+    },
+    "original_health_score": {
+      "type": "number"
+    },
+    "enhanced_health_score": {
+      "type": "number"
+    },
+    "original_findings_count": {
+      "type": "number"
+    },
+    "resolved_findings_count": {
+      "type": "number"
+    },
+    "remaining_findings_count": {
+      "type": "number"
+    },
+    "systems_count": {
+      "type": "number"
+    },
+    "leak_points_count": {
+      "type": "number"
+    },
+    "enhancement_count": {
+      "type": "number"
+    },
+    "pricing_breakdown": {
+      "type": "object"
+    },
+    "total_price": {
+      "type": "number"
+    },
+    "recommended_plan": {
+      "type": "string"
+    },
+    "proposal_text": {
+      "type": "string"
+    },
+    "enhanced_system_summary": {
+      "type": "string"
+    },
+    "outreach_draft_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "default": "draft"
+    }
+  },
+  "required": [
+    "organization_id",
+    "company_id"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    }
+  }
+}

@@ -69,6 +69,7 @@ export default function CompanyDetail() {
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <Link to={`/app/companies/${company.id}/clone`} className="btn dark" style={{ fontSize: 13 }}>🧬 Clone System</Link>
+          <Link to={`/app/security-pipeline/${company.id}`} className="btn dark" style={{ fontSize: 13, background: 'linear-gradient(135deg, var(--gold2), var(--gold))', color: '#111' }}>⚡ Full Security Pipeline</Link>
           <Link to="/app/client-setup" className="btn outline" style={{ fontSize: 13 }}>Set up client portal →</Link>
           <a href={`/portal/${company.id}`} target="_blank" rel="noopener noreferrer" className="btn gold" style={{ fontSize: 13 }}>
             Open client portal →
