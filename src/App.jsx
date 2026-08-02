@@ -22,6 +22,7 @@ import Admin from '@/pages/Admin';
 import DriveSync from '@/pages/DriveSync';
 import DiscoveryEngine from '@/pages/DiscoveryEngine';
 import SetupWizard from '@/pages/SetupWizard';
+import ClientSetupWizard from '@/pages/ClientSetupWizard';
 import CompanyDetail from '@/pages/CompanyDetail';
 import Chat from '@/pages/Chat';
 import Trends from '@/pages/Trends';
@@ -69,6 +70,7 @@ const AuthenticatedApp = () => {
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route path="/app" element={<Overview />} />
         <Route path="/app/setup" element={<SetupWizard />} />
+        <Route path="/app/client-setup" element={<ClientSetupWizard />} />
         <Route path="/app/discovery-engine" element={<DiscoveryEngine />} />
         <Route path="/app/chat" element={<Chat />} />
         <Route path="/app/trends" element={<Trends />} />

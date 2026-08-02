@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import PortalShell from '@/components/fl/PortalShell';
 import PageHead from '@/components/fl/PageHead';
+import PageCoach from '@/components/fl/PageCoach';
 import { base44 } from '@/api/base44Client';
 
 export default function DriveSync() {
@@ -42,8 +43,10 @@ export default function DriveSync() {
 
   const fmtDate = (d) => d ? new Date(d).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' }) : '—';
 
+  const coachContext = { lastSync: state?.last_sync_at, lastDirection: state?.last_direction, lastCount: state?.last_count, historyCount: history.length };
+
   return (
-    <PortalShell>
+    <PortalShell assistant={<PageCoach pageKey="drive-sync" context={coachContext} title="Drive Sync" />}>
       <PageHead eyebrow="Integrations" title="Google Drive Sync" text="Two-way backup between FaultLine AI and your Google Drive. Export audits, findings, and repair plans to Drive; import Drive files as evidence." />
 
       {error && (

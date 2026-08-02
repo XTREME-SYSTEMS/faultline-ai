@@ -77,9 +77,14 @@ export default function Overview() {
               Our AI coach will guide you step-by-step — company profile, target market, discovery engine, automation, email drafts, and diagnostics.
             </p>
           </div>
-          <button onClick={() => navigate('/app/setup')} className="btn gold" style={{ fontSize: 15, padding: '15px 26px' }}>
-            Start guided setup →
-          </button>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button onClick={() => navigate('/app/setup')} className="btn gold" style={{ fontSize: 15, padding: '15px 26px' }}>
+              Start guided setup →
+            </button>
+            <button onClick={() => navigate('/app/client-setup')} className="btn outline-light" style={{ fontSize: 15, padding: '15px 26px', background: 'none', border: '1px solid #59411e', color: 'var(--gold2)' }}>
+              Build client portal →
+            </button>
+          </div>
         </div>
       )}
 

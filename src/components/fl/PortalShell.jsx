@@ -7,6 +7,7 @@ import AiPanel from './AiPanel';
 import { portalNav } from './data';
 
 export default function PortalShell({ children, assistant = false }) {
+  // assistant can be: false (no panel), true (default AiPanel), or a React node (custom coach)
   const [open, setOpen] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -77,7 +78,7 @@ export default function PortalShell({ children, assistant = false }) {
         </header>
         <div className={assistant ? 'portal-content with-ai' : 'portal-content'}>
           <div className="portal-page">{children}</div>
-          {assistant && <AiPanel />}
+          {assistant && (assistant === true ? <AiPanel /> : assistant)}
         </div>
       </div>
     </div>

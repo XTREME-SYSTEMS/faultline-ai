@@ -1,7 +1,15 @@
 // Phase definitions for the AI-guided setup wizard.
-// Each phase has a system prompt that tells the coach what to collect and how to behave.
+// The system is built around four pillars: AI cybersecurity, company discovery,
+// leak discovery, and system clone for AI enhancement. Each phase references these.
 // The coach outputs [CONFIG]{...json...}[/CONFIG] when it has gathered everything.
 // The coach can end any message with [CHOICES]option1|option2|option3[/CHOICES] to render clickable buttons.
+
+const PILLARS = `FaultLine AI is built on four pillars:
+1. AI CYBERSECURITY — scans target websites and systems for security vulnerabilities, weak trust signals, and compliance gaps.
+2. COMPANY DISCOVERY — autonomously finds real businesses with operational complexity that benefit from a diagnostic audit.
+3. LEAK DISCOVERY — quantifies where target companies are losing revenue: missed leads, pricing leakage, unbilled work, churn, and friction.
+4. SYSTEM CLONE FOR AI ENHANCEMENT — maps a company's operational systems and workflows, then clones that system map to design AI-powered enhancements.
+Reference these pillars naturally as you guide the user.`;
 
 const CHOICES_RULE = `
 IMPORTANT — MULTIPLE CHOICE BUTTONS:
@@ -21,11 +29,14 @@ export const PHASES = [
     icon: '🏢',
     desc: 'Your business identity',
     prompt: `You are guiding the user through setting up their COMPANY PROFILE.
+${PILLARS}
+
 Collect these fields through natural conversation, one question at a time:
 1. company_name — their company's name
 2. company_location — where their company is based (city, state/country)
 3. industry — their primary industry
 
+Explain that FaultLine AI will use this profile to power company discovery, AI cybersecurity scans, leak discovery, and system cloning for AI enhancement across their target market.
 Be warm and concise (max 2 sentences). Ask ONE question at a time.
 For the industry question, offer common options as choices: [CHOICES]Manufacturing|Construction|Logistics|Professional Services|Other[/CHOICES]
 When you have all three, confirm briefly and output EXACTLY: [CONFIG]{"company_name":"...","company_location":"...","industry":"..."}[/CONFIG]
@@ -66,7 +77,10 @@ ${CHOICES_RULE}`
     title: 'Discovery Engine',
     icon: '🔍',
     desc: 'What the scraper targets',
-    prompt: `You are guiding the user through configuring the DISCOVERY ENGINE (the scraper).
+    prompt: `You are guiding the user through configuring the DISCOVERY ENGINE (the company discovery pillar).
+${PILLARS}
+
+The discovery engine autonomously finds real businesses matching their criteria, then runs AI cybersecurity scans, leak discovery, and system cloning for AI enhancement on each one.
 Collect through natural conversation:
 1. discovery_criteria — what kinds of businesses to target (size, signals, keywords, exclusions). Help them describe it in a sentence or two.
 2. audit_depth — how deep audits should go. Explain the options briefly, then offer choices:
@@ -111,12 +125,14 @@ ${CHOICES_RULE}`
     icon: '🩺',
     desc: 'Audits, maps, leaks, repairs',
     prompt: `You are guiding the user through choosing which DIAGNOSTICS to enable.
+${PILLARS}
+
 Explain each module briefly and ask which they want enabled:
-1. website_intelligence — scans target websites for tech stack, performance, SEO issues
-2. system_maps — maps the target company's operational systems and how they connect
-3. revenue_leaks — quantifies where the target company is losing revenue
+1. website_intelligence — AI CYBERSECURITY pillar: scans target websites for security vulnerabilities, tech stack, performance, SEO issues, and trust signals
+2. system_maps — SYSTEM CLONE FOR AI ENHANCEMENT pillar: maps the target company's operational systems and workflows, then designs AI-powered enhancements
+3. revenue_leaks — LEAK DISCOVERY pillar: quantifies where the target company is losing revenue (missed leads, pricing leakage, unbilled work, churn)
 4. repair_plans — generates a prioritized 90-day repair plan for each target
-5. audits — runs the core fault audit on each discovered company
+5. audits — runs the core fault audit on each discovered company (COMPANY DISCOVERY pillar)
 
 Recommend enabling all of them for a complete diagnostic. Offer choices:
 [CHOICES]Enable all (recommended)|Let me choose specific ones[/CHOICES]

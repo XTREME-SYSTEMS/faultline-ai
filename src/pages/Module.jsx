@@ -6,6 +6,7 @@ import { base44 } from '@/api/base44Client';
 import { modules } from '@/components/fl/data';
 import RepairPlansView from '@/components/fl/RepairPlansView';
 import OutreachView from '@/components/fl/OutreachView';
+import PageCoach from '@/components/fl/PageCoach';
 
 const moduleDataMap = {
   audits: { entity: 'Audit', sort: '-created_date', limit: 50, columns: [['Title', 'title'], ['Type', 'audit_type'], ['Status', 'status'], ['Date', 'created_date']] },
@@ -66,8 +67,10 @@ export default function Module() {
     return () => { cancelled = true; };
   }, [slug]);
 
+  const coachContext = { module: slug, title: m.title, recordCount: records.length, entity: config?.entity, records: records.slice(0, 5) };
+
   return (
-    <PortalShell>
+    <PortalShell assistant={<PageCoach pageKey="module" context={coachContext} title={m.title} />}>
       <PageHead eyebrow={m.eyebrow} title={m.title} text={m.description} />
 
       {error && (

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import PortalShell from '@/components/fl/PortalShell';
+import PageCoach from '@/components/fl/PageCoach';
 import { base44 } from '@/api/base44Client';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 
@@ -51,17 +52,27 @@ export default function CompanyDetail() {
   const competitors = company.competitor_scores || {};
   const competitorEntries = Object.entries(competitors);
 
+  const coachContext = {
+    company: company?.name, industry: company?.industry, domain: company?.domain,
+    healthScore: latestSnapshot?.health_score, auditCount: audits.length,
+    findingCount: findings.length, criticalCount: findings.filter(f => f.severity === 'critical').length,
+    topFindings: findings.slice(0, 5).map(f => ({ title: f.title, severity: f.severity, category: f.category }))
+  };
+
   return (
-    <PortalShell>
+    <PortalShell assistant={<PageCoach pageKey="company-detail" context={coachContext} title={company?.name || 'Company'} />}>
       <div className="page-head">
         <div>
           <p className="eyebrow"><Link to="/app/company-discovery" style={{ color: 'var(--gold)' }}>Company Discovery</Link> › Detail</p>
           <h1>{company.name}</h1>
           <p>{company.domain} · {company.industry} · Status: {company.status}</p>
         </div>
-        <a href={`/portal/${company.id}`} target="_blank" rel="noopener noreferrer" className="btn gold" style={{ fontSize: 13 }}>
-          Open client portal →
-        </a>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link to="/app/client-setup" className="btn outline" style={{ fontSize: 13 }}>Set up client portal →</Link>
+          <a href={`/portal/${company.id}`} target="_blank" rel="noopener noreferrer" className="btn gold" style={{ fontSize: 13 }}>
+            Open client portal →
+          </a>
+        </div>
       </div>
 
       <div className="metrics" style={{ gridTemplateColumns: 'repeat(4, 1fr)' }}>

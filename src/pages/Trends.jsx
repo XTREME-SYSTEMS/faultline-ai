@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import PortalShell from '@/components/fl/PortalShell';
+import PageCoach from '@/components/fl/PageCoach';
 import { base44 } from '@/api/base44Client';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend } from 'recharts';
 
@@ -54,8 +55,16 @@ export default function Trends() {
     count: scores.length
   }));
 
+  const coachContext = {
+    avgScore: data.snapshots.length > 0 ? Math.round(data.snapshots.reduce((a, s) => a + s.health_score, 0) / data.snapshots.length) : null,
+    totalFindings: data.findings.length,
+    companiesTracked: data.companies.length,
+    scansCompleted: data.snapshots.length,
+    topIndustries: benchmarkData.slice(0, 5)
+  };
+
   return (
-    <PortalShell>
+    <PortalShell assistant={<PageCoach pageKey="trends" context={coachContext} title="Trends" />}>
       <div className="page-head">
         <div>
           <p className="eyebrow">Intelligence</p>

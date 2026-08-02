@@ -1,9 +1,12 @@
 import PortalShell from '@/components/fl/PortalShell';
 import PageHead from '@/components/fl/PageHead';
+import PageCoach from '@/components/fl/PageCoach';
 
 export default function Admin() {
+  const coachContext = { page: 'admin console', queues: 'audit, evidence, outreach, failed jobs', systemHealth: 'control plane, supabase, vercel, monitoring, evidence QA, model gateway' };
+
   return (
-    <PortalShell>
+    <PortalShell assistant={<PageCoach pageKey="admin" context={coachContext} title="Admin" />}>
       <PageHead eyebrow="Internal operations" title="FaultLine AI admin console" text="Manage queues, agents, connectors, governance, release gates, and operating evidence." />
       <div className="queue-grid">
         {[['Audit queue', '12', '3 awaiting review'], ['Evidence queue', '38', '8 need validation'], ['Outreach approvals', '7', 'All draft-only'], ['Failed jobs', '2', 'Dead-lettered safely']].map(([a, b, c]) => (
