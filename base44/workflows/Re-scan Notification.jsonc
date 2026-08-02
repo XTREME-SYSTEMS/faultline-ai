@@ -1,0 +1,60 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "rescan_notification",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "check_score_change": {
+          "switch": [
+            {
+              "when": "${ .trigger.data.health_score != null and .trigger.data.previous_health_score != null }",
+              "then": "create_notification"
+            },
+            {
+              "when": "${ true }",
+              "then": "end"
+            }
+          ],
+          "x-base44": {
+            "title": "Check if score data exists",
+            "description": "Only notify when both scores are present"
+          }
+        }
+      },
+      {
+        "create_notification": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "monitoringOrchestrator",
+            "args": {
+              "action": "create_reminder",
+              "company_id": "${ .trigger.data.company_id }",
+              "task": "Score changed \u2014 email client a summary of what changed since last scan"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Create notification for operator",
+            "description": "Log reminder to email client about score change"
+          }
+        }
+      }
+    ]
+  },
+  "description": "Triggers when a ScanSnapshot is created. If the health score changed compared to the previous scan, creates a notification Receipt for the operator to email the client a summary of what changed.",
+  "name": "Re-scan Notification",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create"
+      ],
+      "entity_name": "ScanSnapshot"
+    }
+  }
+}

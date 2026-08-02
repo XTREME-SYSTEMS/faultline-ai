@@ -32,6 +32,7 @@ import DeliverableStudio from '@/pages/DeliverableStudio';
 import UniversalBuilder from '@/pages/UniversalBuilder';
 import QADashboard from '@/pages/QADashboard';
 import CommandCenter from '@/pages/CommandCenter';
+import ClientROI from '@/pages/ClientROI';
 import CompanyDetail from '@/pages/CompanyDetail';
 import RepairBoard from '@/pages/RepairBoard';
 import Chat from '@/pages/Chat';
@@ -96,6 +97,7 @@ const AuthenticatedApp = () => {
         <Route path="/app/universal-builder" element={<UniversalBuilder />} />
         <Route path="/app/qa-center" element={<QADashboard />} />
         <Route path="/app/command-center" element={<CommandCenter />} />
+        <Route path="/app/roi" element={<ClientROI />} />
         <Route path="/app/demo-portal/:companyId" element={<ClientDemoPortal />} />
         <Route path="/app/drive-sync" element={<DriveSync />} />
         <Route path="/app/:slug" element={<Module />} />

@@ -108,6 +108,9 @@ export const TOOL_CATEGORIES = [
       { id: 'setupRagDatabase', label: 'Setup RAG Database', desc: 'Initialize the RAG search database with existing data', params: [] },
       { id: 'getPortalData', label: 'Get Portal Data', desc: 'Fetch all portal data for the current organization', params: [] },
       { id: 'getCustomerPortalData', label: 'Get Customer Portal Data', desc: 'Fetch customer-facing portal data for a specific company', params: [{ key: 'company_id', label: 'Company', type: 'company_select' }] },
+      { id: 'publicScan', label: 'Public 60-Second Scan', desc: 'Instant website scan — 3 findings + revenue leak estimate. No login required. Saves as AuditLead.', params: [{ key: 'url', label: 'Website URL', type: 'text', placeholder: 'example.com' }, { key: 'email', label: 'Email (optional)', type: 'text', placeholder: 'lead@email.com' }, { key: 'company_name', label: 'Company (optional)', type: 'text', placeholder: 'Company Inc' }] },
+      { id: 'computeClientSuccess', label: 'Compute Client Success', desc: 'Calculate churn risk score for all clients based on engagement, resolution rate, scan recency', params: [] },
+      { id: 'computeIndustryBenchmarks', label: 'Industry Benchmarks', desc: 'Aggregate anonymized health scores across an industry — avg, median, top quartile', params: [{ key: 'industry', label: 'Industry (optional)', type: 'text', placeholder: 'HVAC' }] },
     ]
   },
 ];

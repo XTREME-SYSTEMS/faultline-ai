@@ -1,0 +1,69 @@
+{
+  "name": "ClientSuccessScore",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "company_id": {
+      "type": "string"
+    },
+    "login_frequency": {
+      "type": "number",
+      "description": "Portal logins in last 30 days"
+    },
+    "finding_resolution_rate": {
+      "type": "number",
+      "description": "Percentage of findings moved to resolved"
+    },
+    "days_since_last_scan": {
+      "type": "number"
+    },
+    "total_findings": {
+      "type": "number"
+    },
+    "resolved_findings": {
+      "type": "number"
+    },
+    "open_findings": {
+      "type": "number"
+    },
+    "churn_risk_score": {
+      "type": "number",
+      "description": "0-100, higher = more likely to churn"
+    },
+    "churn_risk_level": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ]
+    },
+    "recommendation": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id",
+    "company_id",
+    "churn_risk_score"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

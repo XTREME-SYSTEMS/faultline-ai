@@ -1,0 +1,115 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "lead_nurture_sequence",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "day1_reminder": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "monitoringOrchestrator",
+            "args": {
+              "action": "create_reminder",
+              "lead_id": "${ .trigger.entity_id }",
+              "day": 1,
+              "task": "Send findings email to lead \u2014 share their 3 critical findings and revenue leak estimate"
+            }
+          },
+          "then": "wait1",
+          "x-base44": {
+            "title": "Day 1 reminder \u2014 send findings",
+            "description": "Log reminder for operator to email findings to the lead"
+          }
+        }
+      },
+      {
+        "wait1": {
+          "wait": "P1D",
+          "then": "day3_reminder"
+        }
+      },
+      {
+        "day3_reminder": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "monitoringOrchestrator",
+            "args": {
+              "action": "create_reminder",
+              "lead_id": "${ .trigger.entity_id }",
+              "day": 3,
+              "task": "Send case study email \u2014 share a relevant industry case study showing ROI"
+            }
+          },
+          "then": "wait2",
+          "x-base44": {
+            "title": "Day 3 reminder \u2014 send case study"
+          }
+        }
+      },
+      {
+        "wait2": {
+          "wait": "P2D",
+          "then": "day7_reminder"
+        }
+      },
+      {
+        "day7_reminder": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "monitoringOrchestrator",
+            "args": {
+              "action": "create_reminder",
+              "lead_id": "${ .trigger.entity_id }",
+              "day": 7,
+              "task": "Invite lead to book a strategy call \u2014 share Calendly link"
+            }
+          },
+          "then": "wait3",
+          "x-base44": {
+            "title": "Day 7 reminder \u2014 strategy call invite"
+          }
+        }
+      },
+      {
+        "wait3": {
+          "wait": "P3D",
+          "then": "day14_reminder"
+        }
+      },
+      {
+        "day14_reminder": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "monitoringOrchestrator",
+            "args": {
+              "action": "create_reminder",
+              "lead_id": "${ .trigger.entity_id }",
+              "day": 14,
+              "task": "Send pricing email \u2014 share Growth ($299/mo) and Operating System ($699/mo) plans"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Day 14 reminder \u2014 send pricing"
+          }
+        }
+      }
+    ]
+  },
+  "description": "Triggers when an AuditLead is created from the public scan. Creates operator reminders at Day 1 (send findings), Day 3 (send case study), Day 7 (invite to strategy call), and Day 14 (send pricing). Since SendEmail only reaches registered users, reminders are logged as Receipts for manual outreach via Gmail connector.",
+  "name": "Lead Nurture Sequence",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "entity",
+      "events": [
+        "create"
+      ],
+      "entity_name": "AuditLead"
+    }
+  }
+}

@@ -81,6 +81,10 @@ export default function Home() {
   const [modal, setModal] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState('Diagnostic');
   const [notice, setNotice] = useState('');
+  const [scanUrl, setScanUrl] = useState('');
+  const [scanning, setScanning] = useState(false);
+  const [scanResult, setScanResult] = useState(null);
+  const [scanError, setScanError] = useState('');
   const dialogRef = useRef(null);
 
   useEffect(() => {
@@ -107,6 +111,27 @@ export default function Home() {
     setSelectedPlan(plan);
     setNotice('');
     setModal('audit');
+  }
+
+  async function runPublicScan() {
+    if (!scanUrl.trim()) return;
+    setScanning(true);
+    setScanError('');
+    setScanResult(null);
+    try {
+      const res = await fetch('/api/base44/functions/publicScan', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: scanUrl.trim() })
+      });
+      const data = await res.json();
+      if (data.error) { setScanError(data.error); }
+      else { setScanResult(data); }
+    } catch (e) {
+      setScanError('Could not scan this URL. Please check it and try again.');
+    } finally {
+      setScanning(false);
+    }
   }
 
   async function handleSubmit(event, kind) {
@@ -154,6 +179,57 @@ export default function Home() {
               <p className="eyebrow">AI-powered business intelligence</p>
               <h1>Expose What's Broken.<br /><span>Build What Works.</span></h1>
               <p className="hero-lead">FaultLine AI uncovers hidden failures, revenue leaks, and operational risks across your website, systems, and workflows, then delivers an evidence-backed plan to fix them.</p>
+              <div className="scan-box" style={{ background: '#fff', borderRadius: 10, padding: 16, border: '1px solid #e5e1da', boxShadow: '0 8px 30px #0000000a', marginBottom: 16 }}>
+                <p style={{ fontSize: 12, fontWeight: 700, color: '#8A641C', textTransform: 'uppercase', letterSpacing: '.12em', margin: '0 0 8px' }}>⚡ Free 60-Second Scan</p>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    type="text"
+                    value={scanUrl}
+                    onChange={e => setScanUrl(e.target.value)}
+                    placeholder="Enter your website URL (e.g., mycompany.com)"
+                    style={{ flex: 1, padding: '12px 14px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, fontFamily: 'inherit' }}
+                    onKeyDown={e => e.key === 'Enter' && runPublicScan()}
+                  />
+                  <button
+                    type="button"
+                    onClick={runPublicScan}
+                    disabled={scanning}
+                    style={{ padding: '12px 20px', borderRadius: 6, fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: scanning ? 'wait' : 'pointer', background: scanning ? '#ccc' : '#0b0b0b', color: '#fff', border: 0, whiteSpace: 'nowrap' }}
+                  >
+                    {scanning ? '⏳ Scanning…' : 'Scan My Site'}
+                  </button>
+                </div>
+                {scanError && <p style={{ color: '#a52d23', fontSize: 12, marginTop: 8 }}>{scanError}</p>}
+                {scanResult && (
+                  <div style={{ marginTop: 14, borderTop: '1px solid #eee', paddingTop: 14 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 12 }}>
+                      <div style={{ width: 64, height: 64, borderRadius: '50%', border: `6px solid ${scanResult.health_score >= 80 ? '#237A4B' : scanResult.health_score >= 60 ? '#d9b46f' : '#C63D34'}`, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+                        <b style={{ font: '400 22px Libre Caslon Display, serif' }}>{scanResult.health_score}</b>
+                      </div>
+                      <div>
+                        <b style={{ fontSize: 15 }}>{scanResult.headline}</b>
+                        <p style={{ fontSize: 12, color: '#888', margin: '4px 0 0' }}>Estimated revenue leak: <b style={{ color: '#C63D34' }}>${scanResult.revenue_leak_estimate?.min?.toLocaleString()}–${scanResult.revenue_leak_estimate?.max?.toLocaleString()}/yr</b></p>
+                      </div>
+                    </div>
+                    <div style={{ display: 'grid', gap: 8 }}>
+                      {scanResult.findings?.map((f, i) => (
+                        <div key={i} style={{ padding: '10px 12px', background: '#f8f7f4', borderRadius: 6, border: '1px solid #e5e1da' }}>
+                          <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 4 }}>
+                            <span className={`pill ${f.severity}`} style={{ fontWeight: 700, textTransform: 'uppercase' }}>{f.severity}</span>
+                            <b style={{ fontSize: 13 }}>{f.title}</b>
+                          </div>
+                          <p style={{ fontSize: 12, color: '#555', margin: 0, lineHeight: 1.4 }}>{f.description}</p>
+                          <p style={{ fontSize: 11, color: '#888', margin: '4px 0 0' }}><b>Impact:</b> {f.impact}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                      <button type="button" className="button button--gold" onClick={() => setModal('call')} style={{ fontSize: 14 }}>Book Strategy Call <Icon name="arrow-right" /></button>
+                      <button type="button" className="button button--dark-outline" onClick={() => setModal('audit')} style={{ fontSize: 14 }}>Get Full Audit</button>
+                    </div>
+                  </div>
+                )}
+              </div>
               <div className="button-row"><button className="button button--dark" type="button" onClick={() => openAudit()}>Start Free Audit <Icon name="arrow-right" /></button><button className="button button--light" type="button" onClick={() => setModal('call')}>Book a Strategy Call <Icon name="arrow-right" /></button></div>
               <ul className="hero-trust"><li><Icon name="invoice" />No credit card required</li><li><Icon name="shield" />Confidential analysis</li><li><Icon name="evidence" />Evidence-backed recommendations</li></ul>
             </div>
