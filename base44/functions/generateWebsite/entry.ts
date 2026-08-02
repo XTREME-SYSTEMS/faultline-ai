@@ -20,7 +20,7 @@ export default async function(req) {
     const {
       business_name, industry, description, target_audience,
       primary_color, secondary_color, font_style,
-      pages, tone, include_features, company_id
+      pages, tone, include_features, company_id, competitor_analysis
     } = body;
 
     if (!business_name) return Response.json({ error: 'business_name required' }, { status: 400 });
@@ -45,7 +45,12 @@ FONT STYLE: ${font} (modern=sans-serif, classic=serif, bold=condensed)
 TONE: ${voice}
 PAGES: ${requestedPages.join(', ')}
 FEATURES: ${features.join(', ')}
+${competitor_analysis ? `
+COMPETITOR ANALYSIS — you must create a website that is EQUIVALENT OR BETTER than these top 3 competitors:
+${JSON.stringify(competitor_analysis, null, 2)}
 
+You must incorporate the superiority strategy: match their best features, avoid their weaknesses, and exceed their design quality. The generated website must be demonstrably superior to all 3 competitors analyzed above.
+` : ''}
 REQUIREMENTS — this must be an ULTRA-AMAZING website:
 1. Single HTML file with ALL CSS in <style> tags and ALL JS in <script> tags
 2. Fully responsive — mobile-first design with breakpoints
