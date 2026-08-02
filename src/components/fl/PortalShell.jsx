@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import Brand from './Brand';
 import AiPanel from './AiPanel';
 import { portalNav } from './data';
+import WorkflowSteps from './WorkflowSteps';
 
 export default function PortalShell({ children, assistant = false }) {
   // assistant can be: false (no panel), true (default AiPanel), or a React node (custom coach)
@@ -62,6 +63,7 @@ export default function PortalShell({ children, assistant = false }) {
             <NavLink key={to} to={to} end={to === '/app'} onClick={() => setOpen(false)}>{label}</NavLink>
           ))}
         </nav>
+        <WorkflowSteps />
         <button onClick={handleLogout} style={{ width: '100%', textAlign: 'left', padding: '8px 10px', borderRadius: 5, fontSize: 13, fontWeight: 600, color: '#bbb', background: 'none', border: 0, cursor: 'pointer', marginTop: 16, fontFamily: 'inherit' }}>Sign out</button>
         <div className="side-help">
           <b>Need help interpreting results?</b>
