@@ -71,19 +71,21 @@ USER/CLIENT IDEA:
 ${companyContext}
 
 Research and return ALL of the following:
-1. idea_summary — a refined summary of the idea and its core value proposition
-2. top_3_benchmark_systems — the 3 leading companies/systems doing this today: for each {name, url, strengths, weaknesses, processes, what_we_can_learn}
-3. cost_roi — {estimated_startup_cost, estimated_monthly_cost, projected_annual_revenue, roi_percentage, payback_months}
-4. brand_recommendations — 3 brand directions: for each {name, tagline, color_palette (5 hex), rationale}
-5. pitfalls — array of possible pitfalls to avoid
-6. industry_issues_and_fixes — array of {issue, fix} for typical industry problems
-7. best_security_measures — array of recommended security measures
-8. ai_enhancements — array of all AI enhancements applicable {name, description, impact}
-9. comparison — {their_system_summary, our_enhanced_system_summary, key_improvements (array)}
-10. social_media_insights — {customer_reviews_summary, customer_needs, customer_wants, common_complaints, niche_identifier}
-11. industry_trends — array of current trends in this industry
-12. clone_combine_strategy — how to clone the top 3 systems' strengths, fix their weaknesses, and combine into one superior system
-13. exhaustive_plan — a full markdown master plan with sections: Executive Summary, Market Analysis, Competitive Landscape, System Architecture, AI Enhancement Roadmap, Security Plan, Brand Strategy, Financial Projections, Implementation Timeline (30/60/90), Go-to-Market, Risk Mitigation
+ 1. idea_summary — a refined summary of the idea and its core value proposition
+ 2. top_3_benchmark_systems — the 3 leading companies/systems doing this today: for each {name, url, strengths, weaknesses, processes, what_we_can_learn, benchmark_metrics} where benchmark_metrics lists the key performance metrics they achieve (efficiency %, avg cost, accuracy %, speed, customer satisfaction)
+ 3. cost_roi — {estimated_startup_cost, estimated_monthly_cost, projected_annual_revenue, roi_percentage, payback_months}
+ 4. brand_recommendations — 3 brand directions: for each {name, tagline, color_palette (5 hex), rationale}
+ 5. pitfalls — array of possible pitfalls to avoid
+ 6. industry_issues_and_fixes — array of {issue, fix} for typical industry problems
+ 7. best_security_measures — array of recommended security measures
+ 8. ai_enhancements — array of all AI enhancements applicable {name, description, impact}
+ 9. comparison — {their_system_summary, our_enhanced_system_summary, key_improvements (array), improvement_percentages} where improvement_percentages shows how much better our system is vs benchmarks on each key metric (MUST be at least 20% on every metric)
+ 10. social_media_insights — {customer_reviews_summary, customer_needs, customer_wants, common_complaints, niche_identifier}
+ 11. industry_trends — array of current trends in this industry
+ 12. clone_combine_strategy — how to clone the top 3 systems' strengths, fix their weaknesses, and combine into one superior system
+ 13. exhaustive_plan — a full markdown master plan with sections: Executive Summary, Market Analysis, Competitive Landscape, System Architecture, AI Enhancement Roadmap, Security Plan, Brand Strategy, Financial Projections, Implementation Timeline (30/60/90), Go-to-Market, Risk Mitigation
+
+MANDATORY 20% BETTER RULE: The system you design MUST be at least 20% better than the top 3 benchmark systems on EVERY key metric (efficiency, cost, accuracy, speed, customer experience). In the comparison.improvement_percentages object, list each metric with the % improvement — none may be below 20%. In the clone_combine_strategy and exhaustive_plan, explicitly state how each 20%+ improvement is achieved. If a benchmark cannot be beaten by 20% on a metric, identify a new metric where you CAN beat them by 20%+ and make that a core differentiator.
 
 Be specific, evidence-based, and exhaustive. Use real benchmark companies.`,
       add_context_from_internet: true,
@@ -99,7 +101,7 @@ Be specific, evidence-based, and exhaustive. Use real benchmark companies.`,
           industry_issues_and_fixes: { type: 'array', items: { type: 'object', additionalProperties: true } },
           best_security_measures: { type: 'array', items: { type: 'string' } },
           ai_enhancements: { type: 'array', items: { type: 'object', additionalProperties: true } },
-          comparison: { type: 'object', additionalProperties: true },
+          comparison: { type: 'object', additionalProperties: true, properties: { improvement_percentages: { type: 'object', additionalProperties: true } } },
           social_media_insights: { type: 'object', additionalProperties: true },
           industry_trends: { type: 'array', items: { type: 'string' } },
           clone_combine_strategy: { type: 'string' },
