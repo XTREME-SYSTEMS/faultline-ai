@@ -1,0 +1,96 @@
+{
+  "name": "Expense",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "vendor": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "office",
+        "software",
+        "marketing",
+        "travel",
+        "meals",
+        "contractors",
+        "utilities",
+        "rent",
+        "legal",
+        "insurance",
+        "other"
+      ],
+      "default": "other"
+    },
+    "amount": {
+      "type": "number"
+    },
+    "payment_method": {
+      "type": "string",
+      "enum": [
+        "cash",
+        "credit_card",
+        "bank_transfer",
+        "check",
+        "other"
+      ],
+      "default": "credit_card"
+    },
+    "receipt_url": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "reimbursed"
+      ],
+      "default": "approved"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "is_billable": {
+      "type": "boolean",
+      "default": false
+    },
+    "company_id": {
+      "type": "string",
+      "description": "If billable to a client"
+    }
+  },
+  "required": [
+    "organization_id",
+    "date",
+    "vendor",
+    "amount",
+    "category"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -40,6 +40,17 @@ import AuditTemplates from '@/pages/AuditTemplates';
 import PartnerPortal from '@/pages/PartnerPortal';
 import FinancialSync from '@/pages/FinancialSync';
 import ESignature from '@/pages/ESignature';
+import ESignDashboard from '@/pages/esign/ESignDashboard';
+import NewEnvelope from '@/pages/esign/NewEnvelope';
+import EnvelopeDetail from '@/pages/esign/EnvelopeDetail';
+import SignDocument from '@/pages/esign/SignDocument';
+import BooksDashboard from '@/pages/books/BooksDashboard';
+import InvoiceList from '@/pages/books/InvoiceList';
+import NewInvoice from '@/pages/books/NewInvoice';
+import InvoiceDetail from '@/pages/books/InvoiceDetail';
+import ExpenseList from '@/pages/books/ExpenseList';
+import ChartOfAccounts from '@/pages/books/ChartOfAccounts';
+import FinancialReports from '@/pages/books/FinancialReports';
 import CompanyDetail from '@/pages/CompanyDetail';
 import RepairBoard from '@/pages/RepairBoard';
 import Chat from '@/pages/Chat';
@@ -77,6 +88,7 @@ const AuthenticatedApp = () => {
       <Route path="/contact" element={<MarketingPage page="contact" />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/portal/:companyId" element={<CustomerPortal />} />
+      <Route path="/sign/:token" element={<SignDocument />} />
 
       {/* Auth */}
       <Route path="/login" element={<Login />} />
@@ -112,6 +124,16 @@ const AuthenticatedApp = () => {
         <Route path="/app/partner-api" element={<PartnerPortal />} />
         <Route path="/app/financial-sync" element={<FinancialSync />} />
         <Route path="/app/e-signature" element={<ESignature />} />
+        <Route path="/app/esign" element={<ESignDashboard />} />
+        <Route path="/app/esign/new" element={<NewEnvelope />} />
+        <Route path="/app/esign/:id" element={<EnvelopeDetail />} />
+        <Route path="/app/books" element={<BooksDashboard />} />
+        <Route path="/app/books/invoices" element={<InvoiceList />} />
+        <Route path="/app/books/invoices/new" element={<NewInvoice />} />
+        <Route path="/app/books/invoices/:id" element={<InvoiceDetail />} />
+        <Route path="/app/books/expenses" element={<ExpenseList />} />
+        <Route path="/app/books/accounts" element={<ChartOfAccounts />} />
+        <Route path="/app/books/reports" element={<FinancialReports />} />
         <Route path="/app/demo-portal/:companyId" element={<ClientDemoPortal />} />
         <Route path="/app/drive-sync" element={<DriveSync />} />
         <Route path="/app/:slug" element={<Module />} />

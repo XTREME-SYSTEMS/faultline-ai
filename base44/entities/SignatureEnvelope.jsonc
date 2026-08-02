@@ -1,0 +1,208 @@
+{
+  "name": "SignatureEnvelope",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "document_name": {
+      "type": "string"
+    },
+    "document_html": {
+      "type": "string",
+      "description": "HTML content of the document to sign"
+    },
+    "document_url": {
+      "type": "string",
+      "description": "URL to an uploaded PDF/image if not HTML"
+    },
+    "document_type": {
+      "type": "string",
+      "enum": [
+        "html",
+        "pdf",
+        "image"
+      ],
+      "default": "html"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "sent",
+        "viewed",
+        "completed",
+        "declined",
+        "expired"
+      ],
+      "default": "draft"
+    },
+    "recipients": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "email": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "role": {
+            "type": "string",
+            "enum": [
+              "signer",
+              "cc",
+              "witness"
+            ],
+            "default": "signer"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "viewed",
+              "signed",
+              "declined"
+            ],
+            "default": "pending"
+          },
+          "signing_token": {
+            "type": "string"
+          },
+          "viewed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "signed_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "signature_data": {
+            "type": "string",
+            "description": "Base64 PNG of drawn signature"
+          },
+          "declined_reason": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "signature",
+              "initial",
+              "date",
+              "text",
+              "checkbox",
+              "name"
+            ],
+            "default": "signature"
+          },
+          "recipient_email": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "x": {
+            "type": "number",
+            "description": "X position as percentage 0-100"
+          },
+          "y": {
+            "type": "number",
+            "description": "Y position as percentage 0-100"
+          },
+          "width": {
+            "type": "number",
+            "default": 25
+          },
+          "height": {
+            "type": "number",
+            "default": 6
+          },
+          "page": {
+            "type": "number",
+            "default": 1
+          },
+          "required": {
+            "type": "boolean",
+            "default": true
+          },
+          "value": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "audit_trail": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "event": {
+            "type": "string"
+          },
+          "actor": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "ip": {
+            "type": "string"
+          },
+          "details": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "message": {
+      "type": "string"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "signed_document_html": {
+      "type": "string",
+      "description": "Final HTML with signatures applied"
+    }
+  },
+  "required": [
+    "organization_id",
+    "title",
+    "document_name"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
