@@ -38,16 +38,20 @@ TOP FINDINGS:
 ${JSON.stringify(topFindings.map(f => ({ title: f.title, severity: f.severity, business_impact: f.business_impact, recommended_repair: f.recommended_repair })), null, 2)}
 
 Requirements:
-- Subject line: Specific, value-focused, not salesy
-- Body: 150-250 words, conversational, references 2-3 specific findings with their business impact
-- Tone: Helpful expert, not aggressive sales
-- Include a soft call to action for a brief diagnostic call
-- No false claims — only reference the actual findings above
+- Subject line: Specific, value-focused, not salesy (no spam-trigger words like "free", "guarantee", "urgent", "security research")
+- Body: 150-250 words, conversational and consultative (partnership-oriented, NOT fear-based or accusatory)
+- Reference 2-3 findings as general OBSERVATIONS about opportunities to improve — do NOT make specific security accusations, do NOT claim exposed keys or vulnerabilities, do NOT use alarmist language. Frame everything as "we noticed an opportunity to improve X" not "you have a critical security flaw"
+- Include at least ONE concrete, verifiable, non-alarmist observation from the findings (e.g., a specific page name, a specific missing element like a lead form, a performance observation) to establish credibility
+- Tone: Helpful expert offering a consultative diagnostic, not aggressive sales; no false urgency
+- Include a soft, specific call to action offering a brief diagnostic call or a summary report, with a clear low-friction next step
+- Include a professional email signature with a human sender name (e.g., "Jordan Avery, Diagnostic Lead at FaultLine AI"), role, and contact placeholder
+- Include a CAN-SPAM compliant footer with: sender contact info, a one-click opt-out / unsubscribe line, and a physical mailing address placeholder
+- No false claims — only reference the actual findings above, framed constructively
 - Do NOT include recipient name (use a placeholder [First Name])
 
 Return:
 - subject: Email subject line
-- body: Email body text
+- body: Full email body text INCLUDING the signature and CAN-SPAM compliant opt-out footer
 - evidence_refs: Array of finding IDs referenced`,
       response_json_schema: {
         type: 'object',

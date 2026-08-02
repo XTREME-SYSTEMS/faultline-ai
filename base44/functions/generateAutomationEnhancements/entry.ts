@@ -9,14 +9,22 @@ export default async function(req) {
     if (!orgId) return Response.json({ error: 'No organization found' }, { status: 400 });
 
     const body = await req.json().catch(() => ({}));
-    const { industry, opportunity_id, company_id } = body;
-    if (!industry) return Response.json({ error: 'industry required' }, { status: 400 });
+    let { industry, opportunity_id, company_id } = body;
 
     // Gather context: opportunity details + existing system nodes if company provided
     let opportunity = null;
     if (opportunity_id) {
       opportunity = await base44.asServiceRole.entities.IndustryOpportunity.get(opportunity_id);
+      if (opportunity && !industry) industry = opportunity.industry;
     }
+
+    // Derive industry from the company record when not explicitly provided
+    if (!industry && company_id) {
+      const company = await base44.asServiceRole.entities.Company.get(company_id);
+      if (company && company.organization_id === orgId) industry = company.industry;
+    }
+
+    if (!industry) return Response.json({ error: 'industry required (pass industry, opportunity_id, or company_id)' }, { status: 400 });
 
     let systemNodes = [];
     if (company_id) {
