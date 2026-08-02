@@ -68,35 +68,35 @@
     },
     {
       "function_name": "runSecurityPipeline",
-      "description": "Run the full 20-step security and business audit pipeline on a company end-to-end"
+      "description": "Run the full 20-step security and business audit pipeline on a company"
     },
     {
       "function_name": "draftOutreach",
-      "description": "Draft a value-first outreach email for a company (auto-validated by the mandatory QA gate)"
+      "description": "Draft a value-first outreach email (auto-validated by mandatory QA gate)"
     },
     {
       "function_name": "sendApprovedOutreach",
-      "description": "Send an approved outreach email \u2014 blocked unless a passed QA report exists (mandatory gate)"
+      "description": "Send an approved outreach email \u2014 blocked unless QA passed (mandatory gate)"
     },
     {
       "function_name": "generateDeliverable",
-      "description": "Generate a client deliverable (proposal, website, brand, cost-ROI, AI OS) \u2014 auto-validated by the mandatory QA gate"
+      "description": "Generate a client deliverable (auto-validated by mandatory QA gate)"
     },
     {
       "function_name": "generateReport",
-      "description": "Generate an executive report \u2014 auto-validated by the mandatory QA gate"
+      "description": "Generate an executive report (auto-validated by mandatory QA gate)"
     },
     {
       "function_name": "generateSecurityProposal",
-      "description": "Generate a security proposal with pricing \u2014 auto-validated by the mandatory QA gate"
+      "description": "Generate a security proposal (auto-validated by mandatory QA gate)"
     },
     {
       "function_name": "generateRepairPlan",
-      "description": "Generate a prioritized repair plan \u2014 auto-validated by the mandatory QA gate"
+      "description": "Generate a prioritized repair plan (auto-validated by mandatory QA gate)"
     },
     {
       "function_name": "generateUniversalPlan",
-      "description": "Generate a universal builder plan \u2014 auto-validated by the mandatory QA gate"
+      "description": "Generate a universal builder plan (auto-validated by mandatory QA gate)"
     },
     {
       "function_name": "syncToHubSpot",
