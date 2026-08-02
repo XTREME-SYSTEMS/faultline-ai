@@ -23,6 +23,7 @@ import DriveSync from '@/pages/DriveSync';
 import DiscoveryEngine from '@/pages/DiscoveryEngine';
 import SetupWizard from '@/pages/SetupWizard';
 import ClientSetupWizard from '@/pages/ClientSetupWizard';
+import SystemClone from '@/pages/SystemClone';
 import CompanyDetail from '@/pages/CompanyDetail';
 import Chat from '@/pages/Chat';
 import Trends from '@/pages/Trends';
@@ -75,6 +76,7 @@ const AuthenticatedApp = () => {
         <Route path="/app/chat" element={<Chat />} />
         <Route path="/app/trends" element={<Trends />} />
         <Route path="/app/companies/:id" element={<CompanyDetail />} />
+        <Route path="/app/companies/:id/clone" element={<SystemClone />} />
         <Route path="/app/drive-sync" element={<DriveSync />} />
         <Route path="/app/:slug" element={<Module />} />
         <Route path="/admin" element={<Admin />} />

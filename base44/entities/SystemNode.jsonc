@@ -19,6 +19,21 @@
     },
     "health_status": {
       "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "leak_points": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ai_enhancement": {
+      "type": "string"
+    },
+    "confidence": {
+      "type": "number"
     }
   },
   "required": [
