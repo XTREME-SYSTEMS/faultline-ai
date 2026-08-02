@@ -1,9 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
 import PortalShell from '@/components/fl/PortalShell';
 import PageHead from '@/components/fl/PageHead';
+import StartHere from '@/components/fl/StartHere';
 import { base44 } from '@/api/base44Client';
 
 export default function DiscoveryEngine() {
+  const navigate = useNavigate();
   const [companies, setCompanies] = useState([]);
   const [audits, setAudits] = useState([]);
   const [receipts, setReceipts] = useState([]);
@@ -57,6 +60,23 @@ export default function DiscoveryEngine() {
   return (
     <PortalShell>
       <PageHead eyebrow="Autonomous pipeline" title="Discovery Engine" text="The system autonomously discovers businesses, scans their websites for faults, and generates executive reports — no outreach, no external contact." onAction={() => run('discoverCompanies', { industry, location }, 'discovery')} actionLabel="Discover now →" />
+
+      <StartHere
+        companies={companies}
+        audits={audits}
+        receipts={receipts}
+        busy={busy}
+        onDiscover={() => run('discoverCompanies', { industry, location }, 'discovery')}
+        onScanNext={() => {
+          const next = companies.find(c => c.status === 'discovered');
+          if (next) run('scanCompany', { company_id: next.id }, 'scan-' + next.id);
+        }}
+        onGenerateReport={() => {
+          const next = audits.find(a => a.status === 'completed' && !a.report_url);
+          if (next) run('generateReport', { audit_id: next.id }, 'report-' + next.id);
+        }}
+        onGoOverview={() => navigate('/app')}
+      />
 
       {error && (
         <div style={{ background: '#f5d8d5', color: '#a52d23', padding: '14px 18px', borderRadius: 6, marginBottom: 13, border: '1px solid #e3b8b3' }}>
