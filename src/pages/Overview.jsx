@@ -9,12 +9,19 @@ export default function Overview() {
   const [data, setData] = useState({ companies: [], audits: [], findings: [], receipts: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [setupNeeded, setSetupNeeded] = useState(false);
 
   const fetchAll = useCallback(async () => {
     try {
       const res = await base44.functions.invoke('getPortalData', {});
       const { companies = [], audits = [], findings = [], receipts = [] } = res.data || {};
       setData({ companies, audits, findings, receipts });
+      // Check if setup wizard has been completed
+      try {
+        const configs = await base44.entities.SystemConfig.filter({ organization_id: res.data?.orgId });
+        const cfg = configs[0];
+        if (!cfg || !cfg.setup_complete) setSetupNeeded(true);
+      } catch {}
     } catch (e) {
       setError(e.message);
     } finally {
@@ -52,6 +59,27 @@ export default function Overview() {
       {error && (
         <div style={{ background: '#f5d8d5', color: '#a52d23', padding: '14px 18px', borderRadius: 6, marginBottom: 13, border: '1px solid #e3b8b3' }}>
           {error}
+        </div>
+      )}
+
+      {setupNeeded && (
+        <div style={{
+          background: 'radial-gradient(circle at 90% 20%, rgba(200,155,60,.2), transparent 50%), #0a0a0a',
+          color: '#fff', borderRadius: 12, padding: '24px 28px', marginBottom: 20,
+          border: '1px solid #59411e', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20, flexWrap: 'wrap'
+        }}>
+          <div>
+            <p className="eyebrow" style={{ color: 'var(--gold2)', margin: '0 0 6px' }}>First time here?</p>
+            <h2 style={{ font: '400 26px Libre Caslon Display, serif', margin: '0 0 4px', letterSpacing: '-.02em' }}>
+              Let's build your system with AI
+            </h2>
+            <p style={{ color: '#aaa', fontSize: 14, margin: 0, maxWidth: 560 }}>
+              Our AI coach will guide you step-by-step — company profile, target market, discovery engine, automation, email drafts, and diagnostics.
+            </p>
+          </div>
+          <button onClick={() => navigate('/app/setup')} className="btn gold" style={{ fontSize: 15, padding: '15px 26px' }}>
+            Start guided setup →
+          </button>
         </div>
       )}
 
