@@ -28,6 +28,13 @@ export default async function(req) {
 
     const htmlContent = body.html || content;
 
+    // Encode HTML to base64 (Deno-safe UTF-8 encoding)
+    const encoder = new TextEncoder();
+    const bytes = encoder.encode(htmlContent);
+    let binary = '';
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    const documentBase64 = btoa(binary);
+
     // Get DocuSign connection
     const { accessToken } = await base44.asServiceRole.connectors.getConnection('docusign');
 
@@ -49,7 +56,7 @@ export default async function(req) {
         documentId: '1',
         name: title,
         fileExtension: 'html',
-        documentBase64: btoa(unescape(encodeURIComponent(htmlContent)))
+        documentBase64: documentBase64
       }],
       recipients: {
         signers: [{
@@ -81,7 +88,7 @@ export default async function(req) {
     if (!envelopeRes.ok) {
       const err = await envelopeRes.text();
       console.error('DocuSign envelope error:', err);
-      return Response.json({ error: `DocuSign error: ${envelopeRes.status}` }, { status: 502 });
+      return Response.json({ error: `DocuSign error: ${envelopeRes.status}`, details: err }, { status: 502 });
     }
 
     const envelope = await envelopeRes.json();
