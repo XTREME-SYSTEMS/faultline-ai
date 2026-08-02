@@ -37,6 +37,9 @@ import CompetitiveIntel from '@/pages/CompetitiveIntel';
 import ImplementationMarketplace from '@/pages/ImplementationMarketplace';
 import WhiteLabel from '@/pages/WhiteLabel';
 import AuditTemplates from '@/pages/AuditTemplates';
+import PartnerPortal from '@/pages/PartnerPortal';
+import FinancialSync from '@/pages/FinancialSync';
+import ESignature from '@/pages/ESignature';
 import CompanyDetail from '@/pages/CompanyDetail';
 import RepairBoard from '@/pages/RepairBoard';
 import Chat from '@/pages/Chat';
@@ -106,6 +109,9 @@ const AuthenticatedApp = () => {
         <Route path="/app/marketplace" element={<ImplementationMarketplace />} />
         <Route path="/app/white-label" element={<WhiteLabel />} />
         <Route path="/app/audit-templates" element={<AuditTemplates />} />
+        <Route path="/app/partner-api" element={<PartnerPortal />} />
+        <Route path="/app/financial-sync" element={<FinancialSync />} />
+        <Route path="/app/e-signature" element={<ESignature />} />
         <Route path="/app/demo-portal/:companyId" element={<ClientDemoPortal />} />
         <Route path="/app/drive-sync" element={<DriveSync />} />
         <Route path="/app/:slug" element={<Module />} />

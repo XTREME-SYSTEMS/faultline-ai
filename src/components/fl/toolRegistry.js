@@ -113,6 +113,9 @@ export const TOOL_CATEGORIES = [
       { id: 'computeIndustryBenchmarks', label: 'Industry Benchmarks', desc: 'Aggregate anonymized health scores across an industry — avg, median, top quartile', params: [{ key: 'industry', label: 'Industry (optional)', type: 'text', placeholder: 'HVAC' }] },
       { id: 'sendSmsAlert', label: 'Send SMS Alert', desc: 'Send a Twilio SMS alert to a phone number for critical findings', params: [{ key: 'phone', label: 'Phone (optional — uses profile if blank)', type: 'text', placeholder: '+1234567890' }, { key: 'message', label: 'Message', type: 'text', placeholder: 'Critical finding detected' }] },
       { id: 'ingestWebhook', label: 'Ingest Webhook', desc: 'Receive and log an external webhook payload', params: [{ key: 'source', label: 'Source', type: 'text', placeholder: 'stripe' }] },
+      { id: 'syncQuickBooks', label: 'Sync QuickBooks', desc: 'Pull customers and invoices from QuickBooks and cross-reference with FaultLine companies', params: [] },
+      { id: 'sendForSignature', label: 'Send for E-Signature', desc: 'Send a deliverable for DocuSign e-signature', params: [{ key: 'deliverable_id', label: 'Deliverable', type: 'text', placeholder: 'Deliverable ID' }, { key: 'recipient_email', label: 'Recipient Email', type: 'text', placeholder: 'client@company.com' }, { key: 'recipient_name', label: 'Recipient Name', type: 'text', placeholder: 'John Smith' }] },
+      { id: 'partnerApi', label: 'Partner API', desc: 'Public API endpoint for partners — list audits, findings, companies, scores, create leads', params: [{ key: 'action', label: 'Action', type: 'text', placeholder: 'list_audits' }] },
     ]
   },
 ];

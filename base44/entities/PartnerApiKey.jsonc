@@ -1,0 +1,70 @@
+{
+  "name": "PartnerApiKey",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "partner_name": {
+      "type": "string"
+    },
+    "api_key": {
+      "type": "string",
+      "description": "The API key partners use to authenticate"
+    },
+    "scopes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "enum": [
+          "read_audits",
+          "read_findings",
+          "read_companies",
+          "create_leads",
+          "read_scores"
+        ]
+      }
+    },
+    "rate_limit_per_hour": {
+      "type": "number",
+      "default": 100
+    },
+    "requests_this_hour": {
+      "type": "number",
+      "default": 0
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "last_used": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "organization_id",
+    "partner_name",
+    "api_key"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
