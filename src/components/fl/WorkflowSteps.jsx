@@ -4,16 +4,17 @@ import { useLocation, Link } from 'react-router-dom';
 // (or route prefix) so the active step is highlighted automatically.
 const STEPS = [
   { n: 1, label: 'Universal Builder', to: '/app/universal-builder', match: '/app/universal-builder' },
-  { n: 2, label: 'Setup Wizard', to: '/app/setup', match: '/app/setup' },
-  { n: 2, label: 'Discovery Engine', to: '/app/discovery-engine', match: '/app/discovery-engine' },
-  { n: 3, label: 'Scan & Clone', to: '/app', match: '/app/companies' },
-  { n: 4, label: 'Repair Board', to: '/app', match: '/repair-board' },
-  { n: 5, label: 'Industry Opportunities', to: '/app/industry-opportunities', match: '/app/industry-opportunities' },
-  { n: 6, label: 'Deliverable Studio', to: '/app/deliverable-studio', match: '/app/deliverable-studio' },
-  { n: 7, label: 'Client Setup', to: '/app/client-setup', match: '/app/client-setup' },
-  { n: 8, label: 'Demo Portal', to: '/app/demo-portal', match: '/app/demo-portal' },
-  { n: 9, label: 'Trends', to: '/app/trends', match: '/app/trends' },
-  { n: 10, label: 'AI Control Panel', to: '/app/ai-control', match: '/app/ai-control' }
+  { label: 'Setup Wizard', to: '/app/setup', match: '/app/setup' },
+  { label: 'Discovery Engine', to: '/app/discovery-engine', match: '/app/discovery-engine' },
+  { label: 'Scan & Clone', to: '/app', match: '/app/companies' },
+  { label: 'Repair Board', to: '/app', match: '/repair-board' },
+  { label: 'Industry Opportunities', to: '/app/industry-opportunities', match: '/app/industry-opportunities' },
+  { label: 'Deliverable Studio', to: '/app/deliverable-studio', match: '/app/deliverable-studio' },
+  { label: 'QA & Validation', to: '/app/qa-center', match: '/app/qa-center' },
+  { label: 'Client Setup', to: '/app/client-setup', match: '/app/client-setup' },
+  { label: 'Demo Portal', to: '/app/demo-portal', match: '/app/demo-portal' },
+  { label: 'Trends', to: '/app/trends', match: '/app/trends' },
+  { label: 'AI Control Panel', to: '/app/ai-control', match: '/app/ai-control' }
 ];
 
 export default function WorkflowSteps() {
