@@ -111,6 +111,8 @@ export const TOOL_CATEGORIES = [
       { id: 'publicScan', label: 'Public 60-Second Scan', desc: 'Instant website scan — 3 findings + revenue leak estimate. No login required. Saves as AuditLead.', params: [{ key: 'url', label: 'Website URL', type: 'text', placeholder: 'example.com' }, { key: 'email', label: 'Email (optional)', type: 'text', placeholder: 'lead@email.com' }, { key: 'company_name', label: 'Company (optional)', type: 'text', placeholder: 'Company Inc' }] },
       { id: 'computeClientSuccess', label: 'Compute Client Success', desc: 'Calculate churn risk score for all clients based on engagement, resolution rate, scan recency', params: [] },
       { id: 'computeIndustryBenchmarks', label: 'Industry Benchmarks', desc: 'Aggregate anonymized health scores across an industry — avg, median, top quartile', params: [{ key: 'industry', label: 'Industry (optional)', type: 'text', placeholder: 'HVAC' }] },
+      { id: 'sendSmsAlert', label: 'Send SMS Alert', desc: 'Send a Twilio SMS alert to a phone number for critical findings', params: [{ key: 'phone', label: 'Phone (optional — uses profile if blank)', type: 'text', placeholder: '+1234567890' }, { key: 'message', label: 'Message', type: 'text', placeholder: 'Critical finding detected' }] },
+      { id: 'ingestWebhook', label: 'Ingest Webhook', desc: 'Receive and log an external webhook payload', params: [{ key: 'source', label: 'Source', type: 'text', placeholder: 'stripe' }] },
     ]
   },
 ];

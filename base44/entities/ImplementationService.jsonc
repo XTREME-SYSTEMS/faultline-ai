@@ -1,0 +1,77 @@
+{
+  "name": "ImplementationService",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "security",
+        "analytics",
+        "seo",
+        "performance",
+        "automation",
+        "branding",
+        "compliance",
+        "custom"
+      ]
+    },
+    "price": {
+      "type": "number",
+      "description": "One-time implementation price in USD"
+    },
+    "effort_hours": {
+      "type": "number"
+    },
+    "deliverables": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "stripe_price_id": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "default": "active"
+    },
+    "purchases": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "organization_id",
+    "title",
+    "price"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,70 @@
+{
+  "name": "WebhookEndpoint",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "stripe",
+        "hubspot",
+        "github",
+        "slack",
+        "custom",
+        "gmail",
+        "googledrive"
+      ]
+    },
+    "url_path": {
+      "type": "string",
+      "description": "Unique path segment for this webhook"
+    },
+    "secret": {
+      "type": "string",
+      "description": "Secret for verifying webhook signatures"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "last_triggered": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "trigger_count": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "organization_id",
+    "name",
+    "source",
+    "url_path"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -33,6 +33,10 @@ import UniversalBuilder from '@/pages/UniversalBuilder';
 import QADashboard from '@/pages/QADashboard';
 import CommandCenter from '@/pages/CommandCenter';
 import ClientROI from '@/pages/ClientROI';
+import CompetitiveIntel from '@/pages/CompetitiveIntel';
+import ImplementationMarketplace from '@/pages/ImplementationMarketplace';
+import WhiteLabel from '@/pages/WhiteLabel';
+import AuditTemplates from '@/pages/AuditTemplates';
 import CompanyDetail from '@/pages/CompanyDetail';
 import RepairBoard from '@/pages/RepairBoard';
 import Chat from '@/pages/Chat';
@@ -98,6 +102,10 @@ const AuthenticatedApp = () => {
         <Route path="/app/qa-center" element={<QADashboard />} />
         <Route path="/app/command-center" element={<CommandCenter />} />
         <Route path="/app/roi" element={<ClientROI />} />
+        <Route path="/app/competitive-intel" element={<CompetitiveIntel />} />
+        <Route path="/app/marketplace" element={<ImplementationMarketplace />} />
+        <Route path="/app/white-label" element={<WhiteLabel />} />
+        <Route path="/app/audit-templates" element={<AuditTemplates />} />
         <Route path="/app/demo-portal/:companyId" element={<ClientDemoPortal />} />
         <Route path="/app/drive-sync" element={<DriveSync />} />
         <Route path="/app/:slug" element={<Module />} />

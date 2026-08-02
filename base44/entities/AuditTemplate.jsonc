@@ -1,0 +1,90 @@
+{
+  "name": "AuditTemplate",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "industry": {
+      "type": "string"
+    },
+    "audit_type": {
+      "type": "string",
+      "enum": [
+        "security",
+        "performance",
+        "seo",
+        "compliance",
+        "revenue_leak",
+        "full_diagnostic",
+        "ai_readiness"
+      ]
+    },
+    "checklist": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of checks to perform"
+    },
+    "expected_findings": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "price": {
+      "type": "number",
+      "default": 0
+    },
+    "author": {
+      "type": "string"
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": false
+    },
+    "uses": {
+      "type": "number",
+      "default": 0
+    },
+    "rating": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "organization_id",
+    "name",
+    "audit_type"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "data.is_public": true
+        },
+        {
+          "data.organization_id": "{{user.data.organization_id}}"
+        }
+      ]
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

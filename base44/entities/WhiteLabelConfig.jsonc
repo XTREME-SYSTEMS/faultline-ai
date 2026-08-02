@@ -1,0 +1,70 @@
+{
+  "name": "WhiteLabelConfig",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "agency_name": {
+      "type": "string"
+    },
+    "logo_url": {
+      "type": "string"
+    },
+    "primary_color": {
+      "type": "string",
+      "description": "Hex color for brand accent"
+    },
+    "secondary_color": {
+      "type": "string"
+    },
+    "custom_domain": {
+      "type": "string"
+    },
+    "portal_name": {
+      "type": "string"
+    },
+    "welcome_message": {
+      "type": "string"
+    },
+    "hide_faultline_branding": {
+      "type": "boolean",
+      "default": false
+    },
+    "custom_email_from": {
+      "type": "string"
+    },
+    "pricing_markup_percent": {
+      "type": "number",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "default": "active"
+    }
+  },
+  "required": [
+    "organization_id",
+    "agency_name"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

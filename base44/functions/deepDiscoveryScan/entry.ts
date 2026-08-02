@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { discoverAllPages, extractExternalScripts, detectExposedSecrets, deepExtract, fetchPageDeep, fetchScript } from '../../shared/deepScraper.ts';
 import { detectTechStack, calcHealthScore } from '../../shared/scraper.ts';
+import { smartFetchPage } from '../../shared/browserbase.ts';
 
 // Deep Discovery Scan — the deepest level of discovery, scrape, and clone:
 //  1. Scrapes the homepage + ALL discovered internal pages (up to 15)
@@ -34,8 +35,8 @@ export default async function(req) {
     let uniqueSecretsList = [];
     const pageResults = [];
 
-    // 1. Fetch homepage
-    const home = await fetchPageDeep(url);
+    // 1. Fetch homepage — uses Browserbase for JS-heavy sites, falls back to basic fetch
+    const home = await smartFetchPage(url, fetchPageDeep);
     if (!home.ok) {
       findings.push({ title: 'Website Unreachable', category: 'security', severity: 'critical', description: `Deep scan could not reach ${url}: ${home.error}`, business_impact: 'No leads, no sales, damaged trust.', recommended_repair: 'Check DNS, server, and firewall immediately.', confidence: 100 });
     } else {
@@ -47,7 +48,7 @@ export default async function(req) {
 
       // 3. Discover and fetch all internal pages
       const pages = discoverAllPages(home.html, url);
-      const pageFetches = await Promise.all(pages.map(p => fetchPageDeep(p, 8000)));
+      const pageFetches = await Promise.all(pages.map(p => smartFetchPage(p, (u) => fetchPageDeep(u, 8000))));
       for (let i = 0; i < pages.length; i++) {
         const pf = pageFetches[i];
         if (pf.ok) {
