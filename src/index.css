@@ -345,6 +345,8 @@ td small { color: #888; margin-top: 4px; }
 .notfound { min-height: 100vh; display: grid; place-content: center; text-align: center; gap: 18px; }
 .notfound img { width: 70px; margin: auto; }
 .notfound h1 { font: 400 50px 'Libre Caslon Display', serif; margin: 0; }
+@keyframes fl-dot { 0%, 80%, 100% { opacity: .3; } 40% { opacity: 1; } }
+.dot-anim span, .dot-anim { letter-spacing: 3px; animation: fl-dot 1.4s infinite; }
 
 @media (max-width: 1200px) {
   .metrics { grid-template-columns: repeat(3, 1fr); }

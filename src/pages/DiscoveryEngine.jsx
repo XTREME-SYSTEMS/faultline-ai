@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PortalShell from '@/components/fl/PortalShell';
 import PageHead from '@/components/fl/PageHead';
-import StartHere from '@/components/fl/StartHere';
+import OnboardingCoach from '@/components/fl/OnboardingCoach';
 import { base44 } from '@/api/base44Client';
 
 export default function DiscoveryEngine() {
@@ -61,11 +61,13 @@ export default function DiscoveryEngine() {
     <PortalShell>
       <PageHead eyebrow="Autonomous pipeline" title="Discovery Engine" text="The system autonomously discovers businesses, scans their websites for faults, and generates executive reports — no outreach, no external contact." onAction={() => run('discoverCompanies', { industry, location }, 'discovery')} actionLabel="Discover now →" />
 
-      <StartHere
+      <OnboardingCoach
         companies={companies}
         audits={audits}
         receipts={receipts}
         busy={busy}
+        industry={industry}
+        location={location}
         onDiscover={() => run('discoverCompanies', { industry, location }, 'discovery')}
         onScanNext={() => {
           const next = companies.find(c => c.status === 'discovered');
