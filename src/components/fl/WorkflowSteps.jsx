@@ -3,7 +3,8 @@ import { useLocation, Link } from 'react-router-dom';
 // The end-to-end FaultLine AI workflow, in order. Each step maps to a route
 // (or route prefix) so the active step is highlighted automatically.
 const STEPS = [
-  { n: 1, label: 'Setup Wizard', to: '/app/setup', match: '/app/setup' },
+  { n: 1, label: 'Universal Builder', to: '/app/universal-builder', match: '/app/universal-builder' },
+  { n: 2, label: 'Setup Wizard', to: '/app/setup', match: '/app/setup' },
   { n: 2, label: 'Discovery Engine', to: '/app/discovery-engine', match: '/app/discovery-engine' },
   { n: 3, label: 'Scan & Clone', to: '/app', match: '/app/companies' },
   { n: 4, label: 'Repair Board', to: '/app', match: '/repair-board' },
@@ -39,7 +40,7 @@ export default function WorkflowSteps() {
           const isActive = i === active;
           const isDone = active >= 0 && i < active;
           return (
-            <li key={s.n}>
+            <li key={i}>
               <Link
                 to={s.to}
                 style={{
@@ -57,7 +58,7 @@ export default function WorkflowSteps() {
                   background: isActive ? 'var(--gold)' : isDone ? '#1c1c1c' : 'transparent',
                   color: isActive ? '#111' : isDone ? '#237A4B' : '#888'
                 }}>
-                  {isDone ? '✓' : s.n}
+                  {isDone ? '✓' : i + 1}
                 </span>
                 <span>{s.label}</span>
               </Link>
