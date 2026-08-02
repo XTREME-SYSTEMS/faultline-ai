@@ -17,6 +17,26 @@
     "priority": {
       "type": "number"
     },
+    "owner_role": {
+      "type": "string",
+      "description": "Named role responsible for this action (e.g., IT Security Lead, Marketing Director)"
+    },
+    "effort_estimate": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "target_day": {
+      "type": "number",
+      "description": "Target completion day within the plan horizon"
+    },
+    "success_metric": {
+      "type": "string",
+      "description": "Measurable KPI with target value to verify success"
+    },
     "owner_user_id": {
       "type": "string"
     },

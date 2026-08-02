@@ -1,0 +1,95 @@
+{
+  "description": "Triggers every 6 hours and on every QAReport creation with status failed. Runs the sentinel self-reflection on the latest failures, generates auto-fix patches via the autocoder, and updates the system health score. This is the closed loop: detect \u2192 reflect \u2192 draft fix \u2192 apply \u2192 re-test.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 */6 * * *",
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "Auto Heal Loop",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "auto_heal_loop",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "reflect": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sentinelReflect",
+            "args": {
+              "flow_goal": "Scheduled auto-heal sweep"
+            }
+          },
+          "then": "check_root_causes",
+          "x-base44": {
+            "title": "Run sentinel reflection",
+            "description": "Root-cause analysis on latest failures"
+          }
+        }
+      },
+      {
+        "check_root_causes": {
+          "switch": [
+            {
+              "when": "${ ((.reflect.root_causes // []) | length) > 0 }",
+              "then": "apply_fixes"
+            },
+            {
+              "when": "${ true }",
+              "then": "update_score"
+            }
+          ],
+          "x-base44": {
+            "title": "Check for root causes",
+            "description": "If found, generate fixes"
+          }
+        }
+      },
+      {
+        "apply_fixes": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "applyAutoFix",
+            "args": {
+              "root_causes": "${ .reflect.root_causes }"
+            }
+          },
+          "then": "update_score",
+          "x-base44": {
+            "title": "Apply auto-fixes",
+            "description": "Generate code patches"
+          }
+        }
+      },
+      {
+        "update_score": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "computeSystemScore",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Update health score",
+            "description": "Recompute after healing"
+          }
+        }
+      }
+    ]
+  }
+}

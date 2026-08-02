@@ -1,0 +1,57 @@
+{
+  "description": "FaultLine AI autonomous coding agent. It reads the latest QAReport entries with failed or warnings status and the Sentinel's root-cause recommendations, then generates exact code patches (file path, find string, replace string) for each issue. High-confidence patches are ready for operator review and application.",
+  "instructions": "You are the FaultLine AI AutoCoder \u2014 the autonomous coding agent. Your job is to read quality reports and root-cause analyses, then generate exact, applicable code fixes.\n\nWhen triggered:\n1. Read the latest QAReport entries with status 'failed' or 'warnings' to understand what needs fixing.\n2. If root-cause recommendations are available (from the Sentinel's sentinelReflect output), use them as input.\n3. For each issue, call applyAutoFix with the root_causes to generate structured code patches.\n4. Review the generated patches: high-confidence patches are ready for operator application; low-confidence patches need human judgment.\n5. Report clearly: what patches were generated, what files they target, what confidence level, and what was skipped and why.\n6. After generating patches, call computeSystemScore to update the system health score.\n\nOnly generate patches you are confident about. If a fix requires understanding business logic, user preferences, or platform constraints you can't verify, mark it as low confidence and explain why. Never generate a patch that could break a working flow \u2014 when in doubt, skip and explain. The goal is a closed loop: detect \u2192 reflect \u2192 draft fix \u2192 review \u2192 apply \u2192 re-test \u2192 update score.",
+  "tool_configs": [
+    {
+      "entity_name": "QAReport",
+      "allowed_operations": [
+        "read",
+        "update"
+      ]
+    },
+    {
+      "entity_name": "SystemHealthScore",
+      "allowed_operations": [
+        "read",
+        "update"
+      ]
+    },
+    {
+      "entity_name": "Receipt",
+      "allowed_operations": [
+        "read"
+      ]
+    },
+    {
+      "function_name": "applyAutoFix",
+      "description": "Generate structured code patches from root-cause analyses \u2014 returns patches with file_path, find, replace, confidence"
+    },
+    {
+      "function_name": "computeSystemScore",
+      "description": "Compute and persist the current system health score after fixes"
+    },
+    {
+      "function_name": "sentinelReflect",
+      "description": "Perform root-cause analysis on failed test results \u2014 feeds into applyAutoFix"
+    }
+  ],
+  "context_files": [],
+  "app_user_connector_configs": [],
+  "selected_skill_names": [],
+  "selected_workspace_skill_ids": [],
+  "model": "automatic",
+  "whatsapp_greeting": null,
+  "telegram_greeting": null,
+  "line_greeting": null,
+  "memory_config": {
+    "enabled": true,
+    "scope": "both",
+    "include_other_conversation_context": false,
+    "instructions": null
+  },
+  "voice_config": {
+    "voice_id": null
+  },
+  "allow_anonymous_access": false,
+  "name": "faultline_autocoder"
+}

@@ -1,0 +1,113 @@
+{
+  "description": "Runs every hour: computes the system health score. If score drops below 90, triggers the auto-heal loop (sentinel reflect + autocoder fix). If below 75, also runs a full security pen test. This creates the persistent auto-analyze \u2192 auto-fix \u2192 auto-heal \u2192 auto-harden loop.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 * * * *",
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "Persistent Hardening",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "persistent_hardening",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "compute_score": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "computeSystemScore",
+            "args": {}
+          },
+          "then": "check_score",
+          "x-base44": {
+            "title": "Compute system health score",
+            "description": "Aggregate QA, function, security, and autonomy metrics"
+          }
+        }
+      },
+      {
+        "check_score": {
+          "switch": [
+            {
+              "when": "${ .compute_score.overall_score < 75 }",
+              "then": "run_pen_test"
+            },
+            {
+              "when": "${ .compute_score.overall_score < 90 }",
+              "then": "run_heal_loop"
+            },
+            {
+              "when": "${ true }",
+              "then": "end"
+            }
+          ],
+          "x-base44": {
+            "title": "Check score threshold",
+            "description": "Below 90 = heal, below 75 = pen test + heal"
+          }
+        }
+      },
+      {
+        "run_pen_test": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "securityPenTest",
+            "args": {}
+          },
+          "then": "run_heal_loop",
+          "x-base44": {
+            "title": "Run security pen test",
+            "description": "Simulate adversarial attacks"
+          }
+        }
+      },
+      {
+        "run_heal_loop": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sentinelReflect",
+            "args": {
+              "flow_goal": "Persistent hardening auto-heal sweep"
+            }
+          },
+          "then": "apply_fixes",
+          "x-base44": {
+            "title": "Run sentinel self-reflection",
+            "description": "Root-cause analysis on any failures"
+          }
+        }
+      },
+      {
+        "apply_fixes": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "applyAutoFix",
+            "args": {
+              "root_causes": "${ .run_heal_loop.root_causes }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Apply auto-fixes",
+            "description": "Generate and queue code patches"
+          }
+        }
+      }
+    ]
+  }
+}

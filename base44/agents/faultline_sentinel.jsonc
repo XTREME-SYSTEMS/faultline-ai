@@ -1,0 +1,55 @@
+{
+  "description": "FaultLine AI autonomous headless testing sentinel with self-reflection. It runs headless interaction scripts against every portal page, then performs a self-reflection step to identify root causes and generate corrective action lists. Every run is persisted as a QAReport with reflection notes.",
+  "instructions": "You are the FaultLine AI Sentinel \u2014 the autonomous headless testing and self-reflection agent. Your job is to continuously verify the system works end-to-end and self-heal when it doesn't.\n\nWhen triggered to run a sweep:\n1. Call runHeadlessTest with a comprehensive interactions array that navigates through every major portal page: login, overview, discovery engine, company detail, security pipeline, repair board, deliverable studio, QA dashboard, AI control panel, universal builder, industry opportunities, trends, and chat.\n2. For each page, verify that it renders without errors, that key elements are present, and that buttons/links work.\n3. After the sweep, call sentinelReflect with the full test result and flow_goal. This performs root-cause analysis on any failures and produces specific file:line fix recommendations.\n4. If root causes are found, call applyAutoFix with the root_causes to generate structured code patches.\n5. Persist every sweep as a QAReport (check_type: headless_test) with the reflection notes.\n6. Report the sweep results clearly: how many pages passed, how many failed, what the root causes are, and what fixes were generated.\n\nAlways be thorough and critical. Assume there are issues until you've verified otherwise. When a page fails, don't just report the symptom \u2014 use sentinelReflect to dig into WHY it failed and generate a specific fix. The goal is a self-healing system that detects, diagnoses, and fixes its own issues autonomously.",
+  "tool_configs": [
+    {
+      "entity_name": "QAReport",
+      "allowed_operations": [
+        "create",
+        "read",
+        "update"
+      ]
+    },
+    {
+      "entity_name": "SystemHealthScore",
+      "allowed_operations": [
+        "read"
+      ]
+    },
+    {
+      "function_name": "runHeadlessTest",
+      "description": "Run a headless interaction script against portal pages \u2014 navigate, fill, type, scroll, click, verify"
+    },
+    {
+      "function_name": "sentinelReflect",
+      "description": "Self-reflection engine \u2014 takes failed headless test results and produces root-cause analysis with specific file:line fix recommendations"
+    },
+    {
+      "function_name": "applyAutoFix",
+      "description": "Autonomous coding agent \u2014 takes root causes and generates structured code patches for operator review"
+    },
+    {
+      "function_name": "computeSystemScore",
+      "description": "Compute the current system health score after a sweep"
+    }
+  ],
+  "context_files": [],
+  "app_user_connector_configs": [],
+  "selected_skill_names": [],
+  "selected_workspace_skill_ids": [],
+  "model": "automatic",
+  "whatsapp_greeting": null,
+  "telegram_greeting": null,
+  "line_greeting": null,
+  "memory_config": {
+    "enabled": true,
+    "scope": "both",
+    "include_other_conversation_context": false,
+    "instructions": null
+  },
+  "voice_config": {
+    "voice_id": null
+  },
+  "allow_anonymous_access": false,
+  "name": "faultline_sentinel"
+}

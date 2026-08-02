@@ -1,0 +1,110 @@
+{
+  "description": "Runs every 12 hours: executes a security penetration test simulating adversarial attacks (cross-org access, injection, prompt injection) and a compliance check across SOC 2, GDPR, HIPAA, PCI-DSS, CCPA. Any breached attack vector triggers the auto-heal loop.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 */12 * * *",
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "Security Sentinel",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "security_sentinel",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_pen_test": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "securityPenTest",
+            "args": {}
+          },
+          "then": "run_compliance",
+          "x-base44": {
+            "title": "Run security pen test",
+            "description": "Simulate adversarial attacks"
+          }
+        }
+      },
+      {
+        "run_compliance": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "securityComplianceCheck",
+            "args": {}
+          },
+          "then": "check_breaches",
+          "x-base44": {
+            "title": "Run compliance check",
+            "description": "SOC 2, GDPR, HIPAA, PCI-DSS, CCPA"
+          }
+        }
+      },
+      {
+        "check_breaches": {
+          "switch": [
+            {
+              "when": "${ .run_pen_test.succeeded > 0 }",
+              "then": "heal_security"
+            },
+            {
+              "when": "${ true }",
+              "then": "end"
+            }
+          ],
+          "x-base44": {
+            "title": "Check for breaches",
+            "description": "If any attack succeeded, trigger healing"
+          }
+        }
+      },
+      {
+        "heal_security": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sentinelReflect",
+            "args": {
+              "flow_goal": "Security breach remediation",
+              "test_result": "${ .run_pen_test }"
+            }
+          },
+          "then": "apply_security_fix",
+          "x-base44": {
+            "title": "Reflect on security breach",
+            "description": "Root-cause analysis"
+          }
+        }
+      },
+      {
+        "apply_security_fix": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "applyAutoFix",
+            "args": {
+              "root_causes": "${ .heal_security.root_causes }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Apply security fixes",
+            "description": "Generate patches for breached vectors"
+          }
+        }
+      }
+    ]
+  }
+}

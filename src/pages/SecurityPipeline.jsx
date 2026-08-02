@@ -247,7 +247,7 @@ export default function SecurityPipeline() {
               <div style={{ background: '#f8f7f4', border: '1px solid #e5e1da', borderRadius: 6, padding: 18 }}>
                 <p style={{ fontWeight: 700, fontSize: 14, marginBottom: 8 }}>Touch 1: {result.outreach_subject}</p>
                 <p style={{ fontSize: 12, color: '#888' }}>Initial email + 3-touch follow-up sequence created and saved to the outreach queue — pending your approval before sending.</p>
-                <Link to="/app/outreach" className="btn outline" style={{ fontSize: 13, marginTop: 12, display: 'inline-block' }}>Review & Approve Emails →</Link>
+                <Link to="/app/ai-control" className="btn outline" style={{ fontSize: 13, marginTop: 12, display: 'inline-block' }}>Review & Approve Emails →</Link>
               </div>
             </section>
           )}

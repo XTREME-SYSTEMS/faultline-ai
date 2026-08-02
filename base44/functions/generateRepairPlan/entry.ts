@@ -90,6 +90,9 @@ Prioritize by severity (critical first) and effort (quick wins first). Every act
         title: a.title,
         priority: a.priority,
         owner_role: a.owner_role,
+        effort_estimate: a.effort_estimate,
+        target_day: a.target_day,
+        success_metric: a.success_metric,
         status: 'pending',
         validation_result: a.validation_criteria
       });
