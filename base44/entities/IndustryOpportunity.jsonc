@@ -1,0 +1,74 @@
+{
+  "name": "IndustryOpportunity",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "industry": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "opportunity_title": {
+      "type": "string"
+    },
+    "opportunity_description": {
+      "type": "string"
+    },
+    "automation_potential": {
+      "type": "number"
+    },
+    "revenue_impact_estimate": {
+      "type": "number"
+    },
+    "companies_affected_count": {
+      "type": "number"
+    },
+    "pain_points": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "automation_types": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "competitor_benchmarks": {
+      "type": "object"
+    },
+    "market_size": {
+      "type": "string"
+    },
+    "trend_direction": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "default": "discovered"
+    }
+  },
+  "required": [
+    "organization_id",
+    "industry",
+    "opportunity_title"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    }
+  }
+}

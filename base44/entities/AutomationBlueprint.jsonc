@@ -1,0 +1,95 @@
+{
+  "name": "AutomationBlueprint",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "industry": {
+      "type": "string"
+    },
+    "opportunity_id": {
+      "type": "string"
+    },
+    "company_id": {
+      "type": "string"
+    },
+    "blueprint_name": {
+      "type": "string"
+    },
+    "blueprint_type": {
+      "type": "string",
+      "enum": [
+        "workflow",
+        "integration",
+        "ai_agent",
+        "data_pipeline",
+        "monitoring",
+        "customer_facing"
+      ]
+    },
+    "description": {
+      "type": "string"
+    },
+    "systems_affected": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "implementation_steps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "estimated_effort_hours": {
+      "type": "number"
+    },
+    "estimated_roi": {
+      "type": "number"
+    },
+    "tech_stack": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "automation_config": {
+      "type": "object"
+    },
+    "before_state": {
+      "type": "string"
+    },
+    "after_state": {
+      "type": "string"
+    },
+    "demo_script": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "default": "draft"
+    }
+  },
+  "required": [
+    "organization_id",
+    "industry",
+    "blueprint_name",
+    "blueprint_type"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    }
+  }
+}

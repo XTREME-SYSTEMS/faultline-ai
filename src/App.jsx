@@ -25,6 +25,9 @@ import SetupWizard from '@/pages/SetupWizard';
 import ClientSetupWizard from '@/pages/ClientSetupWizard';
 import SystemClone from '@/pages/SystemClone';
 import SecurityPipeline from '@/pages/SecurityPipeline';
+import IndustryOpportunities from '@/pages/IndustryOpportunities';
+import AiControlPanel from '@/pages/AiControlPanel';
+import ClientDemoPortal from '@/pages/ClientDemoPortal';
 import CompanyDetail from '@/pages/CompanyDetail';
 import Chat from '@/pages/Chat';
 import Trends from '@/pages/Trends';
@@ -80,6 +83,10 @@ const AuthenticatedApp = () => {
         <Route path="/app/companies/:id/clone" element={<SystemClone />} />
         <Route path="/app/security-pipeline" element={<SecurityPipeline />} />
         <Route path="/app/security-pipeline/:id" element={<SecurityPipeline />} />
+        <Route path="/app/industry-opportunities" element={<IndustryOpportunities />} />
+        <Route path="/app/ai-control" element={<AiControlPanel />} />
+        <Route path="/app/demo-portal" element={<ClientDemoPortal />} />
+        <Route path="/app/demo-portal/:companyId" element={<ClientDemoPortal />} />
         <Route path="/app/drive-sync" element={<DriveSync />} />
         <Route path="/app/:slug" element={<Module />} />
         <Route path="/admin" element={<Admin />} />
