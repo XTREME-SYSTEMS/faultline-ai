@@ -6,7 +6,8 @@ import { base44 } from '@/api/base44Client';
 const CHECK_TYPES = [
   { key: 'qa_validation', label: 'QA Validation', icon: '🔍', desc: 'Double-check any generated output for problems, gaps, weaknesses, and faults.' },
   { key: 'headless_test', label: 'Headless User Test', icon: '🧪', desc: 'Simulate a user walking through a generated frontend/backend to find broken flows and UX issues.' },
-  { key: 'security_compliance', label: 'Security & Compliance', icon: '🛡️', desc: 'Autonomous audit across SOC 2, GDPR, HIPAA, PCI-DSS, CCPA to stay in compliance.' }
+  { key: 'security_compliance', label: 'Security & Compliance', icon: '🛡️', desc: 'Autonomous audit across SOC 2, GDPR, HIPAA, PCI-DSS, CCPA to stay in compliance.' },
+  { key: 'autonomous_scan', label: 'Autonomous Scan All', icon: '🤖', desc: 'Continuously runs headless client-POV tests on every generated system. Runs automatically every 6 hours — click to trigger now.' }
 ];
 
 function StatusPill({ status }) {
@@ -58,6 +59,8 @@ export default function QADashboard() {
       let res;
       if (checkType === 'security_compliance') {
         res = await base44.functions.invoke('securityComplianceCheck', {});
+      } else if (checkType === 'autonomous_scan') {
+        res = await base44.functions.invoke('autonomousHeadlessScan', {});
       } else {
         const fn = checkType === 'qa_validation' ? 'qaValidateStep' : 'runHeadlessTest';
         res = await base44.functions.invoke(fn, selectedTarget ? { target_id: selectedTarget } : {});
@@ -115,7 +118,7 @@ export default function QADashboard() {
                 <p style={{ fontSize: 12, color: '#888', marginTop: 4, lineHeight: 1.5 }}>{c.desc}</p>
               </div>
             </div>
-            {c.key !== 'security_compliance' && (
+            {c.key !== 'security_compliance' && c.key !== 'autonomous_scan' && (
               <select
                 value={selectedTarget}
                 onChange={(e) => setSelectedTarget(e.target.value)}
@@ -146,11 +149,32 @@ export default function QADashboard() {
             <div>
               <p className="eyebrow">{CHECK_TYPES.find(c => c.key === activeReport.check_type)?.label || 'Result'}</p>
               <h2 style={{ font: '400 22px Libre Caslon Display, serif', margin: '4px 0 0' }}>
-                Score: {activeReport.score || activeReport.compliance_score || 0}/100
+                {activeReport.scanned !== undefined ? 'Autonomous Scan Complete' : `Score: ${activeReport.score || activeReport.compliance_score || 0}/100`}
               </h2>
             </div>
-            <StatusPill status={activeReport.validation_status || activeReport.test_status || activeReport.compliance_status} />
+            {activeReport.scanned !== undefined
+              ? <span style={{ fontSize: 12, color: '#888' }}>{activeReport.scanned} systems scanned</span>
+              : <StatusPill status={activeReport.validation_status || activeReport.test_status || activeReport.compliance_status} />}
           </div>
+          {activeReport.scanned !== undefined && (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, marginBottom: 14 }}>
+              <div style={{ background: '#fff', border: '1px solid #e5e1da', borderRadius: 8, padding: 14, textAlign: 'center' }}><b style={{ fontSize: 24, font: '400 24px Libre Caslon Display, serif' }}>{activeReport.scanned}</b><br/><small style={{ color: '#888', fontSize: 11 }}>Scanned</small></div>
+              <div style={{ background: '#fff', border: '1px solid #e5e1da', borderRadius: 8, padding: 14, textAlign: 'center' }}><b style={{ color: '#237A4B', fontSize: 24 }}>{activeReport.passed || 0}</b><br/><small style={{ color: '#888', fontSize: 11 }}>Passed</small></div>
+              <div style={{ background: '#fff', border: '1px solid #e5e1da', borderRadius: 8, padding: 14, textAlign: 'center' }}><b style={{ color: '#B88214', fontSize: 24 }}>{activeReport.warned || 0}</b><br/><small style={{ color: '#888', fontSize: 11 }}>Warnings</small></div>
+              <div style={{ background: '#fff', border: '1px solid #e5e1da', borderRadius: 8, padding: 14, textAlign: 'center' }}><b style={{ color: '#C63D34', fontSize: 24 }}>{activeReport.failed || 0}</b><br/><small style={{ color: '#888', fontSize: 11 }}>Failed</small></div>
+            </div>
+          )}
+          {activeReport.results?.length > 0 && (
+            <div style={{ marginBottom: 14 }}>
+              <h3 style={{ fontSize: 15, marginBottom: 10 }}>Per-System Results</h3>
+              {activeReport.results.map((r, i) => (
+                <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px', border: '1px solid #e5e1da', borderRadius: 8, marginBottom: 6, background: '#fff' }}>
+                  <b style={{ fontSize: 13 }}>{r.title || r.target_id}</b>
+                  {r.error ? <span style={{ color: '#C63D34', fontSize: 12 }}>Error: {r.error}</span> : <span style={{ display: 'flex', gap: 10, alignItems: 'center' }}><span style={{ fontSize: 12, color: '#888' }}>{r.issues} issues</span><StatusPill status={r.status} /></span>}
+                </div>
+              ))}
+            </div>
+          )}
           {activeReport.summary && <p style={{ fontSize: 14, color: '#555', lineHeight: 1.7, marginBottom: 14 }}>{activeReport.summary}</p>}
           {activeReport.framework_status?.length > 0 && (
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 14 }}>
