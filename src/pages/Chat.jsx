@@ -16,6 +16,7 @@ export default function Chat() {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
 
   const activeAgent = AGENTS.find(a => a.name === agentName);
@@ -23,6 +24,7 @@ export default function Chat() {
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
+    setError(null);
     setConversation(null); setMessages([]);
     (async () => {
       try {
@@ -36,7 +38,7 @@ export default function Chat() {
           setLoading(false);
         }
       } catch (e) {
-        if (!cancelled) setLoading(false);
+        if (!cancelled) { setError(e.message || 'Failed to load conversation'); setLoading(false); }
       }
     })();
     return () => { cancelled = true; };
@@ -62,8 +64,9 @@ export default function Chat() {
     try {
       const updated = await base44.agents.addMessage(conversation, { role: 'user', content });
       setConversation(updated);
+      setMessages(updated.messages || []);
     } catch (e) {
-      // ignore
+      setError(e.message || 'Failed to send message');
     } finally {
       setSending(false);
     }
@@ -92,6 +95,12 @@ export default function Chat() {
         <div style={{ flex: 1, overflow: 'auto', padding: 20 }}>
           {loading ? (
             <p style={{ color: '#888', textAlign: 'center' }}>Loading conversation…</p>
+          ) : error ? (
+            <div style={{ textAlign: 'center', color: '#a52d23', paddingTop: 40 }}>
+              <p style={{ fontWeight: 700 }}>Couldn't start the chat</p>
+              <p style={{ fontSize: 13 }}>{error}</p>
+              <button onClick={() => setAgentName(agentName)} className="btn dark" style={{ marginTop: 12, fontSize: 13 }}>Retry</button>
+            </div>
           ) : messages.length === 0 ? (
             <div style={{ textAlign: 'center', color: '#888', paddingTop: 40 }}>
               <p>Ask me anything about your business diagnostics.</p>
@@ -103,7 +112,7 @@ export default function Chat() {
                 <div className={`chat ${msg.role}`} style={{ maxWidth: '75%' }}>
                   {msg.role === 'user'
                     ? <p style={{ margin: 0, whiteSpace: 'pre-wrap' }}>{msg.content}</p>
-                    : <ReactMarkdown style={{ fontSize: 13 }}>{msg.content || ''}</ReactMarkdown>}
+                    : <div style={{ fontSize: 13, lineHeight: 1.6 }}><ReactMarkdown>{msg.content || ''}</ReactMarkdown></div>}
                   {msg.tool_calls?.map((tc, j) => (
                     <div key={j} style={{ fontSize: 11, color: '#896930', marginTop: 8, padding: '4px 8px', background: '#f3f0ea', borderRadius: 4 }}>
                       ⚙ {tc.name || 'tool'} — {tc.status}
