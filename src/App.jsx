@@ -29,6 +29,7 @@ import IndustryOpportunities from '@/pages/IndustryOpportunities';
 import AiControlPanel from '@/pages/AiControlPanel';
 import ClientDemoPortal from '@/pages/ClientDemoPortal';
 import CompanyDetail from '@/pages/CompanyDetail';
+import RepairBoard from '@/pages/RepairBoard';
 import Chat from '@/pages/Chat';
 import Trends from '@/pages/Trends';
 import CustomerPortal from '@/pages/CustomerPortal';
@@ -81,6 +82,7 @@ const AuthenticatedApp = () => {
         <Route path="/app/trends" element={<Trends />} />
         <Route path="/app/companies/:id" element={<CompanyDetail />} />
         <Route path="/app/companies/:id/clone" element={<SystemClone />} />
+        <Route path="/app/companies/:id/repair-board" element={<RepairBoard />} />
         <Route path="/app/security-pipeline" element={<SecurityPipeline />} />
         <Route path="/app/security-pipeline/:id" element={<SecurityPipeline />} />
         <Route path="/app/industry-opportunities" element={<IndustryOpportunities />} />

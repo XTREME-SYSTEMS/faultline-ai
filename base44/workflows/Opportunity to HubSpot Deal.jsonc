@@ -1,0 +1,40 @@
+{
+  "name": "Opportunity to HubSpot Deal",
+  "description": "When a new IndustryOpportunity is created, automatically push it as a new deal into the HubSpot sales pipeline.",
+  "trigger": {
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "IndustryOpportunity",
+      "events": [
+        "create"
+      ]
+    },
+    "condition": "${ (.trigger.data.hubspot_deal_id // null) == null }"
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "opportunity_to_hubspot_deal",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "push_deal": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "pushOpportunityToHubSpot",
+            "args": {
+              "opportunity_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Push opportunity to HubSpot",
+            "description": "Create a deal from the new opportunity"
+          }
+        }
+      }
+    ]
+  }
+}

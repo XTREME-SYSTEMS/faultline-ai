@@ -14,16 +14,20 @@ export default function IndustryOpportunities() {
   const [error, setError] = useState(null);
   const [selectedOpp, setSelectedOpp] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [companies, setCompanies] = useState([]);
+  const [selectedCompany, setSelectedCompany] = useState('');
 
   useEffect(() => {
     (async () => {
       try {
-        const [opps, bps] = await Promise.all([
+        const [opps, bps, comps] = await Promise.all([
           base44.entities.IndustryOpportunity.list('-created_date', 50),
-          base44.entities.AutomationBlueprint.list('-created_date', 50)
+          base44.entities.AutomationBlueprint.list('-created_date', 50),
+          base44.entities.Company.list('-created_date', 100)
         ]);
         setOpportunities(opps);
         setBlueprints(bps);
+        setCompanies(comps);
       } catch (e) { /* ignore */ }
       setLoading(false);
     })();
@@ -50,7 +54,8 @@ export default function IndustryOpportunities() {
     try {
       await base44.functions.invoke('generateAutomationEnhancements', {
         industry: opp.industry,
-        opportunity_id: opp.id
+        opportunity_id: opp.id,
+        company_id: selectedCompany || undefined
       });
       const updated = await base44.entities.AutomationBlueprint.list('-created_date', 50);
       setBlueprints(updated);
@@ -169,7 +174,23 @@ export default function IndustryOpportunities() {
 
       {/* Automation Blueprints */}
       <section className="finding" style={{ marginTop: 13 }}>
-        <h2 style={{ fontSize: 18, marginBottom: 15 }}>Automation enhancement blueprints ({blueprints.length})</h2>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: 12, marginBottom: 15 }}>
+          <h2 style={{ fontSize: 18, margin: 0 }}>Automation enhancement blueprints ({blueprints.length})</h2>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: '#888' }}>Tailor to client (optional)</label>
+            <select
+              value={selectedCompany}
+              onChange={(e) => setSelectedCompany(e.target.value)}
+              style={{ padding: '10px 14px', border: '1px solid #ddd', borderRadius: 6, fontSize: 14, minWidth: 260, background: '#fff' }}
+            >
+              <option value="">Generic industry blueprints</option>
+              {companies.map(c => (
+                <option key={c.id} value={c.id}>{c.name} — {c.industry || 'unknown industry'}</option>
+              ))}
+            </select>
+            {selectedCompany && <small style={{ color: 'var(--gold)', fontSize: 11 }}>Blueprints will use this client's mapped systems as context.</small>}
+          </div>
+        </div>
         {blueprints.length === 0 ? (
           <p style={{ color: '#888' }}>No blueprints generated yet. Click "Generate Blueprints" on any opportunity above to create deployable automation plans.</p>
         ) : (

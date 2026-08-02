@@ -47,6 +47,9 @@
     "trend_direction": {
       "type": "string"
     },
+    "hubspot_deal_id": {
+      "type": "string"
+    },
     "status": {
       "type": "string",
       "default": "discovered"
