@@ -1,0 +1,85 @@
+{
+  "name": "Product",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string"
+    },
+    "sku": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "epoxy_kit",
+        "polyaspartic",
+        "pigment",
+        "sealer",
+        "densifier",
+        "joint_filler",
+        "moisture_barrier",
+        "cleaner",
+        "overlayment",
+        "glitter",
+        "cove_base",
+        "traction",
+        "equipment",
+        "tooling",
+        "flake",
+        "quartz",
+        "accessory"
+      ]
+    },
+    "size": {
+      "type": "string"
+    },
+    "price": {
+      "type": "number",
+      "description": "USD sale price"
+    },
+    "price_unit": {
+      "type": "string",
+      "description": "e.g. per gal, per oz, per kit"
+    },
+    "specs": {
+      "type": "string",
+      "description": "Coverage, cure time, solids, VOC notes"
+    },
+    "product_url": {
+      "type": "string"
+    },
+    "vendor": {
+      "type": "string",
+      "default": "Xtreme Polishing Systems"
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    },
+    "organization_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "name",
+    "category",
+    "price",
+    "organization_id"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

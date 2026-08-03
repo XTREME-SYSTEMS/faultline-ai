@@ -1,0 +1,107 @@
+{
+  "name": "PricingRule",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "string",
+      "description": "Version label, e.g. v1.2"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "archived"
+      ],
+      "default": "draft"
+    },
+    "mobilization_fee": {
+      "type": "number",
+      "default": 350
+    },
+    "min_job_price": {
+      "type": "number",
+      "default": 1200
+    },
+    "prep_grinding_rate": {
+      "type": "number",
+      "description": "USD/sqft added for grinding prep",
+      "default": 0.75
+    },
+    "moisture_mitigation_rate": {
+      "type": "number",
+      "default": 1.5
+    },
+    "crack_repair_rate": {
+      "type": "number",
+      "description": "USD per linear ft",
+      "default": 12
+    },
+    "coving_rate": {
+      "type": "number",
+      "description": "USD per linear ft",
+      "default": 18
+    },
+    "joint_filler_rate": {
+      "type": "number",
+      "description": "USD per linear ft of polyurea joint filler",
+      "default": 4.5
+    },
+    "patch_rate": {
+      "type": "number",
+      "description": "USD per surface patchwork spot",
+      "default": 35
+    },
+    "excess_patch_rate": {
+      "type": "number",
+      "description": "USD per excessive patch spot beyond normal scope",
+      "default": 25
+    },
+    "large_patch_rate": {
+      "type": "number",
+      "description": "USD per large hole / deep spall repair",
+      "default": 150
+    },
+    "demolition_rate": {
+      "type": "number",
+      "description": "USD per sqft of demolition / coating removal",
+      "default": 3
+    },
+    "extra_prep_rate": {
+      "type": "number",
+      "description": "Flat USD for excessive job site prep (extra plastics, masking)",
+      "default": 250
+    },
+    "range_spread_pct": {
+      "type": "number",
+      "description": "Preliminary range spread, e.g. 0.15",
+      "default": 0.15
+    },
+    "notes": {
+      "type": "string"
+    },
+    "organization_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "version",
+    "organization_id"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,265 @@
+{
+  "name": "Lead",
+  "type": "object",
+  "properties": {
+    "customer_name": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "project_address": {
+      "type": "string"
+    },
+    "space_type": {
+      "type": "string",
+      "enum": [
+        "garage",
+        "basement",
+        "warehouse",
+        "showroom",
+        "patio",
+        "commercial_kitchen",
+        "retail",
+        "other"
+      ]
+    },
+    "photo_url": {
+      "type": "string",
+      "description": "Original customer photo (immutable source)"
+    },
+    "mask_url": {
+      "type": "string",
+      "description": "Corrected floor mask overlay"
+    },
+    "mask_coverage_pct": {
+      "type": "number"
+    },
+    "system_id": {
+      "type": "string"
+    },
+    "system_name": {
+      "type": "string"
+    },
+    "finish": {
+      "type": "string"
+    },
+    "floor_type": {
+      "type": "string",
+      "description": "General floor type for spec generation (e.g. Metallic Epoxy, Flake Epoxy)"
+    },
+    "color_name": {
+      "type": "string"
+    },
+    "color_hex": {
+      "type": "string"
+    },
+    "square_feet": {
+      "type": "number"
+    },
+    "linear_feet_cracks": {
+      "type": "number",
+      "default": 0
+    },
+    "linear_feet_coving": {
+      "type": "number",
+      "default": 0
+    },
+    "linear_feet_joints": {
+      "type": "number",
+      "default": 0,
+      "description": "Linear feet of joints to fill with polyurea"
+    },
+    "patch_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Number of surface patchwork / spall spots"
+    },
+    "excessive_patch_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Excessive patch spots beyond normal scope"
+    },
+    "large_patch_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Large holes / deep spalls requiring extensive repair"
+    },
+    "demolition_sqft": {
+      "type": "number",
+      "default": 0,
+      "description": "Sq ft of demolition / coating removal"
+    },
+    "extra_prep": {
+      "type": "boolean",
+      "default": false,
+      "description": "Excessive job site prep — extra plastics, masking, containment"
+    },
+    "has_joints": {
+      "type": "boolean",
+      "default": false,
+      "description": "Floor has control/construction joints requiring joint filler"
+    },
+    "condition": {
+      "type": "string",
+      "enum": [
+        "good",
+        "fair",
+        "poor"
+      ],
+      "default": "fair"
+    },
+    "needs_grinding": {
+      "type": "boolean",
+      "default": true
+    },
+    "needs_moisture_mitigation": {
+      "type": "boolean",
+      "default": false
+    },
+    "estimate_low": {
+      "type": "number"
+    },
+    "estimate_high": {
+      "type": "number"
+    },
+    "adjusted_low": {
+      "type": "number"
+    },
+    "adjusted_high": {
+      "type": "number"
+    },
+    "pricing_version": {
+      "type": "string"
+    },
+    "proposal_total": {
+      "type": "number",
+      "description": "Final total from the generated proposal"
+    },
+    "discount_amount": {
+      "type": "number",
+      "default": 0
+    },
+    "discount_pct": {
+      "type": "number",
+      "default": 0
+    },
+    "discount_expires": {
+      "type": "string",
+      "description": "ISO datetime when the 24-hour discount offer expires"
+    },
+    "desired_install_date": {
+      "type": "string",
+      "format": "date"
+    },
+    "floor_logo_description": {
+      "type": "string",
+      "description": "Description of logo to install in the floor"
+    },
+    "signature_url": {
+      "type": "string",
+      "description": "URL of the client's e-signature image"
+    },
+    "signed_date": {
+      "type": "string",
+      "description": "ISO datetime when the client signed the proposal"
+    },
+    "hubspot_contact_id": {
+      "type": "string",
+      "description": "HubSpot CRM contact ID after push"
+    },
+    "hubspot_deal_id": {
+      "type": "string",
+      "description": "HubSpot CRM deal ID after push"
+    },
+    "proposal_draft": {
+      "type": "string"
+    },
+    "specifications": {
+      "type": "array",
+      "description": "Full scope-of-work spec items generated from the floor type",
+      "items": {
+        "type": "object",
+        "properties": {
+          "label": {
+            "type": "string"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "visualizer",
+        "lead_generator",
+        "manual",
+        "referral",
+        "phone"
+      ],
+      "default": "manual"
+    },
+    "division": {
+      "type": "string",
+      "default": "National Concrete Polishing"
+    },
+    "follow_up_stage": {
+      "type": "string",
+      "enum": [
+        "welcome_sent",
+        "first_followup_sent",
+        "second_followup_sent",
+        "final_reminder_sent"
+      ],
+      "description": "Current stage in the automated follow-up sequence"
+    },
+    "last_contacted_date": {
+      "type": "string",
+      "description": "ISO datetime of the last automated follow-up"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "new",
+        "qualified",
+        "estimate_sent",
+        "proposal_sent",
+        "won",
+        "lost",
+        "follow_up"
+      ],
+      "default": "new"
+    },
+    "notes": {
+      "type": "string"
+    },
+    "organization_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "customer_name",
+    "organization_id"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
