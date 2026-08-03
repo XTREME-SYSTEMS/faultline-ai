@@ -1,0 +1,122 @@
+{
+  "name": "Lead Follow-up",
+  "description": "Automated 4-stage follow-up sequence: welcome email on lead creation, first follow-up after 2 days, second after 7 days, final reminder after 14 days. Skips won/lost leads.",
+  "trigger": {
+    "condition": "${ .trigger.data.email != null and .trigger.data.email != \"\" and .trigger.data.status == \"new\" }",
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "Lead",
+      "events": [
+        "create"
+      ]
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "lead_followup",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "send_welcome": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sendLeadFollowup",
+            "args": {
+              "lead_id": "${ .trigger.entity_id }",
+              "stage": "welcome"
+            }
+          },
+          "then": "wait_first",
+          "x-base44": {
+            "title": "Send welcome email",
+            "description": "Immediate welcome on lead creation"
+          }
+        }
+      },
+      {
+        "wait_first": {
+          "wait": "P2D",
+          "then": "send_first_followup",
+          "x-base44": {
+            "title": "Wait 2 days",
+            "description": "Pause before first follow-up"
+          }
+        }
+      },
+      {
+        "send_first_followup": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sendLeadFollowup",
+            "args": {
+              "lead_id": "${ .trigger.entity_id }",
+              "stage": "first_followup"
+            }
+          },
+          "then": "wait_second",
+          "x-base44": {
+            "title": "Send first follow-up",
+            "description": "Check in after 2 days"
+          }
+        }
+      },
+      {
+        "wait_second": {
+          "wait": "P5D",
+          "then": "send_second_followup",
+          "x-base44": {
+            "title": "Wait 5 days",
+            "description": "Pause before second follow-up"
+          }
+        }
+      },
+      {
+        "send_second_followup": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sendLeadFollowup",
+            "args": {
+              "lead_id": "${ .trigger.entity_id }",
+              "stage": "second_followup"
+            }
+          },
+          "then": "wait_final",
+          "x-base44": {
+            "title": "Send second follow-up",
+            "description": "Re-engage after 7 days"
+          }
+        }
+      },
+      {
+        "wait_final": {
+          "wait": "P7D",
+          "then": "send_final_reminder",
+          "x-base44": {
+            "title": "Wait 7 days",
+            "description": "Pause before final reminder"
+          }
+        }
+      },
+      {
+        "send_final_reminder": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "sendLeadFollowup",
+            "args": {
+              "lead_id": "${ .trigger.entity_id }",
+              "stage": "final_reminder"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Send final reminder",
+            "description": "Last touch after 14 days"
+          }
+        }
+      }
+    ]
+  }
+}
