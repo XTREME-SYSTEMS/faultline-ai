@@ -89,9 +89,8 @@ Generate the COMPLETE website now. Start with <!DOCTYPE html> and end with </htm
     }
 
     // Save as a Deliverable
-    const deliverable = await base44.asServiceRole.entities.Deliverable.create({
+    const deliverableData = {
       organization_id: orgId,
-      company_id: company_id || null,
       deliverable_type: 'website',
       title: `Website — ${business_name}`,
       content: websiteHtml,
@@ -101,7 +100,9 @@ Generate the COMPLETE website now. Start with <!DOCTYPE html> and end with </htm
         generated_at: new Date().toISOString()
       },
       status: 'generated'
-    });
+    };
+    if (company_id) deliverableData.company_id = company_id;
+    const deliverable = await base44.asServiceRole.entities.Deliverable.create(deliverableData);
 
     await base44.asServiceRole.entities.Receipt.create({
       organization_id: orgId,
