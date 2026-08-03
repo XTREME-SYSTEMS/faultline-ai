@@ -1,0 +1,77 @@
+{
+  "name": "GeneratorNode",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "generator_id": {
+      "type": "string"
+    },
+    "node_id": {
+      "type": "string"
+    },
+    "node_type": {
+      "type": "string",
+      "description": "Start, User Input, AI Process, Generate, Transform, Validation, Approval, Output, End, etc"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "tool": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "idle",
+        "active",
+        "passed",
+        "failed",
+        "blocked"
+      ],
+      "default": "idle"
+    },
+    "inputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "order": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "organization_id",
+    "generator_id",
+    "node_type",
+    "name"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

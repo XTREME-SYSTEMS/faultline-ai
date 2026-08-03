@@ -1,0 +1,82 @@
+{
+  "name": "RepairTask",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "artifact_id": {
+      "type": "string"
+    },
+    "validation_result_id": {
+      "type": "string"
+    },
+    "area": {
+      "type": "string",
+      "description": "completeness, consistency, usability, source, quality"
+    },
+    "check_name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "fix_strategy": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "identified",
+        "in_progress",
+        "resolved",
+        "wont_fix",
+        "blocked"
+      ],
+      "default": "identified"
+    },
+    "assigned_to": {
+      "type": "string"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high",
+        "critical"
+      ],
+      "default": "medium"
+    },
+    "resolved_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "resolution_notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id",
+    "description"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
