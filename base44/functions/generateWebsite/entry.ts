@@ -20,7 +20,7 @@ export default async function(req) {
     const {
       business_name, industry, description, target_audience,
       primary_color, secondary_color, font_style,
-      pages, tone, include_features, company_id, competitor_analysis
+      pages, tone, include_features, company_id, competitor_analysis, logo_url
     } = body;
 
     if (!business_name) return Response.json({ error: 'business_name required' }, { status: 400 });
@@ -43,6 +43,7 @@ BRAND COLOR: ${color}
 SECONDARY COLOR: ${color2}
 FONT STYLE: ${font} (modern=sans-serif, classic=serif, bold=condensed)
 TONE: ${voice}
+LOGO: ${logo_url ? `Use this logo image URL in the navbar and footer: ${logo_url}` : 'No logo provided — create a text-based wordmark logo'}
 PAGES: ${requestedPages.join(', ')}
 FEATURES: ${features.join(', ')}
 ${competitor_analysis ? `
@@ -97,7 +98,7 @@ Generate the COMPLETE website now. Start with <!DOCTYPE html> and end with </htm
       metadata: {
         business_name, industry, primary_color: color, secondary_color: color2,
         font_style: font, tone: voice, pages: requestedPages, features,
-        generated_at: new Date().toISOString()
+        logo_url: logo_url || null, generated_at: new Date().toISOString()
       },
       status: 'generated'
     };

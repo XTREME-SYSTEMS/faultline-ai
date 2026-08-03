@@ -3,13 +3,14 @@ import PortalShell from '@/components/fl/PortalShell';
 import WebsiteCoach from '@/components/fl/WebsiteCoach';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
+import AiFieldGenerator from '@/components/fl/AiFieldGenerator';
 
 export default function WebsiteGenerator() {
   const [companies, setCompanies] = useState([]);
   const [form, setForm] = useState({
     business_name: '', industry: '', description: '', target_audience: '',
     primary_color: '#C89B3C', secondary_color: '#0a0a0a', font_style: 'modern',
-    tone: 'professional', company_id: ''
+    tone: 'professional', company_id: '', logo_url: ''
   });
   const [pages, setPages] = useState(['home', 'about', 'services', 'contact']);
   const [features, setFeatures] = useState(['hero', 'services', 'testimonials', 'contact_form', 'footer', 'stats', 'about']);
@@ -43,7 +44,14 @@ export default function WebsiteGenerator() {
   const handleCoachApply = (field, value) => {
     if (field === 'pages') setPages(value);
     else if (field === 'features') setFeatures(value);
-    else updateForm(field, value);
+    else if (field === 'branding') {
+      updateForm('primary_color', value.primary_color);
+      updateForm('secondary_color', value.secondary_color);
+      updateForm('font_style', value.font_style);
+      updateForm('tone', value.tone);
+    } else if (field === 'logo_url') {
+      updateForm('logo_url', value);
+    } else updateForm(field, value);
   };
 
   const togglePage = (page) => {
@@ -258,24 +266,43 @@ export default function WebsiteGenerator() {
         )}
 
         <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700, marginBottom: 14 }}>
-          Business Name *
+          <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>Business Name * <AiFieldGenerator type="business_name" form={form} onApply={handleCoachApply} /></span>
           <input value={form.business_name} onChange={e => updateForm('business_name', e.target.value)} placeholder="Acme Corp" style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: 13 }} />
         </label>
 
         <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700, marginBottom: 14 }}>
-          Industry
+          <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>Industry <AiFieldGenerator type="industry" form={form} onApply={handleCoachApply} /></span>
           <input value={form.industry} onChange={e => updateForm('industry', e.target.value)} placeholder="e.g. Construction, SaaS, Healthcare" style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: 13 }} />
         </label>
 
         <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700, marginBottom: 14 }}>
-          Business Description * <span style={{ fontWeight: 400, color: '#999' }}>— ask the coach for help →</span>
+          <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>Business Description * <AiFieldGenerator type="description" form={form} onApply={handleCoachApply} /></span>
           <textarea value={form.description} onChange={e => updateForm('description', e.target.value)} placeholder="What does the business do? What problems does it solve? What makes it unique?" style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: 13, minHeight: 80 }} />
         </label>
 
         <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700, marginBottom: 14 }}>
-          Target Audience
+          <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>Target Audience <AiFieldGenerator type="target_audience" form={form} onApply={handleCoachApply} /></span>
           <input value={form.target_audience} onChange={e => updateForm('target_audience', e.target.value)} placeholder="e.g. Small business owners, enterprise CTOs" style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: 13 }} />
         </label>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <p style={{ fontSize: 12, fontWeight: 700, margin: 0 }}>Branding & Logo</p>
+          <div style={{ display: 'flex', gap: 6 }}>
+            <AiFieldGenerator type="branding" form={form} onApply={handleCoachApply} />
+            <AiFieldGenerator type="logo" form={form} onApply={handleCoachApply} />
+          </div>
+        </div>
+
+        {form.logo_url && (
+          <div style={{ marginBottom: 14, padding: 12, background: '#f8f7f4', border: '1px solid #e5e1da', borderRadius: 6, display: 'flex', alignItems: 'center', gap: 12 }}>
+            <img src={form.logo_url} alt="Logo" style={{ width: 56, height: 56, objectFit: 'contain', borderRadius: 4, background: '#fff' }} />
+            <div>
+              <b style={{ fontSize: 13 }}>Logo selected</b>
+              <p style={{ fontSize: 11, color: '#888', margin: '2px 0 0' }}>Will be included in the generated website.</p>
+            </div>
+            <button onClick={() => updateForm('logo_url', '')} style={{ marginLeft: 'auto', background: 'none', border: 0, color: '#a52d23', cursor: 'pointer', fontSize: 12, fontFamily: 'inherit' }}>Remove</button>
+          </div>
+        )}
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
           <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700 }}>Primary Color
