@@ -68,6 +68,29 @@ import Chat from '@/pages/Chat';
 import Trends from '@/pages/Trends';
 import CustomerPortal from '@/pages/CustomerPortal';
 import NotFound from '@/pages/NotFound';
+// Xtreme Visualizer
+import XVLayout from '@/components/vq/Layout';
+import XVHome from '@/pages/xv/XVHome';
+import XVVisualizer from '@/pages/xv/Visualizer';
+import XVGenerator from '@/pages/xv/Generator';
+import XVProducts from '@/pages/xv/Products';
+import XVColorCharts from '@/pages/xv/ColorCharts';
+import XVLeads from '@/pages/xv/Leads';
+import XVLeadDetail from '@/pages/xv/LeadDetail';
+import XVCRM from '@/pages/xv/CRM';
+import XVLeadGenerator from '@/pages/xv/LeadGenerator';
+import XVSystems from '@/pages/xv/Systems';
+import XVPricing from '@/pages/xv/Pricing';
+import XVCompetitivePricing from '@/pages/xv/CompetitivePricing';
+import XVIndustryReference from '@/pages/xv/IndustryReference';
+import XVClose from '@/pages/xv/Close';
+import XVEmailTemplates from '@/pages/xv/EmailTemplates';
+import XVBidGenerator from '@/pages/xv/BidGenerator';
+import XVAppointments from '@/pages/xv/Appointments';
+import XVInbox from '@/pages/xv/Inbox';
+import XVReceipts from '@/pages/xv/Receipts';
+import XVGuardrails from '@/pages/xv/Guardrails';
+import XVSettings from '@/pages/xv/Settings';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
@@ -158,6 +181,29 @@ const AuthenticatedApp = () => {
         <Route path="/app/tool-advisor" element={<ToolAdvisor />} />
         <Route path="/app/demo-portal/:companyId" element={<ClientDemoPortal />} />
         <Route path="/app/drive-sync" element={<DriveSync />} />
+        <Route path="/app/xv" element={<XVLayout />}>
+          <Route index element={<XVHome />} />
+          <Route path="visualizer" element={<XVVisualizer />} />
+          <Route path="generator" element={<XVGenerator />} />
+          <Route path="products" element={<XVProducts />} />
+          <Route path="colors" element={<XVColorCharts />} />
+          <Route path="leads" element={<XVLeads />} />
+          <Route path="leads/:id" element={<XVLeadDetail />} />
+          <Route path="crm" element={<XVCRM />} />
+          <Route path="lead-generator" element={<XVLeadGenerator />} />
+          <Route path="systems" element={<XVSystems />} />
+          <Route path="pricing" element={<XVPricing />} />
+          <Route path="competitive-pricing" element={<XVCompetitivePricing />} />
+          <Route path="industry" element={<XVIndustryReference />} />
+          <Route path="close" element={<XVClose />} />
+          <Route path="email-templates" element={<XVEmailTemplates />} />
+          <Route path="bid-generator" element={<XVBidGenerator />} />
+          <Route path="appointments" element={<XVAppointments />} />
+          <Route path="inbox" element={<XVInbox />} />
+          <Route path="receipts" element={<XVReceipts />} />
+          <Route path="guardrails" element={<XVGuardrails />} />
+          <Route path="settings" element={<XVSettings />} />
+        </Route>
         <Route path="/app/:slug" element={<Module />} />
         <Route path="/admin" element={<Admin />} />
       </Route>
