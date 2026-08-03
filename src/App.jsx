@@ -52,6 +52,7 @@ import ExpenseList from '@/pages/books/ExpenseList';
 import ChartOfAccounts from '@/pages/books/ChartOfAccounts';
 import FinancialReports from '@/pages/books/FinancialReports';
 import WebsiteGenerator from '@/pages/WebsiteGenerator';
+import AppGenerator from '@/pages/AppGenerator';
 import CompanyDetail from '@/pages/CompanyDetail';
 import RepairBoard from '@/pages/RepairBoard';
 import Chat from '@/pages/Chat';
@@ -136,6 +137,7 @@ const AuthenticatedApp = () => {
         <Route path="/app/books/accounts" element={<ChartOfAccounts />} />
         <Route path="/app/books/reports" element={<FinancialReports />} />
         <Route path="/app/website-generator" element={<WebsiteGenerator />} />
+        <Route path="/app/app-generator" element={<AppGenerator />} />
         <Route path="/app/demo-portal/:companyId" element={<ClientDemoPortal />} />
         <Route path="/app/drive-sync" element={<DriveSync />} />
         <Route path="/app/:slug" element={<Module />} />
