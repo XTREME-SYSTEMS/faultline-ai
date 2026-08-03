@@ -7,90 +7,100 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import PortalLayout from '@/components/fl/PortalLayout';
+import { lazy, Suspense } from 'react';
+import { ThemeProvider } from 'next-themes';
 // Auth pages
-import Login from '@/pages/Login';
-import Register from '@/pages/Register';
-import ForgotPassword from '@/pages/ForgotPassword';
-import ResetPassword from '@/pages/ResetPassword';
+const Login = lazy(() => import('@/pages/Login'));
+const Register = lazy(() => import('@/pages/Register'));
+const ForgotPassword = lazy(() => import('@/pages/ForgotPassword'));
+const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
 // FaultLine pages
-import Home from '@/pages/Home';
-import MarketingPage from '@/pages/MarketingPage';
-import Checkout from '@/pages/Checkout';
-import Overview from '@/pages/Overview';
-import Module from '@/pages/Module';
-import Admin from '@/pages/Admin';
-import DriveSync from '@/pages/DriveSync';
-import DiscoveryEngine from '@/pages/DiscoveryEngine';
-import SetupWizard from '@/pages/SetupWizard';
-import ClientSetupWizard from '@/pages/ClientSetupWizard';
-import SystemClone from '@/pages/SystemClone';
-import SecurityPipeline from '@/pages/SecurityPipeline';
-import IndustryOpportunities from '@/pages/IndustryOpportunities';
-import AiControlPanel from '@/pages/AiControlPanel';
-import ClientDemoPortal from '@/pages/ClientDemoPortal';
-import DeliverableStudio from '@/pages/DeliverableStudio';
-import UniversalBuilder from '@/pages/UniversalBuilder';
-import QADashboard from '@/pages/QADashboard';
-import CommandCenter from '@/pages/CommandCenter';
-import ClientROI from '@/pages/ClientROI';
-import CompetitiveIntel from '@/pages/CompetitiveIntel';
-import ImplementationMarketplace from '@/pages/ImplementationMarketplace';
-import WhiteLabel from '@/pages/WhiteLabel';
-import AuditTemplates from '@/pages/AuditTemplates';
-import PartnerPortal from '@/pages/PartnerPortal';
-import FinancialSync from '@/pages/FinancialSync';
-import ESignature from '@/pages/ESignature';
-import ESignDashboard from '@/pages/esign/ESignDashboard';
-import NewEnvelope from '@/pages/esign/NewEnvelope';
-import EnvelopeDetail from '@/pages/esign/EnvelopeDetail';
-import SignDocument from '@/pages/esign/SignDocument';
-import BooksDashboard from '@/pages/books/BooksDashboard';
-import InvoiceList from '@/pages/books/InvoiceList';
-import NewInvoice from '@/pages/books/NewInvoice';
-import InvoiceDetail from '@/pages/books/InvoiceDetail';
-import ExpenseList from '@/pages/books/ExpenseList';
-import ChartOfAccounts from '@/pages/books/ChartOfAccounts';
-import FinancialReports from '@/pages/books/FinancialReports';
-import WebsiteGenerator from '@/pages/WebsiteGenerator';
-import AppGenerator from '@/pages/AppGenerator';
-import BusinessHub from '@/pages/business/BusinessHub';
-import IdeaIntake from '@/pages/business/IdeaIntake';
-import UniversalGenerator from '@/pages/UniversalGenerator';
-import BrandGenerator from '@/pages/BrandGenerator';
-import XPSCatalog from '@/pages/XPSCatalog';
-import Marketplace from '@/pages/Marketplace';
-import VisualMediaStudio from '@/pages/VisualMediaStudio';
-import PCUMarketplace from '@/pages/PCUMarketplace';
-import ToolAdvisor from '@/pages/ToolAdvisor';
-import CompanyDetail from '@/pages/CompanyDetail';
-import RepairBoard from '@/pages/RepairBoard';
-import Chat from '@/pages/Chat';
-import Trends from '@/pages/Trends';
-import CustomerPortal from '@/pages/CustomerPortal';
-import NotFound from '@/pages/NotFound';
+const Home = lazy(() => import('@/pages/Home'));
+const MarketingPage = lazy(() => import('@/pages/MarketingPage'));
+const Checkout = lazy(() => import('@/pages/Checkout'));
+const Overview = lazy(() => import('@/pages/Overview'));
+const Module = lazy(() => import('@/pages/Module'));
+const Admin = lazy(() => import('@/pages/Admin'));
+const DriveSync = lazy(() => import('@/pages/DriveSync'));
+const DiscoveryEngine = lazy(() => import('@/pages/DiscoveryEngine'));
+const SetupWizard = lazy(() => import('@/pages/SetupWizard'));
+const ClientSetupWizard = lazy(() => import('@/pages/ClientSetupWizard'));
+const SystemClone = lazy(() => import('@/pages/SystemClone'));
+const SecurityPipeline = lazy(() => import('@/pages/SecurityPipeline'));
+const IndustryOpportunities = lazy(() => import('@/pages/IndustryOpportunities'));
+const AiControlPanel = lazy(() => import('@/pages/AiControlPanel'));
+const ClientDemoPortal = lazy(() => import('@/pages/ClientDemoPortal'));
+const DeliverableStudio = lazy(() => import('@/pages/DeliverableStudio'));
+const UniversalBuilder = lazy(() => import('@/pages/UniversalBuilder'));
+const QADashboard = lazy(() => import('@/pages/QADashboard'));
+const CommandCenter = lazy(() => import('@/pages/CommandCenter'));
+const ClientROI = lazy(() => import('@/pages/ClientROI'));
+const CompetitiveIntel = lazy(() => import('@/pages/CompetitiveIntel'));
+const ImplementationMarketplace = lazy(() => import('@/pages/ImplementationMarketplace'));
+const WhiteLabel = lazy(() => import('@/pages/WhiteLabel'));
+const AuditTemplates = lazy(() => import('@/pages/AuditTemplates'));
+const PartnerPortal = lazy(() => import('@/pages/PartnerPortal'));
+const FinancialSync = lazy(() => import('@/pages/FinancialSync'));
+const ESignature = lazy(() => import('@/pages/ESignature'));
+const ESignDashboard = lazy(() => import('@/pages/esign/ESignDashboard'));
+const NewEnvelope = lazy(() => import('@/pages/esign/NewEnvelope'));
+const EnvelopeDetail = lazy(() => import('@/pages/esign/EnvelopeDetail'));
+const SignDocument = lazy(() => import('@/pages/esign/SignDocument'));
+const BooksDashboard = lazy(() => import('@/pages/books/BooksDashboard'));
+const InvoiceList = lazy(() => import('@/pages/books/InvoiceList'));
+const NewInvoice = lazy(() => import('@/pages/books/NewInvoice'));
+const InvoiceDetail = lazy(() => import('@/pages/books/InvoiceDetail'));
+const ExpenseList = lazy(() => import('@/pages/books/ExpenseList'));
+const ChartOfAccounts = lazy(() => import('@/pages/books/ChartOfAccounts'));
+const FinancialReports = lazy(() => import('@/pages/books/FinancialReports'));
+const WebsiteGenerator = lazy(() => import('@/pages/WebsiteGenerator'));
+const AppGenerator = lazy(() => import('@/pages/AppGenerator'));
+const BusinessHub = lazy(() => import('@/pages/business/BusinessHub'));
+const IdeaIntake = lazy(() => import('@/pages/business/IdeaIntake'));
+const UniversalGenerator = lazy(() => import('@/pages/UniversalGenerator'));
+const BrandGenerator = lazy(() => import('@/pages/BrandGenerator'));
+const XPSCatalog = lazy(() => import('@/pages/XPSCatalog'));
+const Marketplace = lazy(() => import('@/pages/Marketplace'));
+const VisualMediaStudio = lazy(() => import('@/pages/VisualMediaStudio'));
+const PCUMarketplace = lazy(() => import('@/pages/PCUMarketplace'));
+const ToolAdvisor = lazy(() => import('@/pages/ToolAdvisor'));
+const CompanyDetail = lazy(() => import('@/pages/CompanyDetail'));
+const RepairBoard = lazy(() => import('@/pages/RepairBoard'));
+const Chat = lazy(() => import('@/pages/Chat'));
+const Trends = lazy(() => import('@/pages/Trends'));
+const CustomerPortal = lazy(() => import('@/pages/CustomerPortal'));
+const NotFound = lazy(() => import('@/pages/NotFound'));
+const Settings = lazy(() => import('@/pages/Settings'));
 // Xtreme Visualizer
-import XVLayout from '@/components/vq/Layout';
-import XVHome from '@/pages/xv/XVHome';
-import XVVisualizer from '@/pages/xv/Visualizer';
-import XVGenerator from '@/pages/xv/Generator';
-import XVProducts from '@/pages/xv/Products';
-import XVColorCharts from '@/pages/xv/ColorCharts';
-import XVLeads from '@/pages/xv/Leads';
-import XVLeadDetail from '@/pages/xv/LeadDetail';
-import XVCRM from '@/pages/xv/CRM';
-import XVLeadGenerator from '@/pages/xv/LeadGenerator';
-import XVSystems from '@/pages/xv/Systems';
-import XVPricing from '@/pages/xv/Pricing';
-import XVCompetitivePricing from '@/pages/xv/CompetitivePricing';
-import XVIndustryReference from '@/pages/xv/IndustryReference';
-import XVClose from '@/pages/xv/Close';
-import XVEmailTemplates from '@/pages/xv/EmailTemplates';
-import XVBidGenerator from '@/pages/xv/BidGenerator';
-import XVAppointments from '@/pages/xv/Appointments';
-import XVInbox from '@/pages/xv/Inbox';
-import XVReceipts from '@/pages/xv/Receipts';
-import XVGuardrails from '@/pages/xv/Guardrails';
-import XVSettings from '@/pages/xv/Settings';
+const XVLayout = lazy(() => import('@/components/vq/Layout'));
+const XVHome = lazy(() => import('@/pages/xv/XVHome'));
+const XVVisualizer = lazy(() => import('@/pages/xv/Visualizer'));
+const XVGenerator = lazy(() => import('@/pages/xv/Generator'));
+const XVProducts = lazy(() => import('@/pages/xv/Products'));
+const XVColorCharts = lazy(() => import('@/pages/xv/ColorCharts'));
+const XVLeads = lazy(() => import('@/pages/xv/Leads'));
+const XVLeadDetail = lazy(() => import('@/pages/xv/LeadDetail'));
+const XVCRM = lazy(() => import('@/pages/xv/CRM'));
+const XVLeadGenerator = lazy(() => import('@/pages/xv/LeadGenerator'));
+const XVSystems = lazy(() => import('@/pages/xv/Systems'));
+const XVPricing = lazy(() => import('@/pages/xv/Pricing'));
+const XVCompetitivePricing = lazy(() => import('@/pages/xv/CompetitivePricing'));
+const XVIndustryReference = lazy(() => import('@/pages/xv/IndustryReference'));
+const XVClose = lazy(() => import('@/pages/xv/Close'));
+const XVEmailTemplates = lazy(() => import('@/pages/xv/EmailTemplates'));
+const XVBidGenerator = lazy(() => import('@/pages/xv/BidGenerator'));
+const XVAppointments = lazy(() => import('@/pages/xv/Appointments'));
+const XVInbox = lazy(() => import('@/pages/xv/Inbox'));
+const XVReceipts = lazy(() => import('@/pages/xv/Receipts'));
+const XVGuardrails = lazy(() => import('@/pages/xv/Guardrails'));
+const XVSettings = lazy(() => import('@/pages/xv/Settings'));
+
+const PageLoader = () => (
+  <div className="fixed inset-0 flex items-center justify-center">
+    <div className="w-8 h-8 border-4 border-slate-200 border-t-slate-800 rounded-full animate-spin"></div>
+  </div>
+);
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
@@ -108,6 +118,7 @@ const AuthenticatedApp = () => {
   }
 
   return (
+    <Suspense fallback={<PageLoader />}>
     <Routes>
       {/* Public marketing */}
       <Route path="/" element={<Home />} />
@@ -132,6 +143,7 @@ const AuthenticatedApp = () => {
 
       {/* Protected portal */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
+        <Route element={<PortalLayout />}>
         <Route path="/app" element={<Overview />} />
         <Route path="/app/setup" element={<SetupWizard />} />
         <Route path="/app/client-setup" element={<ClientSetupWizard />} />
@@ -204,12 +216,15 @@ const AuthenticatedApp = () => {
           <Route path="guardrails" element={<XVGuardrails />} />
           <Route path="settings" element={<XVSettings />} />
         </Route>
+        <Route path="/app/settings" element={<Settings />} />
         <Route path="/app/:slug" element={<Module />} />
         <Route path="/admin" element={<Admin />} />
+        </Route>
       </Route>
 
       <Route path="*" element={<NotFound />} />
     </Routes>
+    </Suspense>
   );
 };
 
@@ -217,6 +232,7 @@ const AuthenticatedApp = () => {
 function App() {
 
   return (
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>
@@ -226,6 +242,7 @@ function App() {
         <Toaster />
       </QueryClientProvider>
     </AuthProvider>
+    </ThemeProvider>
   )
 }
 
