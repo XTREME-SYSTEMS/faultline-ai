@@ -60,14 +60,8 @@ export default function WebsiteGenerator() {
     setCloneError('');
     setCloneResult(null);
     try {
-      const res = await fetch('/api/base44/functions/cloneTopWebsites', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ category: cloneCategory, industry: form.industry })
-      });
-      const text = await res.text();
-      if (!text) { setCloneError('Server returned an empty response — the function may have timed out. Try again.'); setCloning(false); return; }
-      const data = JSON.parse(text);
+      const response = await base44.functions.invoke('cloneTopWebsites', { category: cloneCategory, industry: form.industry });
+      const data = response.data;
       if (data.error) { setCloneError(data.error); setCloning(false); return; }
       setCloneResult(data);
       // Auto-apply recommended tone if form tone is still default
@@ -89,14 +83,8 @@ export default function WebsiteGenerator() {
     setGenerating(true);
     setResult(null);
     try {
-      const res = await fetch('/api/base44/functions/generateWebsite', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, pages, include_features: features, competitor_analysis: cloneResult || null })
-      });
-      const text = await res.text();
-      if (!text) { setError('Server returned an empty response — the function may have timed out. Try again.'); setGenerating(false); return; }
-      const data = JSON.parse(text);
+      const response = await base44.functions.invoke('generateWebsite', { ...form, pages, include_features: features, competitor_analysis: cloneResult || null });
+      const data = response.data;
       if (data.error) { setError(data.error); setGenerating(false); return; }
       setResult(data);
       loadSavedWebsites();
