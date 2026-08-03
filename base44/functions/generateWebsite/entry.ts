@@ -58,6 +58,33 @@ You must incorporate the superiority strategy: match their best features, avoid 
       GOOGLE_FONTS: googleFonts
     };
 
+    // Load PCU Website Generator library context (master prompt + curated assets)
+    let pcuContext = '';
+    try {
+      const [masterPrompts, templates, heroCopy, sections, brandPacks] = await Promise.all([
+        base44.asServiceRole.entities.PromptTemplate.filter({ organization_id: orgId, tool_id: 'pcu-website-generator', prompt_type: 'MASTER', status: 'active' }, '-created_date', 1),
+        base44.asServiceRole.entities.WebsiteLibraryAsset.filter({ organization_id: orgId, library_type: 'template_catalog', status: 'active' }, '-created_date', 3),
+        base44.asServiceRole.entities.WebsiteLibraryAsset.filter({ organization_id: orgId, library_type: 'hero_copy', status: 'active' }, '-created_date', 3),
+        base44.asServiceRole.entities.WebsiteLibraryAsset.filter({ organization_id: orgId, library_type: 'section_library', status: 'active' }, '-created_date', 5),
+        base44.asServiceRole.entities.WebsiteLibraryAsset.filter({ organization_id: orgId, library_type: 'brand_pack', status: 'active' }, '-created_date', 2)
+      ]);
+      if (masterPrompts.length > 0) {
+        pcuContext += `\n\n=== PCU GOVERNANCE FRAMEWORK ===\n${masterPrompts[0].prompt_text}\n=== END GOVERNANCE ===\n`;
+      }
+      if (templates.length > 0) {
+        pcuContext += `\n\nAPPROVED TEMPLATE OPTIONS (use as design direction):\n${templates.map(t => `- ${t.record_id}: ${t.name} — ${t.data['Visual DNA'] || t.data['Layout System'] || ''}`).join('\n')}\n`;
+      }
+      if (heroCopy.length > 0) {
+        pcuContext += `\nHERO COPY DIRECTIONS (adapt tone, don't copy verbatim):\n${heroCopy.map(h => `- ${h.record_id}: ${h.data['Hero Headline'] || h.data['Headline'] || h.name}`).join('\n')}\n`;
+      }
+      if (sections.length > 0) {
+        pcuContext += `\nSECTION PATTERNS (incorporate relevant ones):\n${sections.map(s => `- ${s.record_id}: ${s.name} — ${s.data['Section Type'] || s.data['Purpose'] || ''}`).join('\n')}\n`;
+      }
+      if (brandPacks.length > 0) {
+        pcuContext += `\nBRAND PACK REFERENCES:\n${brandPacks.map(b => `- ${b.record_id}: ${b.name} — ${b.data['Color Palette'] || b.data['Typography'] || ''}`).join('\n')}\n`;
+      }
+    } catch (e) { console.log('PCU library load skipped:', e.message); }
+
     const prompt = await resolvePrompt(base44, orgId, 'fl-website', 'GENERATE', promptVars,
       `You are an elite web designer and developer. Generate a COMPLETE, production-ready website for the following business. Output ONLY valid HTML with embedded CSS and JS — no markdown, no explanations, no code fences.
 
@@ -73,6 +100,7 @@ LOGO: ${logo_url ? `Use this logo image URL in the navbar and footer: ${logo_url
 PAGES: ${requestedPages.join(', ')}
 FEATURES: ${features.join(', ')}
 ${competitorSection}
+${pcuContext}
 REQUIREMENTS — this must be an ULTRA-AMAZING website:
 1. Single HTML file with ALL CSS in <style> tags and ALL JS in <script> tags
 2. Fully responsive — mobile-first design with breakpoints

@@ -1,0 +1,52 @@
+{
+  "name": "WebsiteLibraryAsset",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "library_type": {
+      "type": "string",
+      "description": "template_catalog, page_library, section_library, hero_copy, brand_pack, service_library, local_seo, content_library, estimator_library, crm_follow_up, visualizer_library, student_onboarding, packages_addons, qa_validation, governance, design_tokens, generator_rules, sources, input_schema"
+    },
+    "record_id": {
+      "type": "string",
+      "description": "Original ID from the PCU library (e.g. TPL-001, SEC-042)"
+    },
+    "name": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string"
+    },
+    "data": {
+      "type": "object",
+      "description": "Full record as JSON from the library"
+    },
+    "status": {
+      "type": "string",
+      "default": "active"
+    }
+  },
+  "required": [
+    "organization_id",
+    "library_type",
+    "record_id"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
