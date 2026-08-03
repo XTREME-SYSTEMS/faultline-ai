@@ -1,0 +1,113 @@
+{
+  "name": "PromptTemplate",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "prompt_id": {
+      "type": "string",
+      "description": "Unique slug identifier for the prompt"
+    },
+    "tool_id": {
+      "type": "string",
+      "description": "Generator/tool this prompt belongs to (e.g. website-studio, fl-website, global)"
+    },
+    "tool_name": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "prompt_type": {
+      "type": "string",
+      "enum": [
+        "SYSTEM",
+        "DISCOVERY",
+        "GENERATE",
+        "REVISE",
+        "VALIDATE",
+        "COACH",
+        "EXPORT",
+        "ADMIN"
+      ],
+      "default": "GENERATE"
+    },
+    "audience": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "description": {
+      "type": "string"
+    },
+    "required_inputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "optional_inputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "prompt_text": {
+      "type": "string",
+      "description": "The prompt body with {{VARIABLE}} placeholders"
+    },
+    "approval_required": {
+      "type": "boolean",
+      "default": false
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "version": {
+      "type": "string",
+      "default": "1.0.0"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "active",
+        "archived"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "organization_id",
+    "prompt_id",
+    "tool_id",
+    "title",
+    "prompt_type",
+    "prompt_text"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "update": {
+      "user_condition": {
+        "role": "admin"
+      }
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

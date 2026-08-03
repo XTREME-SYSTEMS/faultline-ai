@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { resolvePrompt } from '../../shared/promptLibrary.ts';
 
 // Ultra-powered AI Website Generator
 // Generates a complete, production-ready website as a single HTML file with:
@@ -33,7 +34,32 @@ export default async function(req) {
     const features = include_features || ['hero', 'services', 'testimonials', 'contact_form', 'footer'];
     const voice = tone || 'professional';
 
-    const prompt = `You are an elite web designer and developer. Generate a COMPLETE, production-ready website for the following business. Output ONLY valid HTML with embedded CSS and JS — no markdown, no explanations, no code fences.
+    const googleFonts = font === 'classic' ? 'Playfair Display + Lato' : font === 'bold' ? 'Oswald + Open Sans' : 'Inter + Poppins';
+    const competitorSection = competitor_analysis ? `
+COMPETITOR ANALYSIS — you must create a website that is EQUIVALENT OR BETTER than these top 3 competitors:
+${JSON.stringify(competitor_analysis, null, 2)}
+
+You must incorporate the superiority strategy: match their best features, avoid their weaknesses, and exceed their design quality. The generated website must be demonstrably superior to all 3 competitors analyzed above.
+` : '';
+
+    const promptVars = {
+      BUSINESS_NAME: business_name,
+      INDUSTRY: industry || 'General',
+      DESCRIPTION: description,
+      TARGET_AUDIENCE: target_audience || 'General consumers and businesses',
+      PRIMARY_COLOR: color,
+      SECONDARY_COLOR: color2,
+      FONT_STYLE: font,
+      TONE: voice,
+      LOGO_INSTRUCTION: logo_url ? `Use this logo image URL in the navbar and footer: ${logo_url}` : 'No logo provided — create a text-based wordmark logo',
+      PAGES: requestedPages.join(', '),
+      FEATURES: features.join(', '),
+      COMPETITOR_SECTION: competitorSection,
+      GOOGLE_FONTS: googleFonts
+    };
+
+    const prompt = await resolvePrompt(base44, orgId, 'fl-website', 'GENERATE', promptVars,
+      `You are an elite web designer and developer. Generate a COMPLETE, production-ready website for the following business. Output ONLY valid HTML with embedded CSS and JS — no markdown, no explanations, no code fences.
 
 BUSINESS: ${business_name}
 INDUSTRY: ${industry || 'General'}
@@ -46,12 +72,7 @@ TONE: ${voice}
 LOGO: ${logo_url ? `Use this logo image URL in the navbar and footer: ${logo_url}` : 'No logo provided — create a text-based wordmark logo'}
 PAGES: ${requestedPages.join(', ')}
 FEATURES: ${features.join(', ')}
-${competitor_analysis ? `
-COMPETITOR ANALYSIS — you must create a website that is EQUIVALENT OR BETTER than these top 3 competitors:
-${JSON.stringify(competitor_analysis, null, 2)}
-
-You must incorporate the superiority strategy: match their best features, avoid their weaknesses, and exceed their design quality. The generated website must be demonstrably superior to all 3 competitors analyzed above.
-` : ''}
+${competitorSection}
 REQUIREMENTS — this must be an ULTRA-AMAZING website:
 1. Single HTML file with ALL CSS in <style> tags and ALL JS in <script> tags
 2. Fully responsive — mobile-first design with breakpoints
@@ -66,7 +87,7 @@ REQUIREMENTS — this must be an ULTRA-AMAZING website:
 11. Footer with links, social icons, copyright
 12. SEO: title, meta description, Open Graph tags, Schema.org JSON-LD structured data
 13. Use CSS custom properties for brand colors: --primary:${color}, --secondary:${color2}
-14. Google Fonts: ${font === 'classic' ? 'Playfair Display + Lato' : font === 'bold' ? 'Oswald + Open Sans' : 'Inter + Poppins'}
+14. Google Fonts: ${googleFonts}
 15. Smooth scroll behavior, scroll-triggered animations using IntersectionObserver
 16. Back-to-top button
 17. Loading animation on hero
@@ -74,7 +95,7 @@ REQUIREMENTS — this must be an ULTRA-AMAZING website:
 19. Performance: lazy loading hints, optimized CSS
 20. The design must be VISUALLY STUNNING — gradients, shadows, glassmorphism, micro-interactions
 
-Generate the COMPLETE website now. Start with <!DOCTYPE html> and end with </html>. Make it long, detailed, and beautiful. Every section must have real, compelling copy tailored to ${business_name}. Do not use placeholder text — write actual marketing copy.`;
+Generate the COMPLETE website now. Start with <!DOCTYPE html> and end with </html>. Make it long, detailed, and beautiful. Every section must have real, compelling copy tailored to ${business_name}. Do not use placeholder text — write actual marketing copy.`);
 
     const res = await base44.integrations.Core.InvokeLLM({
       prompt

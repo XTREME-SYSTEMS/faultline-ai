@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { resolvePrompt } from '../../shared/promptLibrary.ts';
 
 // High-end AI App Generator
 // Generates complete, production-ready single-page web applications with:
@@ -43,7 +44,33 @@ export default async function(req) {
       lms: 'a learning management system with course catalog, progress tracking, and quizzes'
     };
 
-    const prompt = `You are an elite full-stack developer and UI/UX designer. Generate a COMPLETE, production-ready single-page web application. Output ONLY valid HTML with embedded CSS and JS — no markdown, no explanations, no code fences.
+    const googleFonts = font === 'classic' ? 'Playfair Display + Lato' : font === 'bold' ? 'Oswald + Open Sans' : 'Inter + Poppins';
+    const competitorSection = competitor_analysis ? `
+COMPETITOR ANALYSIS — exceed these apps in design and functionality:
+${JSON.stringify(competitor_analysis, null, 2)}
+` : '';
+
+    const promptVars = {
+      APP_NAME: app_name,
+      APP_TYPE: appType,
+      APP_TYPE_DESCRIPTION: appTypeDescriptions[appType] || 'a modern web application',
+      BUSINESS_NAME: business_name || app_name,
+      INDUSTRY: industry || 'General',
+      DESCRIPTION: description,
+      TARGET_AUDIENCE: target_audience || 'General users',
+      PRIMARY_COLOR: color,
+      SECONDARY_COLOR: color2,
+      FONT_STYLE: font,
+      TONE: voice,
+      PAGES: appPages.join(', '),
+      FEATURES: appFeatures.join(', '),
+      LOGO_INSTRUCTION: logo_url ? `Use this logo image: ${logo_url}` : 'Create a text-based wordmark',
+      COMPETITOR_SECTION: competitorSection,
+      GOOGLE_FONTS: googleFonts
+    };
+
+    const prompt = await resolvePrompt(base44, orgId, 'fl-app', 'GENERATE', promptVars,
+      `You are an elite full-stack developer and UI/UX designer. Generate a COMPLETE, production-ready single-page web application. Output ONLY valid HTML with embedded CSS and JS — no markdown, no explanations, no code fences.
 
 APP NAME: ${app_name}
 APP TYPE: ${appType} — ${appTypeDescriptions[appType] || 'a modern web application'}
@@ -58,10 +85,7 @@ TONE: ${voice}
 PAGES: ${appPages.join(', ')}
 FEATURES: ${appFeatures.join(', ')}
 LOGO: ${logo_url ? `Use this logo image: ${logo_url}` : 'Create a text-based wordmark'}
-${competitor_analysis ? `
-COMPETITOR ANALYSIS — exceed these apps in design and functionality:
-${JSON.stringify(competitor_analysis, null, 2)}
-` : ''}
+${competitorSection}
 
 REQUIREMENTS — this must be an ULTRA-PREMIUM, production-grade application:
 1. Single HTML file with ALL CSS in <style> tags and ALL JS in <script> tags
@@ -88,13 +112,13 @@ REQUIREMENTS — this must be an ULTRA-PREMIUM, production-grade application:
 19. Loading skeleton states for async-feeling data loads
 20. Fully responsive — mobile-first with breakpoints at 768px and 1024px
 21. CSS custom properties for brand colors: --primary:${color}, --secondary:${color2}
-22. Google Fonts: ${font === 'classic' ? 'Playfair Display + Lato' : font === 'bold' ? 'Oswald + Open Sans' : 'Inter + Poppins'}
+22. Google Fonts: ${googleFonts}
 23. Micro-interactions: button hover effects, card lift on hover, ripple on click
 24. Accessible: ARIA labels, keyboard navigation, semantic HTML5
 25. Generate realistic sample data (at least 10-20 rows for tables, realistic chart data)
 26. The design must be VISUALLY STUNNING — glassmorphism cards, gradient accents, soft shadows, rounded corners
 
-Generate the COMPLETE application now. Start with <!DOCTYPE html> and end with </html>. Make it long, detailed, and fully functional. Every page must have real, working interactivity. Write actual JavaScript that makes the app work — not just static HTML.`;
+Generate the COMPLETE application now. Start with <!DOCTYPE html> and end with </html>. Make it long, detailed, and fully functional. Every page must have real, working interactivity. Write actual JavaScript that makes the app work — not just static HTML.`);
 
     const res = await base44.integrations.Core.InvokeLLM({ prompt });
 

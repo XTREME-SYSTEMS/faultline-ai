@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { resolvePrompt } from '../../shared/promptLibrary.ts';
 
 // Brand Assets Generator — produces 6 options per run for:
 //   - logo:      6 logo image variations
@@ -83,9 +84,10 @@ export default async function(req) {
 
     // ── BRAND: 6 complete identity options + logo images ───────
     if (type === 'brand') {
-      // Step 1: Generate 6 brand identity concepts via LLM
-      const llmRes = await base44.asServiceRole.integrations.Core.InvokeLLM({
-        prompt: `You are an elite brand strategist. Generate 6 DISTINCT, complete brand identity concepts for a business.
+      // Step 1: Generate 6 brand identity concepts via LLM (prompt from library)
+      const brandPrompt = await resolvePrompt(base44, orgId, 'fl-brand', 'GENERATE',
+        { BUSINESS_NAME: bizName, INDUSTRY: ind, DESCRIPTION: subject },
+        `You are an elite brand strategist. Generate 6 DISTINCT, complete brand identity concepts for a business.
 
 BUSINESS: ${bizName}
 INDUSTRY: ${ind}
@@ -104,7 +106,10 @@ Return a JSON object with an "options" array of 6 items. Each item must have:
 - voice: brand voice description (2-3 words)
 - logo_concept: a detailed visual description of the logo concept (used for AI image generation)
 
-Make each concept visually and tonally distinct. Use real, specific color hex codes and real Google Font names.`,
+Make each concept visually and tonally distinct. Use real, specific color hex codes and real Google Font names.`
+      );
+      const llmRes = await base44.asServiceRole.integrations.Core.InvokeLLM({
+        prompt: brandPrompt,
         response_json_schema: {
           type: 'object',
           properties: {

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { resolvePrompt } from '../../shared/promptLibrary.ts';
 
 // Universal Generator Compiler — the core of the Xtreme AI Builder integration
 // Takes ANY request (business idea, website, app, tool, workflow), infers the
@@ -167,9 +168,10 @@ export default async function(req) {
 
       // Route to the appropriate existing generator based on build type
       if (build_type === 'Website') {
-        // Use the existing generateWebsite function via InvokeLLM
-        const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
-          prompt: `Generate a complete, production-ready website as a single HTML file. Output ONLY valid HTML with embedded CSS and JS.
+        // Use the prompt library for the website generation
+        const webPrompt = await resolvePrompt(base44, orgId, 'fl-website', 'GENERATE',
+          { BUSINESS_NAME: generator?.name || 'Business', INDUSTRY: industry || 'General', DESCRIPTION: request, PAGES: 'home, about, services, contact', FEATURES: 'hero, services, testimonials, contact_form, footer', PRIMARY_COLOR: '#C89B3C', SECONDARY_COLOR: '#0a0a0a', FONT_STYLE: 'modern', TONE: 'professional', GOOGLE_FONTS: 'Inter + Poppins' },
+          `Generate a complete, production-ready website as a single HTML file. Output ONLY valid HTML with embedded CSS and JS.
 
 BUSINESS REQUEST: ${request}
 INDUSTRY: ${industry}
@@ -191,6 +193,9 @@ Requirements:
 14. The design must be VISUALLY STUNNING — gradients, shadows, micro-interactions
 
 Start with <!DOCTYPE html> and end with </html>. Write real marketing copy tailored to the business.`
+        );
+        const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
+          prompt: webPrompt
         });
         let html = typeof res === 'string' ? res : res?.content || '';
         html = html.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
@@ -208,8 +213,9 @@ Start with <!DOCTYPE html> and end with </html>. Write real marketing copy tailo
           metadata: { build_type, industry, request }
         });
       } else if (build_type === 'Application') {
-        const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
-          prompt: `Generate a complete, production-ready single-page web application as a single HTML file. Output ONLY valid HTML with embedded CSS and JS.
+        const appPrompt = await resolvePrompt(base44, orgId, 'fl-app', 'GENERATE',
+          { APP_NAME: generator?.name || 'App', APP_TYPE: 'dashboard', APP_TYPE_DESCRIPTION: 'a modern web application', BUSINESS_NAME: generator?.name || 'App', INDUSTRY: industry || 'General', DESCRIPTION: request, PAGES: 'dashboard, analytics, settings', FEATURES: 'sidebar, dashboard, charts, tables, forms', PRIMARY_COLOR: '#C89B3C', SECONDARY_COLOR: '#0a0a0a', FONT_STYLE: 'modern', TONE: 'professional', GOOGLE_FONTS: 'Inter + Poppins' },
+          `Generate a complete, production-ready single-page web application as a single HTML file. Output ONLY valid HTML with embedded CSS and JS.
 
 APP REQUEST: ${request}
 INDUSTRY: ${industry}
@@ -231,6 +237,9 @@ Requirements:
 14. Visually stunning — glassmorphism, gradients, soft shadows
 
 Start with <!DOCTYPE html> and end with </html>. Make it fully functional with real JavaScript.`
+        );
+        const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
+          prompt: appPrompt
         });
         let html = typeof res === 'string' ? res : res?.content || '';
         html = html.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
@@ -249,8 +258,9 @@ Start with <!DOCTYPE html> and end with </html>. Make it fully functional with r
         });
       } else {
         // End-to-End Business System, Multi-Generator Workflow, AI Tool, Single Generator
-        const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
-          prompt: `You are an elite business strategist and systems architect. Generate a COMPLETE business system package for the following request. Return structured JSON.
+        const bizPrompt = await resolvePrompt(base44, orgId, 'fl-universal', 'GENERATE',
+          { REQUEST: request, INDUSTRY: industry || 'Universal Business', BUILD_TYPE: build_type },
+          `You are an elite business strategist and systems architect. Generate a COMPLETE business system package for the following request. Return structured JSON.
 
 BUSINESS REQUEST: ${request}
 INDUSTRY: ${industry}
@@ -272,7 +282,10 @@ Generate ALL of the following as a JSON object:
 13. risks — array of {risk, likelihood, impact, mitigation}
 14. compliance — legal, licensing, regulatory considerations
 
-Be specific, evidence-based, and exhaustive. Every number must be an estimate with stated assumptions.`,
+Be specific, evidence-based, and exhaustive. Every number must be an estimate with stated assumptions.`
+        );
+        const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
+          prompt: bizPrompt,
           response_json_schema: {
             type: 'object',
             properties: {

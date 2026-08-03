@@ -1,0 +1,92 @@
+{
+  "name": "PromptRun",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "prompt_id": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "tool_id": {
+      "type": "string"
+    },
+    "input_snapshot": {
+      "type": "object"
+    },
+    "output_snapshot": {
+      "type": "object"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "queued",
+        "running",
+        "waiting_input",
+        "waiting_approval",
+        "validating",
+        "complete",
+        "failed",
+        "blocked"
+      ],
+      "default": "draft"
+    },
+    "assumptions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "missing_inputs": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "validation_score": {
+      "type": "number"
+    },
+    "validation_status": {
+      "type": "string"
+    },
+    "approval_state": {
+      "type": "string"
+    },
+    "version": {
+      "type": "number",
+      "default": 1
+    },
+    "parent_run_id": {
+      "type": "string"
+    },
+    "receipt_ref": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id",
+    "prompt_id",
+    "tool_id",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
