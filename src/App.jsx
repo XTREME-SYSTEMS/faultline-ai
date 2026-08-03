@@ -55,6 +55,7 @@ import WebsiteGenerator from '@/pages/WebsiteGenerator';
 import AppGenerator from '@/pages/AppGenerator';
 import BusinessHub from '@/pages/business/BusinessHub';
 import IdeaIntake from '@/pages/business/IdeaIntake';
+import UniversalGenerator from '@/pages/UniversalGenerator';
 import CompanyDetail from '@/pages/CompanyDetail';
 import RepairBoard from '@/pages/RepairBoard';
 import Chat from '@/pages/Chat';
@@ -142,6 +143,7 @@ const AuthenticatedApp = () => {
         <Route path="/app/app-generator" element={<AppGenerator />} />
         <Route path="/app/business" element={<BusinessHub />} />
         <Route path="/app/business/:projectId/chat" element={<IdeaIntake />} />
+        <Route path="/app/universal-generator" element={<UniversalGenerator />} />
         <Route path="/app/demo-portal/:companyId" element={<ClientDemoPortal />} />
         <Route path="/app/drive-sync" element={<DriveSync />} />
         <Route path="/app/:slug" element={<Module />} />
