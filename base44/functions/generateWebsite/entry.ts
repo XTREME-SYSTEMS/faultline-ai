@@ -76,8 +76,7 @@ REQUIREMENTS — this must be an ULTRA-AMAZING website:
 Generate the COMPLETE website now. Start with <!DOCTYPE html> and end with </html>. Make it long, detailed, and beautiful. Every section must have real, compelling copy tailored to ${business_name}. Do not use placeholder text — write actual marketing copy.`;
 
     const res = await base44.integrations.Core.InvokeLLM({
-      prompt,
-      model: 'claude_sonnet_4_6'
+      prompt
     });
 
     let websiteHtml = typeof res === 'string' ? res : res?.content || res?.text || JSON.stringify(res);
