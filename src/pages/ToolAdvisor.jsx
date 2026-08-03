@@ -25,33 +25,6 @@ const SERVICES = [
   'Concrete staining', 'Urethane cement', 'Quartz systems', 'Terrazzo and resinous flooring'
 ];
 
-function scoreTool(tool, stage, goals, budget) {
-  let score = 0;
-  const bestFor = (tool.audience || '').split(',').map(s => s.trim());
-  if (bestFor.includes(stage)) score += 4;
-  goals.forEach(goal => { if (bestFor.includes(goal)) score += 5; });
-  if (tool.rating >= 5) score += 1;
-  if (tool.price <= budget * 0.55) score += 1;
-  return score;
-}
-
-function getRecommendations(tools, stage, goals, budget) {
-  if (!stage || !goals.length) return [];
-  const scored = tools.map(tool => ({ tool, score: scoreTool(tool, stage, goals, budget) }))
-    .filter(entry => entry.score > 0)
-    .sort((a, b) => b.score - a.score || a.tool.price - b.tool.price);
-  const selected = [];
-  let spend = 0;
-  for (const entry of scored) {
-    if (selected.length >= 5) break;
-    if (spend + entry.tool.price <= budget || selected.length < 2) {
-      selected.push(entry.tool);
-      spend += entry.tool.price;
-    }
-  }
-  return selected;
-}
-
 function money(value) {
   return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(value);
 }
@@ -65,7 +38,8 @@ export default function ToolAdvisor() {
   const [goals, setGoals] = useState([]);
   const [focus, setFocus] = useState('');
   const [budget, setBudget] = useState(200);
-  const [recommendations, setRecommendations] = useState([]);
+  const [aiResult, setAiResult] = useState(null);
+  const [generating, setGenerating] = useState(false);
   const [cart, setCart] = useState([]);
   const [activeCategory, setActiveCategory] = useState('All Tools');
   const [view, setView] = useState('advisor');
@@ -87,9 +61,27 @@ export default function ToolAdvisor() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  useEffect(() => {
-    setRecommendations(getRecommendations(tools, stage, goals, budget));
-  }, [tools, stage, goals, budget]);
+  const generateRecommendations = async () => {
+    if (!stage || !goals.length) {
+      toast({ title: 'Select stage and goals', description: 'Choose your stage and at least one goal first.', variant: 'destructive' });
+      return;
+    }
+    setGenerating(true);
+    setAiResult(null);
+    try {
+      const res = await fetch('/api/base44-functions/recommendToolStack', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stage, goals, focus, budget, current_tools: cart })
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setAiResult(data);
+    } catch (e) {
+      toast({ title: 'Recommendation failed', description: e.message, variant: 'destructive' });
+    }
+    setGenerating(false);
+  };
 
   const toggleGoal = (goal) => {
     setGoals(prev => prev.includes(goal) ? prev.filter(g => g !== goal) : [...prev, goal]);
@@ -114,20 +106,31 @@ export default function ToolAdvisor() {
   };
 
   const addRecommendedStack = () => {
+    const recs = aiResult?.recommendations || [];
+    if (!recs.length) return;
     let added = 0;
-    for (const tool of recommendations) {
-      if (!cart.find(c => c.tool_id === tool.tool_id)) {
-        added++;
-      }
+    for (const tool of recs) {
+      if (!cart.find(c => c.tool_id === tool.tool_id)) added++;
     }
     setCart(prev => {
       const existing = new Set(prev.map(c => c.tool_id));
-      const newItems = recommendations
+      const newItems = recs
         .filter(t => !existing.has(t.tool_id))
         .map(t => ({ tool_id: t.tool_id, name: t.name, price: t.price, price_mode: t.price_mode, type: 'tool' }));
       return [...prev, ...newItems];
     });
     toast({ title: 'Stack added', description: `${added} tools added to your cart` });
+  };
+
+  const addBundleAlternative = () => {
+    const bundle = aiResult?.bundle_alternative;
+    if (!bundle) return;
+    if (cart.find(c => c.tool_id === bundle.bundle_id)) {
+      toast({ title: 'Already in cart', description: bundle.name });
+      return;
+    }
+    setCart(prev => [...prev, { tool_id: bundle.bundle_id, name: bundle.name, price: bundle.price, price_mode: 'subscription', type: 'bundle' }]);
+    toast({ title: 'Bundle added', description: bundle.name });
   };
 
   const removeFromCart = (toolId) => {
@@ -252,36 +255,92 @@ export default function ToolAdvisor() {
                   </div>
                 </div>
               </div>
+
+              <button onClick={generateRecommendations} disabled={generating}
+                style={{
+                  width: '100%', marginTop: 24, padding: '15px', borderRadius: 8, border: 0,
+                  background: generating ? '#ddd' : 'linear-gradient(135deg, #E7C86E, #C89B3C)',
+                  color: '#111', fontWeight: 700, fontSize: 14, cursor: generating ? 'wait' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8
+                }}>
+                {generating ? 'Analyzing your business…' : '✦ Generate AI Recommendations'}
+              </button>
             </div>
           </div>
 
           <aside style={{ position: 'sticky', top: 90, alignSelf: 'start' }}>
             <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 24 }}>
-              <span style={{ color: '#C89B3C', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.16em' }}>Your Recommended Stack</span>
-              {recommendations.length > 0 ? (
+              <span style={{ color: '#C89B3C', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.16em' }}>AI Recommended Stack</span>
+
+              {generating ? (
+                <div style={{ textAlign: 'center', padding: '40px 10px' }}>
+                  <div style={{ width: 36, height: 36, border: '3px solid #E7C86E', borderTopColor: 'transparent', borderRadius: '50%', animation: 'fl-dot 1s linear infinite', margin: '0 auto 16px' }}></div>
+                  <p style={{ fontSize: 13, color: '#666' }}>Analyzing your business profile against the tool catalog…</p>
+                </div>
+              ) : aiResult ? (
                 <>
-                  {recommendations.map((tool, i) => (
-                    <div key={tool.id} style={{ display: 'flex', gap: 12, alignItems: 'flex-start', padding: '14px 0', borderBottom: '1px solid #eee' }}>
-                      <b style={{ font: '400 20px "Libre Caslon Display", serif', color: '#C89B3C', minWidth: 28 }}>{String(i + 1).padStart(2, '0')}</b>
-                      <div style={{ flex: 1 }}>
-                        <strong style={{ fontSize: 13, display: 'block' }}>{tool.name}</strong>
-                        <small style={{ color: '#777', fontSize: 12, lineHeight: 1.4, display: 'block', marginTop: 2 }}>{tool.description?.split('.')[0]}</small>
-                        <span style={{ fontSize: 11, fontWeight: 700, color: '#C89B3C' }}>{money(tool.price)}{tool.price_mode === 'subscription' ? '/mo' : ''}</span>
+                  {aiResult.summary && (
+                    <p style={{ fontSize: 12, color: '#555', lineHeight: 1.5, margin: '12px 0 16px', padding: 12, background: '#FAF8F2', borderRadius: 6, borderLeft: '3px solid #C89B3C' }}>
+                      {aiResult.summary}
+                    </p>
+                  )}
+
+                  {(aiResult.recommendations || []).map((tool, i) => (
+                    <div key={tool.tool_id} style={{ padding: '14px 0', borderBottom: '1px solid #eee' }}>
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}>
+                        <b style={{ font: '400 20px "Libre Caslon Display", serif', color: '#C89B3C', minWidth: 28 }}>{String(i + 1).padStart(2, '0')}</b>
+                        <div style={{ flex: 1 }}>
+                          <strong style={{ fontSize: 13, display: 'block' }}>{tool.name}</strong>
+                          <span style={{ fontSize: 11, fontWeight: 700, color: '#C89B3C' }}>{money(tool.price)}{tool.price_mode === 'subscription' ? '/mo' : ''}</span>
+                        </div>
+                        <button onClick={() => addToCart(tool)}
+                          style={{ width: 30, height: 30, borderRadius: 6, border: '1px solid #C89B3C', background: '#C89B3C15', color: '#C89B3C', fontWeight: 700, cursor: 'pointer', fontSize: 16 }}>+</button>
                       </div>
-                      <button onClick={() => addToCart(tool)}
-                        style={{ width: 30, height: 30, borderRadius: 6, border: '1px solid #C89B3C', background: '#C89B3C15', color: '#C89B3C', fontWeight: 700, cursor: 'pointer', fontSize: 16 }}>+</button>
+                      {tool.why && (
+                        <p style={{ fontSize: 12, color: '#555', lineHeight: 1.5, margin: '8px 0 0 40px' }}>
+                          <strong style={{ color: '#8A641C' }}>Why: </strong>{tool.why}
+                        </p>
+                      )}
+                      {tool.expected_outcome && (
+                        <p style={{ fontSize: 11, color: '#237A4B', lineHeight: 1.4, margin: '4px 0 0 40px' }}>
+                          <strong>Outcome: </strong>{tool.expected_outcome}
+                        </p>
+                      )}
                     </div>
                   ))}
+
+                  {aiResult.bundle_alternative && (
+                    <div style={{ marginTop: 16, padding: 14, background: '#0a0a0a', color: '#fff', borderRadius: 8 }}>
+                      <span style={{ fontSize: 10, color: '#E7C86E', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em' }}>Better value as a bundle</span>
+                      <strong style={{ fontSize: 14, display: 'block', margin: '6px 0' }}>{aiResult.bundle_alternative.name}</strong>
+                      <p style={{ fontSize: 12, color: '#aaa', lineHeight: 1.4 }}>{aiResult.bundle_alternative.why}</p>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 10 }}>
+                        <span style={{ font: '400 20px "Libre Caslon Display", serif', color: '#E7C86E' }}>{money(aiResult.bundle_alternative.price)}/mo</span>
+                        <button onClick={addBundleAlternative}
+                          style={{ padding: '8px 14px', borderRadius: 6, border: 0, background: 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
+                          Add Bundle
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {aiResult.total_monthly_cost != null && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 14, padding: '10px 0', borderTop: '1px solid #eee' }}>
+                      <span style={{ fontSize: 12, color: '#666' }}>Total monthly cost</span>
+                      <strong style={{ font: '400 20px "Libre Caslon Display", serif' }}>{money(aiResult.total_monthly_cost)}/mo</strong>
+                    </div>
+                  )}
+
                   <button onClick={addRecommendedStack}
-                    style={{ width: '100%', marginTop: 16, padding: '12px', borderRadius: 6, border: 0, background: 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
-                    Add Recommended Stack
+                    style={{ width: '100%', marginTop: 12, padding: '12px', borderRadius: 6, border: 0, background: 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                    Add Full Stack to Cart
                   </button>
                 </>
               ) : (
                 <div style={{ textAlign: 'center', padding: '30px 10px' }}>
                   <span style={{ fontSize: 32, color: '#ddd' }}>✦</span>
-                  <h3 style={{ fontSize: 15, margin: '12px 0 6px' }}>Your recommendations will appear here</h3>
-                  <p style={{ fontSize: 13, color: '#888', lineHeight: 1.5 }}>Select your stage and at least one goal to generate a focused stack.</p>
+                  <h3 style={{ fontSize: 15, margin: '12px 0 6px' }}>AI-powered recommendations</h3>
+                  <p style={{ fontSize: 13, color: '#888', lineHeight: 1.5 }}>Answer the questions, then click generate to get a personalized stack with explanations.</p>
                 </div>
               )}
             </div>
