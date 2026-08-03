@@ -10,10 +10,22 @@ export default async function(req) {
       return Response.json({ error: 'Missing company_id parameter.' }, { status: 400 });
     }
 
-    // Fetch the company (public — no auth required, scoped by company_id)
+    // Authenticate the caller before returning any sensitive data
+    const user = await base44.auth.me().catch(() => null);
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    // Fetch the company
     const company = await base44.asServiceRole.entities.Company.get(companyId);
     if (!company) {
       return Response.json({ error: 'Company not found.' }, { status: 404 });
+    }
+
+    // Verify the caller belongs to the organization that owns this company
+    const userOrgId = user.data?.organization_id;
+    if (!userOrgId || userOrgId !== company.organization_id) {
+      return Response.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     // Fetch audits, findings, scan snapshots, and websites in parallel

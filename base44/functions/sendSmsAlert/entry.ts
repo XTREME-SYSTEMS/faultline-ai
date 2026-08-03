@@ -3,6 +3,13 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
+
+    // Require authentication before processing any SMS request
+    const user = await base44.auth.me().catch(() => null);
+    if (!user) {
+      return Response.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
     const body = await req.json().catch(() => ({}));
     const { phone, message, finding_id, company_id } = body;
 
@@ -14,12 +21,8 @@ export default async function(req) {
       return Response.json({ error: 'Twilio not configured — set TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, TWILIO_FROM_NUMBER' }, { status: 500 });
     }
 
-    // If no phone provided, try to get the operator's phone from their user profile
-    let toNumber = phone;
-    if (!toNumber) {
-      const user = await base44.auth.me();
-      toNumber = user?.data?.phone;
-    }
+    // Use provided phone, or fall back to the authenticated user's profile phone
+    const toNumber = phone || user?.data?.phone;
     if (!toNumber) return Response.json({ error: 'No phone number provided' }, { status: 400 });
 
     const smsBody = message || `⚠️ FaultLine AI Alert: Critical finding detected. Check your portal immediately.`;
@@ -42,8 +45,7 @@ export default async function(req) {
 
     const result = await res.json();
 
-    // Log the alert
-    const user = await base44.auth.me().catch(() => null);
+    // Log the alert (user already authenticated above)
     const orgId = user?.data?.organization_id;
     if (orgId) {
       await base44.asServiceRole.entities.Receipt.create({
