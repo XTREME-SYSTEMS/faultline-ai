@@ -2,6 +2,7 @@ import { useState } from 'react';
 import PortalShell from '@/components/fl/PortalShell';
 import { base44 } from '@/api/base44Client';
 import { Image } from '@/components/ui/image';
+import AiFieldGenerator from '@/components/fl/AiFieldGenerator';
 
 const TABS = [
   { id: 'logo', label: 'Logo Generator', icon: '🎨', desc: '6 logo variations in different styles' },
@@ -18,6 +19,11 @@ export default function BrandGenerator() {
   const [history, setHistory] = useState([]);
 
   const update = (k, v) => setForm(prev => ({ ...prev, [k]: v }));
+
+  const handleAiApply = (field, value) => {
+    if (field === 'prompt') update('prompt', value);
+    else update(field, value);
+  };
 
   const generate = async () => {
     setError('');
@@ -80,17 +86,20 @@ export default function BrandGenerator() {
       <div style={{ background: '#fff', border: '1px solid #C7CCD4', borderRadius: 12, padding: 24, marginBottom: 20 }}>
         {tab !== 'image' && (
           <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700, marginBottom: 14 }}>
-            Business Name
+            <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>Business Name <AiFieldGenerator type="business_name" form={form} onApply={handleAiApply} /></span>
             <input value={form.business_name} onChange={e => update('business_name', e.target.value)} placeholder={placeholder} style={inputStyle} />
           </label>
         )}
         <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700, marginBottom: 14 }}>
-          {tab === 'image' ? 'Image Prompt' : 'Description / Prompt (optional)'}
+          <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            {tab === 'image' ? 'Image Prompt' : 'Description / Prompt (optional)'}
+            <AiFieldGenerator type="prompt" fieldLabel={tab === 'image' ? 'an image prompt' : tab === 'brand' ? 'a brand description' : 'a logo description'} form={form} onApply={handleAiApply} />
+          </span>
           <textarea value={form.prompt} onChange={e => update('prompt', e.target.value)} placeholder={tab === 'image' ? placeholder : 'Describe the business, vibe, or what you want the logo/brand to convey'} style={{ ...inputStyle, minHeight: 70, resize: 'vertical' }} />
         </label>
         {tab !== 'image' && (
           <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700, marginBottom: 14 }}>
-            Industry (optional)
+            <span style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>Industry (optional) <AiFieldGenerator type="industry" form={form} onApply={handleAiApply} /></span>
             <input value={form.industry} onChange={e => update('industry', e.target.value)} placeholder="e.g. Construction, SaaS, Healthcare" style={inputStyle} />
           </label>
         )}

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import PortalShell from '@/components/fl/PortalShell';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
+import AiFieldGenerator from '@/components/fl/AiFieldGenerator';
 
 // UniversalGenerator — the Xtreme AI Builder command center
 // Accepts ANY request, infers build type, compiles a generator, queues it,
@@ -136,15 +137,20 @@ export default function UniversalGenerator() {
       <div style={{ background: '#fff', border: '1px solid #C7CCD4', borderRadius: 12, padding: 28, marginBottom: 20, boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
         <p style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.14em', color: '#D4AF37', margin: 0 }}>Step 1 · Describe</p>
         <h3 style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 28, margin: '8px 0 16px' }}>What do you want to build?</h3>
-        <textarea
-          value={request}
-          onChange={e => setRequest(e.target.value)}
-          placeholder="e.g. Create a mobile epoxy-flooring company serving homeowners in Tampa, Florida"
-          style={{
-            width: '100%', minHeight: 80, padding: 14, border: '1px solid #C7CCD4', borderRadius: 8,
-            fontSize: 15, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box'
-          }}
-        />
+        <div style={{ position: 'relative' }}>
+          <textarea
+            value={request}
+            onChange={e => setRequest(e.target.value)}
+            placeholder="e.g. Create a mobile epoxy-flooring company serving homeowners in Tampa, Florida"
+            style={{
+              width: '100%', minHeight: 80, padding: 14, border: '1px solid #C7CCD4', borderRadius: 8,
+              fontSize: 15, fontFamily: 'inherit', resize: 'vertical', boxSizing: 'border-box'
+            }}
+          />
+          <div style={{ position: 'absolute', top: 8, right: 8 }}>
+            <AiFieldGenerator type="prompt" fieldLabel="a business or app to build" form={{ prompt: request }} onApply={(_, v) => setRequest(v)} />
+          </div>
+        </div>
         <div style={{ display: 'flex', gap: 10, marginTop: 14, flexWrap: 'wrap' }}>
           {examples.map((ex, i) => (
             <button key={i} onClick={() => setRequest(ex)} style={{

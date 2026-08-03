@@ -6,10 +6,14 @@ const PROMPTS = {
   industry: (f) => `Based on the business name "${f.business_name || 'unknown'}"${f.description ? ` and description "${f.description}"` : ''}, suggest 5 possible industries this business could operate in. Be specific (e.g. "Residential HVAC" not just "Services"). Return only the industry names.`,
   description: (f) => `Write 3 compelling 2-3 sentence business descriptions for ${f.business_name || 'a business'}${f.industry ? ` in the ${f.industry} industry` : ''}${f.target_audience ? ` targeting ${f.target_audience}` : ''}. Each should be professional, engaging, and clearly communicate the value proposition. Return only the descriptions.`,
   target_audience: (f) => `Based on ${f.business_name || 'this business'}${f.industry ? ` in the ${f.industry} industry` : ''}${f.description ? ` — ${f.description}` : ''}, identify 5 specific target audience segments. Be specific (e.g. "Small business owners aged 30-55 in construction" not just "business owners"). Return only the audience descriptions.`,
-  branding: (f) => `Suggest 3 complete branding packages for ${f.business_name || 'a business'}${f.industry ? ` in the ${f.industry} industry` : ''}${f.description ? ` — ${f.description}` : ''}. Each package should include a primary color (hex), secondary color (hex), font style (one of: modern, classic, bold), and tone (one of: professional, friendly, luxury, playful, technical, persuasive). Choose colors that fit the industry and audience.`
+  branding: (f) => `Suggest 3 complete branding packages for ${f.business_name || 'a business'}${f.industry ? ` in the ${f.industry} industry` : ''}${f.description ? ` — ${f.description}` : ''}. Each package should include a primary color (hex), secondary color (hex), font style (one of: modern, classic, bold), and tone (one of: professional, friendly, luxury, playful, technical, persuasive). Choose colors that fit the industry and audience.`,
+  prompt: (f, label) => {
+    const ctx = [f.business_name && `business "${f.business_name}"`, f.industry && `industry ${f.industry}`, f.description && `description: ${f.description}`, f.prompt && `current input: ${f.prompt}`].filter(Boolean).join(', ');
+    return `Generate 5 creative, specific suggestions for ${label || 'a build request'}.${ctx ? ` Context: ${ctx}.` : ''} Each suggestion should be a complete, actionable sentence that someone could use directly. Be specific, creative, and practical. Return only the suggestions, one per line.`;
+  }
 };
 
-export default function AiFieldGenerator({ type, form, onApply }) {
+export default function AiFieldGenerator({ type, form, onApply, fieldLabel }) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [suggestions, setSuggestions] = useState([]);
@@ -54,7 +58,7 @@ export default function AiFieldGenerator({ type, form, onApply }) {
         setBrandingOptions(res.options || []);
       } else {
         const res = await base44.integrations.Core.InvokeLLM({
-          prompt: PROMPTS[type](form),
+          prompt: PROMPTS[type](form, fieldLabel),
           response_json_schema: {
             type: 'object',
             properties: {
@@ -108,7 +112,7 @@ export default function AiFieldGenerator({ type, form, onApply }) {
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
               <h3 style={{ margin: 0, fontSize: 16 }}>
-                ✨ AI {type === 'business_name' ? 'Business Name' : type === 'industry' ? 'Industry' : type === 'description' ? 'Description' : type === 'target_audience' ? 'Target Audience' : type === 'branding' ? 'Branding' : 'Logo'} Suggestions
+                ✨ AI {type === 'business_name' ? 'Business Name' : type === 'industry' ? 'Industry' : type === 'description' ? 'Description' : type === 'target_audience' ? 'Target Audience' : type === 'branding' ? 'Branding' : type === 'logo' ? 'Logo' : fieldLabel || 'Prompt'} Suggestions
               </h3>
               <button onClick={() => setOpen(false)} style={{ background: 'none', border: 0, fontSize: 20, cursor: 'pointer', color: '#999' }}>×</button>
             </div>
