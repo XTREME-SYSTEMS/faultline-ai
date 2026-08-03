@@ -178,13 +178,9 @@ export default function WebsiteGenerator() {
             {cloneError && <p style={{ color: '#a52d23', fontSize: 13, marginTop: 10 }}>{cloneError}</p>}
 
             {cloning && (
-              <div style={{ marginTop: 16, display: 'grid', gap: 8 }}>
-                {[1, 2, 3].map(i => (
-                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', background: '#f8f7f4', border: '1px solid #e5e1da', borderRadius: 6 }}>
-                    <span className="dot-anim" style={{ fontSize: 16 }}>●</span>
-                    <span style={{ fontWeight: 600, fontSize: 13 }}>Searching & scraping competitor {i}…</span>
-                  </div>
-                ))}
+              <div style={{ marginTop: 16, display: 'flex', alignItems: 'center', gap: 12, padding: '14px 16px', background: '#f8f7f4', border: '1px solid #e5e1da', borderRadius: 6 }}>
+                <span className="dot-anim" style={{ fontSize: 16 }}>●</span>
+                <span style={{ fontWeight: 600, fontSize: 13 }}>Searching the web for top 3 competitors and analyzing…</span>
               </div>
             )}
 
