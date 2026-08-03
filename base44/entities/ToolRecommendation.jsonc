@@ -1,0 +1,57 @@
+{
+  "name": "ToolRecommendation",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "student_profile_id": {
+      "type": "string"
+    },
+    "tool_id": {
+      "type": "string"
+    },
+    "reason": {
+      "type": "string"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ],
+      "default": "medium"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "shown",
+        "purchased",
+        "dismissed"
+      ],
+      "default": "pending"
+    }
+  },
+  "required": [
+    "organization_id",
+    "tool_id"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

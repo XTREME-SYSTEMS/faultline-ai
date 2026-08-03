@@ -59,6 +59,8 @@ import UniversalGenerator from '@/pages/UniversalGenerator';
 import BrandGenerator from '@/pages/BrandGenerator';
 import XPSCatalog from '@/pages/XPSCatalog';
 import Marketplace from '@/pages/Marketplace';
+import VisualMediaStudio from '@/pages/VisualMediaStudio';
+import PCUMarketplace from '@/pages/PCUMarketplace';
 import CompanyDetail from '@/pages/CompanyDetail';
 import RepairBoard from '@/pages/RepairBoard';
 import Chat from '@/pages/Chat';
@@ -150,6 +152,8 @@ const AuthenticatedApp = () => {
         <Route path="/app/brand-generator" element={<BrandGenerator />} />
         <Route path="/app/xps-catalog" element={<XPSCatalog />} />
         <Route path="/app/marketplace" element={<Marketplace />} />
+        <Route path="/app/visual-studio" element={<VisualMediaStudio />} />
+        <Route path="/app/pcu-marketplace" element={<PCUMarketplace />} />
         <Route path="/app/demo-portal/:companyId" element={<ClientDemoPortal />} />
         <Route path="/app/drive-sync" element={<DriveSync />} />
         <Route path="/app/:slug" element={<Module />} />

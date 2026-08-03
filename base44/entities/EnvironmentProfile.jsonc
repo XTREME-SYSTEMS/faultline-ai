@@ -1,0 +1,64 @@
+{
+  "name": "EnvironmentProfile",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "environment_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "sector": {
+      "type": "string"
+    },
+    "scene_details": {
+      "type": "string"
+    },
+    "installation_details": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "lighting_options": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "camera_options": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "active": {
+      "type": "boolean",
+      "default": true
+    }
+  },
+  "required": [
+    "organization_id",
+    "name",
+    "sector"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

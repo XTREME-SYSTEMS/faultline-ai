@@ -1,0 +1,81 @@
+{
+  "name": "MediaAsset",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "asset_id": {
+      "type": "string"
+    },
+    "job_id": {
+      "type": "string"
+    },
+    "provider_id": {
+      "type": "string"
+    },
+    "media_type": {
+      "type": "string",
+      "enum": [
+        "image",
+        "video"
+      ]
+    },
+    "storage_url": {
+      "type": "string"
+    },
+    "thumbnail_url": {
+      "type": "string"
+    },
+    "width": {
+      "type": "number"
+    },
+    "height": {
+      "type": "number"
+    },
+    "duration_seconds": {
+      "type": "number"
+    },
+    "checksum_sha256": {
+      "type": "string"
+    },
+    "prompt_snapshot": {
+      "type": "object"
+    },
+    "disclosure_label": {
+      "type": "string"
+    },
+    "approval_status": {
+      "type": "string",
+      "enum": [
+        "unreviewed",
+        "approved",
+        "revise",
+        "rejected"
+      ],
+      "default": "unreviewed"
+    }
+  },
+  "required": [
+    "organization_id",
+    "job_id",
+    "provider_id",
+    "media_type"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

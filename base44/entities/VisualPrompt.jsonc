@@ -1,0 +1,92 @@
+{
+  "name": "VisualPrompt",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "prompt_id": {
+      "type": "string"
+    },
+    "media_type": {
+      "type": "string",
+      "enum": [
+        "image",
+        "video"
+      ],
+      "default": "image"
+    },
+    "finish_id": {
+      "type": "string"
+    },
+    "environment_id": {
+      "type": "string"
+    },
+    "scenario": {
+      "type": "string"
+    },
+    "marketing_use": {
+      "type": "string"
+    },
+    "aspect_ratio": {
+      "type": "string"
+    },
+    "camera_id": {
+      "type": "string"
+    },
+    "image_prompt": {
+      "type": "string"
+    },
+    "negative_prompt": {
+      "type": "string"
+    },
+    "video_prompt": {
+      "type": "string"
+    },
+    "duration_seconds": {
+      "type": "number"
+    },
+    "disclosure_label": {
+      "type": "string"
+    },
+    "source_urls": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "version": {
+      "type": "number",
+      "default": 1
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "approved",
+        "archived"
+      ],
+      "default": "approved"
+    }
+  },
+  "required": [
+    "organization_id",
+    "media_type"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
