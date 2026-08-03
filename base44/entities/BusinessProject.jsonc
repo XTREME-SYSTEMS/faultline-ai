@@ -1,0 +1,115 @@
+{
+  "name": "BusinessProject",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "idea": {
+      "type": "string",
+      "description": "The one-sentence business idea"
+    },
+    "industry": {
+      "type": "string"
+    },
+    "location": {
+      "type": "string"
+    },
+    "audience": {
+      "type": "string"
+    },
+    "business_type": {
+      "type": "string"
+    },
+    "budget": {
+      "type": "string"
+    },
+    "experience_level": {
+      "type": "string"
+    },
+    "launch_speed": {
+      "type": "string"
+    },
+    "revenue_target": {
+      "type": "string"
+    },
+    "current_phase": {
+      "type": "string",
+      "enum": [
+        "intake",
+        "discovery",
+        "viability",
+        "brand",
+        "model",
+        "products",
+        "website",
+        "leads",
+        "sales",
+        "marketing",
+        "financials",
+        "operations",
+        "launch",
+        "validation",
+        "complete"
+      ],
+      "default": "intake"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "paused",
+        "archived",
+        "deleted"
+      ],
+      "default": "active"
+    },
+    "canonical_brand_pack_id": {
+      "type": "string"
+    },
+    "current_version_id": {
+      "type": "string"
+    },
+    "progress": {
+      "type": "number",
+      "default": 0
+    },
+    "owner_user_id": {
+      "type": "string"
+    },
+    "intake_complete": {
+      "type": "boolean",
+      "default": false
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "organization_id",
+    "name",
+    "idea"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

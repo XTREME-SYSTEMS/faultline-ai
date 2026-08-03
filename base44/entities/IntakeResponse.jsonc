@@ -1,0 +1,58 @@
+{
+  "name": "IntakeResponse",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string"
+    },
+    "question": {
+      "type": "string"
+    },
+    "answer": {
+      "type": "string"
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "user",
+        "ai",
+        "inferred"
+      ],
+      "default": "user"
+    },
+    "confidence": {
+      "type": "number",
+      "default": 1
+    },
+    "phase": {
+      "type": "string",
+      "default": "intake"
+    },
+    "field": {
+      "type": "string",
+      "description": "Which project field this answers"
+    }
+  },
+  "required": [
+    "organization_id",
+    "project_id",
+    "question"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    }
+  }
+}
