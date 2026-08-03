@@ -61,6 +61,7 @@ import XPSCatalog from '@/pages/XPSCatalog';
 import Marketplace from '@/pages/Marketplace';
 import VisualMediaStudio from '@/pages/VisualMediaStudio';
 import PCUMarketplace from '@/pages/PCUMarketplace';
+import ToolAdvisor from '@/pages/ToolAdvisor';
 import CompanyDetail from '@/pages/CompanyDetail';
 import RepairBoard from '@/pages/RepairBoard';
 import Chat from '@/pages/Chat';
@@ -154,6 +155,7 @@ const AuthenticatedApp = () => {
         <Route path="/app/marketplace" element={<Marketplace />} />
         <Route path="/app/visual-studio" element={<VisualMediaStudio />} />
         <Route path="/app/pcu-marketplace" element={<PCUMarketplace />} />
+        <Route path="/app/tool-advisor" element={<ToolAdvisor />} />
         <Route path="/app/demo-portal/:companyId" element={<ClientDemoPortal />} />
         <Route path="/app/drive-sync" element={<DriveSync />} />
         <Route path="/app/:slug" element={<Module />} />

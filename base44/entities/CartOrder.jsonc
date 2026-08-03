@@ -1,0 +1,65 @@
+{
+  "name": "CartOrder",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "owner_user_id": {
+      "type": "string"
+    },
+    "items": {
+      "type": "array",
+      "items": {},
+      "description": "Array of {tool_id, name, price, price_mode, type} items in the cart"
+    },
+    "subtotal": {
+      "type": "number",
+      "default": 0
+    },
+    "total": {
+      "type": "number",
+      "default": 0
+    },
+    "item_count": {
+      "type": "number",
+      "default": 0
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "submitted",
+        "paid",
+        "fulfilled",
+        "cancelled"
+      ],
+      "default": "draft"
+    },
+    "stripe_checkout_session_id": {
+      "type": "string"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
