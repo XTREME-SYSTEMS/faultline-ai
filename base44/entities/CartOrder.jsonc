@@ -10,7 +10,26 @@
     },
     "items": {
       "type": "array",
-      "items": {},
+      "items": {
+        "type": "object",
+        "properties": {
+          "tool_id": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "price": {
+            "type": "number"
+          },
+          "price_mode": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string"
+          }
+        }
+      },
       "description": "Array of {tool_id, name, price, price_mode, type} items in the cart"
     },
     "subtotal": {
