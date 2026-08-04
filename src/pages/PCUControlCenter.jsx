@@ -3,9 +3,11 @@ import PortalShell from '@/components/fl/PortalShell';
 import { products, packages, fulfillment, approvals, automations, modules, personas, decisions, risks, neededEntities, systemMeta } from '@/components/pcu/registryData';
 import FulfillmentFlow from '@/components/pcu/FulfillmentFlow';
 import ApprovalChain from '@/components/pcu/ApprovalChain';
+import ClientsDashboard from '@/components/pcu/ClientsDashboard';
 
 const TABS = [
   { id: 'overview', label: 'Overview' },
+  { id: 'clients', label: 'Clients' },
   { id: 'products', label: 'Products' },
   { id: 'packages', label: 'Packages' },
   { id: 'fulfillment', label: 'Fulfillment' },
@@ -109,6 +111,9 @@ export default function PCUControlCenter() {
           </div>
         </div>
       )}
+
+      {/* Clients tab */}
+      {tab === 'clients' && <ClientsDashboard />}
 
       {/* Products tab */}
       {tab === 'products' && (
