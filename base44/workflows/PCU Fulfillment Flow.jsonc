@@ -1,0 +1,198 @@
+{
+  "name": "PCU Fulfillment Flow",
+  "description": "Orchestrates the 9-step PCU/Xtreme Polishing System fulfillment flow when a cart order is paid \u2014 from purchase through account provisioning, intake, brand discovery, website generation, QA, approval, and launch.",
+  "trigger": {
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "CartOrder",
+      "events": [
+        "update"
+      ]
+    },
+    "condition": "${ .trigger.data.status == \"paid\" and .trigger.old_data.status != \"paid\" }"
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "pcu_fulfillment_flow",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "step1_purchase_received": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "processFulfillmentStep",
+            "args": {
+              "step_id": "FUL-001",
+              "order_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "step2_provision",
+          "x-base44": {
+            "title": "Purchase received",
+            "description": "Create account & entitlements"
+          }
+        }
+      },
+      {
+        "step2_provision": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "processFulfillmentStep",
+            "args": {
+              "step_id": "FUL-002",
+              "order_id": "${ .trigger.entity_id }",
+              "account_id": "${ .step1_purchase_received.account_id }"
+            }
+          },
+          "then": "wait_intake",
+          "x-base44": {
+            "title": "Account provisioned",
+            "description": "Activate entitlements"
+          }
+        }
+      },
+      {
+        "wait_intake": {
+          "wait": "PT1H",
+          "then": "step3_intake",
+          "x-base44": {
+            "title": "Wait for intake",
+            "description": "1 hour buffer"
+          }
+        }
+      },
+      {
+        "step3_intake": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "processFulfillmentStep",
+            "args": {
+              "step_id": "FUL-003",
+              "account_id": "${ .step1_purchase_received.account_id }"
+            }
+          },
+          "then": "step4_validate",
+          "x-base44": {
+            "title": "Intake issued",
+            "description": "Send intake checklist"
+          }
+        }
+      },
+      {
+        "step4_validate": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "processFulfillmentStep",
+            "args": {
+              "step_id": "FUL-004",
+              "account_id": "${ .step1_purchase_received.account_id }"
+            }
+          },
+          "then": "step5_brand",
+          "x-base44": {
+            "title": "Intake validated",
+            "description": "Validate completeness"
+          }
+        }
+      },
+      {
+        "step5_brand": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "processFulfillmentStep",
+            "args": {
+              "step_id": "FUL-005",
+              "account_id": "${ .step1_purchase_received.account_id }"
+            }
+          },
+          "then": "step6_website",
+          "x-base44": {
+            "title": "Brand discovery",
+            "description": "Start brand generation"
+          }
+        }
+      },
+      {
+        "step6_website": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "processFulfillmentStep",
+            "args": {
+              "step_id": "FUL-006",
+              "account_id": "${ .step1_purchase_received.account_id }"
+            }
+          },
+          "then": "step7_qa",
+          "x-base44": {
+            "title": "Website generation",
+            "description": "Start website build"
+          }
+        }
+      },
+      {
+        "step7_qa": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "processFulfillmentStep",
+            "args": {
+              "step_id": "FUL-007",
+              "account_id": "${ .step1_purchase_received.account_id }"
+            }
+          },
+          "then": "step8_approval",
+          "x-base44": {
+            "title": "QA validation",
+            "description": "Validate deliverables"
+          }
+        }
+      },
+      {
+        "step8_approval": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "processFulfillmentStep",
+            "args": {
+              "step_id": "FUL-008",
+              "account_id": "${ .step1_purchase_received.account_id }"
+            }
+          },
+          "then": "wait_approval",
+          "x-base44": {
+            "title": "Customer approval",
+            "description": "Request approval"
+          }
+        }
+      },
+      {
+        "wait_approval": {
+          "wait": "P1D",
+          "then": "step9_launch",
+          "x-base44": {
+            "title": "Wait for approval",
+            "description": "1 day buffer"
+          }
+        }
+      },
+      {
+        "step9_launch": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "processFulfillmentStep",
+            "args": {
+              "step_id": "FUL-009",
+              "account_id": "${ .step1_purchase_received.account_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Launch",
+            "description": "Activate account"
+          }
+        }
+      }
+    ]
+  }
+}
