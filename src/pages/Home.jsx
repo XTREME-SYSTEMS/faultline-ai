@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import DeliverablePreview from '@/components/fl/DeliverablePreview';
 import Icon from '@/components/fl/Icon';
 import { submitFaultLineForm } from '@/lib/faultlineForms';
+import { useAuth } from '@/lib/AuthContext';
 import '@/components/fl/approved-homepage.css';
 
 const navGroups = [
@@ -76,6 +77,7 @@ function FooterColumn({ title, links }) {
 }
 
 export default function Home() {
+  const { user } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [modal, setModal] = useState(null);
@@ -168,7 +170,7 @@ export default function Home() {
             <Link to="/how-it-works">How It Works</Link>
             <Link to="/pricing">Pricing</Link>
           </nav>
-          <div className="header-actions"><Link to="/login">Sign In</Link><button className="button button--dark button--small" type="button" onClick={() => openAudit()}>Start Free Audit <Icon name="arrow-right" /></button></div>
+          <div className="header-actions">{user ? <><Link to="/app/xv" style={{ fontWeight: 600 }}>Visualizer</Link><Link to="/app" className="button button--dark button--small">Launch App <Icon name="arrow-right" /></Link></> : <><Link to="/login">Sign In</Link><button className="button button--dark button--small" type="button" onClick={() => openAudit()}>Start Free Audit <Icon name="arrow-right" /></button></>}</div>
         </div>
       </header>
 
