@@ -1,7 +1,7 @@
 import { Toaster } from "@/components/ui/toaster"
 import { QueryClientProvider } from '@tanstack/react-query'
 import { queryClientInstance } from '@/lib/query-client'
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Route, Routes, Navigate, useLocation } from 'react-router-dom';
 import PageNotFound from './lib/PageNotFound';
 import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
@@ -9,6 +9,7 @@ import ScrollToTop from './components/ScrollToTop';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import PortalLayout from '@/components/fl/PortalLayout';
 import { lazy, Suspense } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { ThemeProvider } from 'next-themes';
 // Auth pages
 const Login = lazy(() => import('@/pages/Login'));
@@ -105,6 +106,9 @@ const PageLoader = () => (
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isLoadingPublicSettings, authError } = useAuth();
+  const location = useLocation();
+  const _PORTAL_TAB_PATHS = new Set(['/app', '/app/command-center', '/app/chat', '/app/business', '/app/settings']);
+  const animKey = _PORTAL_TAB_PATHS.has(location.pathname) ? 'portal-tabs' : location.pathname;
 
   if (isLoadingPublicSettings || isLoadingAuth) {
     return (
@@ -120,7 +124,9 @@ const AuthenticatedApp = () => {
 
   return (
     <Suspense fallback={<PageLoader />}>
-    <Routes>
+      <AnimatePresence mode="wait">
+        <motion.div key={animKey} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2, ease: 'easeInOut' }}>
+    <Routes location={location}>
       {/* Public marketing */}
       <Route path="/" element={<Home />} />
       <Route path="/product" element={<MarketingPage page="product" />} />
@@ -226,6 +232,8 @@ const AuthenticatedApp = () => {
 
       <Route path="*" element={<NotFound />} />
     </Routes>
+        </motion.div>
+      </AnimatePresence>
     </Suspense>
   );
 };
@@ -234,7 +242,7 @@ const AuthenticatedApp = () => {
 function App() {
 
   return (
-    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={false}>
+    <ThemeProvider attribute="class" defaultTheme="light" enableSystem={true}>
     <AuthProvider>
       <QueryClientProvider client={queryClientInstance}>
         <Router>

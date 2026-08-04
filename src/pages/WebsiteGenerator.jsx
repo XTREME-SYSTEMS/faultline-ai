@@ -4,6 +4,7 @@ import WebsiteCoach from '@/components/fl/WebsiteCoach';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import AiFieldGenerator from '@/components/fl/AiFieldGenerator';
+import SheetSelect from '@/components/pcu/SheetSelect';
 
 export default function WebsiteGenerator() {
   const [companies, setCompanies] = useState([]);
@@ -247,21 +248,22 @@ export default function WebsiteGenerator() {
         {companies.length > 0 && (
           <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700, marginBottom: 14 }}>
             Link to Company (optional)
-            <select value={form.company_id} onChange={e => {
-              const id = e.target.value;
-              updateForm('company_id', id);
-              if (id) {
-                const c = companies.find(c => c.id === id);
-                if (c) {
-                  updateForm('business_name', c.name || form.business_name);
-                  updateForm('industry', c.industry || form.industry);
-                  updateForm('description', c.description || form.description);
+            <SheetSelect
+              value={form.company_id}
+              onChange={(id) => {
+                updateForm('company_id', id);
+                if (id) {
+                  const c = companies.find(c => c.id === id);
+                  if (c) {
+                    updateForm('business_name', c.name || form.business_name);
+                    updateForm('industry', c.industry || form.industry);
+                    updateForm('description', c.description || form.description);
+                  }
                 }
-              }
-            }} style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: 13, fontFamily: 'inherit' }}>
-              <option value="">— No link —</option>
-              {companies.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
-            </select>
+              }}
+              options={[{ value: '', label: '— No link —' }, ...companies.map(c => ({ value: c.id, label: c.name }))]}
+              placeholder="— No link —"
+            />
           </label>
         )}
 
