@@ -101,7 +101,6 @@
     @apply bg-background text-foreground;
     font-family: 'DM Sans', system-ui, sans-serif;
     color: #111;
-    overscroll-behavior-y: none;
     -webkit-overflow-scrolling: touch;
   }
   a { text-decoration: none; color: inherit; }
@@ -469,8 +468,8 @@ td small { color: #888; margin-top: 4px; }
 
 /* ===== iOS WebView mobile enhancements ===== */
 
-/* Prevent rubber-banding on inner scrollable panels */
-*, *::before, *::after { overscroll-behavior: none; }
+/* Prevent rubber-banding on inner portal scrollable panels only */
+.sidebar, .ai-panel, .portal-content, .fl-bottom-nav { overscroll-behavior: contain; }
 
 /* Enforce minimum 12px font size for readability on iOS */
 small, .pill, .eyebrow { font-size: max(12px, 0.75em) !important; }
