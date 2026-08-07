@@ -120,7 +120,7 @@ export default function Home() {
       <a className="skip-link" href="#main">Skip to main content</a>
       <header className="site-header">
         <div className="page-wrap header-inner">
-          <a className="brand" href="#top" aria-label="Xtreme AI Systems home"><img src={LOGO_DARK} alt="Xtreme AI Systems" style={{ height: 40, width: 'auto' }} /></a>
+          <a className="brand" href="#top" aria-label="Xtreme AI Systems home"><img src={LOGO_DARK} alt="Xtreme AI Systems" style={{ height: 200, width: 'auto' }} /></a>
           <button className="menu-button" type="button" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(v => !v)}><span /><span /><span /></button>
           <nav className={`primary-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Primary navigation">
             <a href="#tools">AI Tools</a>
@@ -325,7 +325,7 @@ export default function Home() {
       <footer className="site-footer" id="footer">
         <div className="page-wrap footer-grid">
           <div className="footer-brand">
-            <img src={LOGO_LIGHT} alt="Xtreme AI Systems" style={{ height: 40, width: 'auto' }} />
+            <img src={LOGO_LIGHT} alt="Xtreme AI Systems" style={{ height: 200, width: 'auto' }} />
             <p>AI tools &amp; websites for floor pros.</p>
             <div className="socials"><a href="#" aria-label="LinkedIn">in</a><a href="#" aria-label="Instagram">◎</a><a href="#" aria-label="YouTube">▶</a></div>
           </div>
