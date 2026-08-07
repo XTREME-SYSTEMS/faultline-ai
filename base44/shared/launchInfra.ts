@@ -2,8 +2,8 @@
 // Supabase project, Vercel project + deployment. Used by the autonomous launch
 // pipeline so each step is isolated and independently testable.
 
-export async function sha256hex(data) {
-  const buf = await crypto.subtle.digest('SHA-256', data);
+export async function sha1hex(data) {
+  const buf = await crypto.subtle.digest('SHA-1', data);
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
@@ -67,9 +67,21 @@ export async function createVercelProject(token, teamId, name) {
   return { id: d.id, name: d.name };
 }
 
-export async function deployToVercel(token, teamId, projectName, html) {
+export async function disableVercelSso(token, teamId, projectId) {
+  const url = `https://api.vercel.com/v9/projects/${projectId}${teamId ? `?teamId=${teamId}` : ''}`;
+  const res = await fetch(url, {
+    method: 'PATCH',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ssoProtection: null })
+  });
+  if (!res.ok) throw new Error(`Vercel SSO disable failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
+  return true;
+}
+
+export async function deployToVercel(token, teamId, projectName, projectId, html) {
   const fileData = new TextEncoder().encode(html);
-  const sha = await sha256hex(fileData);
+  const sha = await sha1hex(fileData);
+  const size = fileData.length;
   const uploadUrl = `https://api.vercel.com/v2/files${teamId ? `?teamId=${teamId}` : ''}`;
   const upRes = await fetch(uploadUrl, {
     method: 'POST',
@@ -78,10 +90,12 @@ export async function deployToVercel(token, teamId, projectName, html) {
   });
   if (!upRes.ok) throw new Error(`Vercel file upload failed (${upRes.status}): ${(await upRes.text()).slice(0, 200)}`);
   const depUrl = `https://api.vercel.com/v13/deployments${teamId ? `?teamId=${teamId}` : ''}`;
+  const depBody = { name: projectName, files: [{ file: 'index.html', sha, size }], target: 'production', projectSettings: { framework: null } };
+  if (projectId) depBody.project = projectId;
   const depRes = await fetch(depUrl, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name: projectName, files: [{ file: 'index.html', sha }], target: 'production', projectSettings: { framework: null } })
+    body: JSON.stringify(depBody)
   });
   if (!depRes.ok) throw new Error(`Vercel deploy failed (${depRes.status}): ${(await depRes.text()).slice(0, 200)}`);
   const d = await depRes.json();

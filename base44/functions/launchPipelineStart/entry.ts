@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { waitUntil } from "base44:runtime";
 import { kickoffPackDeliverable } from '../../shared/packGeneration.ts';
-import { slugify, createDriveFolder, createGitHubRepo, createSupabaseProject, createVercelProject } from '../../shared/launchInfra.ts';
+import { slugify, createDriveFolder, createGitHubRepo, createSupabaseProject, createVercelProject, disableVercelSso } from '../../shared/launchInfra.ts';
 
 // Step 1 of the Autonomous Launch Pipeline.
 // Triggered by the workflow when a LaunchProject is created (status 'queued').
@@ -89,6 +89,7 @@ export default async function(req) {
     let githubRepoUrl = lp.github_repo_url;
     let supabaseProjectUrl = lp.supabase_project_url;
     let vercelProjectUrl = lp.vercel_project_url;
+    let vercelProjectId = lp.metadata?.vercel_project_id || null;
 
     try {
       if (!driveFolderUrl) {
@@ -122,7 +123,10 @@ export default async function(req) {
         if (!token) throw new Error('VERCEL_TOKEN secret not set');
         const teamId = Deno.env.get('VERCEL_TEAM_ID') || null;
         const vp = await createVercelProject(token, teamId, slug);
+        vercelProjectId = vp.id;
         vercelProjectUrl = `https://vercel.com/${teamId ? teamId + '/' : ''}${slug}`;
+        // Disable Vercel SSO so deployments are publicly accessible for Browserbase validation
+        try { await disableVercelSso(token, teamId, vp.id); } catch (e) { errors.vercel_sso = e.message; }
       }
     } catch (e) { errors.vercel = e.message; }
 
@@ -136,6 +140,7 @@ export default async function(req) {
       github_repo_url: githubRepoUrl,
       supabase_project_url: supabaseProjectUrl,
       vercel_project_url: vercelProjectUrl,
+      metadata: { ...(lp.metadata || {}), ...(vercelProjectId ? { vercel_project_id: vercelProjectId } : {}) },
       status: 'generating',
       errors: Object.keys(errors).length ? errors : null
     });

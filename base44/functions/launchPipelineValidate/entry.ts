@@ -55,7 +55,7 @@ export default async function(req) {
     try {
       const token = Deno.env.get('GITHUB_TOKEN');
       if (token) {
-        const owner = token ? (await (await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${token}` } })).json()).login : null;
+        const owner = token ? (await (await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'FaultLine-AI-Launch-Pipeline' } })).json()).login : null;
         if (owner) await pushGitHubFile(token, owner, slug, 'index.html', html, `Production build ${new Date().toISOString()} — FaultLine Autonomous Pipeline`);
       }
     } catch (e) { errors.github_push = e.message; }
@@ -66,7 +66,8 @@ export default async function(req) {
       const token = Deno.env.get('VERCEL_TOKEN');
       if (!token) throw new Error('VERCEL_TOKEN secret not set');
       const teamId = Deno.env.get('VERCEL_TEAM_ID') || null;
-      const dep = await deployToVercel(token, teamId, slug, html);
+      const projectId = lp.metadata?.vercel_project_id || null;
+      const dep = await deployToVercel(token, teamId, slug, projectId, html);
       deploymentUrl = dep.url || (dep.alias && dep.alias.length ? `https://${dep.alias[0]}` : null);
       // Wait briefly for the deployment to go live
       await new Promise(r => setTimeout(r, 8000));
