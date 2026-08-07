@@ -53,9 +53,10 @@ export default async function(req) {
     // 3. Push to GitHub
     const errors = {};
     try {
-      const token = Deno.env.get('GITHUB_TOKEN');
-      if (token) {
-        const owner = token ? (await (await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'FaultLine-AI-Launch-Pipeline', 'X-GitHub-Api-Version': '2022-11-28' } })).json()).login : null;
+      const ghConn = await base44.asServiceRole.connectors.getConnection('github');
+      if (ghConn?.accessToken) {
+        const token = ghConn.accessToken;
+        const owner = (await (await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'FaultLine-AI-Launch-Pipeline', 'X-GitHub-Api-Version': '2022-11-28' } })).json()).login;
         if (owner) await pushGitHubFile(token, owner, slug, 'index.html', html, `Production build ${new Date().toISOString()} — FaultLine Autonomous Pipeline`);
       }
     } catch (e) { errors.github_push = e.message; }

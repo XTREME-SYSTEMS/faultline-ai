@@ -93,25 +93,26 @@ export default async function(req) {
     try {
       if (!driveFolderUrl) {
         const conn = await base44.asServiceRole.connectors.getConnection('googledrive');
-        const drive = await createDriveFolder(conn.access_token, `${lp.project_name} Website Assets`);
+        if (!conn?.accessToken) throw new Error('Google Drive connector not authorized');
+        const drive = await createDriveFolder(conn.accessToken, `${lp.project_name} Website Assets`);
         driveFolderUrl = drive.url;
       }
     } catch (e) { errors.drive = e.message; }
 
     try {
       if (!githubRepoUrl) {
-        const token = Deno.env.get('GITHUB_TOKEN');
-        if (!token) throw new Error('GITHUB_TOKEN secret not set');
-        const repo = await createGitHubRepo(token, slug);
+        const ghConn = await base44.asServiceRole.connectors.getConnection('github');
+        if (!ghConn?.accessToken) throw new Error('GitHub connector not authorized');
+        const repo = await createGitHubRepo(ghConn.accessToken, slug);
         githubRepoUrl = repo.url;
       }
     } catch (e) { errors.github = e.message; }
 
     try {
       if (!supabaseProjectUrl) {
-        const token = Deno.env.get('SUPABASE_ACCESS_TOKEN');
-        if (!token) throw new Error('SUPABASE_ACCESS_TOKEN secret not set');
-        const supa = await createSupabaseProject(token, slug);
+        const supaConn = await base44.asServiceRole.connectors.getConnection('supabase');
+        if (!supaConn?.accessToken) throw new Error('Supabase connector not authorized');
+        const supa = await createSupabaseProject(supaConn.accessToken, slug);
         supabaseProjectUrl = supa.url;
       }
     } catch (e) { errors.supabase = e.message; }
