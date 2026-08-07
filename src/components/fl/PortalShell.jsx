@@ -4,12 +4,19 @@ import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
 import Brand from './Brand';
 import AiPanel from './AiPanel';
-import { portalNav } from './data';
+import { portalNavCategories } from './data';
 import WorkflowSteps from './WorkflowSteps';
+
+const CATEGORY_ICONS = {
+  'Command': '◈', 'Discover & Diagnose': '◇', 'Build & Generate': '⬡',
+  'Client Delivery': '◐', 'Grow & Sell': '◆', 'Operations': '⬢',
+  'Financials': '◈', 'Admin': '⚙'
+};
 
 export default function PortalShell({ children, assistant = false }) {
   // assistant can be: false (no panel), true (default AiPanel), or a React node (custom coach)
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState({});
   const { user } = useAuth();
   const navigate = useNavigate();
   const [orgName, setOrgName] = useState('Loading…');
@@ -59,9 +66,29 @@ export default function PortalShell({ children, assistant = false }) {
           <small>Growth operating system</small>
         </div>
         <nav>
-          {portalNav.map(([label, to]) => (
-            <NavLink key={to} to={to} end={to === '/app'} onClick={() => setOpen(false)}>{label}</NavLink>
-          ))}
+          {portalNavCategories.map(cat => {
+            const isCollapsed = collapsed[cat.label];
+            return (
+              <div key={cat.label} style={{ marginBottom: 6 }}>
+                <button
+                  onClick={() => setCollapsed(prev => ({ ...prev, [cat.label]: !prev[cat.label] }))}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center', gap: 8,
+                    padding: '7px 10px', border: 0, background: 'none', cursor: 'pointer',
+                    color: '#666', fontSize: 10, fontWeight: 700, textTransform: 'uppercase',
+                    letterSpacing: '.12em', fontFamily: 'inherit', textAlign: 'left'
+                  }}
+                >
+                  <span style={{ color: 'var(--gold)', fontSize: 11 }}>{cat.icon || CATEGORY_ICONS[cat.label]}</span>
+                  <span style={{ flex: 1 }}>{cat.label}</span>
+                  <span style={{ fontSize: 10, color: '#555' }}>{isCollapsed ? '+' : '−'}</span>
+                </button>
+                {!isCollapsed && cat.items.map(([label, to]) => (
+                  <NavLink key={to} to={to} end={to === '/app'} onClick={() => setOpen(false)}>{label}</NavLink>
+                ))}
+              </div>
+            );
+          })}
         </nav>
         <WorkflowSteps />
         <button onClick={handleLogout} style={{ width: '100%', textAlign: 'left', padding: '8px 10px', borderRadius: 5, fontSize: 13, fontWeight: 600, color: '#bbb', background: 'none', border: 0, cursor: 'pointer', marginTop: 16, fontFamily: 'inherit' }}>Sign out</button>

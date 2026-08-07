@@ -3,17 +3,119 @@ export const publicNav = [
   ['How It Works', '/how-it-works'], ['Pricing', '/pricing'], ['Resources', '/resources']
 ];
 
-export const portalNav = [
-  ['Command Center', '/app/command-center'], ['Overview', '/app'],   ['ROI Dashboard', '/app/roi'], ['Competitive Intel', '/app/competitive-intel'], ['Marketplace', '/app/marketplace'], ['Audit Templates', '/app/audit-templates'],   ['White-Label', '/app/white-label'], ['Partner API', '/app/partner-api'], ['QuickBooks', '/app/financial-sync'], ['E-Signature', '/app/e-signature'],
-  ['FaultSign', '/app/esign'], ['FaultBooks', '/app/books'],   ['Website Generator', '/app/website-generator'],   ['App Generator', '/app/app-generator'],   ['Business Generator', '/app/business'],   ['Universal Generator', '/app/universal-generator'],   ['Brand & Image Studio', '/app/brand-generator'],   ['XPS Catalog', '/app/xps-catalog'], ['Marketplace', '/app/marketplace'],   ['Visual Media Studio', '/app/visual-studio'], ['PCU Marketplace', '/app/pcu-marketplace'],   ['AI Tool Advisor', '/app/tool-advisor'], ['PCU / XPS Control Center', '/app/pcu-control'], ['Enhancement Engine', '/app/enhancement-engine'], ['Client Projects', '/app/client-projects'], ['Xtreme Visualizer', '/app/xv'], ['Setup Wizard', '/app/setup'], ['Client Portal Wizard', '/app/client-setup'], ['Discovery Engine', '/app/discovery-engine'], ['Chat', '/app/chat'], ['Trends', '/app/trends'],   ['System Clone', '/app/system-clone'], ['Security Pipeline', '/app/security-pipeline'], ['Industry Opportunities', '/app/industry-opportunities'], ['AI Control Panel', '/app/ai-control'],   ['Client Demo Portal', '/app/demo-portal'],   ['Universal Builder', '/app/universal-builder'], ['QA & Validation', '/app/qa-center'], ['Deliverable Studio', '/app/deliverable-studio'], ['Audits', '/app/audits'], ['Website Intelligence', '/app/website-intelligence'],
-  ['Company Discovery', '/app/company-discovery'], ['System Map', '/app/system-map'],
-  ['Revenue Leaks', '/app/revenue-leaks'], ['Risk Register', '/app/risk-register'],
-  ['AI Readiness', '/app/ai-readiness'], ['Repair Plans', '/app/repair-plans'],
-  ['Business Builder', '/app/business-builder'], ['Outreach', '/app/outreach'],
-  ['Leads', '/app/leads'], ['Tasks', '/app/tasks'], ['Projects', '/app/projects'],
-  ['Reports', '/app/reports'], ['Monitoring', '/app/monitoring'], ['Team', '/app/team'],
-  ['Integrations', '/app/integrations'], ['Drive Sync', '/app/drive-sync'], ['Billing', '/app/billing'], ['Settings', '/app/settings']
+export const portalNavCategories = [
+  {
+    label: 'Command',
+    icon: '◈',
+    items: [
+      ['Overview', '/app'],
+      ['Command Center', '/app/command-center'],
+      ['ROI Dashboard', '/app/roi'],
+      ['Chat', '/app/chat'],
+      ['Trends', '/app/trends']
+    ]
+  },
+  {
+    label: 'Discover & Diagnose',
+    icon: '◇',
+    items: [
+      ['Discovery Engine', '/app/discovery-engine'],
+      ['Company Discovery', '/app/company-discovery'],
+      ['System Clone', '/app/system-clone'],
+      ['Security Pipeline', '/app/security-pipeline'],
+      ['Industry Opportunities', '/app/industry-opportunities'],
+      ['Audits', '/app/audits'],
+      ['Website Intelligence', '/app/website-intelligence'],
+      ['System Map', '/app/system-map'],
+      ['Revenue Leaks', '/app/revenue-leaks'],
+      ['Risk Register', '/app/risk-register'],
+      ['AI Readiness', '/app/ai-readiness']
+    ]
+  },
+  {
+    label: 'Build & Generate',
+    icon: '⬡',
+    items: [
+      ['Website Generator', '/app/website-generator'],
+      ['App Generator', '/app/app-generator'],
+      ['Business Generator', '/app/business'],
+      ['Universal Generator', '/app/universal-generator'],
+      ['Brand & Image Studio', '/app/brand-generator'],
+      ['Universal Builder', '/app/universal-builder'],
+      ['Visual Media Studio', '/app/visual-studio'],
+      ['Autonomous Launch', '/app/projects']
+    ]
+  },
+  {
+    label: 'Client Delivery',
+    icon: '◐',
+    items: [
+      ['Client Projects', '/app/client-projects'],
+      ['Client Portal', '/app/client-portal'],
+      ['Client Portal Wizard', '/app/client-setup'],
+      ['Client Demo Portal', '/app/demo-portal'],
+      ['Deliverable Studio', '/app/deliverable-studio'],
+      ['QA & Validation', '/app/qa-center'],
+      ['Repair Plans', '/app/repair-plans'],
+      ['Repair Board', '/app/repair-board']
+    ]
+  },
+  {
+    label: 'Grow & Sell',
+    icon: '◆',
+    items: [
+      ['Competitive Intel', '/app/competitive-intel'],
+      ['Implementation Marketplace', '/app/marketplace'],
+      ['PCU Marketplace', '/app/pcu-marketplace'],
+      ['Audit Templates', '/app/audit-templates'],
+      ['Leads', '/app/leads'],
+      ['Outreach', '/app/outreach'],
+      ['Business Builder', '/app/business-builder']
+    ]
+  },
+  {
+    label: 'Operations',
+    icon: '⬢',
+    items: [
+      ['Enhancement Engine', '/app/enhancement-engine'],
+      ['PCU Control Center', '/app/pcu-control'],
+      ['AI Control Panel', '/app/ai-control'],
+      ['AI Tool Advisor', '/app/tool-advisor'],
+      ['XPS Catalog', '/app/xps-catalog'],
+      ['Xtreme Visualizer', '/app/xv'],
+      ['Monitoring', '/app/monitoring'],
+      ['Reports', '/app/reports'],
+      ['Tasks', '/app/tasks'],
+      ['Team', '/app/team']
+    ]
+  },
+  {
+    label: 'Financials',
+    icon: '◈',
+    items: [
+      ['FaultBooks', '/app/books'],
+      ['QuickBooks Sync', '/app/financial-sync'],
+      ['FaultSign (E-Sign)', '/app/esign'],
+      ['E-Signature (Legacy)', '/app/e-signature'],
+      ['Billing', '/app/billing']
+    ]
+  },
+  {
+    label: 'Admin',
+    icon: '⚙',
+    items: [
+      ['Setup Wizard', '/app/setup'],
+      ['White-Label', '/app/white-label'],
+      ['Partner API', '/app/partner-api'],
+      ['Integrations', '/app/integrations'],
+      ['Drive Sync', '/app/drive-sync'],
+      ['Settings', '/app/settings']
+    ]
+  }
 ];
+
+// Flat list kept for backward compatibility (search, etc.)
+export const portalNav = portalNavCategories.flatMap(c => c.items);
 
 export const modules = {
   audits: { title: 'AI Audits', eyebrow: 'Diagnose', description: 'Run scoped business, website, operational, and AI-readiness audits with evidence-backed findings.', outcomes: ['Audit scope builder', 'Evidence timeline', 'Human review queue', 'Executive report'] },
