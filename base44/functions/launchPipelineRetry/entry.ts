@@ -18,12 +18,12 @@ export default async function(req) {
     const iteration = (lp.iteration || 0) + 1;
 
     // Pull the previous QA issues to feed back into the generation prompt
-    let fixGuidance = '';
+    let qaFeedback = '';
     try {
       if (lp.qa_report_id) {
         const qr = await base44.asServiceRole.entities.QAReport.get(lp.qa_report_id);
         if (qr?.issues?.length) {
-          fixGuidance = '\n\nPREVIOUS VALIDATION ISSUES TO FIX (mandatory 100/100):\n' + qr.issues.slice(0, 8).map((i, idx) => `${idx + 1}. ${i.description || ''}${i.recommendation ? ' → ' + i.recommendation : ''}`).join('\n');
+          qaFeedback = qr.issues.slice(0, 8).map((i, idx) => `${idx + 1}. ${i.description || ''}${i.recommendation ? ' → ' + i.recommendation : ''}`).join('\n');
         }
       }
     } catch (e) {}
@@ -31,12 +31,13 @@ export default async function(req) {
     const { deliverable_id, background } = await kickoffPackDeliverable(base44, orgId, {
       business_name: lp.business_name || lp.project_name,
       industry: lp.industry,
-      description: (lp.description || '') + fixGuidance,
+      description: lp.description || '',
       target_audience: lp.target_audience,
       tone: lp.tone || 'professional',
       design_pack_id: lp.design_pack_id,
       logo_url: lp.metadata?.logo_url || null,
-      company_id: lp.company_id || null
+      company_id: lp.company_id || null,
+      qa_feedback: qaFeedback
     });
     waitUntil(background);
 
