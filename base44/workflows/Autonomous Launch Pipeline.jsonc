@@ -1,0 +1,203 @@
+{
+  "name": "Autonomous Launch Pipeline",
+  "description": "When a LaunchProject is created, autonomously generates the site from its design pack, provisions Drive/GitHub/Supabase/Vercel, validates 100% parity + operational via Browserbase, scores 100/100 mandatory with up to 3 retry iterations, then finalizes and syncs the CRM.",
+  "trigger": {
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "LaunchProject",
+      "events": [
+        "create"
+      ]
+    },
+    "condition": "${ .trigger.data.status == \"queued\" }"
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "autonomous_launch_pipeline",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "start": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "launchPipelineStart",
+            "args": {
+              "launch_project_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "wait_gen",
+          "x-base44": {
+            "title": "Start pipeline",
+            "description": "Provision infra + kick off generation"
+          }
+        }
+      },
+      {
+        "wait_gen": {
+          "wait": "PT4M",
+          "then": "validate_1",
+          "x-base44": {
+            "title": "Wait for generation",
+            "description": "Let page-by-page build finish"
+          }
+        }
+      },
+      {
+        "validate_1": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "launchPipelineValidate",
+            "args": {
+              "launch_project_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "check_1",
+          "x-base44": {
+            "title": "Validate pass 1",
+            "description": "Browserbase parity + operational"
+          }
+        }
+      },
+      {
+        "check_1": {
+          "switch": [
+            {
+              "when": "${ .validate_1.mandatory_passed == true }",
+              "then": "finalize"
+            },
+            {
+              "when": "${ true }",
+              "then": "retry_1"
+            }
+          ],
+          "x-base44": {
+            "title": "Check 100/100",
+            "description": "Pass or retry"
+          }
+        }
+      },
+      {
+        "retry_1": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "launchPipelineRetry",
+            "args": {
+              "launch_project_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "wait_1",
+          "x-base44": {
+            "title": "Retry 1",
+            "description": "Regenerate with QA feedback"
+          }
+        }
+      },
+      {
+        "wait_1": {
+          "wait": "PT4M",
+          "then": "validate_2",
+          "x-base44": {
+            "title": "Wait for retry 1",
+            "description": "Let regeneration finish"
+          }
+        }
+      },
+      {
+        "validate_2": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "launchPipelineValidate",
+            "args": {
+              "launch_project_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "check_2",
+          "x-base44": {
+            "title": "Validate pass 2",
+            "description": "Browserbase parity + operational"
+          }
+        }
+      },
+      {
+        "check_2": {
+          "switch": [
+            {
+              "when": "${ .validate_2.mandatory_passed == true }",
+              "then": "finalize"
+            },
+            {
+              "when": "${ true }",
+              "then": "retry_2"
+            }
+          ],
+          "x-base44": {
+            "title": "Check 100/100",
+            "description": "Pass or retry"
+          }
+        }
+      },
+      {
+        "retry_2": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "launchPipelineRetry",
+            "args": {
+              "launch_project_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "wait_2",
+          "x-base44": {
+            "title": "Retry 2",
+            "description": "Regenerate with QA feedback"
+          }
+        }
+      },
+      {
+        "wait_2": {
+          "wait": "PT4M",
+          "then": "validate_3",
+          "x-base44": {
+            "title": "Wait for retry 2",
+            "description": "Let regeneration finish"
+          }
+        }
+      },
+      {
+        "validate_3": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "launchPipelineValidate",
+            "args": {
+              "launch_project_id": "${ .trigger.entity_id }"
+            }
+          },
+          "then": "finalize",
+          "x-base44": {
+            "title": "Validate pass 3",
+            "description": "Final attempt"
+          }
+        }
+      },
+      {
+        "finalize": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "launchPipelineFinalize",
+            "args": {
+              "launch_project_id": "${ .trigger.entity_id }",
+              "mandatory_passed": "${ (.validate_1.mandatory_passed // .validate_2.mandatory_passed // .validate_3.mandatory_passed // false) }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Finalize",
+            "description": "Sync CRM + notify"
+          }
+        }
+      }
+    ]
+  }
+}

@@ -77,6 +77,7 @@ const PCUControlCenter = lazy(() => import('@/pages/PCUControlCenter'));
 const EnhancementEngine = lazy(() => import('@/pages/EnhancementEngine'));
 const ClientProjects = lazy(() => import('@/pages/ClientProjects'));
 const ClientFunnel = lazy(() => import('@/pages/ClientFunnel'));
+const Projects = lazy(() => import('@/pages/Projects'));
 // Xtreme Visualizer
 const XVLayout = lazy(() => import('@/components/vq/Layout'));
 const XVHome = lazy(() => import('@/pages/xv/XVHome'));
@@ -231,6 +232,7 @@ const AuthenticatedApp = () => {
         <Route path="/app/pcu-control" element={<PCUControlCenter />} />
         <Route path="/app/enhancement-engine" element={<EnhancementEngine />} />
         <Route path="/app/client-projects" element={<ClientProjects />} />
+        <Route path="/app/projects" element={<Projects />} />
         <Route path="/app/:slug" element={<Module />} />
         <Route path="/admin" element={<Admin />} />
         </Route>

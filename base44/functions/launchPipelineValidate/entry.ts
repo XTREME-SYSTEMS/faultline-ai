@@ -1,0 +1,196 @@
+import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { slugify, pushGitHubFile, deployToVercel } from '../../shared/launchInfra.ts';
+import { fetchRenderedWithScreenshot } from '../../shared/browserbase.ts';
+
+// Step 2 of the Autonomous Launch Pipeline.
+// - Polls the deliverable until generation completes, fetches the HTML
+// - Pushes index.html to the GitHub repo and deploys to Vercel
+// - Uses Browserbase to render the live Vercel URL (real browser) + screenshot
+// - Scores PARITY (vs the design pack spec) and OPERATIONAL (links/forms/no errors)
+//   via a vision-capable LLM. 100/100 is mandatory to pass.
+// - Writes a QAReport and updates the LaunchProject.
+export default async function(req) {
+  try {
+    const base44 = createClientFromRequest(req);
+    const { launch_project_id } = await req.json().catch(() => ({}));
+    if (!launch_project_id) return Response.json({ error: 'launch_project_id required' }, { status: 400 });
+
+    const lp = await base44.asServiceRole.entities.LaunchProject.get(launch_project_id);
+    if (!lp) return Response.json({ error: 'LaunchProject not found' }, { status: 404 });
+    const orgId = lp.organization_id;
+    const slug = lp.slug || slugify(lp.project_name || lp.business_name || 'faultline-site');
+
+    await base44.asServiceRole.entities.LaunchProject.update(launch_project_id, { status: 'validating' });
+
+    // 1. Poll deliverable until generated (brief — the workflow already waited)
+    let deliverable = null;
+    for (let i = 0; i < 15; i++) {
+      try {
+        deliverable = await base44.asServiceRole.entities.Deliverable.get(lp.deliverable_id);
+        if (deliverable.status === 'generated') break;
+        if (deliverable.status === 'failed') {
+          await base44.asServiceRole.entities.LaunchProject.update(launch_project_id, { status: 'failed', last_validation_summary: 'Generation failed: ' + (deliverable.metadata?.error || 'unknown') });
+          return Response.json({ failed: true, reason: 'generation_failed', iteration: lp.iteration || 0 });
+        }
+      } catch (e) {}
+      await new Promise(r => setTimeout(r, 4000));
+    }
+    if (!deliverable || deliverable.status !== 'generated') {
+      await base44.asServiceRole.entities.LaunchProject.update(launch_project_id, { status: 'retrying' });
+      return Response.json({ not_ready: true, iteration: lp.iteration || 0 });
+    }
+
+    // 2. Fetch generated HTML
+    let html = deliverable.content || '';
+    if (deliverable.file_url) {
+      try { const r = await fetch(deliverable.file_url); html = await r.text(); } catch (e) {}
+    }
+    if (!html || html.length < 100) {
+      await base44.asServiceRole.entities.LaunchProject.update(launch_project_id, { status: 'failed', last_validation_summary: 'Generated HTML was empty' });
+      return Response.json({ failed: true, reason: 'empty_html', iteration: lp.iteration || 0 });
+    }
+
+    // 3. Push to GitHub
+    const errors = {};
+    try {
+      const token = Deno.env.get('GITHUB_TOKEN');
+      if (token) {
+        const owner = token ? (await (await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${token}` } })).json()).login : null;
+        if (owner) await pushGitHubFile(token, owner, slug, 'index.html', html, `Production build ${new Date().toISOString()} — FaultLine Autonomous Pipeline`);
+      }
+    } catch (e) { errors.github_push = e.message; }
+
+    // 4. Deploy to Vercel
+    let deploymentUrl = lp.vercel_deployment_url;
+    try {
+      const token = Deno.env.get('VERCEL_TOKEN');
+      if (!token) throw new Error('VERCEL_TOKEN secret not set');
+      const teamId = Deno.env.get('VERCEL_TEAM_ID') || null;
+      const dep = await deployToVercel(token, teamId, slug, html);
+      deploymentUrl = dep.url || (dep.alias && dep.alias.length ? `https://${dep.alias[0]}` : null);
+      // Wait briefly for the deployment to go live
+      await new Promise(r => setTimeout(r, 8000));
+    } catch (e) { errors.vercel_deploy = e.message; }
+
+    await base44.asServiceRole.entities.LaunchProject.update(launch_project_id, {
+      vercel_deployment_url: deploymentUrl,
+      status: 'testing'
+    });
+
+    // 5. Browserbase — render the live URL + screenshot (real browser)
+    let liveHtml = '';
+    let screenshotUrl = null;
+    if (deploymentUrl) {
+      const rendered = await fetchRenderedWithScreenshot(deploymentUrl, { timeout: 30000 });
+      if (rendered) { liveHtml = rendered.html || ''; screenshotUrl = rendered.screenshot || null; }
+    }
+
+    // 6. Load the design pack spec for parity comparison
+    let packSpec = null;
+    try {
+      if (lp.design_pack_id) {
+        const pack = await base44.asServiceRole.entities.DesignPack.get(lp.design_pack_id);
+        packSpec = pack?.spec || null;
+      }
+    } catch (e) {}
+
+    // 7. Score parity + operational via vision-capable LLM
+    const scoringRes = await base44.integrations.Core.InvokeLLM({
+      prompt: `You are the FaultLine Autonomous Validation Engine. Score a generated website against its design pack spec and for operational readiness. 100/100 is MANDATORY to pass — only award 100 when there are zero defects.
+
+BUSINESS: ${lp.business_name || lp.project_name}
+INDUSTRY: ${lp.industry || ''}
+DEPLOYED URL: ${deploymentUrl || 'N/A (deploy failed)'}
+
+DESIGN PACK SPEC (source of truth for parity):
+${JSON.stringify(packSpec || {}, null, 2).slice(0, 6000)}
+
+LIVE RENDERED HTML (from real browser via Browserbase):
+"""
+${(liveHtml || html).slice(0, 12000)}
+"""
+${screenshotUrl ? `\nSCREENSHOT of the live site is attached as a file URL: ${screenshotUrl}\n` : ''}
+
+Score TWO dimensions, each 0-100:
+1. PARITY SCORE — how faithfully the live site reproduces the design pack: exact colors (hex), exact fonts, all pages present in order, all components present, layout system and visual hierarchy. 100 = pixel/structure-perfect match, no missing pages/components, no color or font drift.
+2. OPERATIONAL SCORE — site is fully functional: navigation works, forms present and submittable, no broken links, no JS errors, responsive, all CTAs functional, content renders (no blank sections). 100 = zero operational defects.
+
+Also return a combined test_score (min of the two), mandatory_passed = true ONLY when BOTH are exactly 100, a short summary, and a list of specific issues (each with severity + fix).
+
+Be STRICT. Do not round up. If anything is imperfect, the score must be below 100.`,
+      model: 'gemini_3_1_pro',
+      add_context_from_internet: false,
+      response_json_schema: {
+        type: 'object',
+        properties: {
+          parity_score: { type: 'number' },
+          operational_score: { type: 'number' },
+          test_score: { type: 'number' },
+          mandatory_passed: { type: 'boolean' },
+          summary: { type: 'string' },
+          issues: { type: 'array', items: { type: 'object', properties: { severity: { type: 'string' }, description: { type: 'string' }, fix: { type: 'string' } } } }
+        }
+      }
+    });
+
+    const parity = Math.round(Number(scoringRes.parity_score) || 0);
+    const operational = Math.round(Number(scoringRes.operational_score) || 0);
+    const testScore = Math.round(Number(scoringRes.test_score) || Math.min(parity, operational));
+    const mandatoryPassed = scoringRes.mandatory_passed === true || (parity >= 100 && operational >= 100);
+    const summary = scoringRes.summary || `Parity ${parity}/100 · Operational ${operational}/100`;
+    const issues = Array.isArray(scoringRes.issues) ? scoringRes.issues : [];
+
+    // 8. Write QAReport
+    let qaReportId = null;
+    try {
+      const report = await base44.asServiceRole.entities.QAReport.create({
+        organization_id: orgId,
+        target_type: 'website',
+        target_id: lp.deliverable_id,
+        target_title: lp.project_name,
+        check_type: 'headless_test',
+        status: mandatoryPassed ? 'passed' : (testScore >= 80 ? 'warnings' : 'failed'),
+        score: testScore,
+        issues: issues.map((i, idx) => ({ severity: i.severity || 'medium', category: 'parity_operational', description: `${i.description || ''}${i.fix ? ' — Fix: ' + i.fix : ''}`, recommendation: i.fix || '' })),
+        summary,
+        recommendations: issues.map(i => i.fix).filter(Boolean),
+        auto_generated: true
+      });
+      qaReportId = report.id;
+    } catch (e) { errors.qa_report = e.message; }
+
+    // 9. Update LaunchProject
+    await base44.asServiceRole.entities.LaunchProject.update(launch_project_id, {
+      parity_score: parity,
+      operational_score: operational,
+      test_score: testScore,
+      mandatory_passed: mandatoryPassed,
+      qa_report_id: qaReportId,
+      last_validation_summary: summary,
+      vercel_deployment_url: deploymentUrl,
+      status: 'testing',
+      errors: Object.keys(errors).length ? { ...(lp.errors || {}), ...errors } : null
+    });
+
+    return Response.json({
+      status: 'scored',
+      launch_project_id,
+      parity_score: parity,
+      operational_score: operational,
+      test_score: testScore,
+      mandatory_passed: mandatoryPassed,
+      iteration: lp.iteration || 0,
+      vercel_deployment_url: deploymentUrl,
+      summary,
+      issues
+    });
+  } catch (error) {
+    console.error('launchPipelineValidate error:', error);
+    try {
+      const base44 = createClientFromRequest(req);
+      const { launch_project_id } = await req.json().catch(() => ({}));
+      if (launch_project_id) await base44.asServiceRole.entities.LaunchProject.update(launch_project_id, { status: 'failed', last_validation_summary: 'Validate error: ' + error.message });
+    } catch (e) {}
+    return Response.json({ error: error.message }, { status: 500 });
+  }
+}
