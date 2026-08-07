@@ -120,7 +120,7 @@ export default function Home() {
       <a className="skip-link" href="#main">Skip to main content</a>
       <header className="site-header">
         <div className="page-wrap header-inner">
-          <a className="brand" href="#top" aria-label="Xtreme AI Systems home"><img src={LOGO_DARK} alt="Xtreme AI Systems" style={{ height: 200, width: 'auto' }} /></a>
+          <a className="brand" href="#top" aria-label="Xtreme AI Systems home"><img src={LOGO_DARK} alt="Xtreme AI Systems" style={{ height: 52, width: 'auto' }} /></a>
           <button className="menu-button" type="button" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(v => !v)}><span /><span /><span /></button>
           <nav className={`primary-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Primary navigation">
             <a href="#tools">AI Tools</a>
@@ -162,7 +162,7 @@ export default function Home() {
         </section>
 
         {/* Floor types gallery */}
-        <section className="content-section section-line" id="floors" style={{ background: '#FAF8F2' }}>
+        <section className="content-section section-line" id="floors" style={{ background: '#FFFFFF' }}>
           <div className="page-wrap">
             <div className="center-heading">
               <p className="eyebrow">Ultra-lifelike floor library</p>
@@ -171,7 +171,7 @@ export default function Home() {
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 18, marginTop: 36 }}>
               {floorTypes.map(f => (
-                <article key={f.name} style={{ background: '#fff', border: '1px solid #e5e1da', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
+                <article key={f.name} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
                   <Image src={f.img} alt={f.name} fittingType="fill" className="block w-full" style={{ height: 200 }} />
                   <div style={{ padding: '16px 18px' }}>
                     <h3 style={{ margin: '0 0 4px', fontSize: 16 }}>{f.name}</h3>
@@ -214,7 +214,7 @@ export default function Home() {
               {aiTools.map(t => {
                 const I = t.icon;
                 return (
-                  <article key={t.name} style={{ background: '#fff', border: '1px solid #e5e1da', borderRadius: 14, padding: '24px 22px' }}>
+                  <article key={t.name} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 14, padding: '24px 22px' }}>
                     <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg, #FFD60A, #FFB800)', display: 'grid', placeItems: 'center', marginBottom: 16 }}>
                       <I size={24} color="#0B0B0D" />
                     </div>
@@ -231,7 +231,7 @@ export default function Home() {
         </section>
 
         {/* Websites service */}
-        <section className="content-section section-line" id="websites" style={{ background: '#FAF8F2' }}>
+        <section className="content-section section-line" id="websites" style={{ background: '#FFFFFF' }}>
           <div className="page-wrap" style={{ display: 'grid', gridTemplateColumns: '.95fr 1.05fr', gap: 56, alignItems: 'center' }}>
             <div>
               <p className="eyebrow">Custom websites</p>
@@ -247,7 +247,7 @@ export default function Home() {
                 <Link to="/pricing" className="button button--light">See Plans <Icon name="arrow-right" /></Link>
               </div>
             </div>
-            <div style={{ position: 'relative', borderRadius: 18, overflow: 'hidden', boxShadow: '0 24px 60px #0000001a', border: '1px solid #e5e1da' }}>
+            <div style={{ position: 'relative', borderRadius: 18, overflow: 'hidden', boxShadow: '0 24px 60px #0000001a', border: '1px solid #e5e5e5' }}>
               <Image src={IMG.warehouse} alt="Polished concrete commercial floor website showcase" fittingType="fill" className="block w-full" style={{ height: 380 }} />
               <div style={{ position: 'absolute', inset: '16px', border: '1px solid rgba(255,255,255,.4)', borderRadius: 10, pointerEvents: 'none' }} />
             </div>
@@ -265,7 +265,7 @@ export default function Home() {
               {services.map(s => {
                 const I = s.icon;
                 return (
-                  <article key={s.title} style={{ background: '#fff', border: '1px solid #e5e1da', borderRadius: 14, padding: '26px 24px' }}>
+                  <article key={s.title} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 14, padding: '26px 24px' }}>
                     <div style={{ width: 44, height: 44, borderRadius: 10, background: '#0B0B0D', display: 'grid', placeItems: 'center', marginBottom: 16 }}>
                       <I size={22} color="#FFD60A" />
                     </div>
@@ -279,7 +279,7 @@ export default function Home() {
         </section>
 
         {/* Pricing */}
-        <section className="content-section pricing section-line" id="pricing" style={{ background: '#FAF8F2' }}>
+        <section className="content-section pricing section-line" id="pricing" style={{ background: '#FFFFFF' }}>
           <div className="page-wrap">
             <div className="center-heading">
               <p className="eyebrow">Pricing</p>
