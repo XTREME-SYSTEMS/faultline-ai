@@ -65,11 +65,12 @@ export default async function(req) {
       }
     } catch (e) { errors.company = e.message; }
 
-    // 2. Kick off pack-driven generation (background)
+    // 2. Create the "generating" Deliverable — the workflow drives batch generation
+    //    via generateSiteBatch calls (no waitUntil needed, each batch < 120s).
     let deliverableId = lp.deliverable_id;
     try {
       if (!deliverableId && lp.design_pack_id) {
-        const { deliverable_id, background } = await kickoffPackDeliverable(base44, orgId, {
+        const { deliverable_id } = await kickoffPackDeliverable(base44, orgId, {
           business_name: lp.business_name || lp.project_name,
           industry: lp.industry,
           description: lp.description,
@@ -80,7 +81,6 @@ export default async function(req) {
           company_id: companyId || null
         });
         deliverableId = deliverable_id;
-        waitUntil(background);
       }
     } catch (e) { errors.generation = e.message; }
 

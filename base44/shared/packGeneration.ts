@@ -1,31 +1,28 @@
-// Shared pack-driven website generation — used by generateWebsite and the
-// autonomous launch pipeline. Creates a "generating" Deliverable, then builds
-// the site page-by-page in the background (each InvokeLLM call stays well under
-// the platform's 120s cap), uploads the stitched HTML to file storage, and marks
-// the deliverable ready. The caller wraps `background` in waitUntil().
+// Shared pack-driven website generation — used by the autonomous launch pipeline.
+// The generation is driven by the workflow, which calls generateSiteBatch for each
+// batch of pages, then stitchSite to combine them. This avoids waitUntil reliability
+// issues and implements SPEED-03 (streaming generation with section-by-section progress).
 
-export async function runPackGenerationBackground(base44, orgId, deliverableId, designPackId, opts) {
-  const { business_name, industry, description, target_audience, tone, logo_url, qa_feedback } = opts;
-  try {
-    const pack = await base44.asServiceRole.entities.DesignPack.get(designPackId);
-    const s = pack?.spec || {};
-    const b = s.brand || {};
-    const cols = b.colors || {};
-    const bgColor = cols.background || '#000000';
-    const primary = cols.primary || '#EDD80C';
-    const secondary = cols.secondary || cols.background || '#1A1A1A';
-    const accent = cols.accent || cols.primary || '#C0C0C0';
-    const textColor = cols.text || '#FFFFFF';
-    const mutedColor = cols.muted || '#9CA3AF';
-    const cardColor = cols.card || '#111111';
-    const headingFont = b.fonts?.heading || 'Orbitron';
-    const bodyFont = b.fonts?.body || 'Rajdhani';
-    const pagesToBuild = s.pages || [];
-    const allComponents = s.components || [];
-    const slug = (n) => (n || '').replace(/^\d+\.\s*/, '').replace(/[^a-z0-9]/gi, '').toLowerCase();
-    const pageTitle = (n) => (n || '').replace(/^\d+\.\s*/, '');
+// Build the HTML shell (head + nav + foot) from the design pack spec.
+export function buildShell(spec, opts) {
+  const { business_name, industry, description, tone, logo_url } = opts;
+  const s = spec || {};
+  const b = s.brand || {};
+  const cols = b.colors || {};
+  const bgColor = cols.background || '#000000';
+  const primary = cols.primary || '#EDD80C';
+  const secondary = cols.secondary || cols.background || '#1A1A1A';
+  const accent = cols.accent || cols.primary || '#C0C0C0';
+  const textColor = cols.text || '#FFFFFF';
+  const mutedColor = cols.muted || '#9CA3AF';
+  const cardColor = cols.card || '#111111';
+  const headingFont = b.fonts?.heading || 'Orbitron';
+  const bodyFont = b.fonts?.body || 'Rajdhani';
+  const pagesToBuild = s.pages || [];
+  const slug = (n) => (n || '').replace(/^\d+\.\s*/, '').replace(/[^a-z0-9]/gi, '').toLowerCase();
+  const pageTitle = (n) => (n || '').replace(/^\d+\.\s*/, '');
 
-    const head = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+  const head = `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>${business_name} — ${industry || ''}</title>
 <meta name="description" content="${(description || '').slice(0, 160)}">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -82,35 +79,35 @@ form input:focus,form textarea:focus{outline:none;border-color:var(--primary)}
 </style></head><body>
 <nav><div class="brand">${logo_url ? `<img src="${logo_url}" alt="${business_name}">` : business_name}</div><div class="links" id="navlinks">${pagesToBuild.map(p => `<a href="#${slug(p.name)}">${pageTitle(p.name)}</a>`).join('')}</div><button class="hamburger" onclick="document.getElementById('navlinks').classList.toggle('open')">☰</button></nav>`;
 
-    const foot = `<footer><p>© ${new Date().getFullYear()} ${business_name}. ${industry || ''}.</p><p style="margin-top:8px;color:var(--accent)">${b.tone || tone || ''}</p></footer>
+  const foot = `<footer><p>© ${new Date().getFullYear()} ${business_name}. ${industry || ''}.</p><p style="margin-top:8px;color:var(--accent)">${b.tone || tone || ''}</p></footer>
 <script>
 document.querySelectorAll('nav .links a').forEach(a=>a.addEventListener('click',()=>document.getElementById('navlinks').classList.remove('open')));
 document.querySelectorAll('form').forEach(f=>f.addEventListener('submit',e=>{e.preventDefault();const b=f.querySelector('button');if(b){const o=b.textContent;b.textContent='✓ Done';setTimeout(()=>b.textContent=o,1500);}});
 </script></body></html>`;
 
-    // BATCHED GENERATION — pages in batches of 3 using the fast gemini_3_flash model.
-    // Each batch takes ~30-40s; 10 pages = 4 batches ≈ 120-160s total.
-    // Reliable in waitUntil background execution and produces complete sections.
-    const BATCH_SIZE = 3;
-    const fragments = [];
-    for (let bi = 0; bi < pagesToBuild.length; bi += BATCH_SIZE) {
-      const batch = pagesToBuild.slice(bi, bi + BATCH_SIZE);
-      const batchSpec = batch.map((pg, i) => `PAGE ${bi + i + 1}: "${pageTitle(pg.name)}"
+  return { head, foot, colors: { bgColor, primary, secondary, accent, textColor, mutedColor, cardColor }, fonts: { headingFont, bodyFont }, pages: pagesToBuild, slug, pageTitle };
+}
+
+// Build the LLM prompt for a single batch of pages.
+export function buildBatchPrompt(shellData, batch, batchStartIndex, opts) {
+  const { business_name, industry, description, target_audience, tone, qa_feedback } = opts;
+  const { colors, fonts, slug, pageTitle } = shellData;
+  const batchSpec = batch.map((pg, i) => `PAGE ${batchStartIndex + i + 1}: "${pageTitle(pg.name)}"
   ID: ${slug(pg.name)}
   PURPOSE: ${pg.purpose || ''}
   SECTIONS (include ALL): ${(pg.sections || []).join(', ')}
   COMPONENTS (include ALL): ${(pg.components || []).join(', ')}`).join('\n\n');
 
-      const batchPrompt = `Generate ${batch.length} page sections for ${business_name} (${industry || 'the client'}). Output ONLY <section> blocks — no <html>, <head>, <body>, or <style> tags.
+  return `Generate ${batch.length} page sections for ${business_name} (${industry || 'the client'}). Output ONLY <section> blocks — no <html>, <head>, <body>, or <style> tags.
 
 BUSINESS: ${business_name} — ${description}
 TARGET AUDIENCE: ${target_audience || 'general'}
 TONE: ${tone}
 
 CRITICAL DESIGN RULES — the page shell already defines these CSS custom properties in :root. You MUST use var() for EVERY color. NEVER hardcode hex values.
-  --background: ${bgColor}  --primary: ${primary}  --secondary: ${secondary}  --accent: ${accent}
-  --text: ${textColor}  --muted: ${mutedColor}  --card: ${cardColor}
-Heading font: "${headingFont}". Body font: "${bodyFont}". Already loaded — use via font-family.
+  --background: ${colors.bgColor}  --primary: ${colors.primary}  --secondary: ${colors.secondary}  --accent: ${colors.accent}
+  --text: ${colors.textColor}  --muted: ${colors.mutedColor}  --card: ${colors.cardColor}
+Heading font: "${fonts.headingFont}". Body font: "${fonts.bodyFont}". Already loaded — use via font-family.
 
 PAGES TO GENERATE (one <section id="..."> per page, in order):
 ${batchSpec}
@@ -122,63 +119,35 @@ OUTPUT RULES:
 - Build REAL <form> elements with <input>, <label>, <button> where forms are needed.
 - Write REAL marketing copy for ${business_name}. No placeholder text or fake testimonials.
 - Start with <section and end with </section>.${qa_feedback ? `\n\nMANDATORY FIXES FROM PREVIOUS QA REVIEW:\n${qa_feedback}` : ''}`;
-
-      let batchFrags = '';
-      try {
-        const r = await base44.integrations.Core.InvokeLLM({ prompt: batchPrompt, model: 'gemini_3_flash' });
-        batchFrags = typeof r === 'string' ? r : (r?.content || r?.text || '');
-        batchFrags = batchFrags.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
-      } catch (e) { console.error(`batch ${bi / BATCH_SIZE + 1} failed:`, e.message); }
-
-      // Parse sections from this batch; fill missing ones with fallback
-      for (const pg of batch) {
-        const expectedId = slug(pg.name);
-        const re = new RegExp(`<section[^>]*id=["']${expectedId}["'][^>]*>[\\s\\S]*?</section>`, 'i');
-        const match = batchFrags.match(re);
-        if (match) {
-          fragments.push(match[0]);
-        } else {
-          let frag = '';
-          try {
-            const r = await base44.integrations.Core.InvokeLLM({ prompt: `Generate the "${pageTitle(pg.name)}" page/section for ${business_name} (${industry || ''}). Output ONLY a <section id="${expectedId}">...</section> HTML fragment. Use var() for all colors (--background:${bgColor} --primary:${primary} --secondary:${secondary} --accent:${accent} --text:${textColor} --muted:${mutedColor} --card:${cardColor}). Heading font "${headingFont}", body font "${bodyFont}". PURPOSE: ${pg.purpose || ''}. SECTIONS: ${(pg.sections || []).join(', ')}. COMPONENTS: ${(pg.components || []).join(', ')}. Write real copy for ${business_name}. Start with <section and end with </section>.`, model: 'gemini_3_flash' });
-            frag = typeof r === 'string' ? r : (r?.content || r?.text || '');
-            frag = frag.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
-          } catch (e) { console.error('fallback gen failed', pg.name, e.message); }
-          if (!frag || frag.length < 100) frag = `<section id="${expectedId}"><div class="section-head"><h2>${pageTitle(pg.name)}</h2><p>${pg.purpose || ''}</p></div><div class="grid cards"><div class="card"><h3>${pageTitle(pg.name)}</h3><p>Content for ${business_name}.</p></div></div></section>`;
-          if (!frag.startsWith('<section')) frag = `<section id="${expectedId}">${frag}</section>`;
-          fragments.push(frag);
-        }
-      }
-    }
-
-    const html = head + '\n' + fragments.join('\n') + '\n' + foot;
-    let fileUrl = null;
-    try {
-      const up = await base44.integrations.Core.UploadFile({ file: new Blob([html], { type: 'text/html' }) });
-      fileUrl = up?.file_url || null;
-    } catch (e) { console.error('upload failed:', e.message); }
-
-    await base44.asServiceRole.entities.Deliverable.update(deliverableId, {
-      content: '',
-      file_url: fileUrl,
-      status: 'generated',
-      metadata: { business_name, industry, design_pack_id: designPackId, tone, pages: pagesToBuild.map(p => pageTitle(p.name)), logo_url: logo_url || null, file_url: fileUrl, generated_at: new Date().toISOString(), html_length: html.length }
-    });
-    await base44.asServiceRole.entities.Receipt.create({
-      organization_id: orgId, system: 'website_generator', action: 'generate', status: 'success',
-      summary: `Pack-driven website generated for ${business_name} (${pagesToBuild.length} pages)`,
-      evidence: { deliverable_id: deliverableId, business_name, industry, file_url: fileUrl, design_pack_id: designPackId }
-    });
-  } catch (e) {
-    console.error('pack generation failed:', e.message);
-    try { await base44.asServiceRole.entities.Deliverable.update(deliverableId, { status: 'failed', metadata: { error: e.message } }); } catch {}
-  }
 }
 
-// Creates the "generating" Deliverable and returns { deliverable_id, background }.
-// The caller MUST wrap `background` in waitUntil() so it survives the response.
+// Parse sections from LLM output, fill missing ones with fallback.
+export function parseBatchSections(batchFrags, batch, shellData) {
+  const { slug, pageTitle, colors, fonts } = shellData;
+  const fragments = [];
+  for (const pg of batch) {
+    const expectedId = slug(pg.name);
+    const re = new RegExp(`<section[^>]*id=["']${expectedId}["'][^>]*>[\\s\\S]*?</section>`, 'i');
+    const match = batchFrags.match(re);
+    if (match) {
+      fragments.push(match[0]);
+    } else {
+      fragments.push(`<section id="${expectedId}"><div class="section-head"><h2>${pageTitle(pg.name)}</h2><p>${pg.purpose || ''}</p></div><div class="grid cards"><div class="card"><h3>${pageTitle(pg.name)}</h3><p>Content for this section.</p></div></div></section>`);
+    }
+  }
+  return fragments;
+}
+
+// Clean LLM output (strip markdown code fences).
+export function cleanLlmOutput(r) {
+  let text = typeof r === 'string' ? r : (r?.content || r?.text || '');
+  return text.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+}
+
+// Creates the "generating" Deliverable and returns its id.
+// The workflow drives batch generation by calling generateSiteBatch repeatedly.
 export async function kickoffPackDeliverable(base44, orgId, opts) {
-  const { business_name, industry, design_pack_id, tone, logo_url, company_id, qa_feedback } = opts;
+  const { business_name, industry, design_pack_id, tone, logo_url, company_id } = opts;
   const deliverable = await base44.asServiceRole.entities.Deliverable.create({
     organization_id: orgId,
     deliverable_type: 'website',
@@ -190,6 +159,5 @@ export async function kickoffPackDeliverable(base44, orgId, opts) {
   if (company_id) {
     try { await base44.asServiceRole.entities.Deliverable.update(deliverable.id, { company_id }); } catch (e) {}
   }
-  const background = runPackGenerationBackground(base44, orgId, deliverable.id, design_pack_id, opts);
-  return { deliverable_id: deliverable.id, background };
+  return { deliverable_id: deliverable.id };
 }
