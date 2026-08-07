@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import AiFieldGenerator from '@/components/fl/AiFieldGenerator';
 import SheetSelect from '@/components/pcu/SheetSelect';
+import LaunchPanel from '@/components/fl/LaunchPanel';
 
 export default function WebsiteGenerator() {
   const [companies, setCompanies] = useState([]);
@@ -524,6 +525,10 @@ export default function WebsiteGenerator() {
             )}
           </div>
         </div>
+      )}
+
+      {result && (
+        <LaunchPanel websiteHtml={result.website_html} projectName={form.business_name || form.app_name} />
       )}
 
       {savedWebsites.length > 0 && !result && (
