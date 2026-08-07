@@ -4,7 +4,8 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 // prompts for every generation task in the system. The promptLibrary.ts shared
 // module then autonomously resolves these at generation time via resolvePrompt().
 //
-// Idempotent: skips prompt_ids that already exist for the org.
+// Idempotent upsert: updates existing prompt_ids with the latest text, creates
+// new ones. Re-run after editing prompts to push updates to the DB.
 // Body: { organization_id?: string } — defaults to the caller's org.
 export default async function(req) {
   try {
@@ -15,7 +16,8 @@ export default async function(req) {
     if (!orgId) return Response.json({ error: 'No organization' }, { status: 400 });
 
     // The master prompt library — each entry is the highest-quality prompt for its task.
-    // These are the prompts the system autonomously uses for best-quality results.
+    // The three pack prompts are tuned to the PACK_SCHEMA used by generateDesignPack
+    // (brand, pages, components, layout_system, visual_hierarchy, generation_instructions).
     const PROMPTS = [
       {
         prompt_id: 'logo-pack-generate-v2',
@@ -23,23 +25,27 @@ export default async function(req) {
         tool_name: 'Logo Pack Generator',
         title: 'Premium Logo Pack Generation',
         prompt_type: 'GENERATE',
-        description: 'Generates a complete logo pack — primary, monogram, and mark — from business context.',
+        description: 'Generates a logo-focused design pack spec — brand, colors, fonts, and presentation pages for a logo pack.',
         required_inputs: ['business_name', 'industry'],
-        optional_inputs: ['tone', 'target_audience', 'description'],
-        prompt_text: `You are an elite brand designer. Generate a premium logo pack for {{business_name}}, a {{industry}} company.
+        optional_inputs: ['tone', 'target_audience', 'description', 'style_preferences'],
+        prompt_text: `You are a senior brand architect and design systems lead. Create a complete, production-grade logo pack for this business. Output a structured spec a code generator can reproduce EXACTLY.
 
-Context: {{description|a leading business in its space}}
-Tone: {{tone|professional}}
-Target audience: {{target_audience|general professionals}}
+BUSINESS: {{business_name}}
+INDUSTRY: {{industry|General}}
+DESCRIPTION: {{description|a leading business in its space}}
+TARGET AUDIENCE: {{target_audience|general}}
+TONE: {{tone|professional}}
+STYLE PREFERENCES: {{style_preferences|modern, clean, high-conversion}}
 
-Produce a logo pack with THREE variations:
-1. PRIMARY LOGO — full business name, refined typography, a distinctive mark that reflects the industry. Describe the exact visual: layout, icon style, typographic treatment.
-2. MONOGRAM — a 2-3 letter mark for app icons and favicons. Describe shape, geometry, and negative-space treatment.
-3. ICON MARK — a standalone symbol that works at 16px and 512px.
+Design the logo pack with:
+1. BRAND — a fitting brand name (use "{{business_name}}" if appropriate), a style description focused on logo/identity, an EXACT color palette as hex codes (background, primary, secondary, accent, text, muted, card — cohesive, high-quality, fits the industry), exact Google Fonts (heading + body — a distinctive display font + readable body font), and the tone of voice.
+2. PAGES — 1-2 brand/logo presentation pages. For each: name, purpose, sections (logo mark, monogram, icon, color usage), layout description, and components.
+3. COMPONENTS — logo mark, monogram, icon symbol, color swatches, typography specimen.
+4. LAYOUT_SYSTEM — grid/modular system for the presentation sheet.
+5. VISUAL_HIERARCHY — how the logo and brand elements guide attention.
+6. GENERATION_INSTRUCTIONS — explicit instructions a generator must follow to reproduce this logo pack pixel-faithfully: exact CSS color variables, exact Google Fonts, exact pages, sections, and components.
 
-For each, specify: exact hex colors (primary + accent), font pairing (heading + body), and a 2-sentence rationale for why it converts.
-
-Return a JSON object with: primary_logo, monogram, icon_mark — each containing description, colors (hex array), fonts, and rationale. Also return a brand_name and style_description for the overall pack.`,
+Make it premium, cohesive, and brand-ready. All hex codes must be real, valid hex. All fonts must be real Google Fonts.`,
         tags: ['logo', 'branding', 'design-pack'],
         approval_required: false
       },
@@ -49,25 +55,27 @@ Return a JSON object with: primary_logo, monogram, icon_mark — each containing
         tool_name: 'Brand Pack Generator',
         title: 'Complete Brand Pack Generation',
         prompt_type: 'GENERATE',
-        description: 'Generates a full brand pack — colors, fonts, voice, tone, and visual direction.',
+        description: 'Generates a full brand pack spec — colors, fonts, voice, tone, visual direction, and brand presentation pages.',
         required_inputs: ['business_name', 'industry'],
-        optional_inputs: ['tone', 'target_audience', 'description', 'logo_url'],
-        prompt_text: `You are a senior brand strategist. Build a complete brand pack for {{business_name}}, a {{industry}} business.
+        optional_inputs: ['tone', 'target_audience', 'description', 'style_preferences'],
+        prompt_text: `You are a senior brand architect and design systems lead. Create a complete, production-grade brand pack for this business. Output a structured spec a code generator can reproduce EXACTLY.
 
-Context: {{description|a high-growth business}}
-Tone: {{tone|professional}}
-Target audience: {{target_audience|general professionals}}
+BUSINESS: {{business_name}}
+INDUSTRY: {{industry|General}}
+DESCRIPTION: {{description|a high-growth business}}
+TARGET AUDIENCE: {{target_audience|general}}
+TONE: {{tone|professional}}
+STYLE PREFERENCES: {{style_preferences|modern, clean, high-conversion}}
 
-Define the FULL brand system:
-1. BRAND NAME — confirm or refine the name
-2. BRAND VOICE — 3 adjectives that describe the voice (e.g. "confident, precise, warm")
-3. BRAND COLORS — exact hex values for: background, primary, secondary, accent, text, muted, card. Choose a cohesive palette that signals trust + premium quality for this industry.
-4. TYPOGRAPHY — heading font and body font (from Google Fonts), with rationale
-5. VISUAL DIRECTION — 3-sentence description of the overall visual style
-6. MESSAGING PILLARS — 3 core messages the brand should communicate
-7. TAGLINE — a memorable tagline
+Design the brand pack with:
+1. BRAND — a fitting brand name (use "{{business_name}}" if appropriate), a style description, an EXACT color palette as hex codes (background, primary, secondary, accent, text, muted, card — cohesive, high-quality, fits the industry and tone), exact Google Fonts (heading + body — distinctive display + readable body), and the tone of voice.
+2. PAGES — 2-3 brand presentation pages (brand overview, color & typography, logo usage). For each: name, purpose, sections, layout description, and components.
+3. COMPONENTS — color palette swatches, typography specimen, logo usage examples, brand voice examples, stationery.
+4. LAYOUT_SYSTEM — grid/modular system for the brand sheet.
+5. VISUAL_HIERARCHY — how attention is guided across the brand presentation.
+6. GENERATION_INSTRUCTIONS — explicit, ordered instructions a generator must follow to reproduce this brand pack pixel-faithfully: exact CSS color variables, exact Google Fonts, exact pages, sections, and components, and responsive rules.
 
-Return a JSON object: { brand: { name, voice, style_description, tone }, colors: { background, primary, secondary, accent, text, muted, card }, fonts: { heading, body }, messaging: { pillars: [], tagline } }`,
+Make it premium, cohesive, and conversion-optimized. All hex codes must be real, valid hex. All fonts must be real Google Fonts.`,
         tags: ['brand', 'branding', 'design-pack'],
         approval_required: false
       },
@@ -77,25 +85,27 @@ Return a JSON object: { brand: { name, voice, style_description, tone }, colors:
         tool_name: 'Web Pack Generator',
         title: 'Complete Web Pack Generation',
         prompt_type: 'GENERATE',
-        description: 'Generates a full web design pack — layout system, component library, page structure, and responsive rules.',
+        description: 'Generates a full web design pack spec — layout system, component library, page structure, and responsive rules.',
         required_inputs: ['business_name', 'industry'],
-        optional_inputs: ['tone', 'target_audience', 'description', 'pages'],
-        prompt_text: `You are an elite web design architect. Build a complete web pack for {{business_name}}, a {{industry}} business.
+        optional_inputs: ['tone', 'target_audience', 'description', 'style_preferences'],
+        prompt_text: `You are a senior brand architect and design systems lead. Create a complete, production-grade web pack for this business. Output a structured spec a code generator can reproduce EXACTLY.
 
-Context: {{description|a high-growth business}}
-Tone: {{tone|professional}}
+BUSINESS: {{business_name}}
+INDUSTRY: {{industry|General}}
+DESCRIPTION: {{description|a high-growth business}}
+TARGET AUDIENCE: {{target_audience|general}}
+TONE: {{tone|professional}}
+STYLE PREFERENCES: {{style_preferences|modern, clean, high-conversion}}
 
-Define the FULL web design system:
-1. LAYOUT SYSTEM — grid system (columns, gutters, max-width), responsive breakpoints, section spacing
-2. COMPONENT LIBRARY — list every component the site needs (nav, hero, cards, pricing, testimonials, forms, footer, etc.) with a 1-line spec for each
-3. PAGE STRUCTURE — the pages the site should have, each with: name, purpose, sections (array), components (array)
-4. NAVIGATION — the nav structure and mobile menu behavior
-5. RESPONSIVE RULES — how layouts collapse on mobile
-6. CONVERSION ELEMENTS — CTAs, forms, and trust signals to include
+Design the web pack with:
+1. BRAND — a fitting brand name (use "{{business_name}}" if appropriate), a style description, an EXACT color palette as hex codes (background, primary, secondary, accent, text, muted, card — cohesive, high-quality, fits the industry and tone), exact Google Fonts (heading + body — distinctive display + readable body), and the tone of voice.
+2. PAGES — 8-10 pages a high-converting site for this business needs (Home, About, Services, Pricing, Contact, etc.). For each: name, purpose, sections, layout description, and components.
+3. COMPONENTS — every reusable UI component (nav, hero, cards, forms, testimonials, pricing cards, footer, etc.).
+4. LAYOUT_SYSTEM — grid/modular system, spacing, structural approach. Use a vanilla CSS approach with predefined utility classes (.grid, .cards, .card, .btn, .grid-2, .grid-3, .grid-4, .split, .img-card, .tag, .kpi-card, .pricing-card, .testimonial-card).
+5. VISUAL_HIERARCHY — how attention is guided.
+6. GENERATION_INSTRUCTIONS — explicit, ordered instructions a generator must follow to reproduce this pack pixel-faithfully: exact CSS color variables, exact Google Fonts to load, exact pages in order, exact sections per page, exact components, and responsive rules.
 
-Use a vanilla CSS approach with predefined utility classes (.grid, .cards, .card, .btn, .grid-2, .grid-3, .grid-4, .split, .img-card, .tag, .kpi-card, .pricing-card, .testimonial-card). The layout_system should describe this.
-
-Return a JSON object: { brand: { name, style_description, tone, colors: { background, primary, secondary, accent, text, muted, card }, fonts: { heading, body } }, layout_system: string, pages: [{ name, purpose, sections: [], components: [] }] }`,
+Make it premium, cohesive, and conversion-optimized. All hex codes must be real, valid hex. All fonts must be real Google Fonts.`,
         tags: ['web', 'design-pack', 'layout'],
         approval_required: false
       },
@@ -212,39 +222,55 @@ Be specific and practical. No generic advice.`,
       }
     ];
 
-    // Load existing prompt_ids to skip duplicates
+    // Load existing prompts and build upsert maps
     const existing = await base44.asServiceRole.entities.PromptTemplate.filter(
       { organization_id: orgId, status: 'active' }, '-created_date', 500
     );
-    const existingIds = new Set(existing.map(p => p.prompt_id));
+    const existingMap = {};
+    for (const p of existing) existingMap[p.prompt_id] = p;
 
-    const toCreate = PROMPTS.filter(p => !existingIds.has(p.prompt_id)).map(p => ({
-      organization_id: orgId,
-      prompt_id: p.prompt_id,
-      tool_id: p.tool_id,
-      tool_name: p.tool_name,
-      title: p.title,
-      prompt_type: p.prompt_type,
-      description: p.description,
-      required_inputs: p.required_inputs,
-      optional_inputs: p.optional_inputs,
-      prompt_text: p.prompt_text,
-      tags: p.tags,
-      approval_required: p.approval_required,
-      version: '2.0.0',
-      status: 'active'
-    }));
+    const toCreate = [];
+    const toUpdate = [];
+    for (const p of PROMPTS) {
+      const fields = {
+        organization_id: orgId,
+        prompt_id: p.prompt_id,
+        tool_id: p.tool_id,
+        tool_name: p.tool_name,
+        title: p.title,
+        prompt_type: p.prompt_type,
+        description: p.description,
+        required_inputs: p.required_inputs,
+        optional_inputs: p.optional_inputs,
+        prompt_text: p.prompt_text,
+        tags: p.tags,
+        approval_required: p.approval_required,
+        version: '2.0.0',
+        status: 'active'
+      };
+      if (existingMap[p.prompt_id]) {
+        toUpdate.push({ id: existingMap[p.prompt_id].id, ...fields });
+      } else {
+        toCreate.push(fields);
+      }
+    }
 
     let created = 0;
+    let updated = 0;
     if (toCreate.length > 0) {
       try {
         await base44.asServiceRole.entities.PromptTemplate.bulkCreate(toCreate);
         created = toCreate.length;
       } catch (e) {
-        // Fallback: create one by one
-        for (const p of toCreate) {
-          try { await base44.asServiceRole.entities.PromptTemplate.create(p); created++; } catch (e2) {}
-        }
+        for (const p of toCreate) { try { await base44.asServiceRole.entities.PromptTemplate.create(p); created++; } catch (e2) {} }
+      }
+    }
+    if (toUpdate.length > 0) {
+      try {
+        await base44.asServiceRole.entities.PromptTemplate.bulkUpdate(toUpdate);
+        updated = toUpdate.length;
+      } catch (e) {
+        for (const p of toUpdate) { try { await base44.asServiceRole.entities.PromptTemplate.update(p.id, p); updated++; } catch (e2) {} }
       }
     }
 
@@ -253,7 +279,7 @@ Be specific and practical. No generic advice.`,
       organization_id: orgId,
       total_prompts_in_library: PROMPTS.length,
       newly_seeded: created,
-      already_existed: PROMPTS.length - created
+      updated: updated
     });
   } catch (error) {
     console.error('seedPromptLibrary error:', error);

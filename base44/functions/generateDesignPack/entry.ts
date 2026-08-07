@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { resolvePrompt } from '../../shared/promptLibrary.ts';
 
 // AI Design Pack Generator — creates a logo, brand, or web pack from a business
 // description. Uses InvokeLLM to synthesize a pixel-faithful design spec (the same
@@ -92,8 +93,10 @@ Design the ${label} with:
 
 Make it premium, cohesive, and conversion-optimized. All hex codes must be real, valid hex. All fonts must be real Google Fonts.`;
 
+    const resolvedSpecPrompt = await resolvePrompt(base44, orgId, pType === 'logo_pack' ? 'logo-pack' : pType === 'brand_pack' ? 'brand-pack' : 'web-pack', 'GENERATE',
+      { business_name, industry, description, target_audience, tone, style_preferences }, specPrompt);
     const specRes = await base44.integrations.Core.InvokeLLM({
-      prompt: specPrompt,
+      prompt: resolvedSpecPrompt,
       model: 'gemini_3_1_pro',
       response_json_schema: PACK_SCHEMA
     });

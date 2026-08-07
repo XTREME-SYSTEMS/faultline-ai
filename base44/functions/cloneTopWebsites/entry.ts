@@ -98,6 +98,18 @@ Then build a "superiority strategy" — how to build a website that is EQUIVALEN
       superiority_strategy: res.superiority_strategy || {}
     };
 
+    // Store the superiority strategy back on the TopPerformer record so pack/website
+    // generators can consume it directly.
+    if (body.top_performer_id) {
+      try {
+        await base44.asServiceRole.entities.TopPerformer.update(body.top_performer_id, {
+          superiority_strategy: analysis.superiority_strategy,
+          clone_status: 'cloning',
+          analysis_data: { competitors, analysis }
+        });
+      } catch (e) { console.error('cloneTopWebsites: top performer update failed:', e.message); }
+    }
+
     await base44.asServiceRole.entities.Receipt.create({
       organization_id: orgId,
       system: 'website_generator',

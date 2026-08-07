@@ -1,0 +1,45 @@
+{
+  "description": "Nightly autonomous scan of high-profit industries to discover the top wealth-generating websites and systems, analyze their niche/revenue model/client base, and queue them for cloning.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 3 * * *",
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "top_performer_discovery",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "discover": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "discoverTopPerformers",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Discover top performers",
+            "description": "Scan industries for top profit sites"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Top Performer Discovery"
+}

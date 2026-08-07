@@ -72,7 +72,8 @@ export default function GenerationPipeline() {
           if (!selectedPerformer) throw new Error('Select a target performer first');
           const res = await base44.functions.invoke('cloneTopWebsites', {
             category: selectedPerformer.industry,
-            industry: selectedPerformer.industry
+            industry: selectedPerformer.industry,
+            top_performer_id: selectedPerformer.id
           });
           result = res.data || res;
           break;
