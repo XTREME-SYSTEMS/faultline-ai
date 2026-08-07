@@ -27,10 +27,22 @@ export default function WebsiteGenerator() {
   const [cloneResult, setCloneResult] = useState(null);
   const [cloneError, setCloneError] = useState('');
   const [showCloneSection, setShowCloneSection] = useState(false);
+  const [templateCount, setTemplateCount] = useState(null);
+  const [scraping, setScraping] = useState(false);
+  const [scrapeError, setScrapeError] = useState('');
+  const [scrapeResult, setScrapeResult] = useState(null);
+
+  const loadTemplateCount = async () => {
+    try {
+      const data = await base44.entities.WebsiteLibraryAsset.filter({ library_type: 'industry_template', status: 'active' }, '-created_date', 100);
+      setTemplateCount(data.length);
+    } catch (e) { console.error(e); }
+  };
 
   useEffect(() => {
     base44.entities.Company.list().then(setCompanies).catch(() => {});
     loadSavedWebsites();
+    loadTemplateCount();
   }, []);
 
   const loadSavedWebsites = async () => {
@@ -61,6 +73,23 @@ export default function WebsiteGenerator() {
 
   const toggleFeature = (feature) => {
     setFeatures(features.includes(feature) ? features.filter(f => f !== feature) : [...features, feature]);
+  };
+
+  const scrapeIndustryTemplates = async () => {
+    setScraping(true);
+    setScrapeError('');
+    setScrapeResult(null);
+    try {
+      const response = await base44.functions.invoke('scrapeIndustryTemplates', { niches: ['epoxy', 'decorative_concrete', 'polished_concrete'], per_niche: 20 });
+      const data = response.data;
+      if (data.error) { setScrapeError(data.error); setScraping(false); return; }
+      setScrapeResult(data);
+      setTemplateCount(data.total_stored);
+    } catch (e) {
+      setScrapeError(e?.response?.data?.error || e.message || 'Scraping failed.');
+    } finally {
+      setScraping(false);
+    }
   };
 
   const cloneCompetitors = async () => {
@@ -237,6 +266,33 @@ export default function WebsiteGenerator() {
                 </div>
               </div>
             )}
+          </div>
+        )}
+      </section>
+
+      {/* Industry Template Library */}
+      <section style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, marginBottom: 16, padding: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <h3 style={{ margin: 0, fontSize: 15 }}>🏗️ Industry Template Library</h3>
+          {templateCount !== null && <span style={{ fontSize: 12, color: '#888', fontWeight: 600 }}>{templateCount} templates stored</span>}
+        </div>
+        <p style={{ fontSize: 13, color: '#666', margin: '0 0 14px' }}>Scrape the top 20 epoxy, decorative concrete, and polished concrete contractor websites in the US. The system extracts real design data (colors, fonts, tech stack, content strategy) and stores 60 templates. The generator uses these as a quality benchmark to match or exceed real-world leaders.</p>
+        <button onClick={scrapeIndustryTemplates} disabled={scraping} className="btn dark" style={{ padding: '11px 20px', fontSize: 13, opacity: scraping ? 0.6 : 1 }}>
+          {scraping ? '🔍 Scraping 60 sites… (60-90s)' : '🔍 Scrape Top 20 × 3 Niches'}
+        </button>
+        {scrapeError && <p style={{ color: '#a52d23', fontSize: 13, marginTop: 10 }}>{scrapeError}</p>}
+        {scraping && (
+          <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#f8f7f4', border: '1px solid #e5e1da', borderRadius: 6 }}>
+            <span className="dot-anim" style={{ fontSize: 16 }}>●</span>
+            <span style={{ fontWeight: 600, fontSize: 13 }}>Searching web for top contractors and scraping design data…</span>
+          </div>
+        )}
+        {scrapeResult && (
+          <div style={{ marginTop: 14, padding: 14, background: '#f0f9f3', border: '1px solid #c8e6d0', borderRadius: 6, fontSize: 13 }}>
+            ✓ Found <b>{scrapeResult.total_found}</b> sites — <b>{scrapeResult.total_scraped}</b> scraped, <b>{scrapeResult.total_stored}</b> templates stored.
+            <div style={{ marginTop: 8, display: 'grid', gap: 4 }}>
+              {scrapeResult.by_niche.map(n => <small key={n.niche}>• {n.niche}: {n.found} found, {n.scraped} scraped</small>)}
+            </div>
           </div>
         )}
       </section>

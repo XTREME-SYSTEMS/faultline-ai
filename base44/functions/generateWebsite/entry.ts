@@ -61,12 +61,13 @@ You must incorporate the superiority strategy: match their best features, avoid 
     // Load PCU Website Generator library context (master prompt + curated assets)
     let pcuContext = '';
     try {
-      const [masterPrompts, templates, heroCopy, sections, brandPacks] = await Promise.all([
+      const [masterPrompts, templates, heroCopy, sections, brandPacks, industryTemplates] = await Promise.all([
         base44.asServiceRole.entities.PromptTemplate.filter({ organization_id: orgId, tool_id: 'pcu-website-generator', prompt_type: 'MASTER', status: 'active' }, '-created_date', 1),
         base44.asServiceRole.entities.WebsiteLibraryAsset.filter({ organization_id: orgId, library_type: 'template_catalog', status: 'active' }, '-created_date', 3),
         base44.asServiceRole.entities.WebsiteLibraryAsset.filter({ organization_id: orgId, library_type: 'hero_copy', status: 'active' }, '-created_date', 3),
         base44.asServiceRole.entities.WebsiteLibraryAsset.filter({ organization_id: orgId, library_type: 'section_library', status: 'active' }, '-created_date', 5),
-        base44.asServiceRole.entities.WebsiteLibraryAsset.filter({ organization_id: orgId, library_type: 'brand_pack', status: 'active' }, '-created_date', 2)
+        base44.asServiceRole.entities.WebsiteLibraryAsset.filter({ organization_id: orgId, library_type: 'brand_pack', status: 'active' }, '-created_date', 2),
+        base44.asServiceRole.entities.WebsiteLibraryAsset.filter({ organization_id: orgId, library_type: 'industry_template', status: 'active' }, '-created_date', 15)
       ]);
       if (masterPrompts.length > 0) {
         pcuContext += `\n\n=== PCU GOVERNANCE FRAMEWORK ===\n${masterPrompts[0].prompt_text}\n=== END GOVERNANCE ===\n`;
@@ -82,6 +83,23 @@ You must incorporate the superiority strategy: match their best features, avoid 
       }
       if (brandPacks.length > 0) {
         pcuContext += `\nBRAND PACK REFERENCES:\n${brandPacks.map(b => `- ${b.record_id}: ${b.name} — ${b.data['Color Palette'] || b.data['Typography'] || ''}`).join('\n')}\n`;
+      }
+      if (industryTemplates.length > 0) {
+        pcuContext += `\n\n=== INDUSTRY REFERENCE TEMPLATES (real-world top contractor websites — STUDY these and produce a site that MATCHES OR EXCEEDS their quality) ===\n`;
+        pcuContext += industryTemplates.map(t => {
+          const d = t.data || {};
+          const s = d.scraped || {};
+          return `- ${t.record_id}: ${t.name} (${d.url})
+    Niche: ${d.niche_label} | Location: ${d.location || 'US'}
+    Design Strengths: ${(d.design_strengths || []).join('; ')}
+    Key Features: ${(d.key_features || []).join(', ')}
+    Content Strategy: ${d.content_strategy}
+    Colors: ${(s.colors || []).join(', ') || d.color_scheme || 'unknown'}
+    Fonts: ${(s.fonts || []).join(', ') || 'unknown'}
+    Tech: ${(s.techStack || []).join(', ')}
+    Word Count: ${s.wordCount || 'unknown'} | Images: ${s.imageCount || 'unknown'} | CTAs: ${s.ctaCount || 'unknown'}`;
+        }).join('\n');
+        pcuContext += `\n=== END INDUSTRY TEMPLATES ===\nUse these as your quality benchmark. Adopt the best design patterns, color schemes, and content strategies. Ensure the generated website is at least as polished and feature-rich as these real-world leaders.\n`;
       }
     } catch (e) { console.log('PCU library load skipped:', e.message); }
 
@@ -126,7 +144,8 @@ REQUIREMENTS — this must be an ULTRA-AMAZING website:
 Generate the COMPLETE website now. Start with <!DOCTYPE html> and end with </html>. Make it long, detailed, and beautiful. Every section must have real, compelling copy tailored to ${business_name}. Do not use placeholder text — write actual marketing copy.`);
 
     const res = await base44.integrations.Core.InvokeLLM({
-      prompt
+      prompt,
+      model: 'claude_opus_4_8'
     });
 
     let websiteHtml = typeof res === 'string' ? res : res?.content || res?.text || JSON.stringify(res);
