@@ -14,9 +14,24 @@
     "phone": {
       "type": "string"
     },
+    "service": {
+      "type": "string",
+      "description": "Consultation service requested (ai_tools, website, app, audit, security, consulting)"
+    },
+    "industry": {
+      "type": "string",
+      "description": "Client industry (epoxy, polished_concrete, decorative_concrete, other)"
+    },
     "preferred_date": {
       "type": "string",
       "format": "date"
+    },
+    "preferred_time": {
+      "type": "string",
+      "description": "Selected time slot label"
+    },
+    "notes": {
+      "type": "string"
     },
     "status": {
       "type": "string",
@@ -24,13 +39,14 @@
     },
     "source": {
       "type": "string",
-      "default": "homepage"
+      "default": "consultation"
     }
   },
   "required": [
     "name",
     "email",
-    "company"
+    "company",
+    "service"
   ],
   "rls": {
     "create": null,

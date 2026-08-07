@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Image } from '@/components/ui/image';
 import Icon from '@/components/fl/Icon';
 import { submitFaultLineForm } from '@/lib/faultlineForms';
@@ -68,6 +68,7 @@ function FooterColumn({ title, links }) {
 
 export default function Home() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [modal, setModal] = useState(null);
@@ -129,7 +130,7 @@ export default function Home() {
             <a href="#services" style={{ color: '#fff' }}>Services</a>
             <Link to="/pricing" style={{ color: '#fff' }}>Pricing</Link>
           </nav>
-          <div className="header-actions" style={{ color: '#fff' }}>{user ? <><Link to="/app/xv" style={{ fontWeight: 600, color: '#fff' }}>Visualizer</Link><Link to="/app" className="button button--gold button--small">Client Portal <Icon name="arrow-right" /></Link></> : <><Link to="/login" style={{ color: '#fff' }}>Sign In</Link><button className="button button--gold button--small" type="button" onClick={() => setModal('call')}>Get a Website <Icon name="arrow-right" /></button></>}</div>
+          <div className="header-actions" style={{ color: '#fff' }}>{user ? <><Link to="/app/xv" style={{ fontWeight: 600, color: '#fff' }}>Visualizer</Link><Link to="/app" className="button button--gold button--small">Client Portal <Icon name="arrow-right" /></Link></> : <><Link to="/login" style={{ color: '#fff' }}>Sign In</Link><button className="button button--gold button--small" type="button" onClick={() => navigate('/consultation')}>Get a Website <Icon name="arrow-right" /></button></>}</div>
         </div>
       </header>
 
@@ -143,7 +144,7 @@ export default function Home() {
               <p style={{ fontSize: 18, lineHeight: 1.7, color: '#c9c9cc', maxWidth: 540, margin: 0 }}>Xtreme AI Systems is the client portal for students of Xtreme Polishing Systems &amp; Polished Concrete University. Buy AI tools, generate photoreal floor visualizations, and get a custom website built for your business.</p>
               <div className="button-row" style={{ marginTop: 28 }}>
                 <Link to="/app/xv" className="button button--gold">Explore AI Tools <Icon name="arrow-right" /></Link>
-                <button type="button" className="button button--dark-outline" onClick={() => setModal('call')}>Get a Website <Icon name="arrow-right" /></button>
+                <button type="button" className="button button--dark-outline" onClick={() => navigate('/consultation')}>Get a Website <Icon name="arrow-right" /></button>
               </div>
               <ul className="hero-trust" style={{ color: '#9a9a9e', marginTop: 22 }}>
                 <li><Icon name="shield" />Built for floor contractors</li>
@@ -242,7 +243,7 @@ export default function Home() {
                 ))}
               </ul>
               <div className="button-row">
-                <button type="button" className="button button--gold" onClick={() => setModal('call')}>Request a Website <Icon name="arrow-right" /></button>
+                <button type="button" className="button button--gold" onClick={() => navigate('/consultation')}>Request a Website <Icon name="arrow-right" /></button>
                 <Link to="/pricing" className="button button--light">See Plans <Icon name="arrow-right" /></Link>
               </div>
             </div>
@@ -292,7 +293,7 @@ export default function Home() {
                 <div className="price">{plan.price}{plan.suffix && <small>{plan.suffix}</small>}</div>
                 <div className="cadence">{plan.cadence}</div>
                 <ul>{plan.features.map(feature => <li key={feature}><Icon name="check" />{feature}</li>)}</ul>
-                <button type="button" className={`button ${plan.featured ? 'button--gold' : plan.name === 'Enterprise' ? 'button--light' : 'button--dark'}`} onClick={() => plan.name === 'Enterprise' ? setModal('call') : openAudit(plan.name)}>{plan.cta}<Icon name="arrow-right" /></button>
+                <button type="button" className={`button ${plan.featured ? 'button--gold' : plan.name === 'Enterprise' ? 'button--light' : 'button--dark'}`} onClick={() => plan.name === 'Enterprise' ? navigate('/consultation') : openAudit(plan.name)}>{plan.cta}<Icon name="arrow-right" /></button>
               </article>
             ))}</div>
             <p className="plan-note">All plans include a 14-day satisfaction guarantee. Cancel anytime.</p>
@@ -309,7 +310,7 @@ export default function Home() {
             <div>
               <div className="button-row">
                 <button type="button" className="button button--gold" onClick={() => openAudit()}>Get Started <Icon name="arrow-right" /></button>
-                <button type="button" className="button button--dark-outline" onClick={() => setModal('call')}>Book a Demo <Icon name="arrow-right" /></button>
+                <button type="button" className="button button--dark-outline" onClick={() => navigate('/consultation')}>Book a Demo <Icon name="arrow-right" /></button>
               </div>
               <ul style={{ color: '#9a9a9e' }}>
                 <li><Icon name="invoice" />No credit card</li>

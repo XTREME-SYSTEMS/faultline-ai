@@ -20,6 +20,7 @@ const ResetPassword = lazy(() => import('@/pages/ResetPassword'));
 const Home = lazy(() => import('@/pages/Home'));
 const MarketingPage = lazy(() => import('@/pages/MarketingPage'));
 const Checkout = lazy(() => import('@/pages/Checkout'));
+const Consultation = lazy(() => import('@/pages/Consultation'));
 const Overview = lazy(() => import('@/pages/Overview'));
 const Module = lazy(() => import('@/pages/Module'));
 const Admin = lazy(() => import('@/pages/Admin'));
@@ -144,6 +145,7 @@ const AuthenticatedApp = () => {
       <Route path="/about" element={<MarketingPage page="about" />} />
       <Route path="/contact" element={<MarketingPage page="contact" />} />
       <Route path="/checkout" element={<Checkout />} />
+      <Route path="/consultation" element={<Consultation />} />
       <Route path="/portal/:companyId" element={<CustomerPortal />} />
       <Route path="/funnel" element={<ClientFunnel />} />
       <Route path="/sign/:token" element={<SignDocument />} />
