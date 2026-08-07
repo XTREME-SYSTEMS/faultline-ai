@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { CheckCircle2, AlertCircle, ShoppingBag, X, Sparkles, ArrowRight, Send } from 'lucide-react';
+import DesignPackUploader from '@/components/fl/DesignPackUploader';
 
 export default function ClientFunnel() {
   const projectId = new URLSearchParams(window.location.search).get('project') || '';
@@ -192,6 +193,17 @@ export default function ClientFunnel() {
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* DESIGN PACK UPLOAD (logo/brand gate only) */}
+        {isDiscoveryDone && currentGate?.slug === 'logo_brand' && (
+          <div style={{ background: '#fff', border: '1px solid #e5e1da', borderRadius: 12, padding: '24px 32px', marginBottom: 20 }}>
+            <p style={{ color: 'var(--gold)', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.16em', margin: '0 0 8px' }}>Optional · Reference Pack</p>
+            <h2 style={{ font: '400 24px Libre Caslon Display, serif', margin: '0 0 6px' }}>Have a design pack? Upload it</h2>
+            <p style={{ color: '#666', fontSize: 13, margin: '0 0 18px' }}>If you have a web pack, brand pack, or logo reference image, upload it here. Our AI reads it via vision and reproduces the exact design — colors, fonts, layout, and components — using your real business info.</p>
+            <DesignPackUploader packType="brand_pack" projectId={projectId} compact onIngested={(packId) => { /* pack linked to this project via project_id */ }} />
+            <input type="hidden" value={projectId} readOnly />
           </div>
         )}
 

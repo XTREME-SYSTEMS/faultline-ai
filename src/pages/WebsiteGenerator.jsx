@@ -6,6 +6,7 @@ import { Link } from 'react-router-dom';
 import AiFieldGenerator from '@/components/fl/AiFieldGenerator';
 import SheetSelect from '@/components/pcu/SheetSelect';
 import LaunchPanel from '@/components/fl/LaunchPanel';
+import DesignPackUploader from '@/components/fl/DesignPackUploader';
 
 export default function WebsiteGenerator() {
   const [companies, setCompanies] = useState([]);
@@ -37,6 +38,7 @@ export default function WebsiteGenerator() {
   const [platformError, setPlatformError] = useState('');
   const [platformBlueprints, setPlatformBlueprints] = useState([]);
   const [selectedPlatform, setSelectedPlatform] = useState('');
+  const [designPackId, setDesignPackId] = useState(null);
 
   const loadTemplateCount = async () => {
     try {
@@ -152,7 +154,7 @@ export default function WebsiteGenerator() {
     setGenerating(true);
     setResult(null);
     try {
-      const response = await base44.functions.invoke('generateWebsite', { ...form, pages, include_features: features, competitor_analysis: cloneResult || null, platform: selectedPlatform || undefined });
+      const response = await base44.functions.invoke('generateWebsite', { ...form, pages, include_features: features, competitor_analysis: cloneResult || null, platform: selectedPlatform || undefined, design_pack_id: designPackId || undefined });
       const data = response.data;
       if (data.error) { setError(data.error); setGenerating(false); return; }
       setResult(data);
@@ -363,6 +365,14 @@ export default function WebsiteGenerator() {
             </div>
           </div>
         )}
+      </section>
+
+      {/* Design Pack Ingestion */}
+      <section style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, marginBottom: 16, padding: 20 }}>
+        <h3 style={{ margin: '0 0 6px', fontSize: 15 }}>📦 Upload a Design Pack (Web / Brand / Logo Pack)</h3>
+        <p style={{ fontSize: 13, color: '#666', margin: '0 0 16px' }}>Upload a design pack image and the AI reads it via vision — extracting exact colors, fonts, pages, and components — then reproduces it exactly, using your real business data instead of the pack's sample copy. This overrides all branding and page settings below.</p>
+        <DesignPackUploader packType="web_pack" onIngested={(packId, spec) => setDesignPackId(packId)} />
+        {designPackId && <p style={{ fontSize: 12, color: '#237A4B', marginTop: 12 }}>✓ Design pack bound — generation will reproduce it exactly.</p>}
       </section>
 
       {/* Config Form */}

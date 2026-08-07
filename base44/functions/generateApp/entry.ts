@@ -19,19 +19,19 @@ export default async function(req) {
     const {
       app_name, app_type, business_name, industry, description, target_audience,
       primary_color, secondary_color, font_style, tone,
-      features, pages, company_id, logo_url, competitor_analysis
+      features, pages, company_id, logo_url, competitor_analysis, design_pack_id
     } = body;
 
     if (!app_name) return Response.json({ error: 'app_name required' }, { status: 400 });
     if (!description) return Response.json({ error: 'description required' }, { status: 400 });
 
-    const color = primary_color || '#C89B3C';
-    const color2 = secondary_color || '#0a0a0a';
+    let color = primary_color || '#C89B3C';
+    let color2 = secondary_color || '#0a0a0a';
     const font = font_style || 'modern';
     const voice = tone || 'professional';
     const appType = app_type || 'dashboard';
-    const appFeatures = features || ['sidebar', 'dashboard', 'charts', 'tables', 'forms'];
-    const appPages = pages || ['dashboard', 'analytics', 'settings'];
+    let appFeatures = features || ['sidebar', 'dashboard', 'charts', 'tables', 'forms'];
+    let appPages = pages || ['dashboard', 'analytics', 'settings'];
 
     const appTypeDescriptions = {
       dashboard: 'an analytics dashboard with KPI cards, charts, and data tables',
@@ -44,7 +44,63 @@ export default async function(req) {
       lms: 'a learning management system with course catalog, progress tracking, and quizzes'
     };
 
-    const googleFonts = font === 'classic' ? 'Playfair Display + Lato' : font === 'bold' ? 'Oswald + Open Sans' : 'Inter + Poppins';
+    let googleFonts = font === 'classic' ? 'Playfair Display + Lato' : font === 'bold' ? 'Oswald + Open Sans' : 'Inter + Poppins';
+
+    // Load design pack (vision-extracted spec) if provided — authoritative design DNA
+    let designPackSection = '';
+    if (design_pack_id) {
+      try {
+        const designPack = await base44.asServiceRole.entities.DesignPack.get(design_pack_id);
+        if (designPack?.spec) {
+          const s = designPack.spec;
+          const b = s.brand || {};
+          const cols = b.colors || {};
+          if (cols.primary) color = cols.primary;
+          if (cols.secondary || cols.background) color2 = cols.secondary || cols.background;
+          if (b.fonts?.heading) googleFonts = `${b.fonts.heading} + ${b.fonts.body || b.fonts.heading}`;
+          if (s.pages?.length) appPages = s.pages.map(p => p.name);
+          if (s.components?.length) appFeatures = s.components;
+          designPackSection = `
+=== DESIGN PACK: REPRODUCE EXACTLY (Source of Truth) ===
+Pack: ${designPack.pack_name} (${designPack.pack_type})
+Brand: ${b.name || app_name} — ${b.style_description || ''}
+Exact colors (use as CSS custom properties — DO NOT shift hues):
+  --background: ${cols.background || '#0A0A0A'}
+  --primary: ${cols.primary || color}
+  --secondary: ${cols.secondary || color2}
+  --accent: ${cols.accent || cols.primary || color}
+  --text: ${cols.text || '#FFFFFF'}
+  --muted: ${cols.muted || '#A3A3A3'}
+  --card: ${cols.card || '#171717'}
+Exact fonts: heading "${b.fonts?.heading || 'Inter'}", body "${b.fonts?.body || 'DM Sans'}" — load from Google Fonts.
+Tone: ${b.tone || voice}
+Pages/screens (build in this exact order, with these exact sections):
+${(s.pages || []).map((p, i) => `${i + 1}. ${p.name} — ${p.purpose || ''}
+   Sections: ${(p.sections || []).join(', ')}
+   Layout: ${p.layout_description || 'sidebar + main content'}
+   Components: ${(p.components || []).join(', ')}`).join('\n')}
+Reusable components (include all): ${(s.components || []).join(', ')}
+Layout system: ${s.layout_system || 'sidebar navigation + card-based content'}
+Visual hierarchy: ${s.visual_hierarchy || 'high-contrast headers on dark backgrounds'}
+Tech stack: ${(s.tech_stack || []).join(', ')}
+Architecture: ${s.architecture || 'N/A'}
+PWA features: ${(s.pwa_features || []).join(', ') || 'none specified'}
+Generation instructions: ${s.generation_instructions || 'Reproduce the design above faithfully.'}
+
+FAITHFULNESS CONTRACT:
+- Use the EXACT hex colors above as CSS custom properties. Do not invent or shift colors.
+- Load the EXACT fonts above from Google Fonts. Do not substitute.
+- Build every page/screen above, in order, with the listed sections and components. Do not add or drop pages.
+- Reproduce every component listed above (sidebars, KPI cards, charts, tables, approval gates, etc.).
+- If the pack shows an Approvals Workspace with "Request Changes" / "Approve" buttons, reproduce that exact interaction.
+- Follow the layout system and visual hierarchy exactly.
+- CONTENT RULE: Write REAL copy for ${app_name} (${business_name || 'the client'}) using the description provided. DO NOT copy any sample/placeholder text from the pack — the pack's sample text only informs STYLE and ROLE. Never invent fake testimonials, stats, or business names.
+=== END DESIGN PACK ===
+`;
+        }
+      } catch (e) { console.log('design pack load skipped:', e.message); }
+    }
+
     const competitorSection = competitor_analysis ? `
 COMPETITOR ANALYSIS — exceed these apps in design and functionality:
 ${JSON.stringify(competitor_analysis, null, 2)}
@@ -86,6 +142,7 @@ PAGES: ${appPages.join(', ')}
 FEATURES: ${appFeatures.join(', ')}
 LOGO: ${logo_url ? `Use this logo image: ${logo_url}` : 'Create a text-based wordmark'}
 ${competitorSection}
+${designPackSection}
 
 REQUIREMENTS — this must be an ULTRA-PREMIUM, production-grade application:
 1. Single HTML file with ALL CSS in <style> tags and ALL JS in <script> tags

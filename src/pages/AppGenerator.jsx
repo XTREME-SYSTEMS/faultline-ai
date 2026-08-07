@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import PortalShell from '@/components/fl/PortalShell';
 import AiFieldGenerator from '@/components/fl/AiFieldGenerator';
 import SheetSelect from '@/components/pcu/SheetSelect';
+import DesignPackUploader from '@/components/fl/DesignPackUploader';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 
@@ -42,6 +43,7 @@ export default function AppGenerator() {
   const [error, setError] = useState('');
   const [showPreview, setShowPreview] = useState(true);
   const [savedApps, setSavedApps] = useState([]);
+  const [designPackId, setDesignPackId] = useState(null);
 
   useEffect(() => {
     base44.entities.Company.list().then(setCompanies).catch(() => {});
@@ -85,7 +87,7 @@ export default function AppGenerator() {
     setResult(null);
     try {
       const response = await base44.functions.invoke('generateApp', {
-        ...form, features, pages
+        ...form, features, pages, design_pack_id: designPackId || undefined
       });
       const data = response.data;
       if (data.error) {
@@ -162,6 +164,14 @@ export default function AppGenerator() {
             </button>
           ))}
         </div>
+      </section>
+
+      {/* Design Pack Ingestion */}
+      <section style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 24, marginBottom: 16 }}>
+        <h3 style={{ margin: '0 0 6px', fontSize: 16 }}>📦 Upload a Design Pack</h3>
+        <p style={{ fontSize: 13, color: '#666', margin: '0 0 16px' }}>Upload a design pack image (web/brand/logo pack) and the AI reads it via vision — extracting exact colors, fonts, screens, and components — then reproduces it exactly, using your real app data instead of the pack's sample copy. This overrides the branding and page settings below.</p>
+        <DesignPackUploader packType="web_pack" onIngested={(packId) => setDesignPackId(packId)} />
+        {designPackId && <p style={{ fontSize: 12, color: '#237A4B', marginTop: 12 }}>✓ Design pack bound — generation will reproduce it exactly.</p>}
       </section>
 
       {/* Configuration */}

@@ -1,0 +1,67 @@
+{
+  "name": "DesignPack",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "project_id": {
+      "type": "string",
+      "description": "ClientProject ref (optional)"
+    },
+    "pack_name": {
+      "type": "string"
+    },
+    "pack_type": {
+      "type": "string",
+      "enum": [
+        "web_pack",
+        "brand_pack",
+        "logo_pack",
+        "design_spec"
+      ],
+      "default": "web_pack"
+    },
+    "image_url": {
+      "type": "string",
+      "description": "Uploaded pack image (vision input)"
+    },
+    "spec": {
+      "type": "object",
+      "description": "Structured design spec extracted by AI vision"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "extracted",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "notes": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id",
+    "pack_type",
+    "image_url"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
