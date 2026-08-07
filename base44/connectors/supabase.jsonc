@@ -2,6 +2,7 @@
   "type": "supabase",
   "scopes": [
     "projects:read",
+    "projects:write",
     "database:read",
     "database:write"
   ]
