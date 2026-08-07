@@ -75,6 +75,16 @@ form input:focus,form textarea:focus{outline:none;border-color:var(--primary)}
 .activity-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--secondary)}
 .activity-item .dot{width:10px;height:10px;border-radius:50%;background:var(--primary);margin-top:6px;flex-shrink:0}
 .activity-item .content{font-size:14px}.activity-item .content small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
+.w-full{width:100%}.w-fit{width:fit-content}.flex-1{flex:1}.text-center{text-align:center}.mt-4{margin-top:16px}.mb-4{margin-bottom:16px}.gap-4{gap:16px}
+.grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
+.split{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+@media(max-width:768px){.grid-2,.grid-3,.grid-4,.split{grid-template-columns:1fr !important}}
+.img-card{background:var(--card);border-radius:10px;overflow:hidden;border:1px solid var(--secondary);position:relative}.img-card img{width:100%;height:200px;object-fit:cover;display:block}.img-card .body{padding:20px}
+.gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px}
+.card .icon{font-size:36px;margin-bottom:16px;display:block}
+.tag{display:inline-block;padding:4px 12px;border-radius:20px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;background:var(--secondary);color:var(--primary);border:1px solid var(--accent)}
+.tag.overlay{position:absolute;top:12px;left:12px;z-index:2;background:rgba(0,0,0,.7);color:var(--primary)}
+.trend-up{color:var(--primary);font-weight:700}.trend-down{color:var(--muted);font-weight:700}
 @media(max-width:768px){nav .links{display:none;position:absolute;top:100%;left:0;right:0;background:var(--background);flex-direction:column;padding:16px;border-bottom:1px solid var(--secondary)}nav .links.open{display:flex}nav .hamburger{display:block}section{padding:50px 16px}section .section-head{margin-bottom:30px}}
 </style></head><body>
 <nav><div class="brand">${logo_url ? `<img src="${logo_url}" alt="${business_name}">` : business_name}</div><div class="links" id="navlinks">${pagesToBuild.map(p => `<a href="#${slug(p.name)}">${pageTitle(p.name)}</a>`).join('')}</div><button class="hamburger" onclick="document.getElementById('navlinks').classList.toggle('open')">☰</button></nav>`;
@@ -109,6 +119,20 @@ CRITICAL DESIGN RULES — the page shell already defines these CSS custom proper
   --text: ${colors.textColor}  --muted: ${colors.mutedColor}  --card: ${colors.cardColor}
 Heading font: "${fonts.headingFont}". Body font: "${fonts.bodyFont}". Already loaded — use via font-family.
 
+PREDEFINED CSS CLASSES — the shell already defines these. USE THEM. Do NOT use inline style="" attributes. NEVER use style="" on buttons — use the utility classes instead.
+  .btn (primary button)  .btn.outline (outlined)  .btn.large (large CTA)
+  .grid  .cards (auto-fit card grid)  .card (content card)
+  .section-head (centered heading wrapper)  .kpi-card  .pricing-card  .pricing-card.featured
+  .testimonial-card  .tabs  .progress-bar  .activity-item
+  .w-full (width:100%)  .w-fit (width:fit-content)  .flex-1 (flex:1)  .text-center  .mt-4  .mb-4  .gap-4
+  .grid-2 .grid-3 .grid-4 (responsive grids, auto-collapse on mobile)  .split (2-col responsive)
+  .img-card (image card with <img> + .body)  .gallery (image grid)
+  .card .icon (emoji or SVG icon in a card)  .tag (badge/pill)  .tag.overlay (badge on image)
+  .trend-up .trend-down (trend indicators — use var() colors, NEVER hardcoded hex)
+  form, form label, form input, form textarea (pre-styled)
+ALL CTA buttons MUST use class="btn" or class="btn outline" or class="btn large" — combine with .w-full or .w-fit if needed: class="btn w-full". NEVER use inline style for buttons.
+ALL cards MUST use class="card". ALL grids MUST use class="grid cards". ALL image cards MUST use class="img-card" with a real <img> tag.
+
 PAGES TO GENERATE (one <section id="..."> per page, in order):
 ${batchSpec}
 
@@ -116,8 +140,16 @@ OUTPUT RULES:
 - Output ${batch.length} <section id="...">...</section> blocks, one per page, in order.
 - Each section MUST have the exact id specified.
 - Include EVERY section and EVERY component. Do not skip any.
-- Build REAL <form> elements with <input>, <label>, <button> where forms are needed.
-- Write REAL marketing copy for ${business_name}. No placeholder text or fake testimonials.
+- Build REAL <form> elements with <input name="fieldName">, <label>, <button type="submit" class="btn"> where forms are needed. The submit button MUST be INSIDE the <form> tag, never outside it. ALL <input> elements MUST have name="" attributes. For checkout forms, wrap ALL inputs AND the submit button in ONE single <form>.
+- Write REAL marketing copy for ${business_name}. No placeholder text, no fake testimonials, no bracketed placeholders like [Content] or [Image]. Write actual sentences. Match button text EXACTLY as specified in the components list — do not paraphrase or rename buttons.
+- NEVER use inline style="" attributes — NOT for colors, NOT for layout, NOT for grid-template-columns, NOT for buttons. Use the predefined CSS classes instead. For multi-column layouts use class="grid-2", class="grid-3", class="grid-4", class="split", or class="grid cards" — these are responsive and collapse on mobile.
+- NEVER use hardcoded hex colors like #4ade80 or #22c55e. ALWAYS use var(--primary), var(--accent), var(--muted), etc. For trend indicators use class="trend-up" or class="trend-down".
+- Feature cards and tool cards MUST include an icon: use emoji (e.g., ⚡ 🚀 📊 🤖 🔒 💡) in a <span class="icon"> element inside the card.
+- Image cards in the Industries section MUST include a <span class="tag overlay">Badge Text</span> element for the required tag/badge.
+- ALL CTA links and buttons MUST have valid href attributes pointing to #anchor-id or https:// URLs. NEVER use bare href="#". Link to other sections on the page using their IDs.
+- When the spec calls for image cards or galleries, use class="img-card" with a real <img src="https://images.unsplash.com/photo-XXXXX?w=800" alt="descriptive text"> tag. Use relevant Unsplash photos. Inside .img-card use <div class="body"> — NEVER class="card body".
+- Tabs MUST use <button> elements inside <div class="tabs"> — NEVER <div> or <span> for tabs. Apply class="active" to the selected tab.
+- Trust/logo banners MUST use real <img> tags for logos, not text divs with opacity.
 - Start with <section and end with </section>.${qa_feedback ? `\n\nMANDATORY FIXES FROM PREVIOUS QA REVIEW:\n${qa_feedback}` : ''}`;
 }
 

@@ -134,7 +134,7 @@ Score TWO dimensions, each 0-100:
    - Exact fonts: heading and body fonts must match. Any substitution = below 100.
    - All ${packPages.length} pages present as distinct sections with proper IDs and nav links. Any missing = below 100.
    - All components present per page. Any missing = below 100.
-   - Layout system and visual hierarchy match. Any deviation = below 100.
+   - Layout is responsive (mobile breakpoints work) and uses a grid system for multi-column layouts. The shell uses vanilla CSS with predefined classes (.grid, .cards, .card, .btn) — this IS a valid responsive grid system. Do NOT penalize for not using Tailwind specifically; the design pack's layout_system field is descriptive of the intent, not prescriptive of a framework.
    100 = pixel/structure-perfect match, zero defects.
 2. OPERATIONAL SCORE — site is fully functional:
    - Navigation works (all nav links resolve to sections, mobile menu toggles).
@@ -142,7 +142,7 @@ Score TWO dimensions, each 0-100:
    - No broken links (all hrefs point to valid #anchors or external URLs).
    - No JS errors.
    - Responsive (mobile breakpoints work).
-   - All CTAs functional (buttons styled, hover states).
+   - All CTAs functional (buttons use .btn class with hover states, no inline styles on buttons).
    - Content renders fully (no blank sections, no placeholder text).
    100 = zero operational defects.
 
