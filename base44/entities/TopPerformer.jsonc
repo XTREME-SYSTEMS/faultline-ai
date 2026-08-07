@@ -1,0 +1,117 @@
+{
+  "name": "TopPerformer",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string",
+      "description": "Website or system name"
+    },
+    "url": {
+      "type": "string"
+    },
+    "industry": {
+      "type": "string"
+    },
+    "niche": {
+      "type": "string",
+      "description": "The specific niche they dominate"
+    },
+    "revenue_model": {
+      "type": "string",
+      "description": "How they make money (SaaS sub, ads, marketplace, freemium, etc.)"
+    },
+    "estimated_revenue": {
+      "type": "string"
+    },
+    "client_base": {
+      "type": "string",
+      "description": "Who their clients / target audience are"
+    },
+    "target_audience": {
+      "type": "string"
+    },
+    "value_proposition": {
+      "type": "string"
+    },
+    "design_strengths": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "key_features": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "weaknesses": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Gaps we can exploit when cloning"
+    },
+    "superiority_strategy": {
+      "type": "object",
+      "description": "How to build something equivalent or better"
+    },
+    "profit_potential": {
+      "type": "string",
+      "enum": [
+        "very_high",
+        "high",
+        "medium",
+        "low"
+      ],
+      "default": "high"
+    },
+    "clone_status": {
+      "type": "string",
+      "enum": [
+        "discovered",
+        "queued",
+        "cloning",
+        "cloned",
+        "launched"
+      ],
+      "default": "discovered"
+    },
+    "clone_priority": {
+      "type": "number",
+      "default": 0
+    },
+    "analysis_data": {
+      "type": "object",
+      "description": "Full LLM analysis raw output"
+    },
+    "status": {
+      "type": "string",
+      "default": "active"
+    }
+  },
+  "required": [
+    "organization_id",
+    "name",
+    "industry"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

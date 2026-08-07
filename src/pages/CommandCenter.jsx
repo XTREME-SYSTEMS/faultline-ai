@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { TOOL_CATEGORIES, AGENTS } from '@/components/fl/toolRegistry';
 import ToolCard from '@/components/fl/ToolCard';
 import CommandChat from '@/components/fl/CommandChat';
+import GenerationPipeline from '@/components/fl/GenerationPipeline';
 import { Cloud, Github, Database, Globe, Play, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
 
 const PROVISION_SERVICES = [
@@ -129,6 +130,9 @@ export default function CommandCenter() {
           </div>
         )}
       </div>
+
+      {/* AI-Guided Generation Pipeline — step-by-step timeline */}
+      <GenerationPipeline />
 
       {/* Autonomous provisioning test — Drive, GitHub, Vercel, Supabase */}
       <section className="finding" style={{ marginTop: 13, background: '#fff', border: '1px solid #e5e1da' }}>
