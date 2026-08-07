@@ -75,7 +75,7 @@ form input:focus,form textarea:focus{outline:none;border-color:var(--primary)}
 .activity-item{display:flex;gap:14px;padding:14px 0;border-bottom:1px solid var(--secondary)}
 .activity-item .dot{width:10px;height:10px;border-radius:50%;background:var(--primary);margin-top:6px;flex-shrink:0}
 .activity-item .content{font-size:14px}.activity-item .content small{display:block;color:var(--muted);font-size:12px;margin-top:2px}
-.w-full{width:100%}.w-fit{width:fit-content}.flex-1{flex:1}.text-center{text-align:center}.mt-4{margin-top:16px}.mb-4{margin-bottom:16px}.gap-4{gap:16px}
+.w-full{width:100%}.w-fit{width:fit-content}.flex{display:flex}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.flex-1{flex:1}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.text-center{text-align:center}.mt-4{margin-top:16px}.mb-4{margin-bottom:16px}.gap-4{gap:16px}.gap-2{gap:8px}
 .grid-2{display:grid;grid-template-columns:repeat(2,1fr);gap:24px}.grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}.grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:24px}
 .split{display:grid;grid-template-columns:1fr 1fr;gap:24px}
 @media(max-width:768px){.grid-2,.grid-3,.grid-4,.split{grid-template-columns:1fr !important}}
@@ -123,14 +123,17 @@ PREDEFINED CSS CLASSES — the shell already defines these. USE THEM. Do NOT use
   .btn (primary button)  .btn.outline (outlined)  .btn.large (large CTA)
   .grid  .cards (auto-fit card grid)  .card (content card)
   .section-head (centered heading wrapper)  .kpi-card  .pricing-card  .pricing-card.featured
-  .testimonial-card  .tabs  .progress-bar  .activity-item
-  .w-full (width:100%)  .w-fit (width:fit-content)  .flex-1 (flex:1)  .text-center  .mt-4  .mb-4  .gap-4
+  .testimonial-card  .tabs  .progress-bar (use <div class="progress-bar"><div class="fill"></div></div>)  .activity-item
+  .w-full (width:100%)  .w-fit (width:fit-content)  .flex (display:flex)  .flex-col (column)  .flex-wrap (wrap)  .flex-1 (flex:1)
+  .items-center  .justify-center  .justify-between  .text-center  .mt-4  .mb-4  .gap-4  .gap-2
   .grid-2 .grid-3 .grid-4 (responsive grids, auto-collapse on mobile)  .split (2-col responsive)
   .img-card (image card with <img> + .body)  .gallery (image grid)
   .card .icon (emoji or SVG icon in a card)  .tag (badge/pill)  .tag.overlay (badge on image)
   .trend-up .trend-down (trend indicators — use var() colors, NEVER hardcoded hex)
+  .kpi-card .num (big number)  .kpi-card .label (small label)  .pricing-card .price (price number)
   form, form label, form input, form textarea (pre-styled)
-ALL CTA buttons MUST use class="btn" or class="btn outline" or class="btn large" — combine with .w-full or .w-fit if needed: class="btn w-full". NEVER use inline style for buttons.
+PRICING CARDS: .pricing-card li already gets a ✓ via CSS :before — do NOT add a literal ✓ character inside <li> text. Just write the feature text.
+ALL CTA buttons MUST use class="btn" or class="btn outline" or class="btn large" — combine with .w-full or .w-fit if needed: class="btn w-full". NEVER use inline style="" on buttons — not for text-align, not for display, not for anything. Use .text-center, .w-full, .flex, etc. instead.
 ALL cards MUST use class="card". ALL grids MUST use class="grid cards". ALL image cards MUST use class="img-card" with a real <img> tag.
 
 PAGES TO GENERATE (one <section id="..."> per page, in order):
@@ -146,7 +149,7 @@ OUTPUT RULES:
 - NEVER use hardcoded hex colors like #4ade80 or #22c55e. ALWAYS use var(--primary), var(--accent), var(--muted), etc. For trend indicators use class="trend-up" or class="trend-down".
 - Feature cards and tool cards MUST include an icon: use emoji (e.g., ⚡ 🚀 📊 🤖 🔒 💡) in a <span class="icon"> element inside the card.
 - Image cards in the Industries section MUST include a <span class="tag overlay">Badge Text</span> element for the required tag/badge.
-- ALL CTA links and buttons MUST have valid href attributes pointing to #anchor-id or https:// URLs. NEVER use bare href="#". Link to other sections on the page using their IDs.
+- ALL CTA links and buttons MUST have valid href attributes. NEVER use bare href="#". Only link to section IDs that exist in the PAGES TO GENERATE list above — valid IDs are: ${batch.map(p => slug(p.name)).join(', ')}. If you need a "Learn More" or "Contact" link but no matching section exists, link to the closest existing section (e.g. href="#onboarding" or href="#checkout") or use an external https:// URL. NEVER invent section IDs like #contact that don't exist in the list above.
 - When the spec calls for image cards or galleries, use class="img-card" with a real <img src="https://images.unsplash.com/photo-XXXXX?w=800" alt="descriptive text"> tag. Use relevant Unsplash photos. Inside .img-card use <div class="body"> — NEVER class="card body".
 - Tabs MUST use <button> elements inside <div class="tabs"> — NEVER <div> or <span> for tabs. Apply class="active" to the selected tab.
 - Trust/logo banners MUST use real <img> tags for logos, not text divs with opacity.
