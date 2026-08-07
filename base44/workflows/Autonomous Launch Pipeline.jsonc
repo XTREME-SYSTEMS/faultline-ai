@@ -1,6 +1,6 @@
 {
   "name": "Autonomous Launch Pipeline",
-  "description": "When a LaunchProject is created, autonomously generates the site from its design pack, provisions Drive/GitHub/Supabase/Vercel, validates 100% parity + operational via Browserbase, scores 100/100 mandatory with up to 3 retry iterations, then finalizes and syncs the CRM.",
+  "description": "When a LaunchProject is created, autonomously generates the site from its design pack (batched gemini_3_flash, no waitUntil), provisions Drive/GitHub/Supabase/Vercel, validates 100% parity + operational via Browserbase, scores 100/100 mandatory with up to 3 retry iterations, then finalizes and syncs the CRM.",
   "trigger": {
     "config": {
       "trigger_type": "entity",
@@ -28,20 +28,26 @@
               "launch_project_id": "${ .trigger.entity_id }"
             }
           },
-          "then": "wait_gen",
+          "then": "gen_site",
           "x-base44": {
             "title": "Start pipeline",
-            "description": "Provision infra + kick off generation"
+            "description": "Provision infra + create deliverable"
           }
         }
       },
       {
-        "wait_gen": {
-          "wait": "PT4M",
+        "gen_site": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "generateSiteAll",
+            "args": {
+              "deliverable_id": "${ .start.deliverable_id }"
+            }
+          },
           "then": "validate_1",
           "x-base44": {
-            "title": "Wait for generation",
-            "description": "Let page-by-page build finish"
+            "title": "Generate site",
+            "description": "Batched generation (gemini_3_flash) + stitch + upload"
           }
         }
       },
@@ -88,7 +94,7 @@
               "launch_project_id": "${ .trigger.entity_id }"
             }
           },
-          "then": "wait_1",
+          "then": "gen_site_2",
           "x-base44": {
             "title": "Retry 1",
             "description": "Regenerate with QA feedback"
@@ -96,12 +102,18 @@
         }
       },
       {
-        "wait_1": {
-          "wait": "PT4M",
+        "gen_site_2": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "generateSiteAll",
+            "args": {
+              "deliverable_id": "${ .retry_1.deliverable_id }"
+            }
+          },
           "then": "validate_2",
           "x-base44": {
-            "title": "Wait for retry 1",
-            "description": "Let regeneration finish"
+            "title": "Regenerate site (retry 1)",
+            "description": "Batched regeneration with QA fixes"
           }
         }
       },
@@ -148,7 +160,7 @@
               "launch_project_id": "${ .trigger.entity_id }"
             }
           },
-          "then": "wait_2",
+          "then": "gen_site_3",
           "x-base44": {
             "title": "Retry 2",
             "description": "Regenerate with QA feedback"
@@ -156,12 +168,18 @@
         }
       },
       {
-        "wait_2": {
-          "wait": "PT4M",
+        "gen_site_3": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "generateSiteAll",
+            "args": {
+              "deliverable_id": "${ .retry_2.deliverable_id }"
+            }
+          },
           "then": "validate_3",
           "x-base44": {
-            "title": "Wait for retry 2",
-            "description": "Let regeneration finish"
+            "title": "Regenerate site (retry 2)",
+            "description": "Batched regeneration with QA fixes"
           }
         }
       },

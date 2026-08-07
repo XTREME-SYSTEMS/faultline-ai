@@ -1,11 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { waitUntil } from "base44:runtime";
 import { kickoffPackDeliverable } from '../../shared/packGeneration.ts';
 
 // Retry step of the Autonomous Launch Pipeline.
-// Re-kicks off pack-driven generation with the previous QA issues appended to
-// the description as guidance, increments the iteration counter, and updates
-// the LaunchProject. The workflow then waits and re-validates.
+// Creates a new "generating" Deliverable with the previous QA issues appended
+// as guidance, increments the iteration counter, and updates the LaunchProject.
+// The workflow then calls generateSiteAll to drive the regeneration.
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -28,7 +27,7 @@ export default async function(req) {
       }
     } catch (e) {}
 
-    const { deliverable_id, background } = await kickoffPackDeliverable(base44, orgId, {
+    const { deliverable_id } = await kickoffPackDeliverable(base44, orgId, {
       business_name: lp.business_name || lp.project_name,
       industry: lp.industry,
       description: lp.description || '',
@@ -39,7 +38,6 @@ export default async function(req) {
       company_id: lp.company_id || null,
       qa_feedback: qaFeedback
     });
-    waitUntil(background);
 
     await base44.asServiceRole.entities.LaunchProject.update(launch_project_id, {
       deliverable_id,

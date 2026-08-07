@@ -82,7 +82,7 @@ form input:focus,form textarea:focus{outline:none;border-color:var(--primary)}
   const foot = `<footer><p>© ${new Date().getFullYear()} ${business_name}. ${industry || ''}.</p><p style="margin-top:8px;color:var(--accent)">${b.tone || tone || ''}</p></footer>
 <script>
 document.querySelectorAll('nav .links a').forEach(a=>a.addEventListener('click',()=>document.getElementById('navlinks').classList.remove('open')));
-document.querySelectorAll('form').forEach(f=>f.addEventListener('submit',e=>{e.preventDefault();const b=f.querySelector('button');if(b){const o=b.textContent;b.textContent='✓ Done';setTimeout(()=>b.textContent=o,1500);}});
+document.querySelectorAll('form').forEach(f=>f.addEventListener('submit',e=>{e.preventDefault();const b=f.querySelector('button');if(b){const o=b.textContent;b.textContent='✓ Done';setTimeout(()=>b.textContent=o,1500);}}));
 </script></body></html>`;
 
   return { head, foot, colors: { bgColor, primary, secondary, accent, textColor, mutedColor, cardColor }, fonts: { headingFont, bodyFont }, pages: pagesToBuild, slug, pageTitle };

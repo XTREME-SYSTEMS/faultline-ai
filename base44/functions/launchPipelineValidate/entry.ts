@@ -124,7 +124,7 @@ ${packPages.map((p, i) => `${i + 1}. ${p.name} — Sections: ${(p.sections || []
 
 LIVE RENDERED HTML (from real browser via Browserbase):
 """
-${(liveHtml || html).slice(0, 18000)}
+${(liveHtml || html).slice(0, 65000)}
 """
 ${screenshotUrl ? `\nA SCREENSHOT of the live site is attached — use it to verify visual parity (colors, fonts, layout, component presence).\n` : ''}
 
