@@ -40,28 +40,32 @@ export default function EnhancementEngine() {
     return unsub;
   }, []);
 
-  const startConversation = async () => {
-    if (conversation) return conversation;
-    const conv = base44.agents.createConversation({
-      agent_name: 'faultline_enhancer',
-      metadata: { name: 'Enhancement Engine Session' }
-    });
-    setConversation(conv);
-    return conv;
-  };
-
+  // Load or create the agent conversation on mount
   useEffect(() => {
+    let cancelled = false;
     (async () => {
-      const conv = await startConversation();
-      if (conv?.id) {
-        setMessages(conv.messages || []);
-        const unsub = base44.agents.subscribeToConversation(conv.id, (data) => {
-          setMessages(data.messages || []);
-        });
-        return unsub;
-      }
+      try {
+        const convos = await base44.agents.listConversations({ agent_name: 'faultline_enhancer' });
+        const convo = convos && convos.length > 0
+          ? convos[0]
+          : await base44.agents.createConversation({ agent_name: 'faultline_enhancer', metadata: { name: 'Enhancement Engine Session' } });
+        if (!cancelled) {
+          setConversation(convo);
+          setMessages(convo.messages || []);
+        }
+      } catch (e) { console.error('conversation init failed:', e); }
     })();
+    return () => { cancelled = true; };
   }, []);
+
+  // Subscribe to the conversation for streaming updates
+  useEffect(() => {
+    if (!conversation) return;
+    const unsubscribe = base44.agents.subscribeToConversation(conversation.id, (data) => {
+      setMessages(data.messages || []);
+    });
+    return unsubscribe;
+  }, [conversation]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -69,14 +73,14 @@ export default function EnhancementEngine() {
 
   const sendCommand = async (cmd) => {
     const text = cmd || input;
-    if (!text.trim() || sending) return;
+    if (!text.trim() || sending || !conversation) return;
     setSending(true);
     setInput('');
     try {
-      const conv = conversation || await startConversation();
-      await base44.agents.addMessage(conv, { role: 'user', content: text });
-      // subscription will update messages
-    } catch (e) { console.error(e); } finally { setSending(false); }
+      const updated = await base44.agents.addMessage(conversation, { role: 'user', content: text });
+      setConversation(updated);
+      setMessages(updated.messages || []);
+    } catch (e) { console.error('send failed:', e); } finally { setSending(false); }
   };
 
   const stats = {
