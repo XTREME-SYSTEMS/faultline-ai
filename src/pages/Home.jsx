@@ -118,18 +118,18 @@ export default function Home() {
   return (
     <div className="site-shell">
       <a className="skip-link" href="#main">Skip to main content</a>
-      <header className="site-header">
+      <header className="site-header" style={{ background: '#0B0B0D', borderBottom: '1px solid #2b2b2b', height: 'auto', padding: '16px 0' }}>
         <div className="page-wrap header-inner">
-          <a className="brand" href="#top" aria-label="Xtreme AI Systems home"><img src={LOGO_DARK} alt="Xtreme AI Systems" style={{ height: 48, width: 'auto' }} /></a>
-          <button className="menu-button" type="button" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(v => !v)}><span /><span /><span /></button>
-          <nav className={`primary-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Primary navigation">
-            <a href="#tools">AI Tools</a>
-            <a href="#floors">Floor Gallery</a>
-            <a href="#websites">Websites</a>
-            <a href="#services">Services</a>
-            <Link to="/pricing">Pricing</Link>
+          <a className="brand" href="#top" aria-label="Xtreme AI Systems home"><img src={LOGO_LIGHT} alt="Xtreme AI Systems" style={{ height: 160, width: 'auto' }} /></a>
+          <button className="menu-button" type="button" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(v => !v)}><span style={{ background: '#fff' }} /><span style={{ background: '#fff' }} /><span style={{ background: '#fff' }} /></button>
+          <nav className={`primary-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Primary navigation" style={{ color: '#fff', background: menuOpen ? '#0B0B0D' : 'transparent' }}>
+            <a href="#tools" style={{ color: '#fff' }}>AI Tools</a>
+            <a href="#floors" style={{ color: '#fff' }}>Floor Gallery</a>
+            <a href="#websites" style={{ color: '#fff' }}>Websites</a>
+            <a href="#services" style={{ color: '#fff' }}>Services</a>
+            <Link to="/pricing" style={{ color: '#fff' }}>Pricing</Link>
           </nav>
-          <div className="header-actions">{user ? <><Link to="/app/xv" style={{ fontWeight: 600 }}>Visualizer</Link><Link to="/app" className="button button--dark button--small">Client Portal <Icon name="arrow-right" /></Link></> : <><Link to="/login">Sign In</Link><button className="button button--dark button--small" type="button" onClick={() => setModal('call')}>Get a Website <Icon name="arrow-right" /></button></>}</div>
+          <div className="header-actions" style={{ color: '#fff' }}>{user ? <><Link to="/app/xv" style={{ fontWeight: 600, color: '#fff' }}>Visualizer</Link><Link to="/app" className="button button--gold button--small">Client Portal <Icon name="arrow-right" /></Link></> : <><Link to="/login" style={{ color: '#fff' }}>Sign In</Link><button className="button button--gold button--small" type="button" onClick={() => setModal('call')}>Get a Website <Icon name="arrow-right" /></button></>}</div>
         </div>
       </header>
 
