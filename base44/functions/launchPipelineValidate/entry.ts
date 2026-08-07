@@ -55,7 +55,7 @@ export default async function(req) {
     try {
       const token = Deno.env.get('GITHUB_TOKEN');
       if (token) {
-        const owner = token ? (await (await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'FaultLine-AI-Launch-Pipeline' } })).json()).login : null;
+        const owner = token ? (await (await fetch('https://api.github.com/user', { headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'FaultLine-AI-Launch-Pipeline', 'X-GitHub-Api-Version': '2022-11-28' } })).json()).login : null;
         if (owner) await pushGitHubFile(token, owner, slug, 'index.html', html, `Production build ${new Date().toISOString()} — FaultLine Autonomous Pipeline`);
       }
     } catch (e) { errors.github_push = e.message; }
@@ -96,6 +96,9 @@ export default async function(req) {
     } catch (e) {}
 
     // 7. Score parity + operational via vision-capable LLM
+    const packPages = packSpec?.pages || [];
+    const packColors = packSpec?.brand?.colors || {};
+    const packFonts = packSpec?.brand?.fonts || {};
     const scoringRes = await base44.integrations.Core.InvokeLLM({
       prompt: `You are the FaultLine Autonomous Validation Engine. Score a generated website against its design pack spec and for operational readiness. 100/100 is MANDATORY to pass — only award 100 when there are zero defects.
 
@@ -103,24 +106,52 @@ BUSINESS: ${lp.business_name || lp.project_name}
 INDUSTRY: ${lp.industry || ''}
 DEPLOYED URL: ${deploymentUrl || 'N/A (deploy failed)'}
 
-DESIGN PACK SPEC (source of truth for parity):
-${JSON.stringify(packSpec || {}, null, 2).slice(0, 6000)}
+DESIGN PACK SPEC — source of truth for parity:
+Brand: ${packSpec?.brand?.name || ''} — ${packSpec?.brand?.style_description || ''}
+Exact colors (MUST match these hex values in CSS):
+  background: ${packColors.background || 'N/A'}
+  primary: ${packColors.primary || 'N/A'}
+  secondary: ${packColors.secondary || 'N/A'}
+  accent: ${packColors.accent || 'N/A'}
+  text: ${packColors.text || 'N/A'}
+  muted: ${packColors.muted || 'N/A'}
+  card: ${packColors.card || 'N/A'}
+Exact fonts: heading "${packFonts.heading || 'N/A'}", body "${packFonts.body || 'N/A'}"
+Layout system: ${packSpec?.layout_system || 'N/A'}
+
+Required pages (${packPages.length} total — ALL must be present as distinct sections with proper IDs):
+${packPages.map((p, i) => `${i + 1}. ${p.name} — Sections: ${(p.sections || []).join(', ')} — Components: ${(p.components || []).join(', ')}`).join('\n')}
 
 LIVE RENDERED HTML (from real browser via Browserbase):
 """
-${(liveHtml || html).slice(0, 12000)}
+${(liveHtml || html).slice(0, 18000)}
 """
-${screenshotUrl ? `\nSCREENSHOT of the live site is attached as a file URL: ${screenshotUrl}\n` : ''}
+${screenshotUrl ? `\nA SCREENSHOT of the live site is attached — use it to verify visual parity (colors, fonts, layout, component presence).\n` : ''}
 
 Score TWO dimensions, each 0-100:
-1. PARITY SCORE — how faithfully the live site reproduces the design pack: exact colors (hex), exact fonts, all pages present in order, all components present, layout system and visual hierarchy. 100 = pixel/structure-perfect match, no missing pages/components, no color or font drift.
-2. OPERATIONAL SCORE — site is fully functional: navigation works, forms present and submittable, no broken links, no JS errors, responsive, all CTAs functional, content renders (no blank sections). 100 = zero operational defects.
+1. PARITY SCORE — how faithfully the live site reproduces the design pack:
+   - Exact colors: every CSS color must match the hex values above. Any drift = below 100.
+   - Exact fonts: heading and body fonts must match. Any substitution = below 100.
+   - All ${packPages.length} pages present as distinct sections with proper IDs and nav links. Any missing = below 100.
+   - All components present per page. Any missing = below 100.
+   - Layout system and visual hierarchy match. Any deviation = below 100.
+   100 = pixel/structure-perfect match, zero defects.
+2. OPERATIONAL SCORE — site is fully functional:
+   - Navigation works (all nav links resolve to sections, mobile menu toggles).
+   - Forms present with proper <form>, <input>, <label>, <button> elements (checkout, login, contact).
+   - No broken links (all hrefs point to valid #anchors or external URLs).
+   - No JS errors.
+   - Responsive (mobile breakpoints work).
+   - All CTAs functional (buttons styled, hover states).
+   - Content renders fully (no blank sections, no placeholder text).
+   100 = zero operational defects.
 
 Also return a combined test_score (min of the two), mandatory_passed = true ONLY when BOTH are exactly 100, a short summary, and a list of specific issues (each with severity + fix).
 
-Be STRICT. Do not round up. If anything is imperfect, the score must be below 100.`,
+Be STRICT and PRECISE. Do not round up. If anything is imperfect, the score must be below 100. List every defect you find.`,
       model: 'gemini_3_1_pro',
       add_context_from_internet: false,
+      file_urls: screenshotUrl ? [screenshotUrl] : undefined,
       response_json_schema: {
         type: 'object',
         properties: {
