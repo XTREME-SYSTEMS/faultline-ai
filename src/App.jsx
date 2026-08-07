@@ -75,6 +75,8 @@ const NotFound = lazy(() => import('@/pages/NotFound'));
 const Settings = lazy(() => import('@/pages/Settings'));
 const PCUControlCenter = lazy(() => import('@/pages/PCUControlCenter'));
 const EnhancementEngine = lazy(() => import('@/pages/EnhancementEngine'));
+const ClientProjects = lazy(() => import('@/pages/ClientProjects'));
+const ClientFunnel = lazy(() => import('@/pages/ClientFunnel'));
 // Xtreme Visualizer
 const XVLayout = lazy(() => import('@/components/vq/Layout'));
 const XVHome = lazy(() => import('@/pages/xv/XVHome'));
@@ -141,6 +143,7 @@ const AuthenticatedApp = () => {
       <Route path="/contact" element={<MarketingPage page="contact" />} />
       <Route path="/checkout" element={<Checkout />} />
       <Route path="/portal/:companyId" element={<CustomerPortal />} />
+      <Route path="/funnel" element={<ClientFunnel />} />
       <Route path="/sign/:token" element={<SignDocument />} />
 
       {/* Auth */}
@@ -227,6 +230,7 @@ const AuthenticatedApp = () => {
         <Route path="/app/settings" element={<Settings />} />
         <Route path="/app/pcu-control" element={<PCUControlCenter />} />
         <Route path="/app/enhancement-engine" element={<EnhancementEngine />} />
+        <Route path="/app/client-projects" element={<ClientProjects />} />
         <Route path="/app/:slug" element={<Module />} />
         <Route path="/admin" element={<Admin />} />
         </Route>
