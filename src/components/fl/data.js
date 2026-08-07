@@ -5,6 +5,7 @@ export const publicNav = [
 
 export const portalNavCategories = [
   {
+    step: 1,
     label: 'Command',
     icon: '◈',
     items: [
@@ -16,6 +17,7 @@ export const portalNavCategories = [
     ]
   },
   {
+    step: 2,
     label: 'Discover & Diagnose',
     icon: '◇',
     items: [
@@ -33,6 +35,7 @@ export const portalNavCategories = [
     ]
   },
   {
+    step: 3,
     label: 'Build & Generate',
     icon: '⬡',
     items: [
@@ -47,6 +50,7 @@ export const portalNavCategories = [
     ]
   },
   {
+    step: 4,
     label: 'Client Delivery',
     icon: '◐',
     items: [
@@ -61,6 +65,7 @@ export const portalNavCategories = [
     ]
   },
   {
+    step: 5,
     label: 'Grow & Sell',
     icon: '◆',
     items: [
@@ -74,6 +79,7 @@ export const portalNavCategories = [
     ]
   },
   {
+    step: 6,
     label: 'Operations',
     icon: '⬢',
     items: [
@@ -90,6 +96,7 @@ export const portalNavCategories = [
     ]
   },
   {
+    step: 7,
     label: 'Financials',
     icon: '◈',
     items: [
@@ -101,6 +108,7 @@ export const portalNavCategories = [
     ]
   },
   {
+    step: 8,
     label: 'Admin',
     icon: '⚙',
     items: [
