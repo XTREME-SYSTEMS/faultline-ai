@@ -120,7 +120,7 @@ export default function Home() {
       <a className="skip-link" href="#main">Skip to main content</a>
       <header className="site-header" style={{ background: '#0B0B0D', borderBottom: '1px solid #2b2b2b', height: 64 }}>
         <div className="page-wrap header-inner">
-          <a className="brand" href="#top" aria-label="Xtreme AI Systems home"><img src={LOGO_LIGHT} alt="Xtreme AI Systems" style={{ height: 40, width: 'auto' }} /></a>
+          <a className="brand" href="#top" aria-label="Xtreme AI Systems home"><img src={LOGO_LIGHT} alt="Xtreme AI Systems" style={{ height: 52, width: 'auto' }} /></a>
           <button className="menu-button" type="button" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(v => !v)}><span style={{ background: '#fff' }} /><span style={{ background: '#fff' }} /><span style={{ background: '#fff' }} /></button>
           <nav className={`primary-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Primary navigation" style={{ color: '#fff', background: menuOpen ? '#0B0B0D' : 'transparent' }}>
             <a href="#tools" style={{ color: '#fff' }}>AI Tools</a>
