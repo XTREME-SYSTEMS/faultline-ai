@@ -4,6 +4,15 @@ import PortalShell from '@/components/fl/PortalShell';
 import { base44 } from '@/api/base44Client';
 import { TOOL_CATEGORIES, AGENTS } from '@/components/fl/toolRegistry';
 import ToolCard from '@/components/fl/ToolCard';
+import CommandChat from '@/components/fl/CommandChat';
+import { Cloud, Github, Database, Globe, Play, CheckCircle2, XCircle, Loader2 } from 'lucide-react';
+
+const PROVISION_SERVICES = [
+  { key: 'drive', label: 'Google Drive', icon: Cloud, color: '#4285F4' },
+  { key: 'github', label: 'GitHub', icon: Github, color: '#181717' },
+  { key: 'vercel', label: 'Vercel', icon: Globe, color: '#000' },
+  { key: 'supabase', label: 'Supabase', icon: Database, color: '#3ECF8E' }
+];
 
 export default function CommandCenter() {
   const navigate = useNavigate();
@@ -14,6 +23,8 @@ export default function CommandCenter() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [sweepRunning, setSweepRunning] = useState(false);
   const [sweepLog, setSweepLog] = useState([]);
+  const [provRunning, setProvRunning] = useState(false);
+  const [provResult, setProvResult] = useState(null);
 
   useEffect(() => {
     (async () => {
@@ -67,10 +78,38 @@ export default function CommandCenter() {
     } catch (e) { /* ignore */ }
   };
 
+  const runProvisioningTest = async () => {
+    setProvRunning(true);
+    setProvResult(null);
+    try {
+      const res = await base44.functions.invoke('testProvisioning', {});
+      setProvResult(res.data || res);
+    } catch (e) {
+      setProvResult({ status: 'error', error: e.message });
+    } finally {
+      setProvRunning(false);
+    }
+  };
+
   const totalTools = TOOL_CATEGORIES.reduce((sum, c) => sum + c.tools.length, 0);
 
   return (
-    <PortalShell>
+    <PortalShell assistant={
+      <div style={{ background: '#fff', border: '1px solid #e5e1da', borderRadius: 10, padding: 16, display: 'flex', flexDirection: 'column', height: 'calc(100vh - 110px)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid #eee' }}>
+          <span style={{ display: 'grid', placeItems: 'center', width: 32, height: 32, borderRadius: 8, background: 'linear-gradient(135deg, #E7C86E, #C89B3C)' }}>
+            <span style={{ fontSize: 16 }}>✦</span>
+          </span>
+          <div>
+            <b style={{ fontSize: 13, display: 'block' }}>Command AI</b>
+            <small style={{ fontSize: 10, color: '#888' }}>Claude Opus 4.8 · best model</small>
+          </div>
+        </div>
+        <div style={{ flex: 1, minHeight: 0 }}>
+          <CommandChat />
+        </div>
+      </div>
+    }>
       <div className="page-head">
         <div>
           <p className="eyebrow">System Command Center</p>
@@ -90,6 +129,56 @@ export default function CommandCenter() {
           </div>
         )}
       </div>
+
+      {/* Autonomous provisioning test — Drive, GitHub, Vercel, Supabase */}
+      <section className="finding" style={{ marginTop: 13, background: '#fff', border: '1px solid #e5e1da' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 14 }}>
+          <div>
+            <h2 style={{ fontSize: 18, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}><Play size={18} style={{ color: 'var(--gold)' }} /> Autonomous Provisioning Test</h2>
+            <p style={{ fontSize: 13, color: '#666', margin: 0 }}>End-to-end validation of all launch-pipeline infrastructure — creates a real test resource in Google Drive, GitHub, Vercel, and Supabase to verify tokens and scopes are healthy.</p>
+          </div>
+          <button
+            onClick={runProvisioningTest}
+            disabled={provRunning}
+            style={{ padding: '12px 24px', borderRadius: 6, fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: provRunning ? 'wait' : 'pointer', background: provRunning ? '#ccc' : 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111', border: 0, display: 'flex', alignItems: 'center', gap: 8 }}
+          >
+            {provRunning ? <><Loader2 size={16} className="animate-spin" /> Provisioning…</> : <><Play size={16} /> Run End-to-End Test</>}
+          </button>
+        </div>
+
+        {/* Service status grid */}
+        <div style={{ marginTop: 16, display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10 }}>
+          {PROVISION_SERVICES.map(svc => {
+            const r = provResult?.results?.[svc.key];
+            const Icon = svc.icon;
+            return (
+              <div key={svc.key} style={{ border: '1px solid #e5e1da', borderRadius: 8, padding: 14, background: r?.status === 'pass' ? '#e6f4ec' : r?.status === 'fail' ? '#f5d8d5' : '#f8f7f4' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                  <Icon size={18} style={{ color: svc.color }} />
+                  <b style={{ fontSize: 12 }}>{svc.label}</b>
+                </div>
+                {!r && !provRunning && <small style={{ fontSize: 11, color: '#888' }}>Not tested</small>}
+                {provRunning && !r && <small style={{ fontSize: 11, color: '#888', display: 'flex', alignItems: 'center', gap: 4 }}><Loader2 size={11} className="animate-spin" /> Testing…</small>}
+                {r?.status === 'pass' && (
+                  <div>
+                    <small style={{ fontSize: 11, color: '#237A4B', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 4 }}><CheckCircle2 size={12} /> Passed</small>
+                    {r.url && <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: 10, color: 'var(--gold)', display: 'block', marginTop: 4, wordBreak: 'break-all' }}>Open →</a>}
+                  </div>
+                )}
+                {r?.status === 'fail' && (
+                  <small style={{ fontSize: 10, color: '#a52d23', display: 'block', lineHeight: 1.4 }} title={r.error}><XCircle size={11} style={{ display: 'inline', marginRight: 3 }} />{r.error?.slice(0, 60)}</small>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {provResult && (
+          <div style={{ marginTop: 14, padding: 12, borderRadius: 8, background: provResult.status === 'pass' ? '#e6f4ec' : '#f8e5ce', fontSize: 13, fontWeight: 600, color: provResult.status === 'pass' ? '#237A4B' : '#8A641C' }}>
+            {provResult.status === 'pass' ? `✓ All ${provResult.total} provisioning services healthy` : `${provResult.passed}/${provResult.total} services passed — check failures above`}
+          </div>
+        )}
+      </section>
 
       {/* Full autonomous sweep */}
       <section className="finding" style={{ marginTop: 13, background: 'linear-gradient(135deg, #0b0b0b, #1a1a1a)', color: '#fff', border: '1px solid #333' }}>
