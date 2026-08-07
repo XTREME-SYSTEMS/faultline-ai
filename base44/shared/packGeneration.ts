@@ -88,70 +88,66 @@ document.querySelectorAll('nav .links a').forEach(a=>a.addEventListener('click',
 document.querySelectorAll('form').forEach(f=>f.addEventListener('submit',e=>{e.preventDefault();const b=f.querySelector('button');if(b){const o=b.textContent;b.textContent='✓ Done';setTimeout(()=>b.textContent=o,1500);}});
 </script></body></html>`;
 
-    // SINGLE-CALL GENERATION — all pages in one InvokeLLM call (~60-90s).
-    // Far more reliable than page-by-page (10 calls × 30s = 300s) and produces
-    // a more cohesive site. Falls back to per-page generation for any missing sections.
-    const allPagesSpec = pagesToBuild.map((pg, i) => `PAGE ${i + 1}: "${pageTitle(pg.name)}"
+    // BATCHED GENERATION — pages in batches of 3 using the fast gemini_3_flash model.
+    // Each batch takes ~30-40s; 10 pages = 4 batches ≈ 120-160s total.
+    // Reliable in waitUntil background execution and produces complete sections.
+    const BATCH_SIZE = 3;
+    const fragments = [];
+    for (let bi = 0; bi < pagesToBuild.length; bi += BATCH_SIZE) {
+      const batch = pagesToBuild.slice(bi, bi + BATCH_SIZE);
+      const batchSpec = batch.map((pg, i) => `PAGE ${bi + i + 1}: "${pageTitle(pg.name)}"
   ID: ${slug(pg.name)}
   PURPOSE: ${pg.purpose || ''}
   SECTIONS (include ALL): ${(pg.sections || []).join(', ')}
   COMPONENTS (include ALL): ${(pg.components || []).join(', ')}`).join('\n\n');
 
-    const masterPrompt = `Generate ALL ${pagesToBuild.length} page sections for ${business_name} (${industry || 'the client'}) as a single HTML fragment. Output ONLY the <section> blocks — no <html>, <head>, <body>, or <style> tags.
+      const batchPrompt = `Generate ${batch.length} page sections for ${business_name} (${industry || 'the client'}). Output ONLY <section> blocks — no <html>, <head>, <body>, or <style> tags.
 
 BUSINESS: ${business_name} — ${description}
 TARGET AUDIENCE: ${target_audience || 'general'}
 TONE: ${tone}
 
-CRITICAL DESIGN RULES — the page shell already defines these CSS custom properties in :root. You MUST use var() for EVERY color. NEVER hardcode hex color values.
-  --background: ${bgColor}   (page background)
-  --primary: ${primary}       (buttons, highlights, key accents)
-  --secondary: ${secondary}   (borders, secondary surfaces, nav background)
-  --accent: ${accent}         (subtle borders, footer links, dividers)
-  --text: ${textColor}        (body text)
-  --muted: ${mutedColor}      (secondary text, labels)
-  --card: ${cardColor}        (card backgrounds)
-Heading font: "${headingFont}". Body font: "${bodyFont}". These are already loaded — use them via font-family.
+CRITICAL DESIGN RULES — the page shell already defines these CSS custom properties in :root. You MUST use var() for EVERY color. NEVER hardcode hex values.
+  --background: ${bgColor}  --primary: ${primary}  --secondary: ${secondary}  --accent: ${accent}
+  --text: ${textColor}  --muted: ${mutedColor}  --card: ${cardColor}
+Heading font: "${headingFont}". Body font: "${bodyFont}". Already loaded — use via font-family.
 
-PAGES TO GENERATE (output one <section id="..."> per page, in this order):
-${allPagesSpec}
+PAGES TO GENERATE (one <section id="..."> per page, in order):
+${batchSpec}
 
 OUTPUT RULES:
-- Output ${pagesToBuild.length} <section id="...">...</section> blocks, one per page, in the order listed above.
-- Each section MUST have the exact id specified (e.g. id="${slug(pagesToBuild[0]?.name || '')}").
-- Include EVERY section and EVERY component listed for each page. Do not skip any.
-- If the spec calls for forms (login, checkout, contact), build REAL <form> elements with <input>, <label>, <button> fields — not just visual placeholders.
-- Write REAL marketing copy for ${business_name} drawn from the business description above. DO NOT copy sample/placeholder text, fake testimonials, or dummy statistics.
-- Be complete, polished, and production-quality. Every component must have real content.
-- Start with <section and end with </section>. Output all ${pagesToBuild.length} sections back to back.${qa_feedback ? `\n\nMANDATORY FIXES FROM PREVIOUS QA REVIEW — you MUST address every issue:\n${qa_feedback}` : ''}`;
+- Output ${batch.length} <section id="...">...</section> blocks, one per page, in order.
+- Each section MUST have the exact id specified.
+- Include EVERY section and EVERY component. Do not skip any.
+- Build REAL <form> elements with <input>, <label>, <button> where forms are needed.
+- Write REAL marketing copy for ${business_name}. No placeholder text or fake testimonials.
+- Start with <section and end with </section>.${qa_feedback ? `\n\nMANDATORY FIXES FROM PREVIOUS QA REVIEW:\n${qa_feedback}` : ''}`;
 
-    let allFrags = '';
-    try {
-      const r = await base44.integrations.Core.InvokeLLM({ prompt: masterPrompt, model: 'claude_sonnet_4_6' });
-      allFrags = typeof r === 'string' ? r : (r?.content || r?.text || '');
-      allFrags = allFrags.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
-    } catch (e) { console.error('master generation failed:', e.message); }
+      let batchFrags = '';
+      try {
+        const r = await base44.integrations.Core.InvokeLLM({ prompt: batchPrompt, model: 'gemini_3_flash' });
+        batchFrags = typeof r === 'string' ? r : (r?.content || r?.text || '');
+        batchFrags = batchFrags.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+      } catch (e) { console.error(`batch ${bi / BATCH_SIZE + 1} failed:`, e.message); }
 
-    // Parse the generated sections and fill in any missing ones individually
-    const fragments = [];
-    for (const pg of pagesToBuild) {
-      const expectedId = slug(pg.name);
-      // Try to extract this section from the bulk output
-      const re = new RegExp(`<section[^>]*id=["']${expectedId}["'][^>]*>[\\s\\S]*?</section>`, 'i');
-      const match = allFrags.match(re);
-      if (match) {
-        fragments.push(match[0]);
-      } else {
-        // Fallback: generate this single missing page
-        let frag = '';
-        try {
-          const r = await base44.integrations.Core.InvokeLLM({ prompt: `Generate the "${pageTitle(pg.name)}" page/section for ${business_name} (${industry || ''}). Output ONLY a <section id="${expectedId}">...</section> HTML fragment. Use var() for all colors (--background:${bgColor} --primary:${primary} --secondary:${secondary} --accent:${accent} --text:${textColor} --muted:${mutedColor} --card:${cardColor}). Heading font "${headingFont}", body font "${bodyFont}". PURPOSE: ${pg.purpose || ''}. SECTIONS: ${(pg.sections || []).join(', ')}. COMPONENTS: ${(pg.components || []).join(', ')}. Write real copy for ${business_name}. Start with <section and end with </section>.`, model: 'claude_sonnet_4_6' });
-          frag = typeof r === 'string' ? r : (r?.content || r?.text || '');
-          frag = frag.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
-        } catch (e) { console.error('fallback gen failed', pg.name, e.message); }
-        if (!frag || frag.length < 100) frag = `<section id="${expectedId}"><div class="section-head"><h2>${pageTitle(pg.name)}</h2><p>${pg.purpose || ''}</p></div><div class="grid cards"><div class="card"><h3>${pageTitle(pg.name)}</h3><p>Content for ${business_name}.</p></div></div></section>`;
-        if (!frag.startsWith('<section')) frag = `<section id="${expectedId}">${frag}</section>`;
-        fragments.push(frag);
+      // Parse sections from this batch; fill missing ones with fallback
+      for (const pg of batch) {
+        const expectedId = slug(pg.name);
+        const re = new RegExp(`<section[^>]*id=["']${expectedId}["'][^>]*>[\\s\\S]*?</section>`, 'i');
+        const match = batchFrags.match(re);
+        if (match) {
+          fragments.push(match[0]);
+        } else {
+          let frag = '';
+          try {
+            const r = await base44.integrations.Core.InvokeLLM({ prompt: `Generate the "${pageTitle(pg.name)}" page/section for ${business_name} (${industry || ''}). Output ONLY a <section id="${expectedId}">...</section> HTML fragment. Use var() for all colors (--background:${bgColor} --primary:${primary} --secondary:${secondary} --accent:${accent} --text:${textColor} --muted:${mutedColor} --card:${cardColor}). Heading font "${headingFont}", body font "${bodyFont}". PURPOSE: ${pg.purpose || ''}. SECTIONS: ${(pg.sections || []).join(', ')}. COMPONENTS: ${(pg.components || []).join(', ')}. Write real copy for ${business_name}. Start with <section and end with </section>.`, model: 'gemini_3_flash' });
+            frag = typeof r === 'string' ? r : (r?.content || r?.text || '');
+            frag = frag.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+          } catch (e) { console.error('fallback gen failed', pg.name, e.message); }
+          if (!frag || frag.length < 100) frag = `<section id="${expectedId}"><div class="section-head"><h2>${pageTitle(pg.name)}</h2><p>${pg.purpose || ''}</p></div><div class="grid cards"><div class="card"><h3>${pageTitle(pg.name)}</h3><p>Content for ${business_name}.</p></div></div></section>`;
+          if (!frag.startsWith('<section')) frag = `<section id="${expectedId}">${frag}</section>`;
+          fragments.push(frag);
+        }
       }
     }
 
