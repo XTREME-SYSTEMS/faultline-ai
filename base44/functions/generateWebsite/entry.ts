@@ -21,7 +21,7 @@ export default async function(req) {
     const {
       business_name, industry, description, target_audience,
       primary_color, secondary_color, font_style,
-      pages, tone, include_features, company_id, competitor_analysis, logo_url
+      pages, tone, include_features, company_id, competitor_analysis, logo_url, platform
     } = body;
 
     if (!business_name) return Response.json({ error: 'business_name required' }, { status: 400 });
@@ -103,6 +103,35 @@ You must incorporate the superiority strategy: match their best features, avoid 
       }
     } catch (e) { console.log('PCU library load skipped:', e.message); }
 
+    // Load platform blueprint if a platform was specified
+    let platformBlueprint = null;
+    if (platform) {
+      try {
+        const blueprints = await base44.asServiceRole.entities.WebsiteLibraryAsset.filter(
+          { organization_id: orgId, library_type: 'platform_blueprint', status: 'active' },
+          '-created_date', 10
+        );
+        platformBlueprint = blueprints.find(b =>
+          (b.data?.platform_name || '').toLowerCase() === platform.toLowerCase() ||
+          (b.record_id || '').toLowerCase().includes(platform.toLowerCase().replace(/[^a-z0-9]/g, '-'))
+        ) || blueprints[0] || null;
+      } catch (e) { console.log('platform blueprint load skipped:', e.message); }
+    }
+    const platformSection = platformBlueprint ? `
+=== PLATFORM BLUEPRINT: Replicate the approach of ${platformBlueprint.data?.platform_name || platform} ===
+Editor Type: ${platformBlueprint.data?.editor_type || 'N/A'}
+Template System: ${platformBlueprint.data?.template_system || 'N/A'}
+Component Library (include these): ${(platformBlueprint.data?.component_library || []).join(', ')}
+Design System: ${platformBlueprint.data?.design_system || 'N/A'}
+Page Types: ${(platformBlueprint.data?.page_types || []).join(', ')}
+Built-in Features (include these): ${(platformBlueprint.data?.built_in_features || []).join(', ')}
+Content Management: ${platformBlueprint.data?.content_management || 'N/A'}
+Generation Approach: ${platformBlueprint.data?.generation_approach || 'N/A'}
+Replication Instructions: ${platformBlueprint.data?.replication_instructions || 'N/A'}
+=== END PLATFORM BLUEPRINT ===
+Follow the replication instructions above. Include the listed components, features, and design patterns. The generated website should feel like it was built using ${platformBlueprint.data?.platform_name || platform}'s builder.
+` : '';
+
     const prompt = await resolvePrompt(base44, orgId, 'fl-website', 'GENERATE', promptVars,
       `You are an elite web designer and developer. Generate a COMPLETE, production-ready website for the following business. Output ONLY valid HTML with embedded CSS and JS — no markdown, no explanations, no code fences.
 
@@ -119,6 +148,7 @@ PAGES: ${requestedPages.join(', ')}
 FEATURES: ${features.join(', ')}
 ${competitorSection}
 ${pcuContext}
+${platformSection}
 REQUIREMENTS — this must be an ULTRA-AMAZING website:
 1. Single HTML file with ALL CSS in <style> tags and ALL JS in <script> tags
 2. Fully responsive — mobile-first design with breakpoints

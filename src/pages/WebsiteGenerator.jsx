@@ -31,6 +31,11 @@ export default function WebsiteGenerator() {
   const [scraping, setScraping] = useState(false);
   const [scrapeError, setScrapeError] = useState('');
   const [scrapeResult, setScrapeResult] = useState(null);
+  const [cloningPlatform, setCloningPlatform] = useState(false);
+  const [platformName, setPlatformName] = useState('');
+  const [platformError, setPlatformError] = useState('');
+  const [platformBlueprints, setPlatformBlueprints] = useState([]);
+  const [selectedPlatform, setSelectedPlatform] = useState('');
 
   const loadTemplateCount = async () => {
     try {
@@ -39,10 +44,18 @@ export default function WebsiteGenerator() {
     } catch (e) { console.error(e); }
   };
 
+  const loadPlatformBlueprints = async () => {
+    try {
+      const data = await base44.entities.WebsiteLibraryAsset.filter({ library_type: 'platform_blueprint', status: 'active' }, '-created_date', 20);
+      setPlatformBlueprints(data);
+    } catch (e) { console.error(e); }
+  };
+
   useEffect(() => {
     base44.entities.Company.list().then(setCompanies).catch(() => {});
     loadSavedWebsites();
     loadTemplateCount();
+    loadPlatformBlueprints();
   }, []);
 
   const loadSavedWebsites = async () => {
@@ -92,6 +105,23 @@ export default function WebsiteGenerator() {
     }
   };
 
+  const clonePlatform = async () => {
+    if (!platformName.trim()) { setPlatformError('Enter a platform name'); return; }
+    setCloningPlatform(true);
+    setPlatformError('');
+    try {
+      const response = await base44.functions.invoke('clonePlatform', { platform: platformName.trim() });
+      const data = response.data;
+      if (data.error) { setPlatformError(data.error); setCloningPlatform(false); return; }
+      setPlatformName('');
+      loadPlatformBlueprints();
+    } catch (e) {
+      setPlatformError(e?.response?.data?.error || e.message || 'Clone failed.');
+    } finally {
+      setCloningPlatform(false);
+    }
+  };
+
   const cloneCompetitors = async () => {
     if (!cloneCategory) { setCloneError('Enter a category first'); return; }
     setCloning(true);
@@ -121,7 +151,7 @@ export default function WebsiteGenerator() {
     setGenerating(true);
     setResult(null);
     try {
-      const response = await base44.functions.invoke('generateWebsite', { ...form, pages, include_features: features, competitor_analysis: cloneResult || null });
+      const response = await base44.functions.invoke('generateWebsite', { ...form, pages, include_features: features, competitor_analysis: cloneResult || null, platform: selectedPlatform || undefined });
       const data = response.data;
       if (data.error) { setError(data.error); setGenerating(false); return; }
       setResult(data);
@@ -297,9 +327,46 @@ export default function WebsiteGenerator() {
         )}
       </section>
 
+      {/* Platform Cloner */}
+      <section style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, marginBottom: 16, padding: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <h3 style={{ margin: 0, fontSize: 15 }}>🧩 Platform Cloner</h3>
+          {platformBlueprints.length > 0 && <span style={{ fontSize: 12, color: '#888', fontWeight: 600 }}>{platformBlueprints.length} blueprints</span>}
+        </div>
+        <p style={{ fontSize: 13, color: '#666', margin: '0 0 14px' }}>Clone a SaaS builder platform's capabilities (Wix, Squarespace, Webflow, HubSpot CMS, Shopify, etc.). The system researches its editor, component library, design system, and features — then encodes them as a blueprint the generator uses to replicate that platform's approach.</p>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700, flex: 1, minWidth: 250 }}>
+            Platform Name
+            <input value={platformName} onChange={e => setPlatformName(e.target.value)} placeholder="e.g. Wix, Squarespace, Webflow, HubSpot CMS" style={{ padding: 11, border: '1px solid #ddd', borderRadius: 6, fontSize: 13 }} />
+          </label>
+          <button onClick={clonePlatform} disabled={cloningPlatform} className="btn dark" style={{ padding: '11px 20px', fontSize: 13, opacity: cloningPlatform ? 0.6 : 1 }}>
+            {cloningPlatform ? '🔍 Researching platform…' : '🧩 Clone Platform'}
+          </button>
+        </div>
+        {platformError && <p style={{ color: '#a52d23', fontSize: 13, marginTop: 10 }}>{platformError}</p>}
+        {cloningPlatform && (
+          <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 10, padding: '12px 14px', background: '#f8f7f4', border: '1px solid #e5e1da', borderRadius: 6 }}>
+            <span className="dot-anim" style={{ fontSize: 16 }}>●</span>
+            <span style={{ fontWeight: 600, fontSize: 13 }}>Researching platform capabilities via web search…</span>
+          </div>
+        )}
+        {platformBlueprints.length > 0 && (
+          <div style={{ marginTop: 14 }}>
+            <p style={{ fontSize: 12, fontWeight: 700, margin: '0 0 8px' }}>Cloned Platforms (select to use as generation framework):</p>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+              <button onClick={() => setSelectedPlatform('')} style={{ padding: '6px 12px', borderRadius: 6, border: `1px solid ${!selectedPlatform ? '#C89B3C' : '#ddd'}`, background: !selectedPlatform ? '#C89B3C20' : '#fff', color: !selectedPlatform ? '#8A641C' : '#666', cursor: 'pointer', fontSize: 11, fontWeight: 600, fontFamily: 'inherit' }}>Default (no platform)</button>
+              {platformBlueprints.map(b => {
+                const pname = b.data?.platform_name || b.record_id;
+                return <button key={b.id} onClick={() => setSelectedPlatform(pname)} style={{ padding: '6px 12px', borderRadius: 6, border: `1px solid ${selectedPlatform === pname ? '#C89B3C' : '#ddd'}`, background: selectedPlatform === pname ? '#C89B3C20' : '#fff', color: selectedPlatform === pname ? '#8A641C' : '#666', cursor: 'pointer', fontSize: 11, fontWeight: 600, fontFamily: 'inherit' }}>{pname}</button>;
+              })}
+            </div>
+          </div>
+        )}
+      </section>
+
       {/* Config Form */}
       <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 24 }}>
-        <h3 style={{ margin: '0 0 20px', fontSize: 16 }}>Configuration {cloneResult && <span style={{ fontSize: 12, color: '#237A4B', fontWeight: 600 }}>· with competitor analysis</span>}</h3>
+        <h3 style={{ margin: '0 0 20px', fontSize: 16 }}>Configuration {cloneResult && <span style={{ fontSize: 12, color: '#237A4B', fontWeight: 600 }}>· with competitor analysis</span>}{selectedPlatform && <span style={{ fontSize: 12, color: '#8A641C', fontWeight: 600 }}> · {selectedPlatform} blueprint</span>}</h3>
 
         {companies.length > 0 && (
           <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700, marginBottom: 14 }}>
