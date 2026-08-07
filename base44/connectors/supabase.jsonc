@@ -4,6 +4,7 @@
     "projects:read",
     "projects:write",
     "database:read",
-    "database:write"
+    "database:write",
+    "organizations:read"
   ]
 }
