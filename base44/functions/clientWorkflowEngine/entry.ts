@@ -327,6 +327,63 @@ export default async function(req) {
       return Response.json({ checkout_url: session.url });
     }
 
+    // ---- ADMIN: advance gate (operator override) ----
+    if (action === 'advanceGate') {
+      const user = await base44.auth.me();
+      if (!user || user.role !== 'admin') return Response.json({ error: 'Admin only' }, { status: 403 });
+      const { project_id, note } = body;
+      if (!project_id) return Response.json({ error: 'project_id required' }, { status: 400 });
+      const project = await base44.asServiceRole.entities.ClientProject.get(project_id);
+      if (!project) return Response.json({ error: 'Project not found' }, { status: 404 });
+      const gates = getGateSequence(project.service_type);
+      const gateIdx = gates.findIndex(g => g.slug === project.current_gate);
+      if (gateIdx < 0) return Response.json({ error: 'No active gate' }, { status: 400 });
+      const gate = gates[gateIdx];
+      const nextIdx = gateIdx + 1;
+      // Log the override as an approved review
+      await base44.asServiceRole.entities.GateReview.create({
+        organization_id: project.organization_id,
+        project_id,
+        gate_slug: gate.slug,
+        gate_title: gate.title,
+        gate_index: gateIdx,
+        deliverable_id: project.current_deliverable_id || null,
+        state: 'approved',
+        fix_responses: {},
+        decision_note: note || 'Operator override — advanced without client review',
+        iteration: 1,
+        reviewed_at: new Date().toISOString()
+      });
+      if (nextIdx >= gates.length) {
+        await base44.asServiceRole.entities.ClientProject.update(project_id, {
+          status: 'completed', current_gate: '', gate_index: nextIdx, current_deliverable_id: null
+        });
+        return Response.json({ project: { ...project, status: 'completed', gate_index: nextIdx }, complete: true });
+      }
+      const nextGate = gates[nextIdx];
+      await base44.asServiceRole.entities.ClientProject.update(project_id, {
+        status: 'in_progress', current_gate: nextGate.slug, gate_index: nextIdx, current_deliverable_id: null
+      });
+      await notify(base44, project.organization_id, { ...project, project_name: project.project_name }, `Operator Advanced: ${gate.title}`,
+        `${project.project_name}: Operator advanced past "${gate.title}". Next up: ${nextGate.title}.`);
+      return Response.json({ project: { ...project, current_gate: nextGate.slug, gate_index: nextIdx, status: 'in_progress' } });
+    }
+
+    // ---- ADMIN: get full project detail (operator view) ----
+    if (action === 'getProjectDetail') {
+      const user = await base44.auth.me();
+      if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
+      const { project_id } = body;
+      if (!project_id) return Response.json({ error: 'project_id required' }, { status: 400 });
+      const project = await base44.asServiceRole.entities.ClientProject.get(project_id);
+      if (!project) return Response.json({ error: 'Project not found' }, { status: 404 });
+      const reviews = await base44.asServiceRole.entities.GateReview.filter({ project_id });
+      const gates = getGateSequence(project.service_type);
+      let cart = null;
+      if (project.cart_order_id) cart = await base44.asServiceRole.entities.CartOrder.get(project.cart_order_id).catch(() => null);
+      return Response.json({ project, gates, reviews, cart, service_types: SERVICE_TYPES });
+    }
+
     // ---- ADMIN: list all projects ----
     if (action === 'listProjects') {
       const user = await base44.auth.me();
