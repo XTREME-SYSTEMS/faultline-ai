@@ -349,7 +349,11 @@ export default function AppGenerator() {
               <div key={w.id} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 16 }}>
                 <b style={{ fontSize: 14 }}>{w.title}</b>
                 <p style={{ fontSize: 12, color: '#666', margin: '4px 0 8px' }}>{w.metadata?.app_type || 'app'} · {new Date(w.created_date).toLocaleDateString()}</p>
-                <button onClick={() => { setResult({ app_html: w.content, app_name: w.metadata?.app_name, app_type: w.metadata?.app_type }); }} style={{ padding: '6px 12px', border: '1px solid #C89B3C', borderRadius: 6, background: '#C89B3C20', color: '#8A641C', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'inherit' }}>View →</button>
+                <button onClick={async () => {
+                  let html = w.content;
+                  if (w.file_url) { try { const r = await fetch(w.file_url); html = await r.text(); } catch (e) { html = w.content || ''; } }
+                  setResult({ app_html: html, app_name: w.metadata?.app_name, app_type: w.metadata?.app_type });
+                }} style={{ padding: '6px 12px', border: '1px solid #C89B3C', borderRadius: 6, background: '#C89B3C20', color: '#8A641C', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'inherit' }}>View →</button>
               </div>
             ))}
           </div>

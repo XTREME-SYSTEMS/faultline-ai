@@ -157,6 +157,28 @@ export default function WebsiteGenerator() {
       const response = await base44.functions.invoke('generateWebsite', { ...form, pages, include_features: features, competitor_analysis: cloneResult || null, platform: selectedPlatform || undefined, design_pack_id: designPackId || undefined });
       const data = response.data;
       if (data.error) { setError(data.error); setGenerating(false); return; }
+      if (data.status === 'generating' && data.deliverable_id) {
+        // Pack-driven async generation — poll the deliverable until it's ready
+        const pollDeliverable = async () => {
+          for (let i = 0; i < 60; i++) {
+            await new Promise(r => setTimeout(r, 4000));
+            try {
+              const d = await base44.entities.Deliverable.get(data.deliverable_id);
+              if (d.status === 'generated') {
+                let html = '';
+                if (d.file_url) { try { const r = await fetch(d.file_url); html = await r.text(); } catch (e) { html = ''; } }
+                setResult({ website_html: html, deliverable_id: d.id, business_name: data.business_name, file_url: d.file_url });
+                setGenerating(false); loadSavedWebsites(); return;
+              }
+              if (d.status === 'failed') { setError('Generation failed: ' + (d.metadata?.error || 'unknown')); setGenerating(false); return; }
+            } catch (e) {}
+          }
+          setError('Generation is still running — check Deliverable Studio shortly.');
+          setGenerating(false);
+        };
+        pollDeliverable();
+        return;
+      }
       setResult(data);
       loadSavedWebsites();
     } catch (e) {
@@ -549,7 +571,11 @@ export default function WebsiteGenerator() {
               <div key={w.id} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 16 }}>
                 <b style={{ fontSize: 14 }}>{w.title}</b>
                 <p style={{ fontSize: 12, color: '#666', margin: '4px 0 8px' }}>{w.metadata?.industry || 'General'} · {new Date(w.created_date).toLocaleDateString()}</p>
-                <button onClick={() => { setResult({ website_html: w.content, deliverable_id: w.id, business_name: w.metadata?.business_name }); }} style={{ padding: '6px 12px', border: '1px solid #C89B3C', borderRadius: 6, background: '#C89B3C20', color: '#8A641C', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'inherit' }}>View →</button>
+                <button onClick={async () => {
+                  let html = w.content;
+                  if (w.file_url) { try { const r = await fetch(w.file_url); html = await r.text(); } catch (e) { html = w.content || ''; } }
+                  setResult({ website_html: html, deliverable_id: w.id, business_name: w.metadata?.business_name });
+                }} style={{ padding: '6px 12px', border: '1px solid #C89B3C', borderRadius: 6, background: '#C89B3C20', color: '#8A641C', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: 'inherit' }}>View →</button>
               </div>
             ))}
           </div>
