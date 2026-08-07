@@ -45,10 +45,19 @@ export async function pushGitHubFile(token, owner, repo, path, content, message)
 
 export async function createSupabaseProject(token, name) {
   const dbPass = crypto.randomUUID().replace(/-/g, '').slice(0, 24) + 'A1!';
+  // Supabase requires an organization context — list orgs and use the first one
+  const orgRes = await fetch('https://api.supabase.com/v1/organizations', {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+  let orgId = null;
+  if (orgRes.ok) {
+    const orgs = await orgRes.json();
+    if (Array.isArray(orgs) && orgs.length > 0) orgId = orgs[0].id;
+  }
   const res = await fetch('https://api.supabase.com/v1/projects', {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({ name, db_pass: dbPass, region: 'us-east-1', plan: 'free' })
+    body: JSON.stringify({ name, db_pass: dbPass, region: 'us-east-1', plan: 'free', ...(orgId ? { organization_id: orgId } : {}) })
   });
   if (!res.ok) throw new Error(`Supabase project failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
   const d = await res.json();
