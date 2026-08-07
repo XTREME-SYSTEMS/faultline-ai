@@ -53,7 +53,7 @@ export default async function(req) {
     const supaConn = await base44.asServiceRole.connectors.getConnection('supabase');
     if (!supaConn?.accessToken) throw new Error('Supabase connector not authorized');
     const supa = await createSupabaseProject(supaConn.accessToken, slugify(baseName));
-    log('supabase', 'pass', { id: supa.id, ref: supa.ref, url: supa.url, status: supa.status });
+    log('supabase', 'pass', { id: supa.id, ref: supa.ref, url: supa.url, supabase_status: supa.status });
   } catch (e) { errors.supabase = e.message; log('supabase', 'fail', { error: e.message }); }
 
   const passed = Object.values(results).filter(r => r?.status === 'pass').length;
