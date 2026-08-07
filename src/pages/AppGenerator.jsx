@@ -76,7 +76,11 @@ export default function AppGenerator() {
 
   const generate = async () => {
     setError('');
-    if (!form.app_name || !form.description) { setError('App name and description are required'); return; }
+    if (!form.app_name || !form.description) {
+      setError('App name and description are required');
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
     setGenerating(true);
     setResult(null);
     try {
@@ -84,11 +88,20 @@ export default function AppGenerator() {
         ...form, features, pages
       });
       const data = response.data;
-      if (data.error) { setError(data.error); setGenerating(false); return; }
+      if (data.error) {
+        setError(data.error);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setGenerating(false);
+        return;
+      }
       setResult(data);
       loadSavedApps();
+      setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 100);
     } catch (e) {
-      setError(e.message || 'Generation failed. The app is complex — try again.');
+      console.error('generateApp error:', e);
+      const msg = e?.response?.data?.error || e?.response?.data?.message || e.message || 'Generation failed. Please try again.';
+      setError(msg);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setGenerating(false);
     }
