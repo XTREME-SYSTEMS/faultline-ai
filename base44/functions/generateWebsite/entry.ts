@@ -89,15 +89,24 @@ You must incorporate the superiority strategy: match their best features, avoid 
         pcuContext += industryTemplates.map(t => {
           const d = t.data || {};
           const s = d.scraped || {};
+          const v = s.visual || {};
           return `- ${t.record_id}: ${t.name} (${d.url})
     Niche: ${d.niche_label} | Location: ${d.location || 'US'}
     Design Strengths: ${(d.design_strengths || []).join('; ')}
     Key Features: ${(d.key_features || []).join(', ')}
     Content Strategy: ${d.content_strategy}
-    Colors: ${(s.colors || []).join(', ') || d.color_scheme || 'unknown'}
+    Colors: ${(v.visual_palette || s.colors || []).join(', ') || d.color_scheme || 'unknown'}
     Fonts: ${(s.fonts || []).join(', ') || 'unknown'}
     Tech: ${(s.techStack || []).join(', ')}
-    Word Count: ${s.wordCount || 'unknown'} | Images: ${s.imageCount || 'unknown'} | CTAs: ${s.ctaCount || 'unknown'}`;
+    Word Count: ${s.wordCount || 'unknown'} | Images: ${s.imageCount || 'unknown'} | CTAs: ${s.ctaCount || 'unknown'}
+    Visual Palette: ${(v.visual_palette || []).join(', ')}
+    Typography Style: ${v.typography_style || 'unknown'}
+    Layout Pattern: ${v.layout_pattern || 'unknown'}
+    Visual Hierarchy: ${v.visual_hierarchy || 'unknown'}
+    Conversion Patterns: ${(v.conversion_patterns || []).join('; ')}
+    Aesthetic Score: ${v.aesthetic_score || 'unknown'}/10
+    Design DNA: ${v.design_dna || 'unknown'}
+    Replicate Patterns: ${(v.replicate_patterns || []).join('; ')}`;
         }).join('\n');
         pcuContext += `\n=== END INDUSTRY TEMPLATES ===\nUse these as your quality benchmark. Adopt the best design patterns, color schemes, and content strategies. Ensure the generated website is at least as polished and feature-rich as these real-world leaders.\n`;
       }

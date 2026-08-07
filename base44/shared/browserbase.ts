@@ -6,7 +6,7 @@ const BB_API = 'https://api.browserbase.com/v1/fetch';
 
 export async function fetchRenderedPage(url, options = {}) {
   const apiKey = Deno.env.get('BROWSERBASE_API_KEY');
-  if (!apiKey) return null; // Caller should fall back to basic fetch
+  if (!apiKey) { console.error('Browserbase: BROWSERBASE_API_KEY not set'); return null; }
 
   try {
     const res = await fetch(BB_API, {
@@ -17,26 +17,58 @@ export async function fetchRenderedPage(url, options = {}) {
       },
       body: JSON.stringify({
         url,
-        format: 'html',
+        format: 'raw',
         ...options
       }),
-      signal: AbortSignal.timeout(options.timeout || 30000)
+      signal: AbortSignal.timeout(options.timeout || 15000)
     });
 
     if (!res.ok) {
-      console.error(`Browserbase API returned ${res.status}`);
+      const errText = await res.text().catch(() => '');
+      console.error(`Browserbase API ${res.status} for ${url}: ${errText.slice(0, 300)}`);
       return null;
     }
 
     const data = await res.json();
+    const html = data.content || data.html || '';
+    if (!html || html.length < 100) {
+      console.error(`Browserbase: empty content for ${url} (len=${html.length})`);
+      return null;
+    }
     return {
-      html: data.content || data.html || '',
+      html,
       status: data.statusCode || 200,
       ok: true,
       rendered: true
     };
   } catch (e) {
-    console.error('Browserbase fetch failed:', e.message);
+    console.error(`Browserbase fetch failed for ${url}: ${e.message}`);
+    return null;
+  }
+}
+
+// Browserbase Search API — performs a web search and returns real results.
+// Useful for discovering top sites in a niche with actual URLs.
+export async function browserbaseSearch(query, numResults = 10) {
+  const apiKey = Deno.env.get('BROWSERBASE_API_KEY');
+  if (!apiKey) return null;
+
+  try {
+    const res = await fetch('https://api.browserbase.com/v1/search', {
+      method: 'POST',
+      headers: { 'x-bb-api-key': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query, numResults }),
+      signal: AbortSignal.timeout(20000)
+    });
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      console.error(`Browserbase Search ${res.status}: ${errText.slice(0, 300)}`);
+      return null;
+    }
+    const data = await res.json();
+    return data.results || [];
+  } catch (e) {
+    console.error(`Browserbase Search failed: ${e.message}`);
     return null;
   }
 }
@@ -82,7 +114,7 @@ export async function fetchRenderedWithScreenshot(url, options = {}) {
       },
       body: JSON.stringify({
         url,
-        format: 'html',
+        format: 'raw',
         screenshot: true,
         ...options
       }),

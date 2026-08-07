@@ -1,10 +1,12 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { fetchPage, extractData, detectTechStack } from '../../shared/scraper.ts';
+import { fetchRenderedPage } from '../../shared/browserbase.ts';
 
-// Scrapes the top N websites for flooring industry niches (epoxy, decorative concrete,
-// polished concrete), extracts real design data (colors, fonts, tech stack, structure),
-// and stores them as WebsiteLibraryAsset records (library_type: 'industry_template')
-// for use as reference templates by the website generator.
+// Scrapes the top N websites for flooring industry niches using BROWSERBASE for real
+// browser rendering (JS execution, dynamic content), then runs a vision-capable AI
+// design analysis on each site using the best web-capable model (gemini_3_1_pro) to
+// extract visual design intelligence that raw HTML parsing cannot capture.
+// Stores enriched templates as WebsiteLibraryAsset records for the website generator.
 const NICHES = [
   { id: 'epoxy', label: 'Epoxy Flooring', query: 'epoxy flooring contractor' },
   { id: 'decorative_concrete', label: 'Decorative Concrete', query: 'decorative concrete contractor' },
@@ -35,11 +37,12 @@ export default async function(req) {
     const body = await req.json().catch(() => ({}));
     const nicheIds = body.niches || NICHES.map(n => n.id);
     const perNiche = Math.min(body.per_niche || 20, 20);
+    const analyzeVisual = body.analyze_visual !== false;
     const selectedNiches = NICHES.filter(n => nicheIds.includes(n.id));
 
-    // Step 1: Find top sites per niche via web search (parallel, one per niche)
+    // Step 1: Find top sites per niche via web search using best web-capable model
     const nicheResults = await pool(selectedNiches, 3, async (niche) => {
-      const prompt = `Research the top ${perNiche} highest-quality, real contractor websites for "${niche.label}" in the United States. These must be ACTUAL contractor businesses (not directories like Houzz/Angi, not Wikipedia, not Home Depot, not national chains). Focus on established local/regional contractors with professional websites.
+      const prompt = `Research the top ${perNiche} highest-quality, real contractor websites for "${niche.label}" in the United States. These must be ACTUAL contractor businesses (not directories like Houzz/Angi, not Wikipedia, not Home Depot, not national chains). Focus on established local/regional contractors with professional, well-designed websites.
 
 For each website provide:
 1. name: Company name
@@ -54,6 +57,7 @@ For each website provide:
       const res = await base44.integrations.Core.InvokeLLM({
         prompt,
         add_context_from_internet: true,
+        model: 'gemini_3_1_pro',
         response_json_schema: {
           type: 'object',
           properties: {
@@ -79,7 +83,7 @@ For each website provide:
       return { niche, websites: (res.websites || []).slice(0, perNiche) };
     });
 
-    // Step 2: Scrape each website for raw design data (concurrency 8)
+    // Step 2: Scrape each site using BROWSERBASE (real browser rendering) with basic fetch fallback
     const allTargets = [];
     for (const { niche, websites } of nicheResults) {
       for (let i = 0; i < websites.length; i++) {
@@ -87,15 +91,28 @@ For each website provide:
       }
     }
 
-    const scraped = await pool(allTargets, 8, async (site) => {
+    const scraped = await pool(allTargets, 10, async (site) => {
       if (!site.url || !site.url.startsWith('http')) return { ...site, scraped: null };
-      const page = await fetchPage(site.url);
-      if (!page.ok || !page.html) return { ...site, scraped: null };
-      const data = extractData(page.html, site.url);
-      const techStack = detectTechStack(page.html);
-      const colorMatches = page.html.match(/#[0-9a-fA-F]{3,8}\b/g) || [];
+
+      let html = '';
+      let usedBrowser = false;
+      // Browserbase Fetch API first — reliable proxy that bypasses bot protection
+      const bbPage = await fetchRenderedPage(site.url, { timeout: 12000 });
+      if (bbPage && bbPage.html && bbPage.html.length > 200) {
+        html = bbPage.html;
+        usedBrowser = true;
+      } else {
+        // Fall back to basic fetch
+        const basic = await fetchPage(site.url);
+        if (basic.ok && basic.html) html = basic.html;
+      }
+      if (!html) return { ...site, scraped: null };
+
+      const data = extractData(html, site.url);
+      const techStack = detectTechStack(html);
+      const colorMatches = html.match(/#[0-9a-fA-F]{3,8}\b/g) || [];
       const colors = [...new Set(colorMatches.map(c => c.toUpperCase()))].slice(0, 12);
-      const fontMatches = page.html.match(/font-family\s*:\s*([^;}]+)/gi) || [];
+      const fontMatches = html.match(/font-family\s*:\s*([^;}]+)/gi) || [];
       const fonts = [...new Set(fontMatches.map(f => f.replace(/font-family\s*:\s*/i, '').replace(/['"]/g, '').trim()))].slice(0, 6);
       return {
         ...site,
@@ -113,13 +130,63 @@ For each website provide:
           techStack,
           colors,
           fonts,
-          htmlLength: page.html.length,
+          htmlLength: html.length,
+          usedBrowser,
           status: 'scraped'
         }
       };
     });
 
-    // Step 3: Clear old industry_template records for these niches, then store new ones
+    // Step 3: AI visual design analysis using best web-capable model (gemini_3_1_pro)
+    // Extracts visual design intelligence that HTML parsing cannot: aesthetic feel,
+    // visual hierarchy, conversion patterns, and replication guidance.
+    if (analyzeVisual) {
+      const toAnalyze = scraped.map((s, i) => ({ ...s, _idx: i })).filter(s => s.scraped);
+      const visuals = await pool(toAnalyze, 5, async (site) => {
+        try {
+          const prompt = `Analyze the visual design and UX of the website ${site.url} — a ${site.niche.label} contractor. Based on your web research of this actual live site, extract precise design intelligence:
+
+1. visual_palette: exact brand colors (hex codes) as seen on the live site
+2. typography_style: font style description (serif/sans-serif, weights, personality, feel)
+3. layout_pattern: primary layout approach (hero type, section flow, grid system, navigation style)
+4. visual_hierarchy: how they guide the visitor's attention and in what order
+5. conversion_patterns: CTA design, form placement, trust signals, social proof approach
+6. aesthetic_score: numeric 1-10 rating of overall visual polish and professionalism
+7. design_dna: 2-3 sentence summary capturing the design's distinct "feel" and what makes it effective
+8. replicate_patterns: specific actionable design patterns FaultLine's generator should replicate to match this quality`;
+
+          const res = await base44.integrations.Core.InvokeLLM({
+            prompt,
+            add_context_from_internet: true,
+            model: 'gemini_3_1_pro',
+            response_json_schema: {
+              type: 'object',
+              properties: {
+                visual_palette: { type: 'array', items: { type: 'string' } },
+                typography_style: { type: 'string' },
+                layout_pattern: { type: 'string' },
+                visual_hierarchy: { type: 'string' },
+                conversion_patterns: { type: 'array', items: { type: 'string' } },
+                aesthetic_score: { type: 'number' },
+                design_dna: { type: 'string' },
+                replicate_patterns: { type: 'array', items: { type: 'string' } }
+              }
+            }
+          });
+          return { idx: site._idx, visual: res };
+        } catch (e) {
+          return { idx: site._idx, visual: null };
+        }
+      });
+      // Merge visual analysis back into scraped results
+      for (const v of visuals) {
+        if (v.visual && scraped[v.idx]?.scraped) {
+          scraped[v.idx].scraped.visual = v.visual;
+        }
+      }
+    }
+
+    // Step 4: Clear old industry_template records for these niches, then store enriched ones
     const nicheLabels = selectedNiches.map(n => n.label);
     try {
       await base44.asServiceRole.entities.WebsiteLibraryAsset.deleteMany({
@@ -152,14 +219,22 @@ For each website provide:
     }));
 
     const created = await base44.entities.WebsiteLibraryAsset.bulkCreate(records);
+    const browserCount = scraped.filter(s => s.scraped?.usedBrowser).length;
+    const visualCount = scraped.filter(s => s.scraped?.visual).length;
 
     await base44.asServiceRole.entities.Receipt.create({
       organization_id: orgId,
       system: 'website_generator',
       action: 'scrape_industry_templates',
       status: 'success',
-      summary: `Scraped ${created.length} industry templates across ${selectedNiches.length} niches (${scraped.filter(s => s.scraped).length} sites successfully scraped)`,
-      evidence: { niches: nicheLabels, stored: created.length, scraped_ok: scraped.filter(s => s.scraped).length }
+      summary: `Scraped ${created.length} templates via Browserbase (${browserCount} rendered) + AI visual analysis (${visualCount} analyzed)`,
+      evidence: {
+        niches: nicheLabels,
+        stored: created.length,
+        scraped_ok: scraped.filter(s => s.scraped).length,
+        browser_rendered: browserCount,
+        visual_analyzed: visualCount
+      }
     });
 
     return Response.json({
@@ -168,6 +243,8 @@ For each website provide:
       total_found: allTargets.length,
       total_scraped: scraped.filter(s => s.scraped).length,
       total_stored: created.length,
+      browser_rendered: browserCount,
+      visual_analyzed: visualCount,
       by_niche: nicheResults.map(({ niche, websites }) => ({
         niche: niche.label,
         found: websites.length,
