@@ -75,10 +75,7 @@ export default function PortalShell({ children, assistant = false }) {
           <Brand variant="monogram" />
           <button onClick={() => setOpen(false)}>×</button>
         </div>
-        <div className="workspace">
-          <b>{orgName}</b>
-          <small>Growth operating system</small>
-        </div>
+
         <nav>
           {portalNavCategories.map(cat => {
             const isExpanded = !!expanded[cat.label];
