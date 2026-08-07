@@ -24,16 +24,16 @@ export default async function(req) {
   // 1. Google Drive (via connector)
   try {
     const conn = await base44.asServiceRole.connectors.getConnection('googledrive');
-    if (!conn?.access_token) throw new Error('Google Drive connector not authorized');
-    const folder = await createDriveFolder(conn.access_token, `${baseName} test`);
+    if (!conn?.accessToken) throw new Error('Google Drive connector not authorized');
+    const folder = await createDriveFolder(conn.accessToken, `${baseName} test`);
     log('drive', 'pass', { url: folder.url, id: folder.id });
   } catch (e) { errors.drive = e.message; log('drive', 'fail', { error: e.message }); }
 
   // 2. GitHub
   try {
-    const token = secrets.get('GITHUB_TOKEN');
-    if (!token) throw new Error('GITHUB_TOKEN secret not set');
-    const repo = await createGitHubRepo(token, slugify(baseName));
+    const ghConn = await base44.asServiceRole.connectors.getConnection('github');
+    if (!ghConn?.accessToken) throw new Error('GitHub connector not authorized');
+    const repo = await createGitHubRepo(ghConn.accessToken, slugify(baseName));
     log('github', 'pass', { url: repo.url, name: repo.name, owner: repo.owner });
   } catch (e) { errors.github = e.message; log('github', 'fail', { error: e.message }); }
 
@@ -50,9 +50,9 @@ export default async function(req) {
 
   // 4. Supabase
   try {
-    const token = secrets.get('SUPABASE_ACCESS_TOKEN');
-    if (!token) throw new Error('SUPABASE_ACCESS_TOKEN secret not set');
-    const supa = await createSupabaseProject(token, slugify(baseName));
+    const supaConn = await base44.asServiceRole.connectors.getConnection('supabase');
+    if (!supaConn?.accessToken) throw new Error('Supabase connector not authorized');
+    const supa = await createSupabaseProject(supaConn.accessToken, slugify(baseName));
     log('supabase', 'pass', { id: supa.id, ref: supa.ref, url: supa.url, status: supa.status });
   } catch (e) { errors.supabase = e.message; log('supabase', 'fail', { error: e.message }); }
 
