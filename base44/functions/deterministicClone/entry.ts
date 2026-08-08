@@ -133,9 +133,12 @@ export default async function(req) {
       if (!im[1].startsWith('data:')) addImageUrl(im[1]);
     }
     // CSS background-image: url(...) in external stylesheets
+    // CSS url(...) in external stylesheets — catch BOTH images and font files
+    // (icon fonts like FontAwesome are critical for visual parity; without them,
+    // icon characters render as exclamation marks or boxes instead of arrows/icons)
     const bgRe = /url\(["']?([^"')]+)["']?\)/gi; let bm;
     while ((bm = bgRe.exec(styleText)) !== null) {
-      if (/\.(jpg|jpeg|png|gif|webp|svg|avif)/i.test(bm[1])) addImageUrl(bm[1]);
+      if (/\.(jpg|jpeg|png|gif|webp|svg|avif|woff|woff2|ttf|eot|otf)/i.test(bm[1])) addImageUrl(bm[1]);
     }
     // Inline style="background-image: url(...)" in HTML (hero sections, etc.)
     // Also catches the shorthand: style="background: url(...) no-repeat center/cover"
@@ -155,6 +158,11 @@ export default async function(req) {
     const preloadRe = /<link[^>]+rel=["']preload["'][^>]+as=["']image["'][^>]+href=["']([^"']+)["']/gi; let pm;
     while ((pm = preloadRe.exec(html)) !== null) {
       if (!pm[1].startsWith('data:')) addImageUrl(pm[1]);
+    }
+    // <link rel="preload" as="font" href="..."> — font files preloaded by the browser
+    const fontPreloadRe = /<link[^>]+rel=["']preload["'][^>]+as=["']font["'][^>]+href=["']([^"']+)["']/gi; let fpm;
+    while ((fpm = fontPreloadRe.exec(html)) !== null) {
+      if (!fpm[1].startsWith('data:')) addImageUrl(fpm[1]);
     }
     // <video poster="..."> — poster/thumbnail image
     const videoPosterRe = /<video[^>]+poster=["']([^"']+)["']/gi; let vpm;
@@ -209,13 +217,26 @@ export default async function(req) {
             redirect: 'follow'
           });
           if (!ir.ok) { console.error(`Re-host ${ir.status} for ${fetchUrl.slice(0, 80)}`); return; }
-          const ct = ir.headers.get('content-type') || 'image/jpeg';
-          if (!ct.startsWith('image/') && !ct.startsWith('video/')) { console.error(`Not media (${ct}) for ${fetchUrl.slice(0, 80)}`); return; }
+          const ct = ir.headers.get('content-type') || 'application/octet-stream';
+          // Accept images, videos, AND font files (icon fonts are critical for parity)
+          const isFont = ct.startsWith('font/') || /font|woff|ttf|otf|eot/i.test(ct);
+          if (!ct.startsWith('image/') && !ct.startsWith('video/') && !isFont) {
+            // Last-resort: accept by URL extension (some servers return octet-stream for fonts)
+            if (!/\.(woff2?|ttf|eot|otf|jpg|jpeg|png|gif|webp|svg|avif|mp4|webm)/i.test(fetchUrl)) {
+              console.error(`Not media/font (${ct}) for ${fetchUrl.slice(0, 80)}`); return;
+            }
+          }
           const buf = await ir.arrayBuffer();
           if (buf.byteLength < 100) return; // skip tiny/empty responses
           const ext = ct.includes('png') ? 'png' : ct.includes('webp') ? 'webp' : ct.includes('gif') ? 'gif'
             : ct.includes('svg') ? 'svg' : ct.includes('mp4') ? 'mp4' : ct.includes('webm') ? 'webm'
-            : ct.includes('ogg') ? 'ogg' : ct.includes('quicktime') ? 'mov' : 'jpg';
+            : ct.includes('ogg') ? 'ogg' : ct.includes('quicktime') ? 'mov'
+            : ct.includes('woff2') || /\.woff2/i.test(fetchUrl) ? 'woff2'
+            : ct.includes('woff') || /\.woff/i.test(fetchUrl) ? 'woff'
+            : ct.includes('ttf') || /\.ttf/i.test(fetchUrl) ? 'ttf'
+            : ct.includes('opentype') || /\.otf/i.test(fetchUrl) ? 'otf'
+            : ct.includes('embedded-opentype') || /\.eot/i.test(fetchUrl) ? 'eot'
+            : 'jpg';
           const filename = `clone-img-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
           const file = new File([buf], filename, { type: ct });
           const upload = await base44.integrations.Core.UploadFile({ file });
