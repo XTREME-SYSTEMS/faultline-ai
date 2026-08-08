@@ -57,19 +57,22 @@ export default function CommandCenter() {
     setSweepLog([]);
     const steps = [
       { name: 'Autonomous Headless Scan', fn: () => base44.functions.invoke('autonomousHeadlessScan', {}) },
-      { name: 'Sentinel Self-Reflection', fn: () => base44.functions.invoke('sentinelReflect', { flow_goal: 'Full autonomous sweep — all portal pages' }) },
+      { name: 'Sentinel Self-Reflection', fn: (prev) => base44.functions.invoke('sentinelReflect', { flow_goal: 'Full autonomous sweep — all portal pages', test_result: prev }) },
       { name: 'Security Pen Test', fn: () => base44.functions.invoke('securityPenTest', {}) },
       { name: 'Compliance Check', fn: () => base44.functions.invoke('securityComplianceCheck', {}) },
       { name: 'Compute System Score', fn: () => base44.functions.invoke('computeSystemScore', {}) },
     ];
+    let prevResult = null;
     for (const step of steps) {
       setSweepLog(prev => [...prev, { name: step.name, status: 'running' }]);
       try {
-        const res = await step.fn();
+        const res = await step.fn(prevResult);
         const data = res.data || res;
+        prevResult = data;
         setSweepLog(prev => [...prev.slice(0, -1), { name: step.name, status: 'done', result: data }]);
       } catch (e) {
         setSweepLog(prev => [...prev.slice(0, -1), { name: step.name, status: 'error', error: e.message }]);
+        prevResult = null;
       }
     }
     setSweepRunning(false);
