@@ -106,6 +106,9 @@ const XVReceipts = lazy(() => import('@/pages/xv/Receipts'));
 const XVGuardrails = lazy(() => import('@/pages/xv/Guardrails'));
 const XVSettings = lazy(() => import('@/pages/xv/Settings'));
 const UniversalDatabase = lazy(() => import('@/pages/UniversalDatabase'));
+const NicheWebsiteStudio = lazy(() => import('@/pages/NicheWebsiteStudio'));
+const VideoStudio = lazy(() => import('@/pages/VideoStudio'));
+const SocialMediaManager = lazy(() => import('@/pages/SocialMediaManager'));
 
 const PageLoader = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -243,6 +246,9 @@ const AuthenticatedApp = () => {
         <Route path="/app/client-portal" element={<ClientPortal />} />
         <Route path="/app/projects" element={<Projects />} />
         <Route path="/app/database" element={<UniversalDatabase />} />
+        <Route path="/app/niche-websites" element={<NicheWebsiteStudio />} />
+        <Route path="/app/video-studio" element={<VideoStudio />} />
+        <Route path="/app/social-media" element={<SocialMediaManager />} />
         <Route path="/app/:slug" element={<Module />} />
         <Route path="/admin" element={<Admin />} />
         </Route>

@@ -100,6 +100,17 @@ export const TOOL_CATEGORIES = [
     ]
   },
   {
+    id: 'content',
+    name: 'Content & Media',
+    icon: '🎬',
+    color: '#8A641C',
+    tools: [
+      { id: 'nicheWebsiteEngine', label: 'Niche Website Engine', desc: 'Discover trending niches and generate polished, production-ready websites with Google Analytics tracking', params: [{ key: 'max_niches', label: 'Max Niches (1-10)', type: 'text', placeholder: '5' }, { key: 'ga_measurement_id', label: 'Google Analytics ID', type: 'text', placeholder: 'G-XXXXXXXXXX' }, { key: 'industry', label: 'Industry (optional)', type: 'text', placeholder: 'general' }] },
+      { id: 'generateMarketingVideo', label: 'Generate Marketing Video', desc: 'Create AI videos: hero promos (16:9), social reels (9:16), or product demos', params: [{ key: 'type', label: 'Video Type', type: 'select', options: ['hero', 'social', 'demo'] }, { key: 'prompt', label: 'Video Description', type: 'textarea', placeholder: 'A serene mountain lake at sunset with gentle ripples...' }, { key: 'business_name', label: 'Business Name (optional)', type: 'text', placeholder: 'Your business' }, { key: 'niche', label: 'Niche (optional)', type: 'text', placeholder: 'personal finance' }] },
+      { id: 'facebookManager', label: 'Facebook Page Manager', desc: 'List pages, post, schedule, and view insights across all your Facebook business pages', params: [{ key: 'action', label: 'Action', type: 'select', options: ['list_pages', 'post', 'schedule', 'posts', 'insights'] }] },
+    ]
+  },
+  {
     id: 'system',
     name: 'System',
     icon: '⚙️',
