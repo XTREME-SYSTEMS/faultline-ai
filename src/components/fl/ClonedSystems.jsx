@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Copy, ExternalLink, Loader2, Rocket, Globe, Cloud, Github, Database, RefreshCw, FileText } from 'lucide-react';
+import { Copy, ExternalLink, Loader2, Rocket, Globe, Cloud, Github, Database, RefreshCw, FileText, Trash2, AlertTriangle } from 'lucide-react';
 import BenchmarkReport from './BenchmarkReport';
 import PipelineProgress from './PipelineProgress';
 
@@ -16,6 +16,8 @@ export default function ClonedSystems() {
   const [loading, setLoading] = useState(true);
   const [resuming, setResuming] = useState(null);
   const [reportProject, setReportProject] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [deleting, setDeleting] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -42,6 +44,19 @@ export default function ClonedSystems() {
       console.error('Resume failed:', e);
     } finally {
       setResuming(null);
+    }
+  };
+
+  const handleDelete = async (p) => {
+    setDeleting(p.id);
+    try {
+      await base44.entities.LaunchProject.delete(p.id);
+      setConfirmDelete(null);
+      await load();
+    } catch (e) {
+      console.error('Delete failed:', e);
+    } finally {
+      setDeleting(null);
     }
   };
 
@@ -116,7 +131,12 @@ export default function ClonedSystems() {
                 <div key={p.id} style={{ background: '#fff', border: '1px solid #e5e1da', borderRadius: 8, padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                     <b style={{ fontSize: 13, lineHeight: 1.3 }}>{p.project_name}</b>
-                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, flexShrink: 0, background: p.status === 'passed' ? '#e6f4ec' : p.status === 'failed' ? '#f5d8d5' : '#f8e5ce', color: p.status === 'passed' ? '#237A4B' : p.status === 'failed' ? '#a52d23' : '#8A641C' }}>{p.status}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                      <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: p.status === 'passed' ? '#e6f4ec' : p.status === 'failed' ? '#f5d8d5' : '#f8e5ce', color: p.status === 'passed' ? '#237A4B' : p.status === 'failed' ? '#a52d23' : '#8A641C' }}>{p.status}</span>
+                      <button onClick={() => setConfirmDelete(p)} title="Delete project" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: 5, border: '1px solid #e5d8d5', background: '#fff', color: '#a52d23', cursor: 'pointer', padding: 0 }}>
+                        <Trash2 size={12} />
+                      </button>
+                    </div>
                   </div>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                     <span style={{ fontSize: 10, background: '#f4f1ea', color: '#8A641C', padding: '2px 8px', borderRadius: 10 }}>{p.project_type}</span>
@@ -154,6 +174,29 @@ export default function ClonedSystems() {
         </div>
       )}
       {reportProject && <BenchmarkReport project={reportProject} onClose={() => setReportProject(null)} />}
+      {confirmDelete && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 20 }} onClick={() => deleting !== confirmDelete.id && setConfirmDelete(null)}>
+          <div style={{ background: '#fff', borderRadius: 12, padding: 28, maxWidth: 420, width: '100%', boxShadow: '0 24px 70px rgba(0,0,0,0.2)' }} onClick={e => e.stopPropagation()}>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, textAlign: 'center' }}>
+              <div style={{ width: 52, height: 52, borderRadius: '50%', background: '#f5d8d5', display: 'grid', placeItems: 'center' }}>
+                <AlertTriangle size={26} style={{ color: '#a52d23' }} />
+              </div>
+              <div>
+                <b style={{ fontSize: 17, display: 'block', marginBottom: 6 }}>Delete this project?</b>
+                <small style={{ fontSize: 13, color: '#888', lineHeight: 1.5 }}>"{confirmDelete.project_name}" will be permanently removed. This cannot be undone.</small>
+              </div>
+              <div style={{ display: 'flex', gap: 10, marginTop: 8, width: '100%' }}>
+                <button onClick={() => setConfirmDelete(null)} disabled={deleting === confirmDelete.id} style={{ flex: 1, padding: '12px 20px', borderRadius: 6, fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', background: '#f0ede5', color: '#333', border: '1px solid #ddd' }}>
+                  No, keep it
+                </button>
+                <button onClick={() => handleDelete(confirmDelete)} disabled={deleting === confirmDelete.id} style={{ flex: 1, padding: '12px 20px', borderRadius: 6, fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: deleting === confirmDelete.id ? 'wait' : 'pointer', background: deleting === confirmDelete.id ? '#ccc' : '#a52d23', color: '#fff', border: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                  {deleting === confirmDelete.id ? <><Loader2 size={14} className="animate-spin" /> Deleting…</> : 'Yes, delete'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
