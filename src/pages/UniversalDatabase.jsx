@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import { useTheme } from 'next-themes';
 import UniversalChat from '@/components/fl/UniversalChat';
-import { Database, Search, Play, Loader2, ExternalLink, CheckCircle2, AlertCircle, Clock, Copy } from 'lucide-react';
+import { Database, Search, Play, Loader2, ExternalLink, CheckCircle2, AlertCircle, Clock, Sun, Moon, ChevronLeft, PanelRightOpen } from 'lucide-react';
 
 const CATEGORIES = [
-  { key: '', label: 'All' },
+  { key: '', label: 'All Categories' },
   { key: 'epoxy_metallic', label: 'Metallic Epoxy' },
   { key: 'epoxy_flake', label: 'Flake Epoxy' },
   { key: 'epoxy_quartz', label: 'Quartz Epoxy' },
@@ -54,10 +55,10 @@ const V_FILTERS = [
 
 function VBadge({ status }) {
   const map = {
-    validated: { c: '#237A4B', bg: '#1c3a2a', icon: CheckCircle2 },
-    needs_work: { c: '#B88214', bg: '#3a2e14', icon: AlertCircle },
-    pending: { c: '#9a9a9e', bg: '#1a1a1d', icon: Clock },
-    failed: { c: '#C63D34', bg: '#3a1a18', icon: AlertCircle }
+    validated: { c: '#237A4B', bg: 'rgba(35,122,75,.14)', icon: CheckCircle2 },
+    needs_work: { c: '#B88214', bg: 'rgba(184,130,20,.14)', icon: AlertCircle },
+    pending: { c: 'var(--db-muted)', bg: 'var(--db-surface-2)', icon: Clock },
+    failed: { c: '#C63D34', bg: 'rgba(198,61,52,.14)', icon: AlertCircle }
   };
   const m = map[status] || map.pending;
   const I = m.icon;
@@ -66,6 +67,7 @@ function VBadge({ status }) {
 
 export default function UniversalDatabase() {
   const { user } = useAuth();
+  const { theme, setTheme } = useTheme();
   const isAdmin = user?.role === 'admin';
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -74,6 +76,7 @@ export default function UniversalDatabase() {
   const [vFilter, setVFilter] = useState('');
   const [running, setRunning] = useState(false);
   const [runMsg, setRunMsg] = useState('');
+  const [chatOpen, setChatOpen] = useState(true);
   const [stats, setStats] = useState({ total: 0, validated: 0, cloned: 0, pending: 0 });
 
   const load = useCallback(async () => {
@@ -122,95 +125,111 @@ export default function UniversalDatabase() {
     }
   }
 
+  const gridCols = chatOpen ? '230px 1fr 350px' : '230px 1fr';
+
   return (
-    <div style={{ minHeight: '100vh', background: '#0B0B0D', color: '#fff' }}>
-      <div style={{ maxWidth: 1480, margin: '0 auto', padding: '28px 24px 80px', display: 'grid', gridTemplateColumns: '1fr 340px', gap: 24 }}>
-        {/* Main column */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', gap: 20, marginBottom: 22 }}>
-            <div>
-              <p style={{ color: '#FFD60A', fontSize: 12, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', margin: '0 0 8px', display: 'flex', alignItems: 'center', gap: 8 }}><Database size={14} /> Universal A-Z Database</p>
-              <h1 style={{ font: "400 clamp(28px,3vw,42px)/1 'Libre Caslon Display', serif", letterSpacing: '-.035em', margin: 0 }}>Everything We've Discovered & Cloned</h1>
-              <p style={{ color: '#9a9a9e', fontSize: 15, margin: '10px 0 0', maxWidth: 560 }}>Persistent non-stop discovery across epoxy, concrete, construction, AI tools, agents, orchestrators, scrapers, and every industry.</p>
-            </div>
+    <div className="universal-db" style={{ minHeight: '100vh', background: 'var(--db-bg)', color: 'var(--db-text)' }}>
+      <style>{`
+        .universal-db { --db-bg:#f7f7f5; --db-surface:#ffffff; --db-surface-2:#f3f0ea; --db-border:#e5e5e5; --db-text:#111111; --db-muted:#666666; --db-accent:#C89B3C; --db-accent-fg:#ffffff; --db-accent-soft:#faf3e0; }
+        .dark .universal-db { --db-bg:#0B0B0D; --db-surface:#111114; --db-surface-2:#1a1a1d; --db-border:#2b2b2b; --db-text:#ffffff; --db-muted:#9a9a9e; --db-accent:#FFD60A; --db-accent-fg:#0B0B0D; --db-accent-soft:#2a2410; }
+      `}</style>
+
+      <div style={{ display: 'grid', gridTemplateColumns: gridCols, minHeight: '100vh', transition: 'grid-template-columns .25s' }}>
+        {/* LEFT — category menu */}
+        <aside style={{ borderRight: '1px solid var(--db-border)', background: 'var(--db-surface)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0 }}>
+          <div style={{ padding: '18px 18px 14px', borderBottom: '1px solid var(--db-border)' }}>
+            <p style={{ color: 'var(--db-accent)', fontSize: 11, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 7 }}><Database size={13} /> A-Z Database</p>
+            <h2 style={{ font: "400 19px 'Libre Caslon Display', serif", margin: 0 }}>Universal Catalog</h2>
+          </div>
+          <nav style={{ flex: 1, overflow: 'auto', padding: '10px 10px' }}>
+            {CATEGORIES.map(c => (
+              <button key={c.key || 'all'} type="button" onClick={() => setCat(c.key)} style={{
+                display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', marginBottom: 2, borderRadius: 7, fontSize: 13, fontWeight: cat === c.key ? 700 : 500, cursor: 'pointer',
+                border: 0, background: cat === c.key ? 'var(--db-accent)' : 'transparent', color: cat === c.key ? 'var(--db-accent-fg)' : 'var(--db-text)'
+              }}>{c.label}</button>
+            ))}
+          </nav>
+          <div style={{ padding: 14, borderTop: '1px solid var(--db-border)', display: 'flex', flexDirection: 'column', gap: 9 }}>
             {isAdmin && (
-              <button type="button" onClick={() => runOrchestrator()} disabled={running} style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 22px', background: 'linear-gradient(135deg,#FFD60A,#FFB800)', color: '#0B0B0D', border: 0, borderRadius: 8, fontSize: 14, fontWeight: 800, cursor: running ? 'wait' : 'pointer', opacity: running ? .7 : 1 }}>
-                {running ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />} Run Cycle
+              <button type="button" onClick={() => runOrchestrator(cat || undefined)} disabled={running} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '10px', background: 'var(--db-accent)', color: 'var(--db-accent-fg)', border: 0, borderRadius: 7, fontSize: 12, fontWeight: 800, cursor: running ? 'wait' : 'pointer', opacity: running ? .7 : 1 }}>
+                {running ? <Loader2 size={14} className="animate-spin" /> : <Play size={14} />} {cat ? 'Discover' : 'Run Cycle'}
               </button>
             )}
+            <button type="button" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '9px', background: 'var(--db-surface-2)', color: 'var(--db-text)', border: '1px solid var(--db-border)', borderRadius: 7, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>
+              {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />} {theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
+            </button>
+          </div>
+        </aside>
+
+        {/* CENTER — content */}
+        <main style={{ padding: '26px 28px 60px', minWidth: 0, overflow: 'auto' }}>
+          <div style={{ marginBottom: 20 }}>
+            <p style={{ color: 'var(--db-accent)', fontSize: 11, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', margin: '0 0 8px' }}>Persistent 24/7 Discovery & Cloning</p>
+            <h1 style={{ font: "400 clamp(26px,3vw,40px)/1 'Libre Caslon Display', serif", letterSpacing: '-.035em', margin: 0 }}>Everything We've Discovered & Cloned</h1>
+            <p style={{ color: 'var(--db-muted)', fontSize: 14, margin: '8px 0 0', maxWidth: 580 }}>Non-stop autonomous discovery across epoxy, concrete, construction data, AI tools, agents, orchestrators, scrapers, and every industry — validated and cloned into production-ready packs.</p>
           </div>
 
-          {runMsg && <div style={{ padding: '11px 16px', background: '#1a1a1d', border: '1px solid #2b2b2b', borderRadius: 8, fontSize: 13, color: '#FFD60A', marginBottom: 18 }}>{runMsg}</div>}
+          {runMsg && <div style={{ padding: '10px 15px', background: 'var(--db-accent-soft)', border: '1px solid var(--db-border)', borderRadius: 8, fontSize: 13, color: 'var(--db-text)', marginBottom: 16 }}>{runMsg}</div>}
 
           {/* Stats */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 12, marginBottom: 22 }}>
-            {[{ l: 'Total Items', v: stats.total, c: '#fff' }, { l: 'Validated', v: stats.validated, c: '#237A4B' }, { l: 'Cloned', v: stats.cloned, c: '#FFD60A' }, { l: 'Needs Work', v: stats.pending, c: '#B88214' }].map(s => (
-              <div key={s.l} style={{ background: '#111114', border: '1px solid #2b2b2b', borderRadius: 10, padding: '16px 18px' }}>
-                <div style={{ fontSize: 11, color: '#9a9a9e', textTransform: 'uppercase', letterSpacing: '.1em' }}>{s.l}</div>
-                <div style={{ font: "400 30px 'Libre Caslon Display', serif", color: s.c, marginTop: 6 }}>{s.v}</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 11, marginBottom: 18 }}>
+            {[{ l: 'Total Items', v: stats.total, c: 'var(--db-text)' }, { l: 'Validated', v: stats.validated, c: '#237A4B' }, { l: 'Cloned', v: stats.cloned, c: 'var(--db-accent)' }, { l: 'Needs Work', v: stats.pending, c: '#B88214' }].map(s => (
+              <div key={s.l} style={{ background: 'var(--db-surface)', border: '1px solid var(--db-border)', borderRadius: 9, padding: '14px 16px' }}>
+                <div style={{ fontSize: 10, color: 'var(--db-muted)', textTransform: 'uppercase', letterSpacing: '.1em' }}>{s.l}</div>
+                <div style={{ font: "400 28px 'Libre Caslon Display', serif", color: s.c, marginTop: 5 }}>{s.v}</div>
               </div>
             ))}
           </div>
 
-          {/* Category chips */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7, marginBottom: 16 }}>
-            {CATEGORIES.map(c => (
-              <button key={c.key || 'all'} type="button" onClick={() => setCat(c.key)} style={{ padding: '7px 13px', borderRadius: 20, fontSize: 12, fontWeight: 600, cursor: 'pointer', border: cat === c.key ? '1px solid #FFD60A' : '1px solid #2b2b2b', background: cat === c.key ? '#FFD60A' : '#111114', color: cat === c.key ? '#0B0B0D' : '#bbb' }}>{c.label}</button>
-            ))}
-          </div>
-
           {/* Filters */}
-          <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-            <div style={{ flex: 1, minWidth: 220, position: 'relative' }}>
-              <Search size={15} style={{ position: 'absolute', left: 13, top: '50%', transform: 'translateY(-50%)', color: '#666' }} />
-              <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search name, URL, niche…" style={{ width: '100%', padding: '11px 13px 11px 38px', background: '#111114', border: '1px solid #2b2b2b', borderRadius: 8, color: '#fff', fontSize: 13, outline: 'none' }} />
+          <div style={{ display: 'flex', gap: 11, marginBottom: 14, flexWrap: 'wrap' }}>
+            <div style={{ flex: 1, minWidth: 200, position: 'relative' }}>
+              <Search size={15} style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', color: 'var(--db-muted)' }} />
+              <input value={q} onChange={e => setQ(e.target.value)} placeholder="Search name, URL, niche…" style={{ width: '100%', padding: '10px 12px 10px 36px', background: 'var(--db-surface)', border: '1px solid var(--db-border)', borderRadius: 7, color: 'var(--db-text)', fontSize: 13, outline: 'none' }} />
             </div>
-            <select value={vFilter} onChange={e => setVFilter(e.target.value)} style={{ padding: '11px 13px', background: '#111114', border: '1px solid #2b2b2b', borderRadius: 8, color: '#fff', fontSize: 13, outline: 'none' }}>
+            <select value={vFilter} onChange={e => setVFilter(e.target.value)} style={{ padding: '10px 12px', background: 'var(--db-surface)', border: '1px solid var(--db-border)', borderRadius: 7, color: 'var(--db-text)', fontSize: 13, outline: 'none' }}>
               {V_FILTERS.map(v => <option key={v.key} value={v.key}>{v.label}</option>)}
             </select>
-            {cat && isAdmin && (
-              <button type="button" onClick={() => runOrchestrator(cat)} disabled={running} style={{ padding: '11px 16px', background: '#1a1a1d', color: '#FFD60A', border: '1px solid #FFD60A', borderRadius: 8, fontSize: 12, fontWeight: 700, cursor: running ? 'wait' : 'pointer' }}>Discover this category</button>
-            )}
           </div>
 
           {/* Catalog table */}
-          <div style={{ background: '#111114', border: '1px solid #2b2b2b', borderRadius: 10, overflow: 'hidden' }}>
+          <div style={{ background: 'var(--db-surface)', border: '1px solid var(--db-border)', borderRadius: 9, overflow: 'hidden' }}>
             {loading ? (
-              <div style={{ padding: 60, textAlign: 'center', color: '#9a9a9e' }}><Loader2 size={26} className="animate-spin" style={{ margin: '0 auto 12px' }} /><div>Loading catalog…</div></div>
+              <div style={{ padding: 56, textAlign: 'center', color: 'var(--db-muted)' }}><Loader2 size={24} className="animate-spin" style={{ margin: '0 auto 12px' }} /><div>Loading catalog…</div></div>
             ) : filtered.length === 0 ? (
-              <div style={{ padding: 60, textAlign: 'center', color: '#9a9a9e' }}>
-                <Database size={32} style={{ margin: '0 auto 14px', opacity: .4 }} />
-                <div style={{ fontSize: 15, marginBottom: 6 }}>No items yet{cat ? ' in this category' : ''}.</div>
-                {isAdmin && <div style={{ fontSize: 13 }}>Hit <b style={{ color: '#FFD60A' }}>Run Cycle</b> to start discovering.</div>}
+              <div style={{ padding: 56, textAlign: 'center', color: 'var(--db-muted)' }}>
+                <Database size={30} style={{ margin: '0 auto 12px', opacity: .4 }} />
+                <div style={{ fontSize: 14, marginBottom: 5 }}>No items yet{cat ? ' in this category' : ''}.</div>
+                {isAdmin && <div style={{ fontSize: 12 }}>Hit <b style={{ color: 'var(--db-accent)' }}>Run Cycle</b> or ask the assistant to start discovering.</div>}
               </div>
             ) : (
               <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
                   <thead>
-                    <tr style={{ background: '#0B0B0D', textAlign: 'left' }}>
+                    <tr style={{ background: 'var(--db-surface-2)', textAlign: 'left' }}>
                       {['Name', 'Category', 'Type', 'Niche', 'Validation', 'Clone', '', ''].map((h, i) => (
-                        <th key={i} style={{ padding: '11px 14px', color: '#9a9a9e', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.1em', fontWeight: 700, borderBottom: '1px solid #2b2b2b' }}>{h}</th>
+                        <th key={i} style={{ padding: '10px 13px', color: 'var(--db-muted)', fontSize: 10, textTransform: 'uppercase', letterSpacing: '.1em', fontWeight: 700, borderBottom: '1px solid var(--db-border)' }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {filtered.map(it => (
-                      <tr key={it.id} style={{ borderBottom: '1px solid #1a1a1d' }}>
-                        <td style={{ padding: '12px 14px' }}>
-                          <b style={{ fontSize: 13 }}>{it.name}</b>
-                          {it.value_proposition && <div style={{ fontSize: 11, color: '#777', marginTop: 3, maxWidth: 280, lineHeight: 1.4 }}>{it.value_proposition}</div>}
+                      <tr key={it.id} style={{ borderBottom: '1px solid var(--db-border)' }}>
+                        <td style={{ padding: '11px 13px' }}>
+                          <b style={{ fontSize: 13, color: 'var(--db-text)' }}>{it.name}</b>
+                          {it.value_proposition && <div style={{ fontSize: 11, color: 'var(--db-muted)', marginTop: 3, maxWidth: 280, lineHeight: 1.4 }}>{it.value_proposition}</div>}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: 12, color: '#bbb' }}>{CATEGORIES.find(c => c.key === it.category)?.label || it.category}</td>
-                        <td style={{ padding: '12px 14px', fontSize: 11, color: '#9a9a9e' }}>{it.item_type?.replace(/_/g, ' ')}</td>
-                        <td style={{ padding: '12px 14px', fontSize: 11, color: '#777', maxWidth: 160 }}>{it.niche}</td>
-                        <td style={{ padding: '12px 14px' }}><VBadge status={it.validation_status} /></td>
-                        <td style={{ padding: '12px 14px', fontSize: 11 }}>
-                          {it.clone_status === 'cloned' ? <span style={{ color: '#FFD60A', fontWeight: 700 }}>✓ Cloned</span> : <span style={{ color: '#666' }}>{it.clone_status}</span>}
+                        <td style={{ padding: '11px 13px', fontSize: 12, color: 'var(--db-text)' }}>{CATEGORIES.find(c => c.key === it.category)?.label || it.category}</td>
+                        <td style={{ padding: '11px 13px', fontSize: 11, color: 'var(--db-muted)' }}>{it.item_type?.replace(/_/g, ' ')}</td>
+                        <td style={{ padding: '11px 13px', fontSize: 11, color: 'var(--db-muted)', maxWidth: 150 }}>{it.niche}</td>
+                        <td style={{ padding: '11px 13px' }}><VBadge status={it.validation_status} /></td>
+                        <td style={{ padding: '11px 13px', fontSize: 11 }}>
+                          {it.clone_status === 'cloned' ? <span style={{ color: 'var(--db-accent)', fontWeight: 700 }}>✓ Cloned</span> : <span style={{ color: 'var(--db-muted)' }}>{it.clone_status}</span>}
                         </td>
-                        <td style={{ padding: '12px 8px' }}>
-                          {it.url && <a href={it.url} target="_blank" rel="noreferrer" style={{ color: '#666', display: 'inline-flex' }}><ExternalLink size={14} /></a>}
+                        <td style={{ padding: '11px 8px' }}>
+                          {it.url && <a href={it.url} target="_blank" rel="noreferrer" style={{ color: 'var(--db-muted)', display: 'inline-flex' }}><ExternalLink size={14} /></a>}
                         </td>
-                        <td style={{ padding: '12px 14px', fontSize: 10, color: '#FFD60A', fontWeight: 700 }}>{it.profit_potential?.replace(/_/g, ' ')}</td>
+                        <td style={{ padding: '11px 13px', fontSize: 10, color: 'var(--db-accent)', fontWeight: 700 }}>{it.profit_potential?.replace(/_/g, ' ')}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -218,16 +237,23 @@ export default function UniversalDatabase() {
               </div>
             )}
           </div>
-          {!loading && filtered.length > 0 && <div style={{ color: '#666', fontSize: 12, marginTop: 12 }}>Showing {filtered.length} of {items.length} items.</div>}
-        </div>
+          {!loading && filtered.length > 0 && <div style={{ color: 'var(--db-muted)', fontSize: 12, marginTop: 11 }}>Showing {filtered.length} of {items.length} items.</div>}
+        </main>
 
-        {/* Chat panel */}
-        <aside style={{ position: 'sticky', top: 20, height: 'calc(100vh - 40px)', background: '#111114', border: '1px solid #2b2b2b', borderRadius: 10, overflow: 'hidden' }}>
-          <UniversalChat items={items} />
-        </aside>
+        {/* RIGHT — AI chat (retractable) */}
+        {chatOpen ? (
+          <aside style={{ borderLeft: '1px solid var(--db-border)', height: '100vh', position: 'sticky', top: 0, overflow: 'hidden' }}>
+            <UniversalChat items={items} onRefresh={load} onRetract={() => setChatOpen(false)} />
+          </aside>
+        ) : (
+          <button type="button" onClick={() => setChatOpen(true)} title="Open AI chat" style={{ position: 'fixed', right: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 50, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '14px 8px', background: 'var(--db-accent)', color: 'var(--db-accent-fg)', border: 0, borderRadius: '8px 0 0 8px', cursor: 'pointer', boxShadow: '-4px 0 20px rgba(0,0,0,.18)' }}>
+            <PanelRightOpen size={18} />
+            <span style={{ fontSize: 9, fontWeight: 800, writingMode: 'vertical-rl', letterSpacing: '.1em' }}>AI CHAT</span>
+          </button>
+        )}
       </div>
 
-      <style>{`@media (max-width: 900px){ .portal-page > div { grid-template-columns: 1fr !important; } aside{ position: static !important; height: 480px !important; } }`}</style>
+      <style>{`@media (max-width: 1100px){ .universal-db > div { grid-template-columns: 1fr !important; } aside, .universal-db aside { position: static !important; height: auto !important; max-height: 260px; border-right: 0 !important; border-bottom: 1px solid var(--db-border) !important; } .universal-db aside:last-of-type { max-height: 420px; } }`}</style>
     </div>
   );
 }
