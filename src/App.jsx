@@ -105,6 +105,7 @@ const XVInbox = lazy(() => import('@/pages/xv/Inbox'));
 const XVReceipts = lazy(() => import('@/pages/xv/Receipts'));
 const XVGuardrails = lazy(() => import('@/pages/xv/Guardrails'));
 const XVSettings = lazy(() => import('@/pages/xv/Settings'));
+const UniversalDatabase = lazy(() => import('@/pages/UniversalDatabase'));
 
 const PageLoader = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -241,6 +242,7 @@ const AuthenticatedApp = () => {
         <Route path="/app/client-projects" element={<ClientProjects />} />
         <Route path="/app/client-portal" element={<ClientPortal />} />
         <Route path="/app/projects" element={<Projects />} />
+        <Route path="/app/database" element={<UniversalDatabase />} />
         <Route path="/app/:slug" element={<Module />} />
         <Route path="/admin" element={<Admin />} />
         </Route>
