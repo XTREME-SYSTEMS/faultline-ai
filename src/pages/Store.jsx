@@ -186,7 +186,11 @@ export default function Store() {
                       <div className="price-row"><span className="price">${PRICE.tool} <small>/ tool</small></span></div>
                       <div className="product-actions">
                         <button className="btn btn-gold" onClick={() => handleAdd(clonedToolItem(c))}>Add to Cart — ${PRICE.tool}</button>
-                        {c.url && <a href={c.url} target="_blank" rel="noreferrer" className="btn btn-ghost">Live Demo</a>}
+                        {c.is_original && c.tool_url ? (
+                          <Link to={c.tool_url} className="btn btn-ghost">Try It Free →</Link>
+                        ) : c.url ? (
+                          <a href={c.url} target="_blank" rel="noreferrer" className="btn btn-ghost">Live Demo</a>
+                        ) : null}
                       </div>
                     </div>
                   </article>

@@ -109,6 +109,7 @@ const UniversalDatabase = lazy(() => import('@/pages/UniversalDatabase'));
 const NicheWebsiteStudio = lazy(() => import('@/pages/NicheWebsiteStudio'));
 const VideoStudio = lazy(() => import('@/pages/VideoStudio'));
 const SocialMediaManager = lazy(() => import('@/pages/SocialMediaManager'));
+const AiBidWriter = lazy(() => import('@/pages/tools/AiBidWriter'));
 
 const PageLoader = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -154,6 +155,7 @@ const AuthenticatedApp = () => {
       <Route path="/consultation" element={<Consultation />} />
       <Route path="/web-packs" element={<WebPackGallery />} />
       <Route path="/store" element={<Store />} />
+      <Route path="/tools/ai-bid-writer" element={<AiBidWriter />} />
       <Route path="/portal/:companyId" element={<CustomerPortal />} />
       <Route path="/funnel" element={<ClientFunnel />} />
       <Route path="/sign/:token" element={<SignDocument />} />

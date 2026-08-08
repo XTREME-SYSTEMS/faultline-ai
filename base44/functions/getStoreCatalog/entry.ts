@@ -72,6 +72,33 @@ export default async function(req) {
       }
     }
 
+    // 3. Original Toolio products from ToolProduct entity (status=Ready).
+    //    These are our own products (not clones) — the AI Bid Writer, etc.
+    const originalProducts = await base44.asServiceRole.entities.ToolProduct.filter(
+      { status: 'Ready' }, '-created_date', 50
+    ).catch(() => []);
+
+    for (const p of originalProducts || []) {
+      tools.push({
+        id: p.id,
+        name: p.name,
+        url: p.tool_url || null,
+        image: null,
+        description: p.description || p.business_problem || '',
+        category: p.category || 'Construction',
+        niche: 'Original Tool',
+        revenue_model: 'One-time',
+        key_features: p.benefits || [],
+        design_strengths: [],
+        priority: 'high',
+        profit_potential: 'high',
+        tags: ['Original', ...(p.tags || [])],
+        is_original: true,
+        price: p.price || 29,
+        tool_url: p.tool_url || null
+      });
+    }
+
     return Response.json({
       web: packs.filter((p) => p.pack_type === 'web_pack'),
       logos: packs.filter((p) => p.pack_type === 'logo_pack'),

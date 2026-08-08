@@ -38,6 +38,21 @@
         "type": "string"
       }
     },
+    "price": {
+      "type": "number",
+      "description": "One-time purchase price in USD",
+      "default": 29
+    },
+    "tool_url": {
+      "type": "string",
+      "description": "URL to the live tool page (for original products with a functional UI)"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
     "price_mode": {
       "type": "string",
       "enum": [

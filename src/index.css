@@ -425,6 +425,23 @@ td small { color: #888; margin-top: 4px; }
   .footer-cta h2 { font-size: 40px; }
 }
 
+/* ===== Toolio tool pages ===== */
+.fl-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d7d7d7;
+  border-radius: 6px;
+  font-size: 14px;
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: #fff;
+  color: #111;
+  outline: none;
+  transition: border-color .15s;
+}
+.fl-input:focus { border-color: #C89B3C; }
+.fl-input::placeholder { color: #aaa; }
+textarea.fl-input { resize: vertical; min-height: 80px; }
+
 /* ===== iOS WebView / Mobile bottom navigation ===== */
 .fl-bottom-nav {
   display: none;
