@@ -71,7 +71,45 @@ export default async function(req) {
       uploadScreenshot(targetScreenshotB64, 'target')
     ]);
 
-    // 3. Vision LLM comparison of the two screenshots (real visual parity)
+    // 3. STRUCTURAL CONTENT AUDIT — compare the clone's rendered HTML against
+    //    the target's rendered HTML to detect MISSING SECTIONS. The vision LLM
+    //    alone is too lenient: it scores 100/100 when entire sections are absent
+    //    because it only judges the elements it can see. This structural check
+    //    extracts all heading text from both pages and flags any target section
+    //    heading that is completely missing from the clone — a hard penalty.
+    let structuralFailures = [];
+    let structuralScore = 100;
+    if (targetRendered && cloneRendered) {
+      try {
+        const extractHeadings = (htmlStr) => {
+          const headings = [];
+          const re = /<h[1-4][^>]*>([\s\S]*?)<\/h[1-4]>/gi;
+          let m;
+          while ((m = re.exec(htmlStr)) !== null) {
+            const text = m[1].replace(/<[^>]+>/g, '').trim().replace(/\s+/g, ' ');
+            if (text.length > 3) headings.push(text);
+          }
+          return headings;
+        };
+        const targetHeadings = extractHeadings(targetRendered);
+        const cloneHeadings = extractHeadings(cloneRendered);
+        const norm = (s) => s.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, ' ').trim().slice(0, 25);
+        const cloneNorm = new Set(cloneHeadings.map(norm));
+        let missingCount = 0;
+        for (const th of targetHeadings) {
+          const tn = norm(th);
+          const found = cloneNorm.has(tn) || [...cloneNorm].some(cn => cn.includes(tn) || tn.includes(cn));
+          if (!found && tn.length > 5) {
+            structuralFailures.push(`Missing section: "${th}"`);
+            missingCount++;
+          }
+        }
+        structuralScore = Math.max(0, 100 - (missingCount * 15));
+        console.log(`Structural audit: target=${targetHeadings.length} headings, clone=${cloneHeadings.length} headings, missing=${missingCount}, score=${structuralScore}`);
+      } catch (e) { console.error('Structural audit failed:', e.message); }
+    }
+
+    // 3b. Vision LLM comparison of the two screenshots (real visual parity)
     let visualScore = 0;
     let visualFailures = [];
     let llmSummary = '';
@@ -79,7 +117,7 @@ export default async function(req) {
 
     if (fileUrls.length === 2) {
       const scoringRes = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are the FaultLine Visual Parity Engine. Compare a cloned website screenshot against the original target site screenshot. Score how faithfully the clone reproduces the original's visual design.
+        prompt: `You are the FaultLine Visual Parity Engine — STRICT MODE. Compare a cloned website screenshot against the original target site screenshot. Score how faithfully the clone reproduces the original's visual design.
 
 TARGET SITE (original): ${target_url}
 CLONE SITE (generated): ${live_url}
@@ -101,16 +139,18 @@ Score VISUAL PARITY 0-100 based on:
 - Layout structure match (hero, sections, grid layout, spacing)
 - Navigation match (same nav items, same positioning)
 - Content presence (same headings, same text content, same imagery style)
+- MISSING SECTIONS: if ANY section visible in the target screenshot is completely ABSENT from the clone screenshot, this is a CRITICAL failure — deduct at least 20 points per missing section
+- COOKIE BANNER: if the clone shows a cookie consent banner instead of real content, deduct 30 points
 - Overall visual impression (would a visitor recognize this as the same site?)
 
-100 = pixel-perfect reproduction, zero visual differences.
-90+ = very close, minor differences
-70-89 = recognizable but noticeable differences
-Below 70 = significantly different
+100 = pixel-perfect reproduction, zero visual differences. NEVER award 100 if any section is missing or any visual difference is visible.
+90+ = very close, minor differences (a single small element differs)
+70-89 = recognizable but noticeable differences (multiple elements differ or one section is simplified)
+Below 70 = significantly different (sections missing, wrong layout, wrong colors)
 
 Return a visual_score (0-100), a list of specific visual_failures (each with a description of what doesn't match and how to fix it), and a summary.
 
-Be STRICT. Only award 100 when the clone truly looks identical to the target. List every visual difference you can spot.`,
+Be EXTREMELY STRICT. Only award 100 when the clone is pixel-perfect. List EVERY visual difference — missing sections, wrong colors, wrong fonts, missing images, cookie banners, simplified layouts.`,
         model: 'gemini_3_flash',
         add_context_from_internet: false,
         file_urls: fileUrls,
@@ -129,6 +169,13 @@ Be STRICT. Only award 100 when the clone truly looks identical to the target. Li
       visualScore = Math.round(Number(scoringRes.visual_score) || 0);
       llmSummary = scoringRes.summary || '';
       visualFailures = (Array.isArray(scoringRes.visual_failures) ? scoringRes.visual_failures : []).map(f => f.description || f);
+      // Merge structural failures (deduped) and take the MINIMUM of LLM + structural
+      // score — if sections are missing, the structural audit drags the score down
+      // regardless of how lenient the vision LLM was.
+      for (const sf of structuralFailures) {
+        if (!visualFailures.some(vf => vf.includes(sf.slice(0, 20)))) visualFailures.push(sf);
+      }
+      visualScore = Math.min(visualScore, structuralScore);
     } else {
       // Fallback: basic content check if screenshots failed
       const nav = (target_dna?.nav || []).filter(n => n && n.length > 1);

@@ -37,8 +37,8 @@ export default async function(req) {
     try {
       const stealthResult = await scrapeWithStealth(target_url, {
         deepRender: true,
-        timeout: 45000,
-        waitAfterLoad: 3000,
+        timeout: 30000,
+        waitAfterLoad: 1500,
         solveCaptchas: true,
         proxies: true,
       });
@@ -190,16 +190,24 @@ export default async function(req) {
         return u;
       } catch { return u; }
     };
-    const imagesToRehost = [...imageUrls].filter(u =>
+    let imagesToRehost = [...imageUrls].filter(u =>
       !u.startsWith('data:') && !u.startsWith('blob:') &&
       !/\.svg$/i.test(u) &&
       !/media\.base44\.com|static\.wixstatic\.com/.test(u)
     );
+    // CAP: on very large sites (Envato has 500+ images), re-hosting all of them
+    // exceeds the function gateway timeout. Cap at 150 most important images
+    // (sorted by appearance order — hero/above-fold images come first).
+    const MAX_IMAGES = 80;
+    if (imagesToRehost.length > MAX_IMAGES) {
+      console.log(`Capping re-host from ${imagesToRehost.length} to ${MAX_IMAGES} (large site)`);
+      imagesToRehost = imagesToRehost.slice(0, MAX_IMAGES);
+    }
     console.log(`Re-hosting ${imagesToRehost.length} media files (images + videos) from ${target_url}`);
 
-    // Process in batches of 5 to avoid overwhelming storage
-    for (let i = 0; i < imagesToRehost.length; i += 5) {
-      const batch = imagesToRehost.slice(i, i + 5);
+    // Process in batches of 10 for faster throughput on large sites
+    for (let i = 0; i < imagesToRehost.length; i += 10) {
+      const batch = imagesToRehost.slice(i, i + 10);
       await Promise.all(batch.map(async (imgUrl) => {
         try {
           // Decode Next.js image optimizer URL to fetch the real image directly
@@ -213,7 +221,7 @@ export default async function(req) {
               'Sec-Fetch-Mode': 'no-cors',
               'Sec-Fetch-Site': 'cross-site'
             },
-            signal: AbortSignal.timeout(15000),
+            signal: AbortSignal.timeout(8000),
             redirect: 'follow'
           });
           if (!ir.ok) { console.error(`Re-host ${ir.status} for ${fetchUrl.slice(0, 80)}`); return; }

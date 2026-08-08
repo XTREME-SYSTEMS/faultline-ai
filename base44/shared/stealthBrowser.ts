@@ -250,22 +250,73 @@ export async function scrapeWithStealth(url: string, options: StealthOptions = {
     const waitAfter = options.waitAfterLoad ?? 2500;
     if (waitAfter > 0) await new Promise(r => setTimeout(r, waitAfter));
 
-    // Deep render: scroll through page, resolve lazy-loaded images, extract computed
-    // background images, and wait for all images to finish loading. This captures
-    // JS-rendered images (hero backgrounds, slider content, lazy-loaded galleries)
-    // that are missing from the static HTML — essential for 100/100 visual parity.
+    // Deep render: dismiss cookie/consent banners, scroll through ENTIRE page,
+    // resolve lazy-loaded images, extract computed background images, capture
+    // canvas/WebGL content as images, and wait for all images to finish loading.
+    // This captures JS-rendered images (hero backgrounds, slider content,
+    // lazy-loaded galleries, canvas animations) that are missing from the static
+    // HTML — essential for 100/100 visual parity.
     if (options.deepRender) {
       try {
         const deepJs = `(async () => {
-          // 1. Scroll through page to trigger lazy loading
-          var totalHeight = document.body.scrollHeight;
-          var step = 800;
-          for (var y = 0; y < totalHeight; y += step) {
-            window.scrollTo(0, y);
-            await new Promise(r => setTimeout(r, 200));
-          }
-          window.scrollTo(0, 0);
+          // 0. DISMISS COOKIE / CONSENT BANNERS — these overlay the real content
+          //    and prevent the scraper from seeing the actual page behind them.
+          //    Try common consent SDK buttons (OneTrust, Cookiebot, Quantcast, IAB,
+          //    Didomi, custom), then remove any remaining fixed-position overlays.
+          var consentDismissed = 0;
+          var consentSelectors = [
+            '#onetrust-accept-btn-handler', '#onetrust-reject-all-handler',
+            '#CybotCookiebotDialogBodyButtonDecline', '#CybotCookiebotDialogBodyButtonAccept',
+            '.qc-cmp2-summary-buttons button[mode="primary"]', '.qc-cmp2-buttons button',
+            '#didomi-notice-agree-button', '#didomi-notice-disagree-button',
+            '#iabv2-consent-accept', '#iabv2-consent-reject', '[id*="iab"] button',
+            '.cc-accept', '.cc-dismiss', '.cc-btn', '#cc-accept',
+            '#consent-accept', '#consent-reject', '[data-consent="accept"]',
+            'button[class*="accept"]', 'button[class*="agree"]', 'button[class*="consent"]',
+            'a[class*="accept"]', 'a[class*="consent"]',
+            '.consent-banner button', '.cookie-banner button', '.cookie-notice button',
+            '#cookie-accept', '#cookie-accept-all', '#accept-cookies',
+            '.js-accept-cookies', '.js-cookie-accept'
+          ];
+          consentSelectors.forEach(function(sel) {
+            document.querySelectorAll(sel).forEach(function(btn) {
+              try { btn.click(); consentDismissed++; } catch(e) {}
+            });
+          });
+          // Remove any remaining fixed/overlay consent elements that block content
+          document.querySelectorAll('[id*="consent"], [id*="cookie"], [class*="consent-banner"], [class*="cookie-banner"], [class*="cookie-notice"], [id*="onetrust"], [id*="Cybot"], [id*="didomi"], [id*="iab"]').forEach(function(el) {
+            if (el && el.parentNode) {
+              try {
+                var s = getComputedStyle(el);
+                if (s.position === 'fixed' || s.position === 'absolute' || s.zIndex > 999) {
+                  el.parentNode.removeChild(el);
+                  consentDismissed++;
+                }
+              } catch(e) {}
+            }
+          });
           await new Promise(r => setTimeout(r, 500));
+
+          // 1. Scroll through ENTIRE page to trigger ALL lazy loading
+          //    (scroll in steps, re-checking scrollHeight since content may expand.
+          //    2 passes max — balances completeness with speed to avoid gateway timeouts)
+          var totalHeight = document.body.scrollHeight;
+          var step = 900;
+          var scrollPasses = 0;
+          for (var pass = 0; pass < 2; pass++) {
+            var prevHeight = totalHeight;
+            for (var y = 0; y < totalHeight; y += step) {
+              window.scrollTo(0, y);
+              await new Promise(r => setTimeout(r, 120));
+              scrollPasses++;
+              if (document.body.scrollHeight > totalHeight) totalHeight = document.body.scrollHeight;
+            }
+            if (totalHeight === prevHeight) break;
+          }
+          window.scrollTo(0, totalHeight);
+          await new Promise(r => setTimeout(r, 400));
+          window.scrollTo(0, 0);
+          await new Promise(r => setTimeout(r, 300));
 
           // 2. Promote data-src variants to src
           document.querySelectorAll('img[data-src]').forEach(function(img) {
@@ -312,17 +363,43 @@ export async function scrapeWithStealth(url: string, options: StealthOptions = {
             } catch (e) {}
           });
 
-          // 5. Wait for all images to load
-          var imgs = Array.from(document.images);
-          await Promise.all(imgs.map(function(img) {
-            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
-            return new Promise(function(resolve) {
-              img.onload = img.onerror = resolve;
-              setTimeout(resolve, 3000);
-            });
-          }));
+          // 4b. CAPTURE CANVAS / WEBGL content as images — many modern hero
+          //     sections (Envato, SaaS sites) render backgrounds via <canvas>
+          //     or WebGL animations. Capture the current frame as a PNG and
+          //     set it as a CSS background-image on the canvas's parent.
+          var canvasCount = 0;
+          document.querySelectorAll('canvas').forEach(function(canvas) {
+            try {
+              if (canvas.width === 0 || canvas.height === 0) return;
+              var dataUrl = canvas.toDataURL('image/png');
+              if (dataUrl && dataUrl.length > 100) {
+                var parent = canvas.parentElement;
+                if (parent) {
+                  parent.style.backgroundImage = 'url(' + dataUrl + ')';
+                  parent.style.backgroundSize = 'cover';
+                  parent.style.backgroundPosition = 'center';
+                  canvasCount++;
+                }
+              }
+            } catch(e) {}
+          });
 
-          return JSON.stringify({ scrolled: totalHeight, bgInjected: bgCount, images: imgs.length });
+          // 5. Wait for images to load (capped at 3s total — don't let slow
+          //    CDN images block the scrape on large sites with hundreds of images)
+          var imgs = Array.from(document.images);
+          var imgWaitStart = Date.now();
+          await Promise.race([
+            Promise.all(imgs.map(function(img) {
+              if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+              return new Promise(function(resolve) {
+                img.onload = img.onerror = resolve;
+                setTimeout(resolve, 2000);
+              });
+            })),
+            new Promise(function(resolve) { setTimeout(resolve, 3000); })
+          ]);
+
+          return JSON.stringify({ scrolled: totalHeight, bgInjected: bgCount, canvasCaptured: canvasCount, consentDismissed: consentDismissed, scrollPasses: scrollPasses, images: imgs.length });
         })()`;
 
         const deepResult = await cdp.send('Runtime.evaluate', {
