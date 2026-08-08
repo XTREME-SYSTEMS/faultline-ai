@@ -140,7 +140,7 @@ You must incorporate the superiority strategy: match their best features, avoid 
         base44.asServiceRole.entities.WebsiteLibraryAsset.filter({ organization_id: orgId, library_type: 'hero_copy', status: 'active' }, '-created_date', 3),
         base44.asServiceRole.entities.WebsiteLibraryAsset.filter({ organization_id: orgId, library_type: 'section_library', status: 'active' }, '-created_date', 5),
         base44.asServiceRole.entities.WebsiteLibraryAsset.filter({ organization_id: orgId, library_type: 'brand_pack', status: 'active' }, '-created_date', 2),
-        base44.asServiceRole.entities.WebsiteLibraryAsset.filter({ organization_id: orgId, library_type: 'industry_template', status: 'active' }, '-created_date', 15)
+        base44.asServiceRole.entities.WebsiteLibraryAsset.filter({ organization_id: orgId, library_type: 'industry_template', status: 'active' }, '-created_date', 5)
       ]);
       if (masterPrompts.length > 0) {
         pcuContext += `\n\n=== PCU GOVERNANCE FRAMEWORK ===\n${masterPrompts[0].prompt_text}\n=== END GOVERNANCE ===\n`;
@@ -158,30 +158,14 @@ You must incorporate the superiority strategy: match their best features, avoid 
         pcuContext += `\nBRAND PACK REFERENCES:\n${brandPacks.map(b => `- ${b.record_id}: ${b.name} — ${b.data['Color Palette'] || b.data['Typography'] || ''}`).join('\n')}\n`;
       }
       if (industryTemplates.length > 0) {
-        pcuContext += `\n\n=== INDUSTRY REFERENCE TEMPLATES (real-world top contractor websites — STUDY these and produce a site that MATCHES OR EXCEEDS their quality) ===\n`;
+        pcuContext += `\n\n=== INDUSTRY REFERENCE TEMPLATES (match or exceed these real-world leaders' quality) ===\n`;
         pcuContext += industryTemplates.map(t => {
           const d = t.data || {};
           const s = d.scraped || {};
           const v = s.visual || {};
-          return `- ${t.record_id}: ${t.name} (${d.url})
-    Niche: ${d.niche_label} | Location: ${d.location || 'US'}
-    Design Strengths: ${(d.design_strengths || []).join('; ')}
-    Key Features: ${(d.key_features || []).join(', ')}
-    Content Strategy: ${d.content_strategy}
-    Colors: ${(v.visual_palette || s.colors || []).join(', ') || d.color_scheme || 'unknown'}
-    Fonts: ${(s.fonts || []).join(', ') || 'unknown'}
-    Tech: ${(s.techStack || []).join(', ')}
-    Word Count: ${s.wordCount || 'unknown'} | Images: ${s.imageCount || 'unknown'} | CTAs: ${s.ctaCount || 'unknown'}
-    Visual Palette: ${(v.visual_palette || []).join(', ')}
-    Typography Style: ${v.typography_style || 'unknown'}
-    Layout Pattern: ${v.layout_pattern || 'unknown'}
-    Visual Hierarchy: ${v.visual_hierarchy || 'unknown'}
-    Conversion Patterns: ${(v.conversion_patterns || []).join('; ')}
-    Aesthetic Score: ${v.aesthetic_score || 'unknown'}/10
-    Design DNA: ${v.design_dna || 'unknown'}
-    Replicate Patterns: ${(v.replicate_patterns || []).join('; ')}`;
+          return `- ${t.name}: niche=${d.niche_label || 'unknown'} | strengths=${(d.design_strengths || []).slice(0, 3).join('; ')} | colors=${(v.visual_palette || s.colors || []).slice(0, 4).join(', ') || d.color_scheme || 'n/a'} | fonts=${(s.fonts || []).slice(0, 2).join(', ') || 'n/a'} | aesthetic=${v.aesthetic_score || '?'}/10 | layout=${v.layout_pattern || 'n/a'} | conversion=${(v.conversion_patterns || []).slice(0, 2).join('; ')}`;
         }).join('\n');
-        pcuContext += `\n=== END INDUSTRY TEMPLATES ===\nUse these as your quality benchmark. Adopt the best design patterns, color schemes, and content strategies. Ensure the generated website is at least as polished and feature-rich as these real-world leaders.\n`;
+        pcuContext += `\n=== END INDUSTRY TEMPLATES ===\nAdopt the best patterns above as your quality benchmark.\n`;
       }
     } catch (e) { console.log('PCU library load skipped:', e.message); }
     }
