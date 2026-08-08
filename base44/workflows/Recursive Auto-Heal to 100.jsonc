@@ -1,0 +1,48 @@
+{
+  "description": "Scheduled 24/7 autonomous loop: scans for launched clones below 100/100 parity (or discovered performers to build), then runs the recursive auto-heal engine \u2014 validate, auto-fix, re-deploy, re-validate \u2014 until 100/100 visual + operational parity is reached.",
+  "name": "Recursive Auto-Heal to 100",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": 30,
+      "interval_unit": "minutes",
+      "interval_anchor": "2026-08-08T09:00:00Z",
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "recursive_auto_heal_to_100",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "scan_and_heal": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "autonomousCloneTo100",
+            "args": {
+              "scan": true,
+              "max_iterations": 5
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Scan & heal clones to 100",
+            "description": "Find work + run recursive auto-heal engine"
+          }
+        }
+      }
+    ]
+  }
+}
