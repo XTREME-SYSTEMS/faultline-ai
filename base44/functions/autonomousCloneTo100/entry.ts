@@ -157,30 +157,46 @@ async function runEngine(base44, orgId, p) {
       base44.functions.invoke('discoverBenchmarkSite', { target_url: p.target_url, industry: p.industry, business_name: bizName, launch_project_id: p.tracker_id }).then(() => add('Benchmark report generated (background)')).catch(e => add(`Benchmark report failed: ${e.message}`));
       await setProgress(8, 'Benchmark report running in background');
 
-      // Backend inference is handled by buildInferredBackend (injects the form
-      // handler from the clone HTML itself) — no separate inference step needed.
-      await setProgress(12, 'Backend inference skipped (handled in build step)');
-
-      add('Generating clone (3-part, parts 1 & 2 in parallel)…');
-      const ws = { business_name: bizName, industry: p.industry, description: s.brief, primary_color: targetDna.primary, secondary_color: targetDna.secondary, target_dna: targetDna };
-      await setProgress(15, 'Generating clone — parts 1 & 2 in parallel…');
-      const [p1r, p2r] = await Promise.all([
-        withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' }), 120000, 'generateWebsite first_half'),
-        withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' }), 120000, 'generateWebsite second_half')
-      ]);
-      const p1 = p1r.data || p1r, p2 = p2r.data || p2r;
-      await setProgress(25, 'Generating clone — part 3 (stitching)…');
-      const p3 = await withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'third_half', first_html: p1.html, second_html: p2.html }), 120000, 'generateWebsite third_half');
-      let cloneHtml = (p3.data || p3).website_html;
-      add(`Clone generated: ${cloneHtml.length} chars`);
-      await setProgress(30, 'Clone HTML generated');
-
-      add('Building inferred backend (injecting form handler)…');
-      const br = await withTimeout(base44.functions.invoke('buildInferredBackend', { clone_html: cloneHtml, organization_id: orgId, clone_id: p.tracker_id }), 60000, 'buildInferredBackend');
-      const b = br?.data || br;
-      cloneHtml = b.operational_html;
-      add('Backend built — clone is operational');
-      await setProgress(35, 'Backend built — clone is operational');
+      // DETERMINISTIC CLONE: use the target's actual HTML + CSS + images (not LLM
+      // reconstruction). This achieves near-100% visual parity because we re-host
+      // the real design, swap branding, and inject our form handler. The LLM
+      // generation path is kept only as a fallback for targets that block scraping.
+      add('Building deterministic clone (re-hosting target HTML + CSS + images)…');
+      await setProgress(12, 'Deterministic clone — re-hosting target assets…');
+      let cloneHtml;
+      let usedDeterministic = false;
+      try {
+        const dcr = await withTimeout(base44.functions.invoke('deterministicClone', {
+          target_url: p.target_url, business_name: bizName,
+          organization_id: orgId
+        }), 120000, 'deterministicClone');
+        const dc = dcr?.data || dcr;
+        if (dc.status === 'success' && dc.website_html && dc.website_html.length > 1000) {
+          cloneHtml = dc.website_html;
+          usedDeterministic = true;
+          add(`Deterministic clone built: ${cloneHtml.length} chars, ${dc.images_rehosted}/${dc.images_total} images re-hosted`);
+          await setProgress(30, `Deterministic clone built — ${dc.images_rehosted} images re-hosted`);
+        } else {
+          throw new Error(`Deterministic clone returned ${dc.status || 'empty'} (${dc.website_html?.length || 0} chars)`);
+        }
+      } catch (dcErr) {
+        add(`Deterministic clone failed (${dcErr.message}) — falling back to LLM generation…`);
+        await setProgress(15, 'Fallback: LLM generation — parts 1 & 2…');
+        const ws = { business_name: bizName, industry: p.industry, description: s.brief, primary_color: targetDna.primary, secondary_color: targetDna.secondary, target_dna: targetDna, fix_directives: p.fix_directives };
+        const [p1r, p2r] = await Promise.all([
+          withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' }), 120000, 'generateWebsite first_half'),
+          withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' }), 120000, 'generateWebsite second_half')
+        ]);
+        const p1 = p1r.data || p1r, p2 = p2r.data || p2r;
+        const p3 = await withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'third_half', first_html: p1.html, second_html: p2.html }), 120000, 'generateWebsite third_half');
+        cloneHtml = (p3.data || p3).website_html;
+        add(`LLM clone generated: ${cloneHtml.length} chars`);
+        await setProgress(30, 'LLM clone HTML generated');
+        // LLM path still needs backend injection
+        const br = await withTimeout(base44.functions.invoke('buildInferredBackend', { clone_html: cloneHtml, organization_id: orgId, clone_id: p.tracker_id }), 60000, 'buildInferredBackend');
+        cloneHtml = (br?.data || br).operational_html || cloneHtml;
+      }
+      // Deterministic path already has the form handler injected — no build step needed.
 
       add('Launching to Drive/GitHub/Supabase/Vercel…');
       const launchName = `${p.project_name || bizName || 'Clone'}-${Date.now().toString(36).slice(-5)}`;
@@ -223,23 +239,35 @@ async function runEngine(base44, orgId, p) {
       }
       prevFailureSig = failureSig;
 
-      // AUTO-FIX: regenerate with fix guidance + re-inject handler + re-deploy
+      // AUTO-FIX: re-run deterministic clone (re-hosts any failed images, re-swaps branding)
+      // or fall back to LLM generation with fix guidance.
       add(`Iteration ${i}: auto-fixing — ${failures.slice(0, 3).join('; ')}…`);
       const fixHint = failures.join('. ');
-      // First iteration uses externally-provided fix_directives if available (more specific);
-      // subsequent iterations use the validation failures from the previous run.
-      const directives = (i === 1 && p.fix_directives) ? `${p.fix_directives}\n\nAdditional validation failures: ${fixHint}` : fixHint;
-      const ws = { business_name: bizName || 'Clone', industry: p.industry, description: p.brief || `Premium ${p.industry || ''} business website.`, primary_color: targetDna?.primary, secondary_color: targetDna?.secondary, target_dna: targetDna, fix_directives: directives };
-      const [f1r, f2r] = await Promise.all([
-        withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' }), 120000, 'heal generateWebsite first_half'),
-        withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' }), 120000, 'heal generateWebsite second_half')
-      ]);
-      const f1 = f1r.data || f1r, f2 = f2r.data || f2r;
-      const f3 = await withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'third_half', first_html: f1.html, second_html: f2.html }), 120000, 'heal generateWebsite third_half');
-      const fc = f3.data || f3;
-      const br = await withTimeout(base44.functions.invoke('buildInferredBackend', { clone_html: fc.website_html, organization_id: orgId, clone_id: p.tracker_id }), 60000, 'heal buildInferredBackend');
-      const b = br?.data || br;
-      const lp = await withTimeout(base44.functions.invoke('launchProject', { project_name: `${bizName || 'Clone'}-heal${i}-${Date.now().toString(36).slice(-4)}`, website_html: b.operational_html }), 120000, 'heal launchProject');
+      let healHtml;
+      try {
+        const hcr = await withTimeout(base44.functions.invoke('deterministicClone', {
+          target_url: p.target_url, business_name: bizName, organization_id: orgId
+        }), 120000, 'heal deterministicClone');
+        const hc = hcr?.data || hcr;
+        if (hc.status === 'success' && hc.website_html?.length > 1000) {
+          healHtml = hc.website_html;
+          add(`Iteration ${i}: deterministic re-clone — ${hc.images_rehosted} images re-hosted`);
+        } else throw new Error('deterministic clone returned empty');
+      } catch (dcErr) {
+        add(`Iteration ${i}: deterministic failed (${dcErr.message}) — LLM fallback…`);
+        const directives = (i === 1 && p.fix_directives) ? `${p.fix_directives}\n\nAdditional validation failures: ${fixHint}` : fixHint;
+        const ws = { business_name: bizName || 'Clone', industry: p.industry, description: p.brief || `Premium ${p.industry || ''} business website.`, primary_color: targetDna?.primary, secondary_color: targetDna?.secondary, target_dna: targetDna, fix_directives: directives };
+        const [f1r, f2r] = await Promise.all([
+          withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' }), 120000, 'heal generateWebsite first_half'),
+          withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' }), 120000, 'heal generateWebsite second_half')
+        ]);
+        const f1 = f1r.data || f1r, f2 = f2r.data || f2r;
+        const f3 = await withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'third_half', first_html: f1.html, second_html: f2.html }), 120000, 'heal generateWebsite third_half');
+        const fc = f3.data || f3;
+        const br = await withTimeout(base44.functions.invoke('buildInferredBackend', { clone_html: fc.website_html, organization_id: orgId, clone_id: p.tracker_id }), 60000, 'heal buildInferredBackend');
+        healHtml = (br?.data || br).operational_html || fc.website_html;
+      }
+      const lp = await withTimeout(base44.functions.invoke('launchProject', { project_name: `${bizName || 'Clone'}-heal${i}-${Date.now().toString(36).slice(-4)}`, website_html: healHtml }), 120000, 'heal launchProject');
       const ld = lp?.data || lp;
       if (ld.status === 'success') urls.vercel = ld.results?.vercel?.deploy?.url || ld.results?.vercel?.deploy?.alias?.[0];
       add(`Iteration ${i}: re-deployed to ${urls.vercel}`);
