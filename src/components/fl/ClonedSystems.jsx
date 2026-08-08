@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Copy, ExternalLink, Loader2, Rocket, Globe } from 'lucide-react';
+import { Copy, ExternalLink, Loader2, Rocket, Globe, Cloud, Github, Database } from 'lucide-react';
 
 const CAT_LABEL = {
   epoxy_metallic: 'Metallic Epoxy', epoxy_flake: 'Flake Epoxy', epoxy_quartz: 'Quartz Epoxy',
@@ -75,19 +75,39 @@ export default function ClonedSystems() {
             <span style={{ background: '#8A641C', color: '#fff', borderRadius: 10, padding: '2px 9px', fontSize: 11, fontWeight: 700 }}>{launches.length}</span>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
-            {launches.map(p => (
-              <div key={p.id} style={{ background: '#fff', border: '1px solid #e5e1da', borderRadius: 8, padding: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-                  <b style={{ fontSize: 13, lineHeight: 1.3 }}>{p.project_name}</b>
-                  {p.vercel_deployment_url && <a href={p.vercel_deployment_url} target="_blank" rel="noreferrer" style={{ color: 'var(--gold)', flexShrink: 0 }}><Globe size={14} /></a>}
+            {launches.map(p => {
+              const proofLinks = [
+                { url: p.drive_folder_url, Icon: Cloud, label: 'Drive', color: '#4285F4' },
+                { url: p.github_repo_url, Icon: Github, label: 'GitHub', color: '#181717' },
+                { url: p.vercel_deployment_url, Icon: Globe, label: 'Vercel', color: '#000' },
+                { url: p.supabase_project_url, Icon: Database, label: 'Supabase', color: '#3ECF8E' }
+              ].filter(l => l.url);
+              return (
+                <div key={p.id} style={{ background: '#fff', border: '1px solid #e5e1da', borderRadius: 8, padding: 14, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
+                    <b style={{ fontSize: 13, lineHeight: 1.3 }}>{p.project_name}</b>
+                    <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, flexShrink: 0, background: p.status === 'passed' ? '#e6f4ec' : p.status === 'failed' ? '#f5d8d5' : '#f8e5ce', color: p.status === 'passed' ? '#237A4B' : p.status === 'failed' ? '#a52d23' : '#8A641C' }}>{p.status}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span style={{ fontSize: 10, background: '#f4f1ea', color: '#8A641C', padding: '2px 8px', borderRadius: 10 }}>{p.project_type}</span>
+                    {p.parity_score != null && <span style={{ fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 10, background: p.parity_score >= 90 ? '#e6f4ec' : p.parity_score >= 60 ? '#f8e5ce' : '#f5d8d5', color: p.parity_score >= 90 ? '#237A4B' : p.parity_score >= 60 ? '#8A641C' : '#a52d23' }}>{p.parity_score}/100</span>}
+                  </div>
+                  {proofLinks.length > 0 && (
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {proofLinks.map((l, i) => {
+                        const Icon = l.Icon;
+                        return (
+                          <a key={i} href={l.url} target="_blank" rel="noreferrer" title={`Open ${l.label} proof`} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '5px 9px', borderRadius: 6, border: '1px solid #e5e1da', background: '#faf9f5', fontSize: 10, fontWeight: 700, color: '#333', textDecoration: 'none' }}>
+                            <Icon size={12} style={{ color: l.color }} /> {l.label}
+                          </a>
+                        );
+                      })}
+                    </div>
+                  )}
+                  {p.domain_name && <small style={{ fontSize: 11, color: '#888' }}>{p.domain_name}</small>}
                 </div>
-                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  <span style={{ fontSize: 10, background: '#f4f1ea', color: '#8A641C', padding: '2px 8px', borderRadius: 10 }}>{p.project_type}</span>
-                  <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: p.status === 'passed' ? '#e6f4ec' : p.status === 'failed' ? '#f5d8d5' : '#f8e5ce', color: p.status === 'passed' ? '#237A4B' : p.status === 'failed' ? '#a52d23' : '#8A641C' }}>{p.status}</span>
-                </div>
-                {p.domain_name && <small style={{ fontSize: 11, color: '#888' }}>{p.domain_name}</small>}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       )}
