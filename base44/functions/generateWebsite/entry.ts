@@ -259,7 +259,7 @@ Generate the COMPLETE website now. Start with <!DOCTYPE html> and end with </htm
 
     const res = await base44.integrations.Core.InvokeLLM({
       prompt,
-      model: 'claude_sonnet_4_6'
+      model: 'gemini_3_flash'
     });
 
     let websiteHtml = typeof res === 'string' ? res : res?.content || res?.text || JSON.stringify(res);
@@ -275,7 +275,10 @@ Generate the COMPLETE website now. Start with <!DOCTYPE html> and end with </htm
     // Large HTML exceeds the entity field-size limit — upload to file storage and store the URL.
     let fileUrl = null;
     try {
-      const upload = await base44.integrations.Core.UploadFile({ file: new Blob([websiteHtml], { type: 'text/html' }) });
+      const fileObj = typeof File !== 'undefined'
+        ? new File([websiteHtml], 'index.html', { type: 'text/html' })
+        : new Blob([websiteHtml], { type: 'text/html' });
+      const upload = await base44.integrations.Core.UploadFile({ file: fileObj });
       fileUrl = upload?.file_url || null;
     } catch (e) { console.error('generateWebsite upload failed:', e); }
 
@@ -283,7 +286,7 @@ Generate the COMPLETE website now. Start with <!DOCTYPE html> and end with </htm
       organization_id: orgId,
       deliverable_type: 'website',
       title: `Website — ${business_name}`,
-      content: fileUrl ? '' : websiteHtml.slice(0, 50000),
+      content: fileUrl ? '' : websiteHtml.slice(0, 5000),
       file_url: fileUrl,
       metadata: {
         business_name, industry, primary_color: color, secondary_color: color2,
