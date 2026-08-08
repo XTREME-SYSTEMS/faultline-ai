@@ -325,7 +325,7 @@ export default function UniversalDatabase() {
         )}
       </div>
 
-      <style>{`@media (max-width: 1100px){ .universal-db > div { grid-template-columns: 1fr !important; } .universal-db aside { position: static !important; height: auto !important; max-height: 280px; border-right: 0 !important; border-bottom: 1px solid var(--db-border) !important; } .universal-db aside:last-of-type { max-height: 420px; } }`}</style>
+      <style>{`@media (max-width: 760px){ .universal-db > div { grid-template-columns: 1fr !important; } .universal-db aside { position: static !important; height: auto !important; max-height: 280px; border-right: 0 !important; border-bottom: 1px solid var(--db-border) !important; } .universal-db aside:last-of-type { max-height: 420px; } }`}</style>
     </div>
   );
 }
