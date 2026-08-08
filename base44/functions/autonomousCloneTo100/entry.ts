@@ -169,7 +169,7 @@ async function runEngine(base44, orgId, p) {
         const dcr = await withTimeout(base44.functions.invoke('deterministicClone', {
           target_url: p.target_url, business_name: bizName,
           organization_id: orgId
-        }), 120000, 'deterministicClone');
+        }), 200000, 'deterministicClone');
         const dc = dcr?.data || dcr;
         if (dc.status === 'success' && dc.website_html && dc.website_html.length > 1000) {
           cloneHtml = dc.website_html;
@@ -247,7 +247,7 @@ async function runEngine(base44, orgId, p) {
       try {
         const hcr = await withTimeout(base44.functions.invoke('deterministicClone', {
           target_url: p.target_url, business_name: bizName, organization_id: orgId
-        }), 120000, 'heal deterministicClone');
+        }), 200000, 'heal deterministicClone');
         const hc = hcr?.data || hcr;
         if (hc.status === 'success' && hc.website_html?.length > 1000) {
           healHtml = hc.website_html;
