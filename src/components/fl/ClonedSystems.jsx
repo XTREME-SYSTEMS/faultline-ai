@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Copy, ExternalLink, Loader2, Rocket, Globe, Cloud, Github, Database, RefreshCw, FileText } from 'lucide-react';
 import BenchmarkReport from './BenchmarkReport';
+import PipelineProgress from './PipelineProgress';
 
 const CAT_LABEL = {
   epoxy_metallic: 'Metallic Epoxy', epoxy_flake: 'Flake Epoxy', epoxy_quartz: 'Quartz Epoxy',
@@ -100,6 +101,8 @@ export default function ClonedSystems() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
             {launches.map(p => {
+              const isActive = ['queued', 'generating', 'provisioning', 'validating', 'testing', 'retrying'].includes(p.status);
+              if (isActive) return <PipelineProgress key={p.id} project={p} />;
               const vercelUrl = p.vercel_deployment_url || p.vercel_project_url;
               const benchmarkUrl = p.benchmark_url || p.metadata?.target_url;
               const proofLinks = [

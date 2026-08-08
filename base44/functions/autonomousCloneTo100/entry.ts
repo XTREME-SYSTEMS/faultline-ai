@@ -44,24 +44,37 @@ export default async function(req) {
 async function runEngine(base44, orgId, p) {
   const log = [];
   const add = (m) => log.push(`${new Date().toISOString()} — ${m}`);
-  let score = 0, failures = [], urls = {}, launchProjectId = p.launch_project_id, targetDna = null, bizName = p.business_name;
+  let score = 0, failures = [], urls = {}, launchProjectId = p.launch_project_id, targetDna = null, bizName = p.business_name, progress = 0;
+  const progressHistory = [];
+  const setProgress = async (pct, stageLabel) => {
+    progress = pct;
+    progressHistory.push({ ts: Date.now(), progress: pct, stage: stageLabel });
+    try {
+      await base44.asServiceRole.entities.LaunchProject.update(p.tracker_id, {
+        progress: pct, last_validation_summary: stageLabel,
+        metadata: { autonomous: true, log: log.slice(-12), urls, progress_history: progressHistory.slice(-60) }
+      });
+    } catch (e) { /* ignore */ }
+  };
 
   const updateTracker = async (summary, parityScore, extra = {}) => {
+    progressHistory.push({ ts: Date.now(), progress: extra.progress ?? progress, stage: summary });
     try {
       await base44.asServiceRole.entities.LaunchProject.update(p.tracker_id, {
         status: parityScore >= 100 ? 'passed' : 'validating',
-        parity_score: parityScore, last_validation_summary: summary,
+        parity_score: parityScore, progress: extra.progress ?? progress, last_validation_summary: summary,
         drive_folder_url: urls.drive || undefined,
         github_repo_url: urls.github || undefined,
         supabase_project_url: urls.supabase || undefined,
         vercel_deployment_url: urls.vercel || undefined,
-        metadata: { autonomous: true, log: log.slice(-12), urls, ...extra }
+        metadata: { autonomous: true, log: log.slice(-12), urls, progress_history: progressHistory.slice(-60), ...extra }
       });
     } catch (e) {}
   };
 
   try {
     add('Engine started');
+    await setProgress(2, 'Engine started');
 
     // SCAN MODE: find work
     if (p.scan && !p.target_url && !launchProjectId) {
@@ -113,30 +126,38 @@ async function runEngine(base44, orgId, p) {
       if (s.status !== 'success') throw new Error(`Scrape failed: ${s.error}`);
       targetDna = s.dna; bizName = bizName || s.bizName;
       add(`Scraped ${bizName}: ${s.rendered_chars} chars, nav=${targetDna.nav?.length || 0}`);
+      await setProgress(5, 'Target site scraped');
 
       add('Generating benchmark discovery report…');
       try {
         await base44.functions.invoke('discoverBenchmarkSite', { target_url: p.target_url, industry: p.industry, business_name: bizName, launch_project_id: p.tracker_id });
         add('Benchmark discovery report generated');
       } catch (e) { add(`Benchmark report failed: ${e.message}`); }
+      await setProgress(8, 'Benchmark discovery report done');
 
       add('Inferring backend…');
       await base44.functions.invoke('inferTargetBackend', { target_url: p.target_url, industry: p.industry, scrape_result: s });
       add('Backend blueprint inferred');
+      await setProgress(12, 'Backend blueprint inferred');
 
       add('Generating clone (3-part)…');
       const ws = { business_name: bizName, industry: p.industry, description: s.brief, primary_color: targetDna.primary, secondary_color: targetDna.secondary, target_dna: targetDna };
+      await setProgress(15, 'Generating clone — part 1 of 3…');
       const p1 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' });
+      await setProgress(20, 'Generating clone — part 2 of 3…');
       const p2 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' });
+      await setProgress(25, 'Generating clone — part 3 of 3…');
       const p3 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'third_half', first_html: (p1.data || p1).html, second_html: (p2.data || p2).html });
       let cloneHtml = (p3.data || p3).website_html;
       add(`Clone generated: ${cloneHtml.length} chars`);
+      await setProgress(30, 'Clone HTML generated');
 
       add('Building inferred backend (injecting form handler)…');
       const br = await base44.functions.invoke('buildInferredBackend', { clone_html: cloneHtml, organization_id: orgId, clone_id: p.tracker_id });
       const b = br?.data || br;
       cloneHtml = b.operational_html;
       add('Backend built — clone is operational');
+      await setProgress(35, 'Backend built — clone is operational');
 
       add('Launching to Drive/GitHub/Supabase/Vercel…');
       const launchName = `${p.project_name || bizName || 'Clone'}-${Date.now().toString(36).slice(-5)}`;
@@ -145,6 +166,7 @@ async function runEngine(base44, orgId, p) {
       if (ld.status !== 'success') throw new Error(`Launch failed: ${JSON.stringify(ld.errors)}`);
       urls = { drive: ld.results?.drive?.url, github: ld.results?.github?.url, supabase: ld.results?.supabase?.url, vercel: ld.results?.vercel?.deploy?.url || ld.results?.vercel?.deploy?.alias?.[0] };
       add(`Launched: ${urls.vercel}`);
+      await setProgress(55, `Launched to Vercel — ${urls.vercel}`);
       await updateTracker(`Built + launched ${bizName}`, 0, { target_dna: targetDna, target_url: p.target_url, vercel_deployment_url: urls.vercel, brief: s.brief });
     }
 
@@ -156,6 +178,7 @@ async function runEngine(base44, orgId, p) {
       const v = vr?.data || vr;
       score = v.score || 0; failures = v.failures || [];
       add(`Iteration ${i}: score=${score} (visual=${v.visual_score} operational=${v.operational_score}) failures=${failures.length}`);
+      await setProgress(55 + Math.round((i / maxIter) * 40), `Validation iter ${i}: ${score}/100`);
       await updateTracker(`Iter ${i}: ${score}/100 — ${failures.length} failures`, score);
       if (score >= 100) { add('100/100 reached — goal achieved'); break; }
 
@@ -173,12 +196,14 @@ async function runEngine(base44, orgId, p) {
       const ld = lp?.data || lp;
       if (ld.status === 'success') urls.vercel = ld.results?.vercel?.deploy?.url || ld.results?.vercel?.deploy?.alias?.[0];
       add(`Iteration ${i}: re-deployed to ${urls.vercel}`);
+      await setProgress(55 + Math.round((i / maxIter) * 40) + 5, `Auto-fixed + re-deployed (iter ${i})`);
       await updateTracker(`Iter ${i}: auto-fixed + re-deployed`, score, { vercel_deployment_url: urls.vercel });
       await new Promise(r => setTimeout(r, 6000)); // let Vercel settle before re-validation
     }
 
     const passed = score >= 100;
     add(`Final: ${score}/100 — ${passed ? 'PASSED' : 'PARTIAL'}`);
+    await setProgress(passed ? 100 : progress, passed ? '100/100 achieved' : `Final ${score}/100`);
     await updateTracker(passed ? '100/100 achieved' : `Final ${score}/100`, score, { final: true });
     await finishQa(base44, orgId, p, { score, status: passed ? 'passed' : 'failed', log, urls, failures, launch_project_id: p.tracker_id, bizName });
     await base44.asServiceRole.entities.Receipt.create({

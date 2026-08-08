@@ -111,6 +111,11 @@
     "test_score": {
       "type": "number"
     },
+    "progress": {
+      "type": "number",
+      "description": "Real-time pipeline progress 0-100, written by the autonomous engine at each stage",
+      "default": 0
+    },
     "mandatory_passed": {
       "type": "boolean",
       "default": false
