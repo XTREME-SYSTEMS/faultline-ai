@@ -5,6 +5,7 @@ import {
   Loader2, CheckCircle2, XCircle, ChevronDown, Sparkles, ArrowRight, Lightbulb, ExternalLink, Zap
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from '@/lib/AuthContext';
 
 // AI-guided step-by-step generation pipeline timeline.
 // Each step: discover → select → clone → logo → brand → web pack → website → launch
@@ -27,6 +28,10 @@ export default function GenerationPipeline() {
   const [industryFilter, setIndustryFilter] = useState('all');
   const [seedStatus, setSeedStatus] = useState(null);
   const [fullRunning, setFullRunning] = useState(false);
+  const [manualUrl, setManualUrl] = useState('');
+  const [manualName, setManualName] = useState('');
+  const [manualIndustry, setManualIndustry] = useState('');
+  const { user } = useAuth();
 
   // Check if the prompt library is seeded
   useEffect(() => {
@@ -48,6 +53,60 @@ export default function GenerationPipeline() {
     } catch (e) {
       setStepStates(s => ({ ...s, discover: { ...s.discover, status: undefined } }));
     }
+  };
+
+  const runBuildPhase = useCallback(async (full) => {
+    // Step 3: Clone
+    setActiveStep(2);
+    setStepStates(s => ({ ...s, clone: { status: 'running' } }));
+    const cRes = await base44.functions.invoke('cloneTopWebsites', { category: full.industry, industry: full.industry, top_performer_id: full.id });
+    setStepStates(s => ({ ...s, clone: { status: 'done', result: cRes.data || cRes } }));
+
+    // Step 4: Logo
+    setActiveStep(3);
+    setStepStates(s => ({ ...s, logo: { status: 'running' } }));
+    const lRes = await base44.functions.invoke('generateDesignPack', { pack_type: 'logo_pack', business_name: full.name, industry: full.industry });
+    setStepStates(s => ({ ...s, logo: { status: 'done', result: lRes.data || lRes } }));
+
+    // Step 5: Brand
+    setActiveStep(4);
+    setStepStates(s => ({ ...s, brand: { status: 'running' } }));
+    const bRes = await base44.functions.invoke('generateDesignPack', { pack_type: 'brand_pack', business_name: full.name, industry: full.industry });
+    setStepStates(s => ({ ...s, brand: { status: 'done', result: bRes.data || bRes } }));
+
+    // Step 6: Web Pack
+    setActiveStep(5);
+    setStepStates(s => ({ ...s, webpack: { status: 'running' } }));
+    const wRes = await base44.functions.invoke('generateDesignPack', { pack_type: 'web_pack', business_name: full.name, industry: full.industry });
+    setStepStates(s => ({ ...s, webpack: { status: 'done', result: wRes.data || wRes } }));
+
+    // Step 7: Website
+    setActiveStep(6);
+    setStepStates(s => ({ ...s, website: { status: 'running' } }));
+    const wsRes = await base44.functions.invoke('generateWebsite', {
+      business_name: full.name, industry: full.industry,
+      description: full.value_proposition || full.niche || `${full.name} — ${full.industry} platform`
+    });
+    setStepStates(s => ({ ...s, website: { status: 'done', result: wsRes.data || wsRes } }));
+
+    // Step 8: Launch
+    setActiveStep(7);
+    setStepStates(s => ({ ...s, launch: { status: 'running' } }));
+    const lpRes = await base44.entities.LaunchProject.create({
+      project_name: `${full.name} Website`, project_type: 'website',
+      business_name: full.name, industry: full.industry, client_name: full.name
+    });
+    setStepStates(s => ({ ...s, launch: { status: 'done', result: { launch_project_id: lpRes.id, status: 'queued' } } }));
+  }, []);
+
+  const handlePipelineError = (e) => {
+    setStepStates(s => {
+      const updated = { ...s };
+      for (const st of STEPS) {
+        if (updated[st.id]?.status === 'running') updated[st.id] = { ...updated[st.id], status: 'error', error: e.message };
+      }
+      return updated;
+    });
   };
 
   const runFullPipeline = useCallback(async () => {
@@ -72,59 +131,42 @@ export default function GenerationPipeline() {
       setStepStates(s => ({ ...s, select: { status: 'done', result: { count: discovered.length } } }));
       setActiveStep(1);
 
-      // Step 3: Clone
-      setActiveStep(2);
-      setStepStates(s => ({ ...s, clone: { status: 'running' } }));
-      const cRes = await base44.functions.invoke('cloneTopWebsites', { category: full.industry, industry: full.industry, top_performer_id: full.id });
-      setStepStates(s => ({ ...s, clone: { status: 'done', result: cRes.data || cRes } }));
-
-      // Step 4: Logo
-      setActiveStep(3);
-      setStepStates(s => ({ ...s, logo: { status: 'running' } }));
-      const lRes = await base44.functions.invoke('generateDesignPack', { pack_type: 'logo_pack', business_name: full.name, industry: full.industry });
-      setStepStates(s => ({ ...s, logo: { status: 'done', result: lRes.data || lRes } }));
-
-      // Step 5: Brand
-      setActiveStep(4);
-      setStepStates(s => ({ ...s, brand: { status: 'running' } }));
-      const bRes = await base44.functions.invoke('generateDesignPack', { pack_type: 'brand_pack', business_name: full.name, industry: full.industry });
-      setStepStates(s => ({ ...s, brand: { status: 'done', result: bRes.data || bRes } }));
-
-      // Step 6: Web Pack
-      setActiveStep(5);
-      setStepStates(s => ({ ...s, webpack: { status: 'running' } }));
-      const wRes = await base44.functions.invoke('generateDesignPack', { pack_type: 'web_pack', business_name: full.name, industry: full.industry });
-      setStepStates(s => ({ ...s, webpack: { status: 'done', result: wRes.data || wRes } }));
-
-      // Step 7: Website
-      setActiveStep(6);
-      setStepStates(s => ({ ...s, website: { status: 'running' } }));
-      const wsRes = await base44.functions.invoke('generateWebsite', {
-        business_name: full.name, industry: full.industry,
-        description: full.value_proposition || full.niche || `${full.name} — ${full.industry} platform`
-      });
-      setStepStates(s => ({ ...s, website: { status: 'done', result: wsRes.data || wsRes } }));
-
-      // Step 8: Launch
-      setActiveStep(7);
-      setStepStates(s => ({ ...s, launch: { status: 'running' } }));
-      const lpRes = await base44.entities.LaunchProject.create({
-        project_name: `${full.name} Website`, project_type: 'website',
-        business_name: full.name, industry: full.industry, client_name: full.name
-      });
-      setStepStates(s => ({ ...s, launch: { status: 'done', result: { launch_project_id: lpRes.id, status: 'queued' } } }));
+      await runBuildPhase(full);
     } catch (e) {
-      setStepStates(s => {
-        const updated = { ...s };
-        for (const st of STEPS) {
-          if (updated[st.id]?.status === 'running') updated[st.id] = { ...updated[st.id], status: 'error', error: e.message };
-        }
-        return updated;
-      });
+      handlePipelineError(e);
     } finally {
       setFullRunning(false);
     }
-  }, []);
+  }, [runBuildPhase]);
+
+  const runManualTarget = useCallback(async () => {
+    const url = (manualUrl || '').trim();
+    if (!url) return;
+    setFullRunning(true);
+    try {
+      const bizName = (manualName || '').trim() || url.replace(/^https?:\/\//, '').replace(/^www\./, '').split('/')[0];
+      const industry = (manualIndustry || '').trim() || 'General';
+      const full = await base44.entities.TopPerformer.create({
+        organization_id: user?.data?.organization_id,
+        name: bizName, url, industry,
+        niche: '', revenue_model: '', profit_potential: 'high',
+        clone_status: 'discovered', clone_priority: 2, status: 'active'
+      });
+      setSelectedPerformer(full);
+      setPerformers([full]);
+      setStepStates(s => ({
+        ...s,
+        discover: { status: 'done', result: { performers_discovered: 1, industries_scanned: 1, performers: [full] } },
+        select: { status: 'done', result: { count: 1 } }
+      }));
+      setActiveStep(1);
+      await runBuildPhase(full);
+    } catch (e) {
+      handlePipelineError(e);
+    } finally {
+      setFullRunning(false);
+    }
+  }, [manualUrl, manualName, manualIndustry, user, runBuildPhase]);
 
   const runStep = useCallback(async (stepId) => {
     setStepStates(s => ({ ...s, [stepId]: { ...s[stepId], status: 'running' } }));
@@ -270,6 +312,23 @@ Be specific and practical.`,
           )}
           <button onClick={runFullPipeline} disabled={fullRunning} style={{ padding: '11px 22px', borderRadius: 6, fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: fullRunning ? 'wait' : 'pointer', background: fullRunning ? '#555' : 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111', border: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
             {fullRunning ? <><Loader2 size={15} className="animate-spin" /> Running Full Pipeline…</> : <><Zap size={15} /> Run Full Pipeline</>}
+          </button>
+        </div>
+      </div>
+
+      {/* Manual target clone — enter a specific website to build from */}
+      <div style={{ marginTop: 18, padding: 16, background: '#f8f7f4', border: '1px solid #e5e1da', borderRadius: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+          <Target size={15} style={{ color: 'var(--gold)' }} />
+          <b style={{ fontSize: 13 }}>Clone a Specific Website</b>
+          <span style={{ fontSize: 11, color: '#888' }}>— skip discovery and build from a target you choose</span>
+        </div>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <input value={manualUrl} onChange={e => setManualUrl(e.target.value)} placeholder="https://example.com" style={{ flex: 2, minWidth: 200, padding: '9px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, fontFamily: 'inherit' }} />
+          <input value={manualName} onChange={e => setManualName(e.target.value)} placeholder="Business name (optional)" style={{ flex: 1.5, minWidth: 160, padding: '9px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, fontFamily: 'inherit' }} />
+          <input value={manualIndustry} onChange={e => setManualIndustry(e.target.value)} placeholder="Industry (optional)" style={{ flex: 1, minWidth: 140, padding: '9px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, fontFamily: 'inherit' }} />
+          <button onClick={runManualTarget} disabled={fullRunning || !manualUrl.trim()} style={{ padding: '9px 18px', borderRadius: 6, fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: (fullRunning || !manualUrl.trim()) ? 'wait' : 'pointer', background: 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111', border: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+            {fullRunning ? <Loader2 size={14} className="animate-spin" /> : <Target size={14} />} Clone & Build
           </button>
         </div>
       </div>
