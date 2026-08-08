@@ -1,0 +1,45 @@
+{
+  "name": "Universal Discovery Loop",
+  "description": "Non-stop 24/7 A-Z discovery + cloning engine. Each run discovers the next taxonomy category (epoxy, concrete, construction data, AI tools, agents, orchestrators, scrapers, all industries) and clones one high-priority validated item into a DesignPack. Builds the exhaustive UniversalCatalog database.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": 10,
+      "interval_unit": "minutes",
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "universal_discovery_loop",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_cycle": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "universalOrchestrator",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Run discovery + clone cycle",
+            "description": "Discover next category, clone one validated item"
+          }
+        }
+      }
+    ]
+  }
+}
