@@ -135,7 +135,7 @@ export default function UniversalDatabase() {
     }
   }
 
-  const gridCols = chatOpen ? '248px 1fr 360px' : '248px 1fr';
+  const gridCols = chatOpen ? '248px 1fr 280px' : '248px 1fr';
   const initials = (user?.full_name || user?.email || 'U').trim().split(/\s+/).map(w => w[0]).slice(0, 2).join('').toUpperCase();
 
   return (
@@ -143,6 +143,11 @@ export default function UniversalDatabase() {
       <style>{`
         .universal-db { --db-bg:#0d0d0d; --db-surface:#161616; --db-surface-2:#1c1c1c; --db-border:#262626; --db-text:#ffffff; --db-muted:#808080; --db-accent:#FFD60A; --db-accent-fg:#0d0d0d; --db-accent-soft:#2a2410; }
         html:not(.dark) .universal-db { --db-bg:#f6f6f4; --db-surface:#ffffff; --db-surface-2:#f1efea; --db-border:#e3e0d9; --db-text:#111111; --db-muted:#6b6b6b; --db-accent:#C89B3C; --db-accent-fg:#ffffff; --db-accent-soft:#faf3e0; }
+        .universal-db ::-webkit-scrollbar { width: 8px; height: 8px; }
+        .universal-db ::-webkit-scrollbar-track { background: #000; }
+        .universal-db ::-webkit-scrollbar-thumb { background: #000; border-radius: 4px; }
+        .universal-db ::-webkit-scrollbar-thumb:hover { background: #1a1a1a; }
+        .universal-db * { scrollbar-color: #000 #000; scrollbar-width: thin; }
       `}</style>
 
       <div style={{ display: 'grid', gridTemplateColumns: gridCols, minHeight: '100vh', transition: 'grid-template-columns .25s' }}>
