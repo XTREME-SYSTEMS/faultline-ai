@@ -1,6 +1,18 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { waitUntil } from 'base44:runtime';
 
+// Timeout wrapper — prevents generation/launch calls from hanging indefinitely.
+// If a sub-call exceeds the deadline, we reject and the engine's catch block
+// records the error on the tracker instead of stalling silently at the last
+// progress value (which is what happens when waitUntil is killed mid-flight).
+const withTimeout = (promise, ms, label) =>
+  Promise.race([
+    promise,
+    new Promise((_, reject) =>
+      setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)), ms)
+    )
+  ]);
+
 // The autonomous recursive engine. Three modes:
 //  BUILD  — given target_url: scrape -> infer backend -> generate clone -> build backend
 //           -> launch -> validate -> heal loop to 100/100.
@@ -112,7 +124,7 @@ async function runEngine(base44, orgId, p) {
       urls.vercel = proj.vercel_deployment_url || proj.metadata?.vercel_deployment_url;
       if (!targetDna && p.target_url) {
         add('Re-scraping for target DNA…');
-        const sr = await base44.functions.invoke('deepCloneTarget', { target_url: p.target_url, industry: p.industry });
+        const sr = await withTimeout(base44.functions.invoke('deepCloneTarget', { target_url: p.target_url, industry: p.industry }), 90000, 'deepCloneTarget (heal re-scrape)');
         targetDna = (sr?.data || sr)?.dna;
       }
       add(`Healing ${proj.project_name} at ${urls.vercel || 'no url yet'}`);
@@ -121,7 +133,7 @@ async function runEngine(base44, orgId, p) {
     // BUILD MODE: full pipeline from a target
     if (p.target_url && (!launchProjectId || !urls.vercel)) {
       add(`Scraping target ${p.target_url}…`);
-      const sr = await base44.functions.invoke('deepCloneTarget', { target_url: p.target_url, industry: p.industry });
+      const sr = await withTimeout(base44.functions.invoke('deepCloneTarget', { target_url: p.target_url, industry: p.industry }), 90000, 'deepCloneTarget');
       const s = sr?.data || sr;
       if (s.status !== 'success') throw new Error(`Scrape failed: ${s.error}`);
       targetDna = s.dna; bizName = bizName || s.bizName;
@@ -140,18 +152,18 @@ async function runEngine(base44, orgId, p) {
       const ws = { business_name: bizName, industry: p.industry, description: s.brief, primary_color: targetDna.primary, secondary_color: targetDna.secondary, target_dna: targetDna };
       await setProgress(15, 'Generating clone — parts 1 & 2 in parallel…');
       const [p1r, p2r] = await Promise.all([
-        base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' }),
-        base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' })
+        withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' }), 120000, 'generateWebsite first_half'),
+        withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' }), 120000, 'generateWebsite second_half')
       ]);
       const p1 = p1r.data || p1r, p2 = p2r.data || p2r;
       await setProgress(25, 'Generating clone — part 3 (stitching)…');
-      const p3 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'third_half', first_html: p1.html, second_html: p2.html });
+      const p3 = await withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'third_half', first_html: p1.html, second_html: p2.html }), 120000, 'generateWebsite third_half');
       let cloneHtml = (p3.data || p3).website_html;
       add(`Clone generated: ${cloneHtml.length} chars`);
       await setProgress(30, 'Clone HTML generated');
 
       add('Building inferred backend (injecting form handler)…');
-      const br = await base44.functions.invoke('buildInferredBackend', { clone_html: cloneHtml, organization_id: orgId, clone_id: p.tracker_id });
+      const br = await withTimeout(base44.functions.invoke('buildInferredBackend', { clone_html: cloneHtml, organization_id: orgId, clone_id: p.tracker_id }), 60000, 'buildInferredBackend');
       const b = br?.data || br;
       cloneHtml = b.operational_html;
       add('Backend built — clone is operational');
@@ -159,7 +171,7 @@ async function runEngine(base44, orgId, p) {
 
       add('Launching to Drive/GitHub/Supabase/Vercel…');
       const launchName = `${p.project_name || bizName || 'Clone'}-${Date.now().toString(36).slice(-5)}`;
-      const lp = await base44.functions.invoke('launchProject', { project_name: launchName, website_html: cloneHtml });
+      const lp = await withTimeout(base44.functions.invoke('launchProject', { project_name: launchName, website_html: cloneHtml }), 120000, 'launchProject');
       const ld = lp?.data || lp;
       if (ld.status !== 'success') throw new Error(`Launch failed: ${JSON.stringify(ld.errors)}`);
       urls = { drive: ld.results?.drive?.url, github: ld.results?.github?.url, supabase: ld.results?.supabase?.url, vercel: ld.results?.vercel?.deploy?.url || ld.results?.vercel?.deploy?.alias?.[0] };
@@ -181,7 +193,7 @@ async function runEngine(base44, orgId, p) {
         }
       } catch (e) {}
       add(`Iteration ${i}/${maxIter}: validating ${urls.vercel}…`);
-      const vr = await base44.functions.invoke('validateFullStack', { live_url: urls.vercel, target_dna: targetDna, organization_id: orgId, clone_id: p.tracker_id });
+      const vr = await withTimeout(base44.functions.invoke('validateFullStack', { live_url: urls.vercel, target_dna: targetDna, organization_id: orgId, clone_id: p.tracker_id }), 90000, 'validateFullStack');
       const v = vr?.data || vr;
       score = v.score || 0; failures = v.failures || [];
       add(`Iteration ${i}: score=${score} (visual=${v.visual_score} operational=${v.operational_score}) failures=${failures.length}`);
@@ -203,15 +215,15 @@ async function runEngine(base44, orgId, p) {
       const fixHint = failures.join('. ');
       const ws = { business_name: bizName || 'Clone', industry: p.industry, description: p.brief || `Premium ${p.industry || ''} business website.`, primary_color: targetDna?.primary, secondary_color: targetDna?.secondary, target_dna: targetDna, fix_directives: fixHint };
       const [f1r, f2r] = await Promise.all([
-        base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' }),
-        base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' })
+        withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' }), 120000, 'heal generateWebsite first_half'),
+        withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' }), 120000, 'heal generateWebsite second_half')
       ]);
       const f1 = f1r.data || f1r, f2 = f2r.data || f2r;
-      const f3 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'third_half', first_html: f1.html, second_html: f2.html });
+      const f3 = await withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'third_half', first_html: f1.html, second_html: f2.html }), 120000, 'heal generateWebsite third_half');
       const fc = f3.data || f3;
-      const br = await base44.functions.invoke('buildInferredBackend', { clone_html: fc.website_html, organization_id: orgId, clone_id: p.tracker_id });
+      const br = await withTimeout(base44.functions.invoke('buildInferredBackend', { clone_html: fc.website_html, organization_id: orgId, clone_id: p.tracker_id }), 60000, 'heal buildInferredBackend');
       const b = br?.data || br;
-      const lp = await base44.functions.invoke('launchProject', { project_name: `${bizName || 'Clone'}-heal${i}-${Date.now().toString(36).slice(-4)}`, website_html: b.operational_html });
+      const lp = await withTimeout(base44.functions.invoke('launchProject', { project_name: `${bizName || 'Clone'}-heal${i}-${Date.now().toString(36).slice(-4)}`, website_html: b.operational_html }), 120000, 'heal launchProject');
       const ld = lp?.data || lp;
       if (ld.status === 'success') urls.vercel = ld.results?.vercel?.deploy?.url || ld.results?.vercel?.deploy?.alias?.[0];
       add(`Iteration ${i}: re-deployed to ${urls.vercel}`);
@@ -232,7 +244,13 @@ async function runEngine(base44, orgId, p) {
     });
   } catch (e) {
     add(`ENGINE ERROR: ${e.message}`);
-    await updateTracker(`Engine error: ${e.message}`, score);
+    try {
+      await base44.asServiceRole.entities.LaunchProject.update(p.tracker_id, {
+        status: 'failed', parity_score: score, progress: progress,
+        last_validation_summary: `Engine error: ${e.message}`,
+        metadata: { autonomous: true, log: log.slice(-12), urls, error: e.message }
+      });
+    } catch (e2) {}
     await finishQa(base44, orgId, p, { score, status: 'failed', log, urls, failures: [e.message], launch_project_id: p.tracker_id, bizName });
   }
 }

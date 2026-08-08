@@ -1,0 +1,44 @@
+{
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/5 * * * *",
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Every 5 minutes, detects autonomous clone projects that have stalled (no progress update in 10+ min \u2014 background waitUntil process was killed) and auto-resumes them once. Prevents permanently stuck projects from cluttering the pipeline.",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "stuck_clone_recovery",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "recover": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "resumeStuckClones"
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Recover stuck clones",
+            "description": "Detect + resume stalled autonomous clone projects"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Stuck Clone Recovery"
+}
