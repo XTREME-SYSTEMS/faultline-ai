@@ -19,16 +19,13 @@ export default async function(req) {
     const limitPerIndustry = Math.min(body.limit_per_industry || 3, 5);
 
     const DEFAULT_INDUSTRIES = [
-      'SaaS', 'Fintech', 'E-commerce', 'AI Tools', 'Cybersecurity',
-      'HealthTech', 'EdTech', 'Marketing Technology', 'Creator Economy',
-      'Real Estate Tech', 'DevOps Tools', 'Legal Tech', 'HR Tech',
-      'Renewable Energy Tech', 'Logistics Tech'
+      'SaaS', 'Fintech', 'E-commerce', 'AI Tools', 'Cybersecurity'
     ];
     const industries = (body.industries && body.industries.length > 0) ? body.industries : DEFAULT_INDUSTRIES;
 
     const allPerformers = [];
 
-    for (const industry of industries) {
+    const scanOne = async (industry) => {
       try {
         const res = await base44.integrations.Core.InvokeLLM({
           model: 'gemini_3_1_pro',
@@ -127,7 +124,9 @@ Focus on REAL, well-known, high-profit sites. Prioritize sites that are actively
       } catch (e) {
         console.error(`discoverTopPerformers: industry ${industry} failed:`, e.message);
       }
-    }
+    };
+
+    await Promise.all(industries.map(scanOne));
 
     // Audit receipt
     try {
