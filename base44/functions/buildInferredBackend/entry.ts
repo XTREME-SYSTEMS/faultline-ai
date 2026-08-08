@@ -43,14 +43,9 @@ export default async function(req) {
       html = html + formScript + '\n</body>\n</html>';
     }
 
-    let fileUrl = null;
-    try {
-      const fileObj = typeof File !== 'undefined' ? new File([html], 'index.html', { type: 'text/html' }) : new Blob([html], { type: 'text/html' });
-      const up = await base44.integrations.Core.UploadFile({ file: fileObj });
-      fileUrl = up?.file_url || null;
-    } catch (e) { console.error('buildInferredBackend upload failed:', e); }
-
-    return Response.json({ status: 'success', operational_html: html, file_url: fileUrl, handler_url: handlerUrl, form_handler_injected: true });
+    // No upload needed — the engine passes operational_html directly to launchProject
+    // which deploys it to Vercel. Uploading here was redundant (wasted ~2-3s per run).
+    return Response.json({ status: 'success', operational_html: html, handler_url: handlerUrl, form_handler_injected: true });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });
   }

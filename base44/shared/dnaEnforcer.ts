@@ -47,7 +47,7 @@ export function enforceDnaParity(html: string, target_dna: any): string {
   // 2. Inject missing h2 headings as sections before </body>.
   const missingH2 = h2.filter(h => !textPresent(out, h));
   if (missingH2.length) {
-    const h2Blocks = missingH2.map(h => `<section id="${slug(h)}"><h2>${esc(h)}</h2></section>`).join('\n');
+    const h2Blocks = missingH2.map(h => `<section id="${slug(h)}" style="padding:60px 20px;max-width:1200px;margin:0 auto"><h2 style="font-size:2em;margin-bottom:0.5em">${esc(h)}</h2><p style="color:#666;line-height:1.6">Learn more about our ${esc(h.toLowerCase())} services. Contact us today for a free consultation.</p></section>`).join('\n');
     out = out.replace(/(<\/body>)/i, `\n${h2Blocks}\n$1`);
   }
 
@@ -59,7 +59,7 @@ export function enforceDnaParity(html: string, target_dna: any): string {
 
   // 4. Ensure a contact section is present.
   if (!/contact/i.test(out)) {
-    const contactBlock = `<section id="contact"><h2>Contact</h2><p>Get in touch with us today.</p></section>`;
+    const contactBlock = `<section id="contact" style="padding:60px 20px;max-width:1200px;margin:0 auto"><h2 style="font-size:2em;margin-bottom:0.5em">Contact</h2><p style="color:#666;line-height:1.6">Get in touch with us today. Call or fill out the form below.</p></section>`;
     out = out.replace(/(<\/body>)/i, `\n${contactBlock}\n$1`);
   }
 

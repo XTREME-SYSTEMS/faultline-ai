@@ -75,15 +75,16 @@ export default async function(req) {
       while ((lm = linkRe.exec(html)) !== null) {
         try { cssUrls.push(new URL(lm[1], url).href); } catch {}
       }
-      for (const cu of cssUrls.slice(0, 4)) {
+      const cssResults = await Promise.all(cssUrls.slice(0, 4).map(async cu => {
         try {
           const cr = await fetch(cu, {
             headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36' },
             signal: AbortSignal.timeout(10000)
           });
-          if (cr.ok) styleText += '\n' + await cr.text();
-        } catch {}
-      }
+          return cr.ok ? await cr.text() : '';
+        } catch { return ''; }
+      }));
+      styleText += cssResults.join('\n');
     } catch {}
     const sourceText = html + '\n' + styleText;
 

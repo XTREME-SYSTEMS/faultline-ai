@@ -44,7 +44,7 @@ export default async function(req) {
 async function runEngine(base44, orgId, p) {
   const log = [];
   const add = (m) => log.push(`${new Date().toISOString()} — ${m}`);
-  let score = 0, failures = [], urls = {}, launchProjectId = p.launch_project_id, targetDna = null, bizName = p.business_name, progress = 0;
+  let score = 0, failures = [], urls = {}, launchProjectId = p.launch_project_id, targetDna = null, bizName = p.business_name, progress = 0, prevFailureSig = null;
   const progressHistory = [];
   const setProgress = async (pct, stageLabel) => {
     progress = pct;
@@ -132,10 +132,9 @@ async function runEngine(base44, orgId, p) {
       base44.functions.invoke('discoverBenchmarkSite', { target_url: p.target_url, industry: p.industry, business_name: bizName, launch_project_id: p.tracker_id }).then(() => add('Benchmark report generated (background)')).catch(e => add(`Benchmark report failed: ${e.message}`));
       await setProgress(8, 'Benchmark report running in background');
 
-      add('Inferring backend…');
-      await base44.functions.invoke('inferTargetBackend', { target_url: p.target_url, industry: p.industry, scrape_result: s });
-      add('Backend blueprint inferred');
-      await setProgress(12, 'Backend blueprint inferred');
+      // Backend inference is handled by buildInferredBackend (injects the form
+      // handler from the clone HTML itself) — no separate inference step needed.
+      await setProgress(12, 'Backend inference skipped (handled in build step)');
 
       add('Generating clone (3-part, parts 1 & 2 in parallel)…');
       const ws = { business_name: bizName, industry: p.industry, description: s.brief, primary_color: targetDna.primary, secondary_color: targetDna.secondary, target_dna: targetDna };
@@ -180,6 +179,15 @@ async function runEngine(base44, orgId, p) {
       await setProgress(55 + Math.round((i / maxIter) * 40), `Validation iter ${i}: ${score}/100`);
       await updateTracker(`Iter ${i}: ${score}/100 — ${failures.length} failures`, score);
       if (score >= 100) { add('100/100 reached — goal achieved'); break; }
+
+      // Convergence detection: if the same failures persist across iterations,
+      // stop early — further regeneration won't help and wastes time + credits.
+      const failureSig = failures.slice().sort().join('|');
+      if (failureSig === prevFailureSig) {
+        add(`Iteration ${i}: convergence failure — same failures as previous iteration, stopping early`);
+        break;
+      }
+      prevFailureSig = failureSig;
 
       // AUTO-FIX: regenerate with fix guidance + re-inject handler + re-deploy
       add(`Iteration ${i}: auto-fixing — ${failures.slice(0, 3).join('; ')}…`);

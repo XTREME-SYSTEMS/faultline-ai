@@ -51,48 +51,54 @@ export default async function(req) {
     const slug = slugify(project_name);
     const html = website_html || '<!DOCTYPE html><html><head><title>Site</title></head><body><h1>Coming Soon</h1></body></html>';
 
-    // 1. Google Drive folder (authorized connector)
+    // Steps 1-4 run IN PARALLEL — Drive, GitHub, Supabase, and Vercel are fully
+    // independent. Sequential provisioning took 30-60s; parallel cuts it to the
+    // slowest single step (~15s). Each step collects its own errors for partial
+    // success reporting. The domain step (5) stays sequential — it depends on Vercel.
+    const provisionTasks = [];
     if (want.drive) {
-      try {
-        const conn = await base44.asServiceRole.connectors.getConnection('googledrive');
-        if (!conn?.accessToken) throw new Error('Google Drive connector not authorized');
-        results.drive = await createDriveFolder(conn.accessToken, `${project_name} Website Assets`);
-      } catch (e) { errors.push({ step: 'drive', error: e.message }); }
+      provisionTasks.push((async () => {
+        try {
+          const conn = await base44.asServiceRole.connectors.getConnection('googledrive');
+          if (!conn?.accessToken) throw new Error('Google Drive connector not authorized');
+          results.drive = await createDriveFolder(conn.accessToken, `${project_name} Website Assets`);
+        } catch (e) { errors.push({ step: 'drive', error: e.message }); }
+      })());
     }
-
-    // 2. GitHub repo + push website (authorized connector)
     if (want.github) {
-      try {
-        const conn = await base44.asServiceRole.connectors.getConnection('github');
-        if (!conn?.accessToken) throw new Error('GitHub connector not authorized');
-        const repo = await createGitHubRepo(conn.accessToken, slug);
-        await pushGitHubFile(conn.accessToken, repo.owner, slug, 'index.html', html, 'Initial website from FaultLine AI');
-        results.github = repo;
-      } catch (e) { errors.push({ step: 'github', error: e.message }); }
+      provisionTasks.push((async () => {
+        try {
+          const conn = await base44.asServiceRole.connectors.getConnection('github');
+          if (!conn?.accessToken) throw new Error('GitHub connector not authorized');
+          const repo = await createGitHubRepo(conn.accessToken, slug);
+          await pushGitHubFile(conn.accessToken, repo.owner, slug, 'index.html', html, 'Initial website from FaultLine AI');
+          results.github = repo;
+        } catch (e) { errors.push({ step: 'github', error: e.message }); }
+      })());
     }
-
-    // 3. Supabase project (authorized connector — shared helper resolves org id)
     if (want.supabase) {
-      try {
-        const conn = await base44.asServiceRole.connectors.getConnection('supabase');
-        if (!conn?.accessToken) throw new Error('Supabase connector not authorized');
-        results.supabase = await createSupabaseProject(conn.accessToken, slug);
-      } catch (e) { errors.push({ step: 'supabase', error: e.message }); }
+      provisionTasks.push((async () => {
+        try {
+          const conn = await base44.asServiceRole.connectors.getConnection('supabase');
+          if (!conn?.accessToken) throw new Error('Supabase connector not authorized');
+          results.supabase = await createSupabaseProject(conn.accessToken, slug);
+        } catch (e) { errors.push({ step: 'supabase', error: e.message }); }
+      })());
     }
-
-    // 4. Vercel project + production deploy (VERCEL_TOKEN secret)
     if (want.vercel) {
-      try {
-        const token = secrets.get('VERCEL_TOKEN');
-        if (!token) throw new Error('VERCEL_TOKEN secret not set');
-        const teamId = secrets.get('VERCEL_TEAM_ID') || null;
-        const project = await createVercelProject(token, teamId, slug);
-        // Disable SSO so the deployed site is publicly accessible
-        try { await disableVercelSso(token, teamId, project.id); } catch (e) { /* non-fatal */ }
-        const deploy = await deployToVercel(token, teamId, slug, project.id, html);
-        results.vercel = { project, deploy };
-      } catch (e) { errors.push({ step: 'vercel', error: e.message }); }
+      provisionTasks.push((async () => {
+        try {
+          const token = secrets.get('VERCEL_TOKEN');
+          if (!token) throw new Error('VERCEL_TOKEN secret not set');
+          const teamId = secrets.get('VERCEL_TEAM_ID') || null;
+          const project = await createVercelProject(token, teamId, slug);
+          try { await disableVercelSso(token, teamId, project.id); } catch (e) { /* non-fatal */ }
+          const deploy = await deployToVercel(token, teamId, slug, project.id, html);
+          results.vercel = { project, deploy };
+        } catch (e) { errors.push({ step: 'vercel', error: e.message }); }
+      })());
     }
+    await Promise.all(provisionTasks);
 
     // 5. Domain purchase via Vercel registrar + attach to project
     if (want.domain && domain_name) {

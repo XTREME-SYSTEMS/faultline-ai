@@ -181,15 +181,24 @@ Generate the SECOND PART of the same single-page website. Output ONLY HTML fragm
         return Response.json({ status: 'success', part: 'second_half', html: secondHtml });
       }
 
-      // third_half — the <script> JS + stitch all three parts + upload + deliverable
-      const thirdPrompt = `${sharedCtx}
-
-Generate ONLY the JavaScript for the same single-page website. Output a SINGLE <script> tag and nothing else — no HTML sections, no <!DOCTYPE>. The script must wire up: mobile nav hamburger toggle, IntersectionObserver fade-in-on-scroll for elements with a "reveal" class, animated stat counters (count up when visible), testimonial carousel auto-rotation (if slides exist), smooth anchor scrolling, and a back-to-top button. Use plain vanilla JS. Keep it concise and correct.`;
-
-      const r3 = await base44.integrations.Core.InvokeLLM({ prompt: thirdPrompt, model: 'gemini_3_flash' });
-      let scriptTag = typeof r3 === 'string' ? r3 : r3?.content || r3?.text || JSON.stringify(r3);
-      scriptTag = scriptTag.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
-      if (!/^<script/i.test(scriptTag)) scriptTag = '<script>\n' + scriptTag + '\n</script>';
+      // third_half — deterministic JS (hardcoded for reliability + speed) + stitch.
+      // No LLM call needed: the JS is standard boilerplate (nav toggle, reveal on
+      // scroll, stat counters, smooth scroll, back-to-top). Hardcoding eliminates a
+      // full LLM round-trip (~10-15s) and the risk of broken/malformed JS from the model.
+      const scriptTag = `<script>
+(function(){
+  var btn=document.querySelector('.nav-toggle,.menu-toggle,.hamburger,[aria-label="Menu"]');
+  var nav=document.querySelector('nav');
+  if(btn&&nav){btn.addEventListener('click',function(){nav.classList.toggle('open');btn.classList.toggle('active');});}
+  var obs=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('visible');obs.unobserve(e.target);}});},{threshold:0.15});
+  document.querySelectorAll('.reveal,[data-reveal]').forEach(function(el){obs.observe(el);});
+  var counters=document.querySelectorAll('[data-count],.stat-number,.counter');
+  var co=new IntersectionObserver(function(es){es.forEach(function(e){if(!e.isIntersecting)return;var el=e.target;var target=parseInt(el.getAttribute('data-count')||el.textContent||'0',10);var cur=0;var step=Math.max(1,Math.ceil(target/40));var t=setInterval(function(){cur+=step;if(cur>=target){cur=target;clearInterval(t);}el.textContent=cur.toLocaleString();},25);co.unobserve(el);});},{threshold:0.5});
+  counters.forEach(function(c){co.observe(c);});
+  document.querySelectorAll('a[href^="#"]').forEach(function(a){a.addEventListener('click',function(e){var id=a.getAttribute('href');if(id.length>1){var t=document.querySelector(id);if(t){e.preventDefault();t.scrollIntoView({behavior:'smooth'});}}});});
+  var bt=document.createElement('button');bt.innerHTML='\\u2191';bt.style.cssText='position:fixed;bottom:20px;right:20px;width:44px;height:44px;border-radius:50%;border:0;background:var(--primary,#C89B3C);color:#fff;font-size:20px;cursor:pointer;opacity:0;transition:opacity .3s;z-index:999;box-shadow:0 4px 12px rgba(0,0,0,.2)';bt.onclick=function(){window.scrollTo({top:0,behavior:'smooth'});};document.body.appendChild(bt);window.addEventListener('scroll',function(){bt.style.opacity=window.scrollY>400?'1':'0';});
+})();
+</script>`;
 
       // Stitch: first_html + second_html + script, inserted before </body>
       const combined = (second_html || '') + '\n' + scriptTag;
