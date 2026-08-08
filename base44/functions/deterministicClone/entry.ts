@@ -139,7 +139,7 @@ export default async function(req) {
     }
     // Inline style="background-image: url(...)" in HTML (hero sections, etc.)
     // Also catches the shorthand: style="background: url(...) no-repeat center/cover"
-    const inlineBgRe = /style=["'][^"']*background(?:-image)?\s*:\s*[^;"'v]*url\(["']?([^"')]+)["']?\)[^"']*["']/gi; let ibm;
+    const inlineBgRe = /style=["'][^"']*background(?:-image)?\s*:\s*[^;"']*?url\(["']?([^"')]+)["']?\)[^"']*["']/gi; let ibm;
     while ((ibm = inlineBgRe.exec(html)) !== null) {
       if (!ibm[1].startsWith('data:')) addImageUrl(ibm[1]);
     }
