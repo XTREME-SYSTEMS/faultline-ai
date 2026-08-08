@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Copy, ExternalLink, Loader2, Rocket, Globe, Cloud, Github, Database } from 'lucide-react';
+import { Copy, ExternalLink, Loader2, Rocket, Globe, Cloud, Github, Database, RefreshCw } from 'lucide-react';
 
 const CAT_LABEL = {
   epoxy_metallic: 'Metallic Epoxy', epoxy_flake: 'Flake Epoxy', epoxy_quartz: 'Quartz Epoxy',
@@ -12,25 +12,42 @@ export default function ClonedSystems() {
   const [cloned, setCloned] = useState([]);
   const [launches, setLaunches] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [resuming, setResuming] = useState(null);
+
+  const load = useCallback(async () => {
+    try {
+      const [c, l] = await Promise.all([
+        base44.entities.UniversalCatalog.filter({ clone_status: 'cloned' }, '-created_date', 100),
+        base44.entities.LaunchProject.list('-created_date', 50)
+      ]);
+      setCloned(c || []);
+      setLaunches(l || []);
+    } catch (e) { /* ignore */ }
+    finally { setLoading(false); }
+  }, []);
+
+  const resumeProject = async (p) => {
+    setResuming(p.id);
+    try {
+      if (p.metadata?.autonomous) {
+        await base44.functions.invoke('autonomousCloneTo100', { launch_project_id: p.id, max_iterations: 3 });
+      } else {
+        await base44.functions.invoke('launchPipelineValidate', { launch_project_id: p.id });
+      }
+      setTimeout(() => load(), 3000);
+    } catch (e) {
+      console.error('Resume failed:', e);
+    } finally {
+      setResuming(null);
+    }
+  };
 
   useEffect(() => {
-    const load = async () => {
-      try {
-        const [c, l] = await Promise.all([
-          base44.entities.UniversalCatalog.filter({ clone_status: 'cloned' }, '-created_date', 100),
-          base44.entities.LaunchProject.list('-created_date', 50)
-        ]);
-        setCloned(c || []);
-        setLaunches(l || []);
-      } catch (e) { /* ignore */ }
-      finally { setLoading(false); }
-    };
     load();
-    // Live updates — refresh as the engine sets URLs and scores
     let unsub = () => {};
     try { unsub = base44.entities.LaunchProject.subscribe(() => load()); } catch (e) { /* subscribe not available */ }
     return unsub;
-  }, []);
+  }, [load]);
 
   if (loading) return (
     <div style={{ padding: 28, textAlign: 'center', color: '#888' }}>
@@ -111,10 +128,14 @@ export default function ClonedSystems() {
                     </div>
                   )}
                   {p.domain_name && <small style={{ fontSize: 11, color: '#888' }}>{p.domain_name}</small>}
-                  {p.vercel_deployment_url && (
+                  {p.vercel_deployment_url ? (
                     <a href={p.vercel_deployment_url} target="_blank" rel="noreferrer" style={{ marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 12px', borderRadius: 6, background: 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
                       <Globe size={14} /> View Live Site
                     </a>
+                  ) : (p.status === 'generating' || p.status === 'failed') && (
+                    <button onClick={() => resumeProject(p)} disabled={resuming === p.id} style={{ marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 12px', borderRadius: 6, background: resuming === p.id ? '#ccc' : '#0b0b0b', color: '#fff', fontSize: 12, fontWeight: 700, border: 0, cursor: resuming === p.id ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
+                      <RefreshCw size={14} className={resuming === p.id ? 'animate-spin' : ''} /> {resuming === p.id ? 'Resuming…' : 'Resume Pipeline'}
+                    </button>
                   )}
                 </div>
               );
