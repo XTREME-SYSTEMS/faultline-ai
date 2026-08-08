@@ -14,7 +14,7 @@ export default function ClonedSystems() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    (async () => {
+    const load = async () => {
       try {
         const [c, l] = await Promise.all([
           base44.entities.UniversalCatalog.filter({ clone_status: 'cloned' }, '-created_date', 100),
@@ -24,7 +24,11 @@ export default function ClonedSystems() {
         setLaunches(l || []);
       } catch (e) { /* ignore */ }
       finally { setLoading(false); }
-    })();
+    };
+    load();
+    // Live updates — refresh as the engine sets URLs and scores
+    const unsub = base44.entities.LaunchProject.subscribe(() => load());
+    return unsub;
   }, []);
 
   if (loading) return (
