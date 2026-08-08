@@ -3,7 +3,7 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useTheme } from 'next-themes';
 import UniversalChat from '@/components/fl/UniversalChat';
-import { Database, Search, Play, Loader2, ExternalLink, CheckCircle2, AlertCircle, Clock, Sun, Moon, ChevronLeft, PanelRightOpen } from 'lucide-react';
+import { Database, Search, Play, Loader2, ExternalLink, CheckCircle2, AlertCircle, Clock, Sun, Moon, ChevronLeft, MessageSquare } from 'lucide-react';
 
 const CATEGORIES = [
   { key: '', label: 'All Categories' },
@@ -247,7 +247,7 @@ export default function UniversalDatabase() {
           </aside>
         ) : (
           <button type="button" onClick={() => setChatOpen(true)} title="Open AI chat" style={{ position: 'fixed', right: 0, top: '50%', transform: 'translateY(-50%)', zIndex: 50, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, padding: '14px 8px', background: 'var(--db-accent)', color: 'var(--db-accent-fg)', border: 0, borderRadius: '8px 0 0 8px', cursor: 'pointer', boxShadow: '-4px 0 20px rgba(0,0,0,.18)' }}>
-            <PanelRightOpen size={18} />
+            <MessageSquare size={18} />
             <span style={{ fontSize: 9, fontWeight: 800, writingMode: 'vertical-rl', letterSpacing: '.1em' }}>AI CHAT</span>
           </button>
         )}
