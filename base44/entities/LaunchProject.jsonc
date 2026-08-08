@@ -30,7 +30,8 @@
         "testing",
         "passed",
         "failed",
-        "retrying"
+        "retrying",
+        "cancelled"
       ],
       "default": "queued"
     },

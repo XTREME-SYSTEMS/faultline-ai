@@ -1,12 +1,12 @@
 import { useEffect, useState, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { Clock, Zap, TrendingUp, Loader2 } from 'lucide-react';
+import { Clock, Zap, TrendingUp, Loader2, Square } from 'lucide-react';
 
 const STAGE_LABELS = {
   queued: 'Queued', generating: 'Generating', provisioning: 'Provisioning',
   validating: 'Validating', testing: 'Testing', retrying: 'Retrying',
-  passed: 'Passed', failed: 'Failed'
+  passed: 'Passed', failed: 'Failed', cancelled: 'Cancelled'
 };
 
 function fmtTime(secs) {
@@ -19,6 +19,19 @@ function fmtTime(secs) {
 export default function PipelineProgress({ project }) {
   const [proj, setProj] = useState(project);
   const [now, setNow] = useState(Date.now());
+  const [stopping, setStopping] = useState(false);
+
+  const handleStop = async () => {
+    setStopping(true);
+    try {
+      await base44.entities.LaunchProject.update(project.id, {
+        status: 'cancelled',
+        last_validation_summary: 'Cancelled by user'
+      });
+      setProj(prev => ({ ...prev, status: 'cancelled', last_validation_summary: 'Cancelled by user' }));
+    } catch (e) { console.error('Stop failed:', e); }
+    finally { setStopping(false); }
+  };
 
   useEffect(() => {
     setProj(project);
@@ -42,7 +55,7 @@ export default function PipelineProgress({ project }) {
   const progress = proj?.progress || 0;
   const stage = proj?.last_validation_summary || 'Starting…';
   const status = proj?.status || 'queued';
-  const isDone = status === 'passed' || status === 'failed';
+  const isDone = status === 'passed' || status === 'failed' || status === 'cancelled';
 
   const chartData = useMemo(() => {
     if (history.length === 0) return [{ t: 0, p: 0 }];
@@ -74,8 +87,13 @@ export default function PipelineProgress({ project }) {
             <small style={{ fontSize: 11, color: '#888' }}>{stage}</small>
           </div>
         </div>
-        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+        <div style={{ textAlign: 'right', flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 8 }}>
           <b style={{ font: '400 32px Libre Caslon Display, serif', color: progressColor, lineHeight: 1 }}>{Math.round(progress)}<span style={{ fontSize: 16, color: '#aaa' }}>%</span></b>
+          {!isDone && (
+            <button onClick={handleStop} disabled={stopping} style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 14px', borderRadius: 5, fontSize: 11, fontWeight: 700, fontFamily: 'inherit', cursor: stopping ? 'wait' : 'pointer', background: stopping ? '#ccc' : '#a52d23', color: '#fff', border: 0 }}>
+              {stopping ? <Loader2 size={11} className="animate-spin" /> : <Square size={11} />} Stop
+            </button>
+          )}
         </div>
       </div>
 

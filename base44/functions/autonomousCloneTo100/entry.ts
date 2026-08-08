@@ -171,6 +171,15 @@ async function runEngine(base44, orgId, p) {
     // HEAL LOOP — validate -> fix -> re-deploy -> re-validate until 100 or max iterations
     const maxIter = p.max_iterations || 5;
     for (let i = 1; i <= maxIter; i++) {
+      // Check for user cancellation before starting this iteration
+      try {
+        const cur = await base44.asServiceRole.entities.LaunchProject.get(p.tracker_id);
+        if (cur?.status === 'cancelled') {
+          add('Project cancelled by user — stopping');
+          await setProgress(progress, 'Cancelled by user');
+          break;
+        }
+      } catch (e) {}
       add(`Iteration ${i}/${maxIter}: validating ${urls.vercel}…`);
       const vr = await base44.functions.invoke('validateFullStack', { live_url: urls.vercel, target_dna: targetDna, organization_id: orgId, clone_id: p.tracker_id });
       const v = vr?.data || vr;
