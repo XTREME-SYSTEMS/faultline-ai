@@ -304,6 +304,20 @@ export default async function(req) {
       return '<img' + before + 'src="' + dataSrc + '"' + after + '>';
     });
 
+    // 5b. FIX APP-ACTION LINKS — the clone is a single static page, so internal
+    //     links to app routes (/app/signup, /app/login, /signup, /login, etc.)
+    //     will 404 on the Vercel deployment. Redirect these to the original
+    //     target site so CTAs like "Start for free" and "Launch" work instead
+    //     of hitting a 404. Marketing nav links (/pricing, /features) are left
+    //     as-is — they'll scroll or 404 gracefully, but the primary CTAs work.
+    const appRoutePattern = /^\/(app\/|signup|login|register|signin|dashboard|admin|get-started|start|onboarding|auth\/)/i;
+    clonedHtml = clonedHtml.replace(/href=["'](\/[^"']*)["']/gi, (match, path) => {
+      if (appRoutePattern.test(path)) {
+        try { return `href="${new URL(path, target_url).href}"`; } catch { return match; }
+      }
+      return match;
+    });
+
     // 6. Inline all CSS into the HTML (self-contained clone)
     //    Remove the <link rel="stylesheet"> tags and inject a single <style> block
     clonedHtml = clonedHtml.replace(/<link[^>]+rel=["']stylesheet["'][^>]*>/gi, '');

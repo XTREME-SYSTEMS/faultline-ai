@@ -230,6 +230,25 @@ Be EXTREMELY STRICT. Only award 100 when the clone is pixel-perfect. List EVERY 
     if (checks.hasFormHandler) operationalScore += 25; else failures.push('Form-handler script not injected into clone HTML');
     if (checks.hasForm) operationalScore += 15; else failures.push('No <form> element found on clone');
     if (checks.httpOk) operationalScore += 10; else failures.push(`Live URL returned HTTP ${r.status}`);
+
+    // 4b. BROKEN CTA LINK CHECK — scan the clone HTML for internal app-action
+    //     links (/app/signup, /app/login, /signup, /login, etc.) that would 404
+    //     on a static single-page clone. These are the primary CTA buttons
+    //     ("Start for free", "Launch", "Log in") — if they point to a relative
+    //     path instead of the original target, visitors hit a 404 and the
+    //     auto-heal loop should catch and fix them.
+    const appRouteRe = /href=["'](\/(?:app\/|signup|login|register|signin|dashboard|admin|get-started|start|onboarding|auth\/)[^"']*)["']/gi;
+    const brokenCtaLinks = new Set();
+    let ctaMatch;
+    while ((ctaMatch = appRouteRe.exec(html)) !== null) {
+      brokenCtaLinks.add(ctaMatch[1]);
+    }
+    if (brokenCtaLinks.size > 0) {
+      const linkList = [...brokenCtaLinks].slice(0, 5);
+      failures.push(`Broken CTA links (would 404 on static clone): ${linkList.join(', ')}`);
+      operationalScore = Math.max(0, operationalScore - 15);
+    }
+
     operationalScore = Math.min(100, operationalScore);
 
     const score = Math.round((visualScore * 0.5) + (operationalScore * 0.5));
