@@ -18,7 +18,8 @@ export default async function(req) {
 
     await base44.asServiceRole.entities.LaunchProject.update(launch_project_id, {
       status: passed ? 'passed' : 'failed',
-      mandatory_passed: passed
+      mandatory_passed: passed,
+      progress: passed ? 100 : (lp.progress || 70)
     });
 
     // CRM sync

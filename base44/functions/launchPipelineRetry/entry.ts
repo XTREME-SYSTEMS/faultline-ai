@@ -43,6 +43,7 @@ export default async function(req) {
       deliverable_id,
       iteration,
       status: 'retrying',
+      progress: 35,
       last_validation_summary: `Retry iteration ${iteration} — regenerating with QA feedback`
     });
 

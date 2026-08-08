@@ -83,6 +83,17 @@ export default async function(req) {
       }
     } catch (e) { errors.generation = e.message; }
 
+    // If no deliverable could be created (no design pack), fail gracefully
+    // instead of leaving the project stuck at 'generating' forever.
+    if (!deliverableId) {
+      await base44.asServiceRole.entities.LaunchProject.update(launch_project_id, {
+        status: 'failed',
+        last_validation_summary: 'No design pack attached — upload a design pack to generate a site, or use the autonomous clone engine for target-URL cloning.',
+        errors: { ...errors, no_deliverable: 'No design_pack_id on this project' }
+      });
+      return Response.json({ error: 'No design pack attached — cannot generate site', launch_project_id }, { status: 400 });
+    }
+
     // 3. Provision infrastructure
     let driveFolderUrl = lp.drive_folder_url;
     let githubRepoUrl = lp.github_repo_url;
@@ -142,6 +153,7 @@ export default async function(req) {
       vercel_project_url: vercelProjectUrl,
       metadata: { ...(lp.metadata || {}), ...(vercelProjectId ? { vercel_project_id: vercelProjectId } : {}) },
       status: 'generating',
+      progress: 15,
       errors: Object.keys(errors).length ? errors : null
     });
 

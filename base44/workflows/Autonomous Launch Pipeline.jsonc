@@ -9,7 +9,7 @@
         "create"
       ]
     },
-    "condition": "${ .trigger.data.status == \"queued\" }"
+    "condition": "${ .trigger.data.status == \"queued\" and (.trigger.data.metadata.autonomous // false) != true }"
   },
   "definition": {
     "document": {

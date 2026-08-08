@@ -20,7 +20,7 @@ export default async function(req) {
     const orgId = lp.organization_id;
     const slug = lp.slug || slugify(lp.project_name || lp.business_name || 'faultline-site');
 
-    await base44.asServiceRole.entities.LaunchProject.update(launch_project_id, { status: 'validating' });
+    await base44.asServiceRole.entities.LaunchProject.update(launch_project_id, { status: 'validating', progress: 50 });
 
     // 1. Poll deliverable until generated (brief — the workflow already waited)
     let deliverable = null;
@@ -76,7 +76,8 @@ export default async function(req) {
 
     await base44.asServiceRole.entities.LaunchProject.update(launch_project_id, {
       vercel_deployment_url: deploymentUrl,
-      status: 'testing'
+      status: 'testing',
+      progress: 60
     });
 
     // 5. Browserbase — render the live URL + screenshot (real browser)
@@ -202,6 +203,7 @@ Be STRICT and PRECISE. Do not round up. If anything is imperfect, the score must
       last_validation_summary: summary,
       vercel_deployment_url: deploymentUrl,
       status: 'testing',
+      progress: 70,
       errors: Object.keys(errors).length ? { ...(lp.errors || {}), ...errors } : null
     });
 
