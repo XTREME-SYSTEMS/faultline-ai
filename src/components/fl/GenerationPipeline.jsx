@@ -324,9 +324,9 @@ Be specific and practical.`,
           <span style={{ fontSize: 11, color: '#888' }}>— skip discovery and build from a target you choose</span>
         </div>
         <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <input value={manualUrl} onChange={e => setManualUrl(e.target.value)} placeholder="https://example.com" style={{ flex: 2, minWidth: 200, padding: '9px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, fontFamily: 'inherit' }} />
-          <input value={manualName} onChange={e => setManualName(e.target.value)} placeholder="Business name (optional)" style={{ flex: 1.5, minWidth: 160, padding: '9px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, fontFamily: 'inherit' }} />
-          <input value={manualIndustry} onChange={e => setManualIndustry(e.target.value)} placeholder="Industry (optional)" style={{ flex: 1, minWidth: 140, padding: '9px 12px', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, fontFamily: 'inherit' }} />
+          <input value={manualUrl} onChange={e => setManualUrl(e.target.value)} placeholder="https://example.com" style={{ flex: 2, minWidth: 200, padding: '9px 12px', background: '#fff', color: '#111', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, fontFamily: 'inherit' }} />
+          <input value={manualName} onChange={e => setManualName(e.target.value)} placeholder="Business name (optional)" style={{ flex: 1.5, minWidth: 160, padding: '9px 12px', background: '#fff', color: '#111', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, fontFamily: 'inherit' }} />
+          <input value={manualIndustry} onChange={e => setManualIndustry(e.target.value)} placeholder="Industry (optional)" style={{ flex: 1, minWidth: 140, padding: '9px 12px', background: '#fff', color: '#111', border: '1px solid #ddd', borderRadius: 6, fontSize: 13, fontFamily: 'inherit' }} />
           <button onClick={runManualTarget} disabled={fullRunning || !manualUrl.trim()} style={{ padding: '9px 18px', borderRadius: 6, fontSize: 13, fontWeight: 700, fontFamily: 'inherit', cursor: (fullRunning || !manualUrl.trim()) ? 'wait' : 'pointer', background: 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111', border: 0, display: 'flex', alignItems: 'center', gap: 6 }}>
             {fullRunning ? <Loader2 size={14} className="animate-spin" /> : <Target size={14} />} Clone & Build
           </button>
