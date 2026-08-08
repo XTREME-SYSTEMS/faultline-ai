@@ -94,6 +94,14 @@
     "domain_name": {
       "type": "string"
     },
+    "benchmark_url": {
+      "type": "string",
+      "description": "Target benchmark site URL for comparison"
+    },
+    "benchmark_report": {
+      "type": "object",
+      "description": "Exhaustive discovery + audit report on the benchmark site (financial, strategy, niche, stack, target market, AI enhancement, profit margin, customer base, monetization, etc.)"
+    },
     "parity_score": {
       "type": "number"
     },
