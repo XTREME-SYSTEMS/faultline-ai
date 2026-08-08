@@ -87,11 +87,17 @@ export default async function(req) {
     }
 
     // 2. Fetch all linked CSS stylesheets
+    //    Match <link rel="stylesheet"> tags regardless of attribute order —
+    //    Webflow outputs href BEFORE rel, so a single ordered regex misses the
+    //    main stylesheet and the clone ships with no layout CSS.
     let styleText = '';
-    const linkRe = /<link[^>]+rel=["']stylesheet["'][^>]+href=["']([^"']+)["']/gi;
+    const linkTagRe = /<link[^>]+rel=["']stylesheet["'][^>]*>/gi;
     const cssUrls = []; let lm;
-    while ((lm = linkRe.exec(html)) !== null) {
-      try { cssUrls.push(new URL(lm[1], target_url).href); } catch {}
+    while ((lm = linkTagRe.exec(html)) !== null) {
+      const hrefMatch = lm[0].match(/href=["']([^"']+)["']/i);
+      if (hrefMatch) {
+        try { cssUrls.push(new URL(hrefMatch[1], target_url).href); } catch {}
+      }
     }
     if (cssUrls.length > 0) {
       const cssResults = await Promise.all(cssUrls.slice(0, 12).map(async cu => {
