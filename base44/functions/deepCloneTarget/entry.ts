@@ -49,7 +49,7 @@ export default async function(req) {
       // Explicit target — fetch directly
       const basic = await fetchPageDeep(url, 15000);
       html = basic.html || '';
-      fetchMethod = basic.ok ? 'basic' : 'failed';
+      fetchMethod = basic.stealth ? 'stealth' : basic.ok ? 'basic' : 'failed';
       if (html.length < 2000) {
         const rendered = await fetchRenderedPage(url, { timeout: 25000 });
         if (rendered && rendered.html && rendered.html.length > html.length) {

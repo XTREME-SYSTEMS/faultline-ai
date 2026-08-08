@@ -1,6 +1,7 @@
-// Browserbase integration — uses the Fetch API to get fully rendered HTML
-// from JS-heavy sites (React/Vue SPAs, dynamic content) that basic fetch can't handle.
-// Falls back to basic fetch if BROWSERBASE_API_KEY is not set or the API fails.
+// Browserbase integration — uses the Fetch API (with proxies) and the full Stealth
+// Sessions API to get fully rendered HTML from JS-heavy sites, CAPTCHA-protected pages,
+// and bot-blocked targets. Falls back to basic fetch if BROWSERBASE_API_KEY is not set.
+import { scrapeWithStealth, smartStealthFetch } from './stealthBrowser.ts';
 
 const BB_API = 'https://api.browserbase.com/v1/fetch';
 
@@ -18,6 +19,7 @@ export async function fetchRenderedPage(url, options = {}) {
       body: JSON.stringify({
         url,
         format: 'raw',
+        proxies: options.proxies !== false,  // route through proxy network by default
         ...options
       }),
       signal: AbortSignal.timeout(options.timeout || 15000)
@@ -73,21 +75,29 @@ export async function browserbaseSearch(query, numResults = 10) {
   }
 }
 
-// Smart fetch — tries Browserbase first for JS-heavy sites, falls back to basic fetch.
-// Uses Browserbase when: the page has many scripts (likely SPA) or basic fetch returns thin content.
-export async function smartFetchPage(url, basicFetchFn, options = {}) {
-  // First try basic fetch
-  const basic = await basicFetchFn(url);
+// Stealth fetch — uses the full Sessions API (advancedStealth + solveCaptchas + proxies + verified).
+// This is the highest-capability scrape: solves CAPTCHAs, bypasses bot detection, uses residential proxies.
+export async function fetchStealthPage(url, options = {}) {
+  const result = await scrapeWithStealth(url, options);
+  if (!result.ok) console.error(`Stealth fetch failed for ${url}: ${result.error}`);
+  return result;
+}
 
-  // If basic fetch failed or returned very thin content, try Browserbase
+// Smart fetch — tries stealth first (highest capability), then proxy fetch, then basic fetch.
+// Automatically escalates when basic fetch returns thin content or fails.
+export async function smartFetchPage(url, basicFetchFn, options = {}) {
+  // 1. Try full stealth session (captcha-solving + proxies + advanced stealth)
+  const stealth = await smartStealthFetch(url, basicFetchFn, options);
+  if (stealth.ok && stealth.html.length > 200) return stealth;
+
+  // 2. Fall back to Fetch API with proxies
+  const basic = await basicFetchFn(url);
   const wordCount = basic.ok
     ? basic.html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim().split(' ').length
     : 0;
-
   const scriptCount = basic.ok
     ? (basic.html.match(/<script[^>]*>/gi) || []).length
     : 0;
-
   const needsRender = !basic.ok || wordCount < 50 || scriptCount > 5;
 
   if (needsRender) {

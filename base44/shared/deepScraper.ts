@@ -48,7 +48,7 @@ export function discoverAllPages(html, baseUrl) {
     } catch {}
   }
   const seen = new Set();
-  return links.filter(l => { if (seen.has(l)) return false; seen.add(l); return true; }).slice(0, 15);
+  return links.filter(l => { if (seen.has(l)) return false; seen.add(l); return true; }).slice(0, 50);
 }
 
 export function extractExternalScripts(html, baseUrl) {
@@ -64,7 +64,7 @@ export function extractExternalScripts(html, baseUrl) {
     } catch {}
   }
   const seen = new Set();
-  return scripts.filter(s => { if (seen.has(s)) return false; seen.add(s); return true; }).slice(0, 12);
+  return scripts.filter(s => { if (seen.has(s)) return false; seen.add(s); return true; }).slice(0, 30);
 }
 
 export function detectExposedSecrets(content, source) {
@@ -127,7 +127,20 @@ export function deepExtract(html, url) {
   };
 }
 
+// Stealth-enhanced deep page fetch — uses the full Browserbase stealth stack
+// (advancedStealth + solveCaptchas + proxies + verified) for bot-protected sites,
+// falling back to a browser-like basic fetch for simple pages.
 export async function fetchPageDeep(url, timeout = 12000) {
+  // Try stealth session first for maximum capability
+  try {
+    const { scrapeWithStealth } = await import('./stealthBrowser.ts');
+    const stealth = await scrapeWithStealth(url, { timeout: timeout + 5000, waitAfterLoad: 2000 });
+    if (stealth.ok && stealth.html.length > 200) {
+      return { html: stealth.html, status: stealth.status, ok: true, headers: {}, stealth: true, captchaSolved: stealth.captchaSolved, screenshot: stealth.screenshot };
+    }
+  } catch { /* fall through to basic */ }
+
+  // Fallback: browser-like basic fetch
   try {
     const res = await fetch(url, {
       headers: {
