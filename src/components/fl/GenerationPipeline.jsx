@@ -2,8 +2,9 @@ import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import {
   Search, Target, Copy, Palette, Layers, Layout, Globe, Rocket,
-  Loader2, CheckCircle2, XCircle, ChevronDown, Sparkles, ArrowRight, Lightbulb
+  Loader2, CheckCircle2, XCircle, ChevronDown, Sparkles, ArrowRight, Lightbulb, ExternalLink, Zap
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 // AI-guided step-by-step generation pipeline timeline.
 // Each step: discover → select → clone → logo → brand → web pack → website → launch
@@ -25,6 +26,7 @@ export default function GenerationPipeline() {
   const [selectedPerformer, setSelectedPerformer] = useState(null);
   const [industryFilter, setIndustryFilter] = useState('all');
   const [seedStatus, setSeedStatus] = useState(null);
+  const [fullRunning, setFullRunning] = useState(false);
 
   // Check if the prompt library is seeded
   useEffect(() => {
@@ -47,6 +49,82 @@ export default function GenerationPipeline() {
       setStepStates(s => ({ ...s, discover: { ...s.discover, status: undefined } }));
     }
   };
+
+  const runFullPipeline = useCallback(async () => {
+    setFullRunning(true);
+    try {
+      // Step 1: Discover
+      setStepStates(s => ({ ...s, discover: { status: 'running' } }));
+      setActiveStep(0);
+      const dRes = await base44.functions.invoke('discoverTopPerformers', {});
+      const dData = dRes.data || dRes;
+      const discovered = dData.performers || [];
+      setPerformers(discovered);
+      setStepStates(s => ({ ...s, discover: { status: 'done', result: dData } }));
+      if (discovered.length === 0) throw new Error('No top performers discovered. Try again.');
+
+      // Step 2: Select — auto-pick highest profit potential
+      const priority = { very_high: 3, high: 2, medium: 1, low: 0 };
+      const topPick = [...discovered].sort((a, b) => (priority[b.profit_potential] || 0) - (priority[a.profit_potential] || 0))[0];
+      let full = topPick;
+      try { full = await base44.entities.TopPerformer.get(topPick.id); } catch (e) {}
+      setSelectedPerformer(full);
+      setStepStates(s => ({ ...s, select: { status: 'done', result: { count: discovered.length } } }));
+      setActiveStep(1);
+
+      // Step 3: Clone
+      setActiveStep(2);
+      setStepStates(s => ({ ...s, clone: { status: 'running' } }));
+      const cRes = await base44.functions.invoke('cloneTopWebsites', { category: full.industry, industry: full.industry, top_performer_id: full.id });
+      setStepStates(s => ({ ...s, clone: { status: 'done', result: cRes.data || cRes } }));
+
+      // Step 4: Logo
+      setActiveStep(3);
+      setStepStates(s => ({ ...s, logo: { status: 'running' } }));
+      const lRes = await base44.functions.invoke('generateDesignPack', { pack_type: 'logo_pack', business_name: full.name, industry: full.industry });
+      setStepStates(s => ({ ...s, logo: { status: 'done', result: lRes.data || lRes } }));
+
+      // Step 5: Brand
+      setActiveStep(4);
+      setStepStates(s => ({ ...s, brand: { status: 'running' } }));
+      const bRes = await base44.functions.invoke('generateDesignPack', { pack_type: 'brand_pack', business_name: full.name, industry: full.industry });
+      setStepStates(s => ({ ...s, brand: { status: 'done', result: bRes.data || bRes } }));
+
+      // Step 6: Web Pack
+      setActiveStep(5);
+      setStepStates(s => ({ ...s, webpack: { status: 'running' } }));
+      const wRes = await base44.functions.invoke('generateDesignPack', { pack_type: 'web_pack', business_name: full.name, industry: full.industry });
+      setStepStates(s => ({ ...s, webpack: { status: 'done', result: wRes.data || wRes } }));
+
+      // Step 7: Website
+      setActiveStep(6);
+      setStepStates(s => ({ ...s, website: { status: 'running' } }));
+      const wsRes = await base44.functions.invoke('generateWebsite', {
+        business_name: full.name, industry: full.industry,
+        description: full.value_proposition || full.niche || `${full.name} — ${full.industry} platform`
+      });
+      setStepStates(s => ({ ...s, website: { status: 'done', result: wsRes.data || wsRes } }));
+
+      // Step 8: Launch
+      setActiveStep(7);
+      setStepStates(s => ({ ...s, launch: { status: 'running' } }));
+      const lpRes = await base44.entities.LaunchProject.create({
+        project_name: `${full.name} Website`, project_type: 'website',
+        business_name: full.name, industry: full.industry, client_name: full.name
+      });
+      setStepStates(s => ({ ...s, launch: { status: 'done', result: { launch_project_id: lpRes.id, status: 'queued' } } }));
+    } catch (e) {
+      setStepStates(s => {
+        const updated = { ...s };
+        for (const st of STEPS) {
+          if (updated[st.id]?.status === 'running') updated[st.id] = { ...updated[st.id], status: 'error', error: e.message };
+        }
+        return updated;
+      });
+    } finally {
+      setFullRunning(false);
+    }
+  }, []);
 
   const runStep = useCallback(async (stepId) => {
     setStepStates(s => ({ ...s, [stepId]: { ...s[stepId], status: 'running' } }));
@@ -108,7 +186,8 @@ export default function GenerationPipeline() {
         case 'website': {
           const res = await base44.functions.invoke('generateWebsite', {
             business_name: selectedPerformer?.name || 'New Business',
-            industry: selectedPerformer?.industry || 'Technology'
+            industry: selectedPerformer?.industry || 'Technology',
+            description: selectedPerformer?.value_proposition || selectedPerformer?.niche || `${selectedPerformer?.name || 'New Business'} — ${selectedPerformer?.industry || 'Technology'} platform`
           });
           result = res.data || res;
           break;
@@ -178,16 +257,21 @@ Be specific and practical.`,
           <h2 style={{ font: '400 28px Libre Caslon Display, serif', margin: '0 0 6px', letterSpacing: '-.02em' }}>Autonomous Build Pipeline</h2>
           <p style={{ color: '#666', fontSize: 14, margin: 0, maxWidth: 600 }}>Step-by-step timeline guided by AI. Discover top performers, clone them, generate logo/brand/web packs, build the website, and launch — all at maximum quality.</p>
         </div>
-        {seedStatus === 'empty' && (
-          <button onClick={seedLibrary} className="btn gold" style={{ fontSize: 13, padding: '10px 18px' }}>
-            <Sparkles size={14} style={{ display: 'inline', marginRight: 6 }} /> Seed Prompt Library
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+          {seedStatus === 'empty' && (
+            <button onClick={seedLibrary} className="btn gold" style={{ fontSize: 13, padding: '10px 18px' }}>
+              <Sparkles size={14} style={{ display: 'inline', marginRight: 6 }} /> Seed Prompt Library
+            </button>
+          )}
+          {seedStatus === 'seeded' && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#237A4B', fontWeight: 600 }}>
+              <CheckCircle2 size={14} /> Prompt Library Active
+            </div>
+          )}
+          <button onClick={runFullPipeline} disabled={fullRunning} style={{ padding: '11px 22px', borderRadius: 6, fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: fullRunning ? 'wait' : 'pointer', background: fullRunning ? '#555' : 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111', border: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+            {fullRunning ? <><Loader2 size={15} className="animate-spin" /> Running Full Pipeline…</> : <><Zap size={15} /> Run Full Pipeline</>}
           </button>
-        )}
-        {seedStatus === 'seeded' && (
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: '#237A4B', fontWeight: 600 }}>
-            <CheckCircle2 size={14} /> Prompt Library Active
-          </div>
-        )}
+        </div>
       </div>
 
       {/* Timeline */}
@@ -237,7 +321,7 @@ Be specific and practical.`,
                     </button>
                     <button
                       onClick={() => runStep(step.id)}
-                      disabled={isRunning}
+                      disabled={isRunning || fullRunning}
                       style={{ padding: '8px 16px', borderRadius: 6, fontSize: 12, fontWeight: 700, fontFamily: 'inherit', cursor: isRunning ? 'wait' : 'pointer', background: isRunning ? '#ccc' : '#0a0a0a', color: '#fff', border: 0, display: 'flex', alignItems: 'center', gap: 5 }}
                     >
                       {isRunning ? <Loader2 size={13} className="animate-spin" /> : isComplete ? <CheckCircle2 size={13} /> : <ArrowRight size={13} />}
@@ -321,6 +405,16 @@ Be specific and practical.`,
                     {step.id === 'webpack' && 'Web pack generated'}
                     {step.id === 'website' && 'Website generated'}
                     {step.id === 'launch' && `Launch project queued — ${state.result.launch_project_id?.slice(0, 8)}…`}
+                  </div>
+                )}
+                {step.id === 'website' && isComplete && state.result?.file_url && (
+                  <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <a href={state.result.file_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 13px', borderRadius: 6, fontSize: 12, fontWeight: 700, background: '#0a0a0a', color: '#fff', textDecoration: 'none' }}>
+                      <Globe size={13} /> Preview Cloned Site
+                    </a>
+                    <Link to="/app/deliverable-studio" style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '7px 13px', borderRadius: 6, fontSize: 12, fontWeight: 700, background: '#f8f7f4', border: '1px solid #e5e1da', color: '#333', textDecoration: 'none' }}>
+                      <ExternalLink size={13} /> Open in Deliverable Studio
+                    </Link>
                   </div>
                 )}
               </div>
