@@ -63,6 +63,7 @@ async function runEngine(base44, orgId, p) {
   const log = [];
   const add = (m) => log.push(`${new Date().toISOString()} — ${m}`);
   let score = 0, failures = [], urls = {}, launchProjectId = p.launch_project_id, targetDna = null, bizName = p.business_name, progress = 0, prevFailureSig = null;
+  const scoreHistory = [];
   const progressHistory = [];
   const setProgress = async (pct, stageLabel) => {
     progress = pct;
@@ -231,6 +232,20 @@ async function runEngine(base44, orgId, p) {
         break;
       }
       prevFailureSig = failureSig;
+
+      // SCORE PLATEAU DETECTION: if the score hasn't improved by more than 3 points
+      // over the last 2 iterations, further re-cloning won't help — stop early to
+      // save credits and avoid infinite loops on targets that are fundamentally hard
+      // to clone (e.g., sites that are down, JS-only SPAs, bot-blocked targets).
+      scoreHistory.push(score);
+      if (scoreHistory.length >= 2) {
+        const lastTwo = scoreHistory.slice(-2);
+        const improvement = lastTwo[1] - lastTwo[0];
+        if (improvement < 3 && i < maxIter) {
+          add(`Iteration ${i}: score plateau (${lastTwo.join(' → ')}, Δ${improvement}) — stopping early to save credits`);
+          break;
+        }
+      }
 
       // AUTO-FIX: re-run deterministic clone (re-hosts any failed images, re-swaps branding)
       // or fall back to LLM generation with fix guidance.

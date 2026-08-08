@@ -31,17 +31,24 @@ export default async function(req) {
 
     // 2. Browserbase screenshots of BOTH the clone and the original target
     //    (stealth session + CDP capture — returns base64 PNG)
+    //    Run in PARALLEL to halve validation time (was sequential = 60s, now ~30s)
     let cloneScreenshotB64 = null, targetScreenshotB64 = null;
     let cloneRendered = '', targetRendered = '';
-    try {
-      const cloneBB = await fetchRenderedWithScreenshot(live_url, { timeout: 30000 });
-      if (cloneBB) { cloneScreenshotB64 = cloneBB.screenshot; cloneRendered = cloneBB.html || ''; }
-    } catch (e) { console.error('Clone screenshot failed:', e.message); }
-    if (target_url) {
-      try {
-        const targetBB = await fetchRenderedWithScreenshot(target_url, { timeout: 30000 });
-        if (targetBB) { targetScreenshotB64 = targetBB.screenshot; targetRendered = targetBB.html || ''; }
-      } catch (e) { console.error('Target screenshot failed:', e.message); }
+    const [cloneBB, targetBB] = await Promise.allSettled([
+      fetchRenderedWithScreenshot(live_url, { timeout: 20000 }),
+      target_url ? fetchRenderedWithScreenshot(target_url, { timeout: 20000 }) : Promise.resolve(null)
+    ]);
+    if (cloneBB.status === 'fulfilled' && cloneBB.value) {
+      cloneScreenshotB64 = cloneBB.value.screenshot;
+      cloneRendered = cloneBB.value.html || '';
+    } else if (cloneBB.status === 'rejected') {
+      console.error('Clone screenshot failed:', cloneBB.reason?.message || cloneBB.reason);
+    }
+    if (targetBB.status === 'fulfilled' && targetBB.value) {
+      targetScreenshotB64 = targetBB.value.screenshot;
+      targetRendered = targetBB.value.html || '';
+    } else if (targetBB.status === 'rejected') {
+      console.error('Target screenshot failed:', targetBB.reason?.message || targetBB.reason);
     }
 
     // 2b. Upload base64 screenshots to storage so the vision LLM can fetch them
@@ -104,7 +111,7 @@ Below 70 = significantly different
 Return a visual_score (0-100), a list of specific visual_failures (each with a description of what doesn't match and how to fix it), and a summary.
 
 Be STRICT. Only award 100 when the clone truly looks identical to the target. List every visual difference you can spot.`,
-        model: 'gemini_3_1_pro',
+        model: 'gemini_3_flash',
         add_context_from_internet: false,
         file_urls: fileUrls,
         response_json_schema: {
