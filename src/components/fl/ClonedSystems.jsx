@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Copy, ExternalLink, Loader2, Rocket, Globe, Cloud, Github, Database, RefreshCw } from 'lucide-react';
+import { Copy, ExternalLink, Loader2, Rocket, Globe, Cloud, Github, Database, RefreshCw, FileText } from 'lucide-react';
+import BenchmarkReport from './BenchmarkReport';
 
 const CAT_LABEL = {
   epoxy_metallic: 'Metallic Epoxy', epoxy_flake: 'Flake Epoxy', epoxy_quartz: 'Quartz Epoxy',
@@ -13,6 +14,7 @@ export default function ClonedSystems() {
   const [launches, setLaunches] = useState([]);
   const [loading, setLoading] = useState(true);
   const [resuming, setResuming] = useState(null);
+  const [reportProject, setReportProject] = useState(null);
 
   const load = useCallback(async () => {
     try {
@@ -99,7 +101,9 @@ export default function ClonedSystems() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
             {launches.map(p => {
               const vercelUrl = p.vercel_deployment_url || p.vercel_project_url;
+              const benchmarkUrl = p.benchmark_url || p.metadata?.target_url;
               const proofLinks = [
+                { url: benchmarkUrl, Icon: ExternalLink, label: 'Benchmark', color: '#C89B3C' },
                 { url: p.drive_folder_url, Icon: Cloud, label: 'Drive', color: '#4285F4' },
                 { url: p.github_repo_url, Icon: Github, label: 'GitHub', color: '#181717' },
                 { url: vercelUrl, Icon: Globe, label: p.vercel_deployment_url ? 'Live Site' : 'Vercel', color: '#000' },
@@ -128,6 +132,9 @@ export default function ClonedSystems() {
                     </div>
                   )}
                   {p.domain_name && <small style={{ fontSize: 11, color: '#888' }}>{p.domain_name}</small>}
+                  <button onClick={() => setReportProject(p)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 12px', borderRadius: 6, background: '#f4f1ea', color: '#8A641C', fontSize: 12, fontWeight: 700, border: '1px solid #d9c8aa', cursor: 'pointer', fontFamily: 'inherit' }}>
+                    <FileText size={14} /> Discovery Report
+                  </button>
                   {p.vercel_deployment_url ? (
                     <a href={p.vercel_deployment_url} target="_blank" rel="noreferrer" style={{ marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 12px', borderRadius: 6, background: 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
                       <Globe size={14} /> View Live Site
@@ -143,6 +150,7 @@ export default function ClonedSystems() {
           </div>
         </div>
       )}
+      {reportProject && <BenchmarkReport project={reportProject} onClose={() => setReportProject(null)} />}
     </div>
   );
 }
