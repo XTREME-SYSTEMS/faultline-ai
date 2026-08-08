@@ -30,18 +30,39 @@ export default async function(req) {
     };
 
     // 2. Browserbase screenshots of BOTH the clone and the original target
-    let cloneScreenshot = null, targetScreenshot = null;
+    //    (stealth session + CDP capture — returns base64 PNG)
+    let cloneScreenshotB64 = null, targetScreenshotB64 = null;
     let cloneRendered = '', targetRendered = '';
     try {
       const cloneBB = await fetchRenderedWithScreenshot(live_url, { timeout: 30000 });
-      if (cloneBB) { cloneScreenshot = cloneBB.screenshot; cloneRendered = cloneBB.html || ''; }
+      if (cloneBB) { cloneScreenshotB64 = cloneBB.screenshot; cloneRendered = cloneBB.html || ''; }
     } catch (e) { console.error('Clone screenshot failed:', e.message); }
     if (target_url) {
       try {
         const targetBB = await fetchRenderedWithScreenshot(target_url, { timeout: 30000 });
-        if (targetBB) { targetScreenshot = targetBB.screenshot; targetRendered = targetBB.html || ''; }
+        if (targetBB) { targetScreenshotB64 = targetBB.screenshot; targetRendered = targetBB.html || ''; }
       } catch (e) { console.error('Target screenshot failed:', e.message); }
     }
+
+    // 2b. Upload base64 screenshots to storage so the vision LLM can fetch them
+    const uploadScreenshot = async (b64, label) => {
+      if (!b64) return null;
+      // Already a URL? (Fetch API fallback returns URLs)
+      if (typeof b64 === 'string' && b64.startsWith('http')) return b64;
+      try {
+        const bytes = atob(b64);
+        const arr = new Uint8Array(bytes.length);
+        for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+        const blob = new Blob([arr], { type: 'image/png' });
+        const file = new File([blob], `${label}-${Date.now()}.png`, { type: 'image/png' });
+        const { file_url } = await base44.integrations.Core.UploadFile({ file });
+        return file_url;
+      } catch (e) { console.error(`${label} upload failed: ${e.message}`); return null; }
+    };
+    const [cloneScreenshot, targetScreenshot] = await Promise.all([
+      uploadScreenshot(cloneScreenshotB64, 'clone'),
+      uploadScreenshot(targetScreenshotB64, 'target')
+    ]);
 
     // 3. Vision LLM comparison of the two screenshots (real visual parity)
     let visualScore = 0;

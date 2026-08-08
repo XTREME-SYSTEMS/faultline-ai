@@ -110,27 +110,44 @@ export async function smartFetchPage(url, basicFetchFn, options = {}) {
   return basic;
 }
 
-// Fetch with Browserbase and take a screenshot (for headless testing evidence)
+// Fetch with Browserbase and take a screenshot (for visual parity validation).
+// Uses the stealth Sessions API + CDP Page.captureScreenshot for reliable full-page
+// screenshots (the Fetch API screenshot endpoint is unreliable — known 500s).
+// Returns base64 PNG in `screenshot` (caller uploads to get a URL for LLM vision).
 export async function fetchRenderedWithScreenshot(url, options = {}) {
+  try {
+    const { scrapeWithStealth } = await import('./stealthBrowser.ts');
+    const result = await scrapeWithStealth(url, {
+      screenshot: true,
+      fullPageScreenshot: true,
+      timeout: options.timeout || 30000,
+      waitAfterLoad: 3000,
+      solveCaptchas: true,
+      proxies: true,
+    });
+    if (result.ok || result.screenshot) {
+      return {
+        html: result.html || '',
+        screenshot: result.screenshot || null,  // base64 PNG data
+        status: result.status || 200,
+        ok: result.ok,
+        rendered: true
+      };
+    }
+  } catch (e) {
+    console.error(`Stealth screenshot failed for ${url}: ${e.message}`);
+  }
+
+  // Fallback: Fetch API with screenshot flag
   const apiKey = Deno.env.get('BROWSERBASE_API_KEY');
   if (!apiKey) return null;
-
   try {
     const res = await fetch(BB_API, {
       method: 'POST',
-      headers: {
-        'x-bb-api-key': apiKey,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        url,
-        format: 'raw',
-        screenshot: true,
-        ...options
-      }),
+      headers: { 'x-bb-api-key': apiKey, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, format: 'raw', screenshot: true, ...options }),
       signal: AbortSignal.timeout(options.timeout || 30000)
     });
-
     if (!res.ok) return null;
     const data = await res.json();
     return {
