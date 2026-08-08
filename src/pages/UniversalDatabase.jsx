@@ -149,7 +149,7 @@ export default function UniversalDatabase() {
         {/* LEFT — tool menu */}
         <aside style={{ borderRight: '1px solid var(--db-border)', background: 'var(--db-surface)', display: 'flex', flexDirection: 'column', height: '100vh', position: 'sticky', top: 0 }}>
           <div style={{ padding: '18px 18px 16px', borderBottom: '1px solid var(--db-border)', display: 'flex', alignItems: 'center', gap: 10 }}>
-            <img src={LOGO_LIGHT} alt="Xtreme AI Systems" style={{ height: 30, width: 'auto' }} />
+            <img src={LOGO_LIGHT} alt="Xtreme AI Systems" style={{ height: 120, width: 'auto' }} />
           </div>
           <nav style={{ flex: 1, overflow: 'auto', padding: '8px 8px' }}>
             <div style={{ fontSize: 9, fontWeight: 800, color: 'var(--db-muted)', textTransform: 'uppercase', letterSpacing: '.14em', padding: '8px 10px 4px' }}>Pages</div>
