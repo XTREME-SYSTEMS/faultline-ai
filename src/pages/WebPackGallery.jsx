@@ -64,7 +64,7 @@ export default function WebPackGallery() {
       <main style={{ maxWidth: 1280, margin: '0 auto', padding: '36px 24px 80px' }}>
         <div style={{ marginBottom: 32 }}>
           <p style={{ color: '#FFD60A', fontSize: 12, fontWeight: 800, letterSpacing: '.16em', textTransform: 'uppercase', margin: '0 0 10px' }}>Design Packs · Web</p>
-          <h1 style={{ font: "400 clamp(34px,4vw,52px)/1 'Libre Caslon Display', serif", letterSpacing: '-.035em', margin: 0 }}>5 Web Packs for Approval</h1>
+          <h1 style={{ font: "400 clamp(34px,4vw,52px)/1 'Libre Caslon Display', serif", letterSpacing: '-.035em', margin: 0 }}>{packs.length} Web Packs for Approval</h1>
           <p style={{ color: '#9a9a9e', fontSize: 16, lineHeight: 1.6, maxWidth: 620, margin: '12px 0 0' }}>Each pack is a complete, production-ready website design spec — colors, fonts, pages, and components. Review the reference image, then approve the one that fits.</p>
         </div>
 
