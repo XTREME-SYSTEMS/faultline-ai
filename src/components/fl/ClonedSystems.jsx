@@ -47,10 +47,14 @@ export default function ClonedSystems() {
     }
   };
 
-  const handleDelete = async (p) => {
-    setDeleting(p.id);
+  const handleDelete = async (item) => {
+    setDeleting(item.id);
     try {
-      await base44.entities.LaunchProject.delete(p.id);
+      if (item.type === 'catalog') {
+        await base44.entities.UniversalCatalog.delete(item.id);
+      } else {
+        await base44.entities.LaunchProject.delete(item.id);
+      }
       setConfirmDelete(null);
       await load();
     } catch (e) {
@@ -93,7 +97,12 @@ export default function ClonedSystems() {
               <div key={c.id} style={{ background: '#fff', border: '1px solid #e5e1da', borderRadius: 8, padding: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
                   <b style={{ fontSize: 13, lineHeight: 1.3 }}>{c.name}</b>
-                  {c.url && <a href={c.url} target="_blank" rel="noreferrer" style={{ color: 'var(--gold)', flexShrink: 0 }}><ExternalLink size={14} /></a>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                    {c.url && <a href={c.url} target="_blank" rel="noreferrer" style={{ color: 'var(--gold)' }}><ExternalLink size={14} /></a>}
+                    <button onClick={() => setConfirmDelete({ ...c, type: 'catalog' })} title="Delete cloned system" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: 5, border: '1px solid #e5d8d5', background: '#fff', color: '#a52d23', cursor: 'pointer', padding: 0 }}>
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   <span style={{ fontSize: 10, background: '#f4f1ea', color: '#8A641C', padding: '2px 8px', borderRadius: 10 }}>{CAT_LABEL[c.category] || c.category}</span>
@@ -133,7 +142,7 @@ export default function ClonedSystems() {
                     <b style={{ fontSize: 13, lineHeight: 1.3 }}>{p.project_name}</b>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
                       <span style={{ fontSize: 10, padding: '2px 8px', borderRadius: 10, background: p.status === 'passed' ? '#e6f4ec' : p.status === 'failed' ? '#f5d8d5' : '#f8e5ce', color: p.status === 'passed' ? '#237A4B' : p.status === 'failed' ? '#a52d23' : '#8A641C' }}>{p.status}</span>
-                      <button onClick={() => setConfirmDelete(p)} title="Delete project" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: 5, border: '1px solid #e5d8d5', background: '#fff', color: '#a52d23', cursor: 'pointer', padding: 0 }}>
+                      <button onClick={() => setConfirmDelete({ ...p, type: 'launch' })} title="Delete project" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: 24, height: 24, borderRadius: 5, border: '1px solid #e5d8d5', background: '#fff', color: '#a52d23', cursor: 'pointer', padding: 0 }}>
                         <Trash2 size={12} />
                       </button>
                     </div>
@@ -183,7 +192,7 @@ export default function ClonedSystems() {
               </div>
               <div>
                 <b style={{ fontSize: 17, display: 'block', marginBottom: 6 }}>Delete this project?</b>
-                <small style={{ fontSize: 13, color: '#888', lineHeight: 1.5 }}>"{confirmDelete.project_name}" will be permanently removed. This cannot be undone.</small>
+                <small style={{ fontSize: 13, color: '#888', lineHeight: 1.5 }}>"{confirmDelete.type === 'catalog' ? confirmDelete.name : confirmDelete.project_name}" will be permanently removed. This cannot be undone.</small>
               </div>
               <div style={{ display: 'flex', gap: 10, marginTop: 8, width: '100%' }}>
                 <button onClick={() => setConfirmDelete(null)} disabled={deleting === confirmDelete.id} style={{ flex: 1, padding: '12px 20px', borderRadius: 6, fontSize: 14, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer', background: '#f0ede5', color: '#333', border: '1px solid #ddd' }}>
