@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { fetchPageDeep } from '../../shared/deepScraper.ts';
 import { fetchRenderedPage, fetchRenderedWithScreenshot } from '../../shared/browserbase.ts';
+import { scrapeWithStealth } from '../../shared/stealthBrowser.ts';
 
 // Deterministic clone: instead of asking an LLM to reconstruct a website from a
 // screenshot (which can never achieve 100% visual parity), this function takes the
@@ -27,16 +28,37 @@ export default async function(req) {
     if (!target_url) return Response.json({ error: 'target_url required' }, { status: 400 });
     const targetOrg = organization_id || orgId;
 
-    // 1. Scrape target — fully rendered HTML
+    // 1. Scrape target — fully rendered HTML via stealth browser with deep render
+    //    (scroll + lazy-load resolution + computed background extraction) to capture
+    //    ALL images including JS-rendered hero backgrounds, slider content, and
+    //    lazy-loaded galleries that are missing from static HTML.
     let html = '';
     let fetchMethod = 'failed';
-    const basic = await fetchPageDeep(target_url, 20000);
-    html = basic.html || '';
-    fetchMethod = basic.stealth ? 'stealth' : basic.ok ? 'basic' : 'failed';
+    try {
+      const stealthResult = await scrapeWithStealth(target_url, {
+        deepRender: true,
+        timeout: 45000,
+        waitAfterLoad: 3000,
+        solveCaptchas: true,
+        proxies: true,
+      });
+      if (stealthResult.ok && stealthResult.html && stealthResult.html.length > 500) {
+        html = stealthResult.html;
+        fetchMethod = 'stealth';
+      }
+    } catch (e) { console.error('Stealth scrape failed:', e.message); }
+    // Fallback to basic fetch if stealth fails
     if (html.length < 2000) {
-      const rendered = await fetchRenderedPage(target_url, { timeout: 30000 });
-      if (rendered && rendered.html && rendered.html.length > html.length) {
-        html = rendered.html; fetchMethod = 'browserbase';
+      const basic = await fetchPageDeep(target_url, 20000);
+      if (basic.html && basic.html.length > html.length) {
+        html = basic.html;
+        fetchMethod = basic.stealth ? 'stealth' : basic.ok ? 'basic' : 'failed';
+      }
+      if (html.length < 2000) {
+        const rendered = await fetchRenderedPage(target_url, { timeout: 30000 });
+        if (rendered && rendered.html && rendered.html.length > html.length) {
+          html = rendered.html; fetchMethod = 'browserbase';
+        }
       }
     }
     if (html.length < 500) return Response.json({ error: `Could not fetch target HTML (${html.length} chars)`, fetchMethod }, { status: 502 });
@@ -49,7 +71,7 @@ export default async function(req) {
       try { cssUrls.push(new URL(lm[1], target_url).href); } catch {}
     }
     if (cssUrls.length > 0) {
-      const cssResults = await Promise.all(cssUrls.slice(0, 6).map(async cu => {
+      const cssResults = await Promise.all(cssUrls.slice(0, 12).map(async cu => {
         try {
           const cr = await fetch(cu, {
             headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36' },
@@ -60,36 +82,55 @@ export default async function(req) {
       }));
       styleText = cssResults.join('\n');
     }
+    // Resolve relative URLs in CSS to absolute (so re-host replacement works for
+    // background-image URLs in external stylesheets that use relative paths)
+    styleText = styleText.replace(/url\(["']?([^"')]+)["']?\)/gi, (match, url) => {
+      if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) return match;
+      if (url.startsWith('//')) return `url(${new URL('https:' + url, target_url).href})`;
+      try { return `url(${new URL(url, target_url).href})`; } catch { return match; }
+    });
 
     // 3. Extract all image URLs from HTML + CSS + inline styles
+    //    Track ALL URL variants (original string + normalized) so we can replace
+    //    both versions in the HTML/CSS. new URL().href normalizes URLs (e.g.,
+    //    encodes / as %2F in query params), but the HTML has the original strings.
     const imageUrls = new Set<string>();
+    const urlVariants = {}; // normalized → Set of original strings
+    const addImageUrl = (orig) => {
+      try {
+        const normalized = new URL(orig, target_url).href;
+        imageUrls.add(normalized);
+        if (!urlVariants[normalized]) urlVariants[normalized] = new Set();
+        urlVariants[normalized].add(orig);
+      } catch {}
+    };
     // HTML <img src="..."> (including data-src for lazy-loaded images)
     const imgRe = /<img[^>]+(?:src|data-src|data-lazy-src|data-original)=["']([^"']+)["']/gi; let im;
     while ((im = imgRe.exec(html)) !== null) {
-      try { if (!im[1].startsWith('data:')) imageUrls.add(new URL(im[1], target_url).href); } catch {}
+      if (!im[1].startsWith('data:')) addImageUrl(im[1]);
     }
     // CSS background-image: url(...) in external stylesheets
     const bgRe = /url\(["']?([^"')]+)["']?\)/gi; let bm;
     while ((bm = bgRe.exec(styleText)) !== null) {
-      try { if (/\.(jpg|jpeg|png|gif|webp|svg|avif)/i.test(bm[1])) imageUrls.add(new URL(bm[1], target_url).href); } catch {}
+      if (/\.(jpg|jpeg|png|gif|webp|svg|avif)/i.test(bm[1])) addImageUrl(bm[1]);
     }
     // Inline style="background-image: url(...)" in HTML (hero sections, etc.)
     const inlineBgRe = /style=["'][^"']*background-image\s*:\s*url\(["']?([^"')]+)["']?\)[^"']*["']/gi; let ibm;
     while ((ibm = inlineBgRe.exec(html)) !== null) {
-      try { if (!ibm[1].startsWith('data:')) imageUrls.add(new URL(ibm[1], target_url).href); } catch {}
+      if (!ibm[1].startsWith('data:')) addImageUrl(ibm[1]);
     }
     // <source srcset="..."> and data-srcset
     const srcsetRe = /(?:srcset|data-srcset)=["']([^"']+)["']/gi; let sm;
     while ((sm = srcsetRe.exec(html)) !== null) {
       sm[1].split(',').forEach(s => {
         const u = s.trim().split(/\s+/)[0];
-        if (u && !u.startsWith('data:')) { try { imageUrls.add(new URL(u, target_url).href); } catch {} }
+        if (u && !u.startsWith('data:')) addImageUrl(u);
       });
     }
     // <link rel="preload" as="image" href="...">
     const preloadRe = /<link[^>]+rel=["']preload["'][^>]+as=["']image["'][^>]+href=["']([^"']+)["']/gi; let pm;
     while ((pm = preloadRe.exec(html)) !== null) {
-      try { if (!pm[1].startsWith('data:')) imageUrls.add(new URL(pm[1], target_url).href); } catch {}
+      if (!pm[1].startsWith('data:')) addImageUrl(pm[1]);
     }
 
     // 4. Re-host images (download from target → upload to our storage)
@@ -150,12 +191,31 @@ export default async function(req) {
     console.log(`Re-hosted ${rehostedCount}/${imagesToRehost.length} images`);
 
     // 5. Replace all image URLs in HTML + CSS with our hosted versions
+    //    Expand the rehost map with ALL original URL variants (the HTML/CSS may
+    //    contain the original non-normalized URL string, the normalized version,
+    //    or a relative path — all must map to the same re-hosted URL).
+    //    Sort by length (longest first) so absolute URLs are replaced BEFORE
+    //    relative paths — prevents malformed URLs like https://target.comhttps://ours.com
+    const expandedRehostMap = {};
+    for (const [normalized, ours] of Object.entries(rehostMap)) {
+      expandedRehostMap[normalized] = ours;
+      const variants = urlVariants[normalized];
+      if (variants) {
+        for (const orig of variants) {
+          if (orig !== normalized) expandedRehostMap[orig] = ours;
+        }
+      }
+      // DON'T add the relative path (pathname + search) as a separate key —
+      // it can match inside absolute URLs and create malformed URLs like
+      // https://target.comhttps://ours.com. The original URL strings from
+      // urlVariants already cover both absolute and relative forms.
+    }
+    const sortedKeys = Object.keys(expandedRehostMap).sort((a, b) => b.length - a.length);
     let clonedHtml = html;
     let clonedCss = styleText;
-    for (const [orig, ours] of Object.entries(rehostMap)) {
-      // Replace in HTML (covers src, data-src, srcset, data-srcset, inline styles, preload)
+    for (const orig of sortedKeys) {
+      const ours = expandedRehostMap[orig];
       clonedHtml = clonedHtml.split(orig).join(ours);
-      // Replace in CSS
       clonedCss = clonedCss.split(orig).join(ours);
     }
     // Handle relative URLs in srcset/data-srcset that weren't caught by the absolute URL replacement
@@ -163,7 +223,7 @@ export default async function(req) {
       return attr + '="' + val.split(',').map(s => {
         const parts = s.trim().split(/\s+/);
         const u = parts[0];
-        try { const abs = new URL(u, target_url).href; return (rehostMap[abs] || abs) + (parts[1] ? ' ' + parts[1] : ''); }
+        try { const abs = new URL(u, target_url).href; return (expandedRehostMap[abs] || expandedRehostMap[u] || abs) + (parts[1] ? ' ' + parts[1] : ''); }
         catch { return s; }
       }).join(', ') + '"';
     });
@@ -252,13 +312,23 @@ export default async function(req) {
       clonedHtml += formScript;
     }
 
-    // 9. Clean up: remove external scripts (they reference the target's JS which won't work)
-    //    Keep inline scripts (interactivity). Remove <script src="..."> pointing to target.
+    // 9. Remove ALL external scripts. The deep render already captured the fully
+    //    rendered DOM (all JS-rendered content is in the HTML). Keeping external
+    //    scripts (especially Next.js bundles) causes re-hydration which injects
+    //    different content than the captured DOM — creating visual artifacts like
+    //    extra icons, wrong backgrounds, and mismatched elements. A static snapshot
+    //    of the rendered DOM achieves higher visual parity than a re-hydrated page.
     clonedHtml = clonedHtml.replace(/<script[^>]+src=["']([^"']+)["'][^>]*><\/script>/gi, (match, src) => {
-      // Keep analytics/tracking scripts removed; keep our form handler
-      if (src.includes('ingestCloneLead')) return match;
-      return ''; // Remove external scripts from target
+      if (src.includes('ingestCloneLead')) return match; // keep our form handler
+      return ''; // remove all external scripts
     });
+
+    // Add DOCTYPE if missing (stealth browser returns document.documentElement.outerHTML
+    // which doesn't include the DOCTYPE declaration — without it, browsers render in
+    // quirks mode which breaks modern CSS layout)
+    if (!/<!doctype/i.test(clonedHtml)) {
+      clonedHtml = '<!DOCTYPE html>\n' + clonedHtml;
+    }
 
     // 10. Save as Deliverable
     let fileUrl = null;

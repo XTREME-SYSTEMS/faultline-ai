@@ -120,6 +120,7 @@ export async function fetchRenderedWithScreenshot(url, options = {}) {
     const result = await scrapeWithStealth(url, {
       screenshot: true,
       fullPageScreenshot: true,
+      deepRender: true,
       timeout: options.timeout || 30000,
       waitAfterLoad: 3000,
       solveCaptchas: true,

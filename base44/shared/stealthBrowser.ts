@@ -24,6 +24,7 @@ export interface StealthOptions {
   waitAfterLoad?: number;    // extra wait for SPA content (ms)
   screenshot?: boolean;
   fullPageScreenshot?: boolean;
+  deepRender?: boolean;       // scroll + resolve lazy images + extract computed backgrounds
   geoCountry?: string;       // proxy geolocation country
   geoState?: string;
   geoCity?: string;
@@ -248,6 +249,92 @@ export async function scrapeWithStealth(url: string, options: StealthOptions = {
     // Extra wait for SPA / dynamic content
     const waitAfter = options.waitAfterLoad ?? 2500;
     if (waitAfter > 0) await new Promise(r => setTimeout(r, waitAfter));
+
+    // Deep render: scroll through page, resolve lazy-loaded images, extract computed
+    // background images, and wait for all images to finish loading. This captures
+    // JS-rendered images (hero backgrounds, slider content, lazy-loaded galleries)
+    // that are missing from the static HTML — essential for 100/100 visual parity.
+    if (options.deepRender) {
+      try {
+        const deepJs = `(async () => {
+          // 1. Scroll through page to trigger lazy loading
+          var totalHeight = document.body.scrollHeight;
+          var step = 800;
+          for (var y = 0; y < totalHeight; y += step) {
+            window.scrollTo(0, y);
+            await new Promise(r => setTimeout(r, 200));
+          }
+          window.scrollTo(0, 0);
+          await new Promise(r => setTimeout(r, 500));
+
+          // 2. Promote data-src variants to src
+          document.querySelectorAll('img[data-src]').forEach(function(img) {
+            if (img.dataset.src) img.src = img.dataset.src;
+          });
+          document.querySelectorAll('img[data-lazy-src]').forEach(function(img) {
+            if (img.dataset.lazySrc) img.src = img.dataset.lazySrc;
+          });
+          document.querySelectorAll('img[data-original]').forEach(function(img) {
+            if (img.dataset.original) img.src = img.dataset.original;
+          });
+
+          // 2b. Promote data-src on iframes (lazy-loaded video embeds)
+          document.querySelectorAll('iframe[data-src]').forEach(function(iframe) {
+            if (iframe.dataset.src) iframe.src = iframe.dataset.src;
+          });
+          document.querySelectorAll('iframe[data-lazy-src]').forEach(function(iframe) {
+            if (iframe.dataset.lazySrc) iframe.src = iframe.dataset.lazySrc;
+          });
+
+          // 3. Handle srcset — set the largest URL as src if missing/placeholder
+          document.querySelectorAll('img[srcset]').forEach(function(img) {
+            if (!img.src || img.src.indexOf('data:image') === 0) {
+              var srcset = img.getAttribute('srcset') || '';
+              var urls = srcset.split(',').map(function(s) { return s.trim().split(/\\s+/)[0]; }).filter(Boolean);
+              if (urls.length > 0) img.src = urls[urls.length - 1];
+            }
+          });
+
+          // 4. Extract computed background images and set as inline style
+          //    ONLY for visible elements with non-zero dimensions (avoids injecting
+          //    backgrounds from hidden/unused elements that would appear as visual noise)
+          var bgCount = 0;
+          document.querySelectorAll('*').forEach(function(el) {
+            try {
+              if (el.offsetWidth === 0 || el.offsetHeight === 0) return;
+              var style = getComputedStyle(el);
+              if (style.display === 'none' || style.visibility === 'hidden' || parseFloat(style.opacity) === 0) return;
+              var bg = style.backgroundImage;
+              if (bg && bg !== 'none' && bg.indexOf('url(') === 0) {
+                el.style.backgroundImage = bg;
+                bgCount++;
+              }
+            } catch (e) {}
+          });
+
+          // 5. Wait for all images to load
+          var imgs = Array.from(document.images);
+          await Promise.all(imgs.map(function(img) {
+            if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+            return new Promise(function(resolve) {
+              img.onload = img.onerror = resolve;
+              setTimeout(resolve, 3000);
+            });
+          }));
+
+          return JSON.stringify({ scrolled: totalHeight, bgInjected: bgCount, images: imgs.length });
+        })()`;
+
+        const deepResult = await cdp.send('Runtime.evaluate', {
+          expression: deepJs,
+          returnByValue: true,
+          awaitPromise: true,
+        }, sessionId, 60000);
+        console.log('Deep render:', deepResult?.result?.value || 'no result');
+      } catch (e) {
+        console.error('Deep render failed:', e.message);
+      }
+    }
 
     // Extract full rendered HTML
     const htmlResult = await cdp.send('Runtime.evaluate', {
