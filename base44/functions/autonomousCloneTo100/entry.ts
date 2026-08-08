@@ -128,26 +128,25 @@ async function runEngine(base44, orgId, p) {
       add(`Scraped ${bizName}: ${s.rendered_chars} chars, nav=${targetDna.nav?.length || 0}`);
       await setProgress(5, 'Target site scraped');
 
-      add('Generating benchmark discovery report…');
-      try {
-        await base44.functions.invoke('discoverBenchmarkSite', { target_url: p.target_url, industry: p.industry, business_name: bizName, launch_project_id: p.tracker_id });
-        add('Benchmark discovery report generated');
-      } catch (e) { add(`Benchmark report failed: ${e.message}`); }
-      await setProgress(8, 'Benchmark discovery report done');
+      add('Generating benchmark discovery report (background, non-blocking)…');
+      base44.functions.invoke('discoverBenchmarkSite', { target_url: p.target_url, industry: p.industry, business_name: bizName, launch_project_id: p.tracker_id }).then(() => add('Benchmark report generated (background)')).catch(e => add(`Benchmark report failed: ${e.message}`));
+      await setProgress(8, 'Benchmark report running in background');
 
       add('Inferring backend…');
       await base44.functions.invoke('inferTargetBackend', { target_url: p.target_url, industry: p.industry, scrape_result: s });
       add('Backend blueprint inferred');
       await setProgress(12, 'Backend blueprint inferred');
 
-      add('Generating clone (3-part)…');
+      add('Generating clone (3-part, parts 1 & 2 in parallel)…');
       const ws = { business_name: bizName, industry: p.industry, description: s.brief, primary_color: targetDna.primary, secondary_color: targetDna.secondary, target_dna: targetDna };
-      await setProgress(15, 'Generating clone — part 1 of 3…');
-      const p1 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' });
-      await setProgress(20, 'Generating clone — part 2 of 3…');
-      const p2 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' });
-      await setProgress(25, 'Generating clone — part 3 of 3…');
-      const p3 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'third_half', first_html: (p1.data || p1).html, second_html: (p2.data || p2).html });
+      await setProgress(15, 'Generating clone — parts 1 & 2 in parallel…');
+      const [p1r, p2r] = await Promise.all([
+        base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' }),
+        base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' })
+      ]);
+      const p1 = p1r.data || p1r, p2 = p2r.data || p2r;
+      await setProgress(25, 'Generating clone — part 3 (stitching)…');
+      const p3 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'third_half', first_html: p1.html, second_html: p2.html });
       let cloneHtml = (p3.data || p3).website_html;
       add(`Clone generated: ${cloneHtml.length} chars`);
       await setProgress(30, 'Clone HTML generated');
@@ -186,9 +185,12 @@ async function runEngine(base44, orgId, p) {
       add(`Iteration ${i}: auto-fixing — ${failures.slice(0, 3).join('; ')}…`);
       const fixHint = failures.join('. ');
       const ws = { business_name: bizName || 'Clone', industry: p.industry, description: p.brief || `Premium ${p.industry || ''} business website.`, primary_color: targetDna?.primary, secondary_color: targetDna?.secondary, target_dna: targetDna, fix_directives: fixHint };
-      const f1 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' });
-      const f2 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' });
-      const f3 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'third_half', first_html: (f1.data || f1).html, second_html: (f2.data || f2).html });
+      const [f1r, f2r] = await Promise.all([
+        base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' }),
+        base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' })
+      ]);
+      const f1 = f1r.data || f1r, f2 = f2r.data || f2r;
+      const f3 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'third_half', first_html: f1.html, second_html: f2.html });
       const fc = f3.data || f3;
       const br = await base44.functions.invoke('buildInferredBackend', { clone_html: fc.website_html, organization_id: orgId, clone_id: p.tracker_id });
       const b = br?.data || br;
@@ -198,7 +200,7 @@ async function runEngine(base44, orgId, p) {
       add(`Iteration ${i}: re-deployed to ${urls.vercel}`);
       await setProgress(55 + Math.round((i / maxIter) * 40) + 5, `Auto-fixed + re-deployed (iter ${i})`);
       await updateTracker(`Iter ${i}: auto-fixed + re-deployed`, score, { vercel_deployment_url: urls.vercel });
-      await new Promise(r => setTimeout(r, 6000)); // let Vercel settle before re-validation
+      await new Promise(r => setTimeout(r, 3000)); // let Vercel settle before re-validation
     }
 
     const passed = score >= 100;
