@@ -27,7 +27,8 @@ export default function ClonedSystems() {
     };
     load();
     // Live updates — refresh as the engine sets URLs and scores
-    const unsub = base44.entities.LaunchProject.subscribe(() => load());
+    let unsub = () => {};
+    try { unsub = base44.entities.LaunchProject.subscribe(() => load()); } catch (e) { /* subscribe not available */ }
     return unsub;
   }, []);
 
