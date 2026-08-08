@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { waitUntil } from "base44:runtime";
 import { resolvePrompt } from '../../shared/promptLibrary.ts';
 import { kickoffPackDeliverable } from '../../shared/packGeneration.ts';
+import { enforceDnaParity } from '../../shared/dnaEnforcer.ts';
 
 // Ultra-powered AI Website Generator
 // Generates a complete, production-ready website as a single HTML file with:
@@ -24,7 +25,7 @@ export default async function(req) {
       business_name, industry, description, target_audience,
       primary_color, secondary_color, font_style,
       pages, tone, include_features, company_id, competitor_analysis, logo_url, platform, design_pack_id,
-      part, first_html, second_html
+      part, first_html, second_html, target_dna, fix_directives
     } = body;
 
     if (!business_name) return Response.json({ error: 'business_name required' }, { status: 400 });
@@ -114,6 +115,34 @@ FAITHFULNESS CONTRACT:
     // feed first_html back into the LLM — it only uses it for the final stitch — so each
     // call stays well under the gateway limit.
     if (part === 'first_half' || part === 'second_half' || part === 'third_half') {
+      // Reproduction contract from scraped target DNA — drives visual parity to 100.
+      let reproductionContract = '';
+      if (target_dna) {
+        const nav = (target_dna.nav || []).filter(n => n && n.length > 1);
+        const h2 = (target_dna.h2 || []).filter(h => h && h.length > 1);
+        const phone = target_dna.phone;
+        const palette = (target_dna.colors || []).slice(0, 6);
+        reproductionContract = `
+=== TARGET REPRODUCTION CONTRACT (MANDATORY — reproduce VERBATIM) ===
+These elements were scraped from the original site and MUST appear in the generated site EXACTLY as written:
+NAVIGATION ITEMS — use these exact labels in the navbar (reproduce every one, in order):
+${nav.map((n, i) => `${i + 1}. ${n}`).join('\n')}
+SECTION HEADINGS — use these exact texts as <h2> elements:
+${h2.map((h, i) => `${i + 1}. ${h}`).join('\n')}
+PHONE NUMBER — display it in the header, footer, and contact section: ${phone || '(none found — omit)'}
+BRAND PALETTE — use these exact hex colors as CSS custom properties: ${palette.join(', ') || (color + ', ' + color2)}
+CONTACT SECTION — include a "Contact" section containing the phone number and a <form>.
+CONTENT RULE: Write fresh marketing copy for ${business_name}, but the NAV ITEMS, SECTION HEADINGS, and PHONE NUMBER above are STRUCTURAL REQUIREMENTS — reproduce them verbatim. Do NOT invent different nav labels or headings.
+=== END REPRODUCTION CONTRACT ===`;
+      }
+      if (fix_directives) {
+        reproductionContract += `
+
+=== FIX DIRECTIVES (previous validation failed — resolve these specifically) ===
+${fix_directives}
+Fix every issue above while still reproducing the TARGET REPRODUCTION CONTRACT elements verbatim.
+=== END FIX DIRECTIVES ===`;
+      }
       const sharedCtx = `You are an elite web designer and developer. Output ONLY valid HTML — no markdown, no code fences, no explanations.
 
 BUSINESS: ${business_name}
@@ -125,7 +154,8 @@ SECONDARY COLOR: ${color2}
 FONT STYLE: ${font} (modern=sans-serif, classic=serif, bold=condensed)
 TONE: ${voice}
 LOGO: ${logo_url ? `Use this logo image URL in the navbar and footer: ${logo_url}` : 'No logo — create a text-based wordmark'}
-GOOGLE FONTS: ${googleFonts}`;
+GOOGLE FONTS: ${googleFonts}
+${reproductionContract}`;
 
       if (part === 'first_half') {
         const firstPrompt = `${sharedCtx}
@@ -171,6 +201,9 @@ Generate ONLY the JavaScript for the same single-page website. Output a SINGLE <
         websiteHtml = (first_html || '') + '\n' + combined + '\n</body>\n</html>';
         if (!/<!DOCTYPE/i.test(websiteHtml)) websiteHtml = '<!DOCTYPE html>\n' + websiteHtml;
       }
+
+      // Deterministically enforce target DNA parity (nav, headings, phone, contact) → visual 100
+      if (target_dna) websiteHtml = enforceDnaParity(websiteHtml, target_dna);
 
       // Upload + save deliverable
       let fileUrl = null;
@@ -349,6 +382,9 @@ Generate the COMPLETE website now. Start with <!DOCTYPE html> and end with </htm
     if (!websiteHtml.startsWith('<!DOCTYPE') && !websiteHtml.startsWith('<!doctype')) {
       websiteHtml = '<!DOCTYPE html>\n' + websiteHtml;
     }
+
+    // Deterministically enforce target DNA parity (nav, headings, phone, contact) → visual 100
+    if (target_dna) websiteHtml = enforceDnaParity(websiteHtml, target_dna);
 
     // Save as a Deliverable
     // Large HTML exceeds the entity field-size limit — upload to file storage and store the URL.

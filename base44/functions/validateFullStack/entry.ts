@@ -31,8 +31,11 @@ export default async function(req) {
     const h2 = (target_dna?.h2 || []).filter(h => h && h.length > 1);
     const phone = target_dna?.phone;
     const stripRE = (s) => s.replace(/[^a-z0-9]/gi, '').slice(0, 15);
-    const navPresent = nav.filter(n => { const re = stripRE(n); return re && new RegExp(re, 'i').test(html); }).length;
-    const h2Present = h2.filter(h => { const re = stripRE(h); return re && new RegExp(re, 'i').test(html); }).length;
+    // Strip the HTML to pure alnum too, so multi-word nav items / headings (e.g.
+    // "Moisture Barriers") match even though the raw HTML has spaces between words.
+    const strippedHtml = html.replace(/[^a-z0-9]/gi, '');
+    const navPresent = nav.filter(n => { const re = stripRE(n); return re && new RegExp(re, 'i').test(strippedHtml); }).length;
+    const h2Present = h2.filter(h => { const re = stripRE(h); return re && new RegExp(re, 'i').test(strippedHtml); }).length;
     const phonePresent = phone ? new RegExp(phone.replace(/[^\d]/g, '').slice(0, 6)).test(html.replace(/[^\d]/g, '')) : true;
     const hasContact = /contact/i.test(html);
 

@@ -91,6 +91,7 @@ async function runEngine(base44, orgId, p) {
       p.target_url = proj.metadata?.target_url || p.target_url;
       p.industry = proj.industry || p.industry;
       bizName = proj.business_name || bizName;
+      p.brief = proj.metadata?.brief || p.brief;
       urls.vercel = proj.vercel_deployment_url || proj.metadata?.vercel_deployment_url;
       if (!targetDna && p.target_url) {
         add('Re-scraping for target DNA…');
@@ -114,7 +115,7 @@ async function runEngine(base44, orgId, p) {
       add('Backend blueprint inferred');
 
       add('Generating clone (3-part)…');
-      const ws = { business_name: bizName, industry: p.industry, description: s.brief, primary_color: targetDna.primary, secondary_color: targetDna.secondary };
+      const ws = { business_name: bizName, industry: p.industry, description: s.brief, primary_color: targetDna.primary, secondary_color: targetDna.secondary, target_dna: targetDna };
       const p1 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' });
       const p2 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' });
       const p3 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'third_half', first_html: (p1.data || p1).html, second_html: (p2.data || p2).html });
@@ -133,7 +134,7 @@ async function runEngine(base44, orgId, p) {
       if (ld.status !== 'success') throw new Error(`Launch failed: ${JSON.stringify(ld.errors)}`);
       urls = { drive: ld.results?.drive?.url, github: ld.results?.github?.url, supabase: ld.results?.supabase?.url, vercel: ld.results?.vercel?.deploy?.url || ld.results?.vercel?.deploy?.alias?.[0] };
       add(`Launched: ${urls.vercel}`);
-      await updateTracker(`Built + launched ${bizName}`, 0, { target_dna: targetDna, target_url: p.target_url, vercel_deployment_url: urls.vercel });
+      await updateTracker(`Built + launched ${bizName}`, 0, { target_dna: targetDna, target_url: p.target_url, vercel_deployment_url: urls.vercel, brief: s.brief });
     }
 
     // HEAL LOOP — validate -> fix -> re-deploy -> re-validate until 100 or max iterations
@@ -150,7 +151,7 @@ async function runEngine(base44, orgId, p) {
       // AUTO-FIX: regenerate with fix guidance + re-inject handler + re-deploy
       add(`Iteration ${i}: auto-fixing — ${failures.slice(0, 3).join('; ')}…`);
       const fixHint = failures.join('. ');
-      const ws = { business_name: bizName || 'Clone', industry: p.industry, description: `FIX these issues: ${fixHint}`, primary_color: targetDna?.primary, secondary_color: targetDna?.secondary };
+      const ws = { business_name: bizName || 'Clone', industry: p.industry, description: p.brief || `Premium ${p.industry || ''} business website.`, primary_color: targetDna?.primary, secondary_color: targetDna?.secondary, target_dna: targetDna, fix_directives: fixHint };
       const f1 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' });
       const f2 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' });
       const f3 = await base44.functions.invoke('generateWebsite', { ...ws, part: 'third_half', first_html: (f1.data || f1).html, second_html: (f2.data || f2).html });
