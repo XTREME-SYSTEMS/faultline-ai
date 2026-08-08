@@ -37,8 +37,8 @@ export default async function(req) {
     try {
       const stealthResult = await scrapeWithStealth(target_url, {
         deepRender: true,
-        timeout: 30000,
-        waitAfterLoad: 1500,
+        timeout: 45000,
+        waitAfterLoad: 8000,
         solveCaptchas: true,
         proxies: true,
       });
