@@ -1,5 +1,4 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { waitUntil } from 'base44:runtime';
 
 // Timeout wrapper — prevents generation/launch calls from hanging indefinitely.
 // If a sub-call exceeds the deadline, we reject and the engine's catch block
@@ -19,7 +18,7 @@ const withTimeout = (promise, ms, label) =>
 //  HEAL   — given launch_project_id: validate -> auto-fix -> re-deploy -> re-validate loop.
 //  SCAN   — given scan:true: find a project below 100 to heal, or a discovered performer to build.
 //
-// Runs in the background via waitUntil (the full loop exceeds the gateway timeout).
+// Always runs synchronously (waitUntil background processes get killed by the platform).
 // Live progress is written to a tracking LaunchProject each iteration; the final result
 // is logged to a QAReport + Receipt. Goal: 100/100 visual + operational parity, autonomously.
 export default async function(req) {
@@ -43,23 +42,17 @@ export default async function(req) {
       metadata: { autonomous: true, scan: params.scan, target_url: params.target_url }
     });
 
-    // Sync mode: run the full pipeline synchronously (no waitUntil) — for heal iterations
-    // where the caller wants the final result in the response (test_backend_function has no time limit).
-    if (body.sync) {
-      await runEngine(base44, orgId, { ...params, tracker_id: tracker.id, fix_directives: body.fix_directives });
-      const final = await base44.asServiceRole.entities.LaunchProject.get(tracker.id);
-      return Response.json({
-        status: 'completed', launch_project_id: tracker.id,
-        score: final.parity_score, progress: final.progress,
-        vercel_url: final.vercel_deployment_url,
-        summary: final.last_validation_summary
-      });
-    }
-
-    waitUntil(runEngine(base44, orgId, { ...params, tracker_id: tracker.id }));
+    // Always run synchronously — waitUntil background processes get killed by the
+    // platform before long-running clone/launch/validate operations complete.
+    // Sync mode ensures the full pipeline finishes within the function's lifetime
+    // (the function continues server-side even if the HTTP client disconnects).
+    await runEngine(base44, orgId, { ...params, tracker_id: tracker.id, fix_directives: body.fix_directives });
+    const final = await base44.asServiceRole.entities.LaunchProject.get(tracker.id);
     return Response.json({
-      status: 'running', launch_project_id: tracker.id,
-      message: 'Autonomous clone-to-100 engine started in the background. Poll the LaunchProject for progress.'
+      status: 'completed', launch_project_id: tracker.id,
+      score: final.parity_score, progress: final.progress,
+      vercel_url: final.vercel_deployment_url,
+      summary: final.last_validation_summary
     });
   } catch (error) {
     return Response.json({ error: error.message }, { status: 500 });

@@ -1,9 +1,9 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
-// Auto-recovery: detects autonomous clone projects that have stalled (no
-// progress update in 10+ min — the background waitUntil process was killed)
-// and resumes them once. Prevents permanently stuck projects from cluttering
-// the pipeline. Called by the "Stuck Clone Recovery" workflow every 5 min.
+// Stalled-project cleanup: detects autonomous clone projects that haven't
+// updated in 10+ min and marks them as failed. Does NOT auto-restart (that
+// caused cascading "(recovery) (recovery)" chains). Called by the "Stuck
+// Clone Recovery" workflow every 5 min as a safety net.
 const STALE_MINUTES = 10;
 const ACTIVE_STATUSES = ['queued', 'generating', 'provisioning', 'validating', 'testing', 'retrying'];
 
@@ -20,50 +20,27 @@ export default async function(req) {
   );
 
   const stuck = projects.filter(p => p.updated_date < cutoff);
-  const resumed = [];
   const failed = [];
 
   for (const p of stuck) {
-    const targetUrl = p.metadata?.target_url || p.benchmark_url;
-    const alreadyRecovered = p.metadata?.auto_recovered === true;
-
-    // Mark the stuck project as failed (the background process is dead)
+    // Mark the stuck project as failed — NO auto-restart. This prevents cascading
+    // recovery chains where each recovery also stalls and gets recovered again
+    // (the "(recovery) (recovery) (recovery)" explosion). The user can manually
+    // re-trigger from the Command Center if they want to retry a failed target.
     try {
       await base44.asServiceRole.entities.LaunchProject.update(p.id, {
         status: 'failed',
-        last_validation_summary: alreadyRecovered
-          ? 'Stalled after auto-recovery — manual intervention needed'
-          : 'Stalled — background process terminated. Auto-recovery triggered.',
-        metadata: { ...(p.metadata || {}), auto_recovered: true, stalled_at: new Date().toISOString() }
+        last_validation_summary: 'Stalled — process terminated. Re-trigger from Command Center to retry.',
+        metadata: { ...(p.metadata || {}), stalled_at: new Date().toISOString() }
       });
+      failed.push(p.project_name);
     } catch (e) { /* ignore */ }
-
-    if (targetUrl && !alreadyRecovered) {
-      // Start a fresh autonomous clone for the same target (one-time recovery)
-      try {
-        await base44.functions.invoke('autonomousCloneTo100', {
-          target_url: targetUrl,
-          industry: p.industry,
-          business_name: p.business_name,
-          project_name: `${p.project_name} (recovery)`,
-          max_iterations: 3
-        });
-        resumed.push(p.project_name);
-      } catch (e) {
-        failed.push({ name: p.project_name, error: e.message });
-      }
-    } else if (alreadyRecovered) {
-      failed.push({ name: p.project_name, error: 'already auto-recovered once' });
-    } else {
-      failed.push({ name: p.project_name, error: 'no target url to resume' });
-    }
   }
 
   return Response.json({
     checked: projects.length,
     stuck: stuck.length,
-    resumed: resumed.length,
-    failed: failed.length,
-    details: { resumed, failed }
+    cleaned: failed.length,
+    details: { cleaned: failed }
   });
 }
