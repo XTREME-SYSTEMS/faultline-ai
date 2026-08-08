@@ -107,7 +107,7 @@ export default async function(req) {
       if (!v.safe) { blocked.push({ type: 'supabase', id: ref, reason: v.reason }); }
       else {
         try {
-          const r = await fetch(`https://api.supabase.com/v1/projects/${ref}/delete`, { method: 'POST', headers: { Authorization: `Bearer ${supaToken}` } });
+          const r = await fetch(`https://api.supabase.com/v1/projects/${ref}`, { method: 'DELETE', headers: { Authorization: `Bearer ${supaToken}` } });
           if (r.ok || r.status === 404) deleted.supabase.push(ref);
           else errors.push(`Supabase delete ${ref}: ${r.status}`);
         } catch (e) { errors.push(`Supabase: ${e.message}`); }
@@ -192,7 +192,7 @@ export default async function(req) {
               if (!v.safe) { blocked.push({ type: 'supabase', id: proj.ref, reason: v.reason }); continue; }
             }
             try {
-              const dr = await fetch(`https://api.supabase.com/v1/projects/${proj.ref}/delete`, { method: 'POST', headers: { Authorization: `Bearer ${supaToken}` } });
+              const dr = await fetch(`https://api.supabase.com/v1/projects/${proj.ref}`, { method: 'DELETE', headers: { Authorization: `Bearer ${supaToken}` } });
               if (dr.ok) deleted.supabase.push(`${proj.ref} (orphan test)`);
             } catch (e) { errors.push(`Supabase orphan ${proj.name}: ${e.message}`); }
           }
@@ -222,6 +222,40 @@ export default async function(req) {
         }
       }
     } catch (e) { errors.push(`Drive scan: ${e.message}`); }
+  }
+
+  // --- Clean a specific Drive folder's contents (when drive_folder_url is provided) ---
+  if (driveToken && body.drive_folder_url) {
+    const parentFolderId = extractDriveId(body.drive_folder_url);
+    if (parentFolderId) {
+      try {
+        // List ALL children (files + folders) of the specified Drive folder
+        const listRes = await fetch(
+          `https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(`'${parentFolderId}' in parents and trashed=false`)}&fields=files(id,name,mimeType)&pageSize=200`,
+          { headers: { Authorization: `Bearer ${driveToken}` } }
+        );
+        if (listRes.ok) {
+          const listData = await listRes.json();
+          const children = listData.files || [];
+          for (const child of children) {
+            try {
+              const delRes = await fetch(`https://www.googleapis.com/drive/v3/files/${child.id}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${driveToken}` }
+              });
+              if (delRes.ok || delRes.status === 204) {
+                deleted.drive.push(`${child.name} (from specified folder)`);
+              } else {
+                errors.push(`Drive folder child delete ${child.name}: ${delRes.status}`);
+              }
+            } catch (e) { errors.push(`Drive folder child ${child.name}: ${e.message}`); }
+          }
+          console.log(`Cleaned ${children.length} items from specified Drive folder ${parentFolderId}`);
+        } else {
+          errors.push(`Drive folder list: ${listRes.status}`);
+        }
+      } catch (e) { errors.push(`Drive folder cleanup: ${e.message}`); }
+    }
   }
 
   // --- Audit receipt ---
