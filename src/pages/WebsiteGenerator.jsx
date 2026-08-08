@@ -7,6 +7,7 @@ import AiFieldGenerator from '@/components/fl/AiFieldGenerator';
 import SheetSelect from '@/components/pcu/SheetSelect';
 import LaunchPanel from '@/components/fl/LaunchPanel';
 import DesignPackUploader from '@/components/fl/DesignPackUploader';
+import CloneTemplateGallery from '@/components/fl/CloneTemplateGallery';
 
 export default function WebsiteGenerator() {
   const [companies, setCompanies] = useState([]);
@@ -39,6 +40,7 @@ export default function WebsiteGenerator() {
   const [platformBlueprints, setPlatformBlueprints] = useState([]);
   const [selectedPlatform, setSelectedPlatform] = useState('');
   const [designPackId, setDesignPackId] = useState(null);
+  const [cloneTemplate, setCloneTemplate] = useState(null);
 
   const loadTemplateCount = async () => {
     try {
@@ -154,7 +156,7 @@ export default function WebsiteGenerator() {
     setGenerating(true);
     setResult(null);
     try {
-      const response = await base44.functions.invoke('generateWebsite', { ...form, pages, include_features: features, competitor_analysis: cloneResult || null, platform: selectedPlatform || undefined, design_pack_id: designPackId || undefined });
+      const response = await base44.functions.invoke('generateWebsite', { ...form, pages, include_features: features, competitor_analysis: cloneResult || null, platform: selectedPlatform || undefined, design_pack_id: designPackId || undefined, clone_template: cloneTemplate ? { name: cloneTemplate.name, url: cloneTemplate.url, target: cloneTemplate.target, score: cloneTemplate.score } : undefined });
       const data = response.data;
       if (data.error) { setError(data.error); setGenerating(false); return; }
       if (data.status === 'generating' && data.deliverable_id) {
@@ -397,9 +399,18 @@ export default function WebsiteGenerator() {
         {designPackId && <p style={{ fontSize: 12, color: '#237A4B', marginTop: 12 }}>✓ Design pack bound — generation will reproduce it exactly.</p>}
       </section>
 
+      {/* Clone Template Gallery — Hostinger flagship */}
+      <section style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, marginBottom: 16, padding: 20 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+          <h3 style={{ margin: 0, fontSize: 15 }}>🎨 Platform Clone Templates</h3>
+          {cloneTemplate && <span style={{ fontSize: 12, color: '#8A641C', fontWeight: 600 }}>✓ {cloneTemplate.name} selected</span>}
+        </div>
+        <CloneTemplateGallery selectedTemplate={cloneTemplate} onSelect={setCloneTemplate} />
+      </section>
+
       {/* Config Form */}
       <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 24 }}>
-        <h3 style={{ margin: '0 0 20px', fontSize: 16 }}>Configuration {cloneResult && <span style={{ fontSize: 12, color: '#237A4B', fontWeight: 600 }}>· with competitor analysis</span>}{selectedPlatform && <span style={{ fontSize: 12, color: '#8A641C', fontWeight: 600 }}> · {selectedPlatform} blueprint</span>}</h3>
+        <h3 style={{ margin: '0 0 20px', fontSize: 16 }}>Configuration {cloneResult && <span style={{ fontSize: 12, color: '#237A4B', fontWeight: 600 }}>· with competitor analysis</span>}{selectedPlatform && <span style={{ fontSize: 12, color: '#8A641C', fontWeight: 600 }}> · {selectedPlatform} blueprint</span>}{cloneTemplate && <span style={{ fontSize: 12, color: '#8A641C', fontWeight: 600 }}> · {cloneTemplate.name} template</span>}</h3>
 
         {companies.length > 0 && (
           <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700, marginBottom: 14 }}>
