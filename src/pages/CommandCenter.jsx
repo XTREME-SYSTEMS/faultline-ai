@@ -7,7 +7,8 @@ import ToolCard from '@/components/fl/ToolCard';
 import CommandChat from '@/components/fl/CommandChat';
 import GenerationPipeline from '@/components/fl/GenerationPipeline';
 import ClonedSystems from '@/components/fl/ClonedSystems';
-import { Cloud, Github, Database, Globe, Play, CheckCircle2, XCircle, Loader2, Copy } from 'lucide-react';
+import CloneQueue from '@/components/fl/CloneQueue';
+import { Cloud, Github, Database, Globe, Play, CheckCircle2, XCircle, Loader2, Copy, Layers } from 'lucide-react';
 
 const PROVISION_SERVICES = [
   { key: 'drive', label: 'Google Drive', icon: Cloud, color: '#4285F4' },
@@ -137,6 +138,13 @@ export default function CommandCenter() {
 
       {/* AI-Guided Generation Pipeline — step-by-step timeline */}
       <GenerationPipeline />
+
+      {/* Clone Queue — pending targets from Wealth Discovery Engine */}
+      <section className="finding" style={{ marginTop: 13, background: '#fff', border: '1px solid #e5e1da' }}>
+        <h2 style={{ fontSize: 18, margin: '0 0 4px', display: 'flex', alignItems: 'center', gap: 8 }}><Layers size={18} style={{ color: 'var(--gold)' }} /> Clone Queue</h2>
+        <p style={{ fontSize: 13, color: '#666', margin: '0 0 14px' }}>Targets discovered by the Wealth Discovery Engine, waiting for autonomous cloning. The engine processes this queue every 6 hours — or launch any target manually.</p>
+        <CloneQueue />
+      </section>
 
       {/* Cloned & Launched Systems */}
       <section className="finding" style={{ marginTop: 13, background: '#fff', border: '1px solid #e5e1da' }}>
