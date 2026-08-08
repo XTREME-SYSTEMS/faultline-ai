@@ -1,0 +1,45 @@
+{
+  "name": "Autonomous Code Engine",
+  "description": "Processes queued code generation tasks from the BuildQueueItem queue. Each run: pull the next queued code task \u2192 RAG retrieval \u2192 generate code \u2192 validate \u2192 auto-fix loop \u2192 store \u2192 ingest into RAG. Runs every 2 hours to keep the code library growing autonomously.",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "autonomous_code_engine",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "process_code_task": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "processCodeQueue",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Process next code task",
+            "description": "Pulls the next queued code task and runs the autonomous coding system"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 */2 * * *",
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  }
+}
