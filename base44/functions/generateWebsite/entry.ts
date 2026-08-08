@@ -168,7 +168,7 @@ Generate ONLY the JavaScript for the same single-page website. Output a SINGLE <
         websiteHtml = first_html.replace(/<\/body>/i, combined + '\n</body>');
         if (!/<\/html>/i.test(websiteHtml)) websiteHtml += '\n</html>';
       } else {
-        websiteHtml = (first_html || '') + '\n' + combined;
+        websiteHtml = (first_html || '') + '\n' + combined + '\n</body>\n</html>';
         if (!/<!DOCTYPE/i.test(websiteHtml)) websiteHtml = '<!DOCTYPE html>\n' + websiteHtml;
       }
 
