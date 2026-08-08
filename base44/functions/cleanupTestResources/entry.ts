@@ -17,6 +17,7 @@ export default async function(req) {
   const base44 = createClientFromRequest(req);
   const body = await req.json().catch(() => ({}));
   const dryRun = body.dry_run !== false;
+  const forceAll = body.force_all === true;
   const user = await base44.auth.me().catch(() => null);
   const orgId = user?.data?.organization_id;
   if (!orgId) return Response.json({ error: 'No organization found' }, { status: 400 });
@@ -37,11 +38,11 @@ export default async function(req) {
 
   // --- VALIDATION LAYER 1: Classify projects + build protected registry ---
   const projects = await base44.asServiceRole.entities.LaunchProject.filter({ organization_id: orgId }, '-created_date', 200);
-  const protectedRegistry = buildProtectedRegistry(projects);
+  const protectedRegistry = forceAll ? { github: new Set(), vercel: new Set(), supabase: new Set(), drive: new Set() } : buildProtectedRegistry(projects);
   const projectMap = new Map(projects.map(p => [p.id, p]));
 
   for (const p of projects) {
-    const cls = classifyProject(p);
+    const cls = forceAll ? 'candidate' : classifyProject(p);
     const info = { id: p.id, name: p.project_name, status: p.status, parity: p.parity_score, classification: cls,
       drive: p.drive_folder_url, github: p.github_repo_url, supabase: p.supabase_project_url,
       vercel: p.vercel_deployment_url || p.vercel_project_url };
@@ -63,8 +64,10 @@ export default async function(req) {
   // --- Delete resources for candidate (test) projects — with VALIDATION LAYER 2 ---
   for (const p of testProjects) {
     // Re-read the project from DB to ensure it hasn't been updated to passed since classification
+    // (skipped when force_all is true — all projects are treated as candidates)
     let liveProject = projectMap.get(p.id);
-    try { liveProject = await base44.asServiceRole.entities.LaunchProject.get(p.id); } catch (e) {}
+    if (!forceAll) { try { liveProject = await base44.asServiceRole.entities.LaunchProject.get(p.id); } catch (e) {} }
+    else { liveProject = { ...liveProject, status: 'failed', parity_score: 0, vercel_deployment_url: null }; }
 
     // GitHub
     if (p.github && ghToken) {
@@ -133,9 +136,13 @@ export default async function(req) {
       if (r.ok) {
         const repos = await r.json();
         for (const repo of repos) {
-          if (/^fl-test-/i.test(repo.name)) {
-            const v = validateDeletion('github', `${repo.owner.login}/${repo.name}`.toLowerCase(), null, protectedRegistry);
-            if (!v.safe) { blocked.push({ type: 'github', id: repo.name, reason: v.reason }); continue; }
+          const isOrphan = /^fl-test-/i.test(repo.name) ||
+            (forceAll && /^(fl-test-|garageforce-|revolut-|pure-floors-|.*-clone-|.*-heal\d?-)/i.test(repo.name));
+          if (isOrphan) {
+            if (!forceAll) {
+              const v = validateDeletion('github', `${repo.owner.login}/${repo.name}`.toLowerCase(), null, protectedRegistry);
+              if (!v.safe) { blocked.push({ type: 'github', id: repo.name, reason: v.reason }); continue; }
+            }
             try {
               const dr = await fetch(`https://api.github.com/repos/${repo.owner.login}/${repo.name}`, { method: 'DELETE', headers: { Authorization: `Bearer ${ghToken}`, Accept: 'application/vnd.github+json', 'User-Agent': 'FaultLine-Cleanup' } });
               if (dr.ok) deleted.github.push(`${repo.owner.login}/${repo.name} (orphan test)`);
@@ -152,9 +159,15 @@ export default async function(req) {
       if (r.ok) {
         const d = await r.json();
         for (const proj of (d.projects || [])) {
-          if (/^fl-test-/i.test(proj.name)) {
-            const v = validateDeletion('vercel', proj.name.toLowerCase(), null, protectedRegistry);
-            if (!v.safe) { blocked.push({ type: 'vercel', id: proj.name, reason: v.reason }); continue; }
+          // When force_all is true, also match clone-engine naming patterns (heal, clone, known test targets)
+          const isOrphan = /^fl-test-/i.test(proj.name) ||
+            (forceAll && /^(fl-test-|garageforce-|revolut-|pure-floors-|.*-clone-|.*-heal\d?-)/i.test(proj.name));
+          if (isOrphan) {
+            // Skip validation when force_all is true (protected registry is already empty)
+            if (!forceAll) {
+              const v = validateDeletion('vercel', proj.name.toLowerCase(), null, protectedRegistry);
+              if (!v.safe) { blocked.push({ type: 'vercel', id: proj.name, reason: v.reason }); continue; }
+            }
             try {
               const dr = await fetch(`https://api.vercel.com/v9/projects/${proj.id}${vercelTeamId ? `?teamId=${vercelTeamId}` : ''}`, { method: 'DELETE', headers: { Authorization: `Bearer ${vercelToken}` } });
               if (dr.ok) deleted.vercel.push(`${proj.name} (orphan test)`);
@@ -171,9 +184,13 @@ export default async function(req) {
       if (r.ok) {
         const projects = await r.json();
         for (const proj of (Array.isArray(projects) ? projects : [])) {
-          if (/^fl-test-/i.test(proj.name)) {
-            const v = validateDeletion('supabase', proj.ref, null, protectedRegistry);
-            if (!v.safe) { blocked.push({ type: 'supabase', id: proj.ref, reason: v.reason }); continue; }
+          const isOrphan = /^fl-test-/i.test(proj.name) ||
+            (forceAll && /^(fl-test-|garageforce-|revolut-|pure-floors-|.*-clone-|.*-heal\d?-)/i.test(proj.name));
+          if (isOrphan) {
+            if (!forceAll) {
+              const v = validateDeletion('supabase', proj.ref, null, protectedRegistry);
+              if (!v.safe) { blocked.push({ type: 'supabase', id: proj.ref, reason: v.reason }); continue; }
+            }
             try {
               const dr = await fetch(`https://api.supabase.com/v1/projects/${proj.ref}/delete`, { method: 'POST', headers: { Authorization: `Bearer ${supaToken}` } });
               if (dr.ok) deleted.supabase.push(`${proj.ref} (orphan test)`);
@@ -186,12 +203,18 @@ export default async function(req) {
   // Drive
   if (driveToken) {
     try {
-      const r = await fetch("https://www.googleapis.com/drive/v3/files?q=name+contains+'fl-test'+and+mimeType='application/vnd.google-apps.folder'+and+trashed=false&fields=files(id,name)", { headers: { Authorization: `Bearer ${driveToken}` } });
+      // When force_all, also search for clone-engine folder names
+      const query = forceAll
+        ? "name contains 'fl-test' or name contains 'garageforce' or name contains 'revolut' or name contains 'pure-floors' or name contains 'clone' or name contains 'heal'"
+        : "name contains 'fl-test'";
+      const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${encodeURIComponent(query)}+and+mimeType='application/vnd.google-apps.folder'+and+trashed=false&fields=files(id,name)`, { headers: { Authorization: `Bearer ${driveToken}` } });
       if (r.ok) {
         const d = await r.json();
         for (const f of (d.files || [])) {
-          const v = validateDeletion('drive', f.id, null, protectedRegistry);
-          if (!v.safe) { blocked.push({ type: 'drive', id: f.id, reason: v.reason }); continue; }
+          if (!forceAll) {
+            const v = validateDeletion('drive', f.id, null, protectedRegistry);
+            if (!v.safe) { blocked.push({ type: 'drive', id: f.id, reason: v.reason }); continue; }
+          }
           try {
             const dr = await fetch(`https://www.googleapis.com/drive/v3/files/${f.id}`, { method: 'DELETE', headers: { Authorization: `Bearer ${driveToken}` } });
             if (dr.ok || dr.status === 204) deleted.drive.push(`${f.name} (orphan test)`);
