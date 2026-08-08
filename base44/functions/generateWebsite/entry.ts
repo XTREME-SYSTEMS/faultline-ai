@@ -132,7 +132,9 @@ ${h2.map((h, i) => `${i + 1}. ${h}`).join('\n')}
 PHONE NUMBER — display it in the header, footer, and contact section: ${phone || '(none found — omit)'}
 BRAND PALETTE — use these exact hex colors as CSS custom properties: ${palette.join(', ') || (color + ', ' + color2)}
 CONTACT SECTION — include a "Contact" section containing the phone number and a <form>.
-CONTENT RULE: Write fresh marketing copy for ${business_name}, but the NAV ITEMS, SECTION HEADINGS, and PHONE NUMBER above are STRUCTURAL REQUIREMENTS — reproduce them verbatim. Do NOT invent different nav labels or headings.
+${target_dna.layout ? `STRUCTURAL LAYOUT BLUEPRINT (reproduce this structure — these are real patterns detected from the target):
+${target_dna.layout}` : ''}
+CONTENT RULE: Write fresh marketing copy for ${business_name}, but the NAV ITEMS, SECTION HEADINGS, PHONE NUMBER, and STRUCTURAL LAYOUT above are STRUCTURAL REQUIREMENTS — reproduce them faithfully. Do NOT invent different nav labels, headings, or layouts. If the target has a before/after slider, vertical tabs, 3D diagrams, or a gallery grid — BUILD those interactive elements, do not substitute simpler versions.
 === END REPRODUCTION CONTRACT ===`;
       }
       if (fix_directives) {
@@ -157,12 +159,33 @@ LOGO: ${logo_url ? `Use this logo image URL in the navbar and footer: ${logo_url
 GOOGLE FONTS: ${googleFonts}
 ${reproductionContract}`;
 
+      const healModel = 'gemini_3_flash'; // layout blueprint + fix-dominant prompt are the key improvements
+      // Target screenshot for visual reference — if present, the LLM can SEE what to reproduce
+      const targetScreenshotUrl = target_dna?.screenshot_url || null;
+      const visionFileUrls = targetScreenshotUrl ? [targetScreenshotUrl] : [];
+      // gemini_3_flash supports vision + file_urls — use it when we have a screenshot
+      const visionModel = targetScreenshotUrl ? 'gemini_3_flash' : healModel;
+
       if (part === 'first_half') {
+        // When fix_directives are present (heal mode), they ARE the structure guide —
+        // the generic section list is replaced by the specific failures to resolve.
+        const healStructure = fix_directives ? `
+CRITICAL — this is a HEAL iteration. The previous version was validated by screenshot comparison and FAILED. You MUST resolve every fix directive below. These are NOT suggestions — they are mandatory structural changes derived from a real screenshot diff:
+
+${fix_directives}
+
+Build the first half to specifically resolve every issue above. Match the target's ACTUAL layout (hero with background image + form box, 3D diagrams, vertical tabbed services, before/after sliders, etc.) — do NOT fall back to a generic hero/services/stats template. Use real Unsplash image URLs (https://images.unsplash.com/...) for all images — never use /api/placeholder or broken image paths.` : '';
+
+        const visualRef = targetScreenshotUrl ? `
+A SCREENSHOT OF THE TARGET SITE IS ATTACHED. Reproduce its visual layout, section structure, colors, spacing, and component placement as faithfully as possible. The screenshot is your primary visual reference — match the hero layout, section order, image placement, and overall design language you see in it.` : '';
+
         const firstPrompt = `${sharedCtx}
+${healStructure}
+${visualRef}
 
 Generate the FIRST HALF of a single-page website as ONE complete HTML document. Start with <!DOCTYPE html>. Include <head> with: charset, viewport, title, meta description, Open Graph tags, Schema.org JSON-LD (LocalBusiness), Google Fonts links, and ALL CSS inside a single <style> tag (use CSS custom properties --primary:${color} and --secondary:${color2}; fully responsive mobile-first; modern animations, gradients, shadows, glassmorphism, micro-interactions). Then open <body> and include these sections ONLY: sticky navbar with mobile hamburger toggle, hero (gradient/animated background, compelling headline, dual CTA buttons), services grid (inline SVG icons, hover lift), about (gradient image placeholder), stats with animated counters. Write REAL compelling copy tailored to ${business_name} from the description — no placeholder text, no fake stats. STOP after the stats section — do NOT output testimonials, contact, footer, </body>, or </html>.`;
 
-        const r1 = await base44.integrations.Core.InvokeLLM({ prompt: firstPrompt, model: 'gemini_3_flash' });
+        const r1 = await base44.integrations.Core.InvokeLLM({ prompt: firstPrompt, model: visionModel, file_urls: visionFileUrls.length ? visionFileUrls : undefined });
         let html = typeof r1 === 'string' ? r1 : r1?.content || r1?.text || JSON.stringify(r1);
         html = html.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
         return Response.json({ status: 'success', part: 'first_half', html });
@@ -171,11 +194,17 @@ Generate the FIRST HALF of a single-page website as ONE complete HTML document. 
       // second_half — testimonials + contact + footer ONLY (HTML fragments, no <script>).
       // Keeping JS out of this call keeps it fast; the script is generated in third_half.
       if (part === 'second_half') {
+        const healNote = fix_directives ? `
+CRITICAL — HEAL iteration. Resolve these specific failures from the screenshot diff (apply to the sections you're generating — testimonials, contact, footer, and any lower-page sections like before/after sliders, upgrade sections, locations accordion):
+${fix_directives}
+Use real Unsplash image URLs for all images. Style every section fully — no raw unstyled HTML dumps.` : '';
+
         const secondPrompt = `${sharedCtx}
+${healNote}
 
-Generate the SECOND PART of the same single-page website. Output ONLY HTML fragments — NO <!DOCTYPE>, NO <html>, NO <head>, NO <style>, NO <script>. Assume the CSS (with --primary:${color} and --secondary:${color2} custom properties) and Google Fonts are already loaded. Output these sections in order, using CSS classes for styling (NOT inline styles): a testimonials section (simple responsive grid of 3 quote cards — do NOT build a JS carousel), a contact section (working form: name, email, message, submit button), and a footer (links, inline SVG social icons, copyright). Fully responsive. Write REAL compelling copy for ${business_name} — no placeholder text, no fake testimonials.`;
+Generate the SECOND PART of the same single-page website. Output HTML fragments — NO <!DOCTYPE>, NO <html>, NO <head>, NO <script>. You MUST include a <style> block at the top with all CSS needed for these sections (using --primary:${color} and --secondary:${color2} custom properties; fully responsive; match the visual style of the first half). Output these sections in order, each with proper CSS classes and full styling: a testimonials section (styled cards with star ratings on a themed background), a contact section (working form: name, email, message, submit button — styled inputs, not raw unstyled HTML), and a footer (multi-column layout with links, inline SVG social icons, copyright). Fully responsive. Write REAL compelling copy for ${business_name} — no placeholder text, no fake testimonials. Use ONLY real Unsplash image URLs (https://images.unsplash.com/photo-...) for any images — never use /api/placeholder or relative paths.`;
 
-        const r2 = await base44.integrations.Core.InvokeLLM({ prompt: secondPrompt, model: 'gemini_3_flash' });
+        const r2 = await base44.integrations.Core.InvokeLLM({ prompt: secondPrompt, model: visionModel, file_urls: visionFileUrls.length ? visionFileUrls : undefined });
         let secondHtml = typeof r2 === 'string' ? r2 : r2?.content || r2?.text || JSON.stringify(r2);
         secondHtml = secondHtml.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
         return Response.json({ status: 'success', part: 'second_half', html: secondHtml });

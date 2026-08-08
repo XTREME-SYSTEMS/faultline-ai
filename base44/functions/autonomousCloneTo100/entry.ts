@@ -43,6 +43,19 @@ export default async function(req) {
       metadata: { autonomous: true, scan: params.scan, target_url: params.target_url }
     });
 
+    // Sync mode: run the full pipeline synchronously (no waitUntil) — for heal iterations
+    // where the caller wants the final result in the response (test_backend_function has no time limit).
+    if (body.sync) {
+      await runEngine(base44, orgId, { ...params, tracker_id: tracker.id, fix_directives: body.fix_directives });
+      const final = await base44.asServiceRole.entities.LaunchProject.get(tracker.id);
+      return Response.json({
+        status: 'completed', launch_project_id: tracker.id,
+        score: final.parity_score, progress: final.progress,
+        vercel_url: final.vercel_deployment_url,
+        summary: final.last_validation_summary
+      });
+    }
+
     waitUntil(runEngine(base44, orgId, { ...params, tracker_id: tracker.id }));
     return Response.json({
       status: 'running', launch_project_id: tracker.id,
@@ -213,7 +226,10 @@ async function runEngine(base44, orgId, p) {
       // AUTO-FIX: regenerate with fix guidance + re-inject handler + re-deploy
       add(`Iteration ${i}: auto-fixing — ${failures.slice(0, 3).join('; ')}…`);
       const fixHint = failures.join('. ');
-      const ws = { business_name: bizName || 'Clone', industry: p.industry, description: p.brief || `Premium ${p.industry || ''} business website.`, primary_color: targetDna?.primary, secondary_color: targetDna?.secondary, target_dna: targetDna, fix_directives: fixHint };
+      // First iteration uses externally-provided fix_directives if available (more specific);
+      // subsequent iterations use the validation failures from the previous run.
+      const directives = (i === 1 && p.fix_directives) ? `${p.fix_directives}\n\nAdditional validation failures: ${fixHint}` : fixHint;
+      const ws = { business_name: bizName || 'Clone', industry: p.industry, description: p.brief || `Premium ${p.industry || ''} business website.`, primary_color: targetDna?.primary, secondary_color: targetDna?.secondary, target_dna: targetDna, fix_directives: directives };
       const [f1r, f2r] = await Promise.all([
         withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' }), 120000, 'heal generateWebsite first_half'),
         withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' }), 120000, 'heal generateWebsite second_half')
