@@ -325,15 +325,36 @@ export default async function(req) {
       });
     }
 
-    // Swap phone number (if client provided one, override everything)
-    const phoneMatch = clonedHtml.match(/(\+?1[-.\s]?)?\(?(\d{3})\)?[-.\s]?(\d{3})[-.\s]?(\d{4})/);
-    if (phoneMatch && client_phone) {
-      clonedHtml = clonedHtml.split(phoneMatch[0]).join(client_phone);
+    // 7b. COMPREHENSIVE CONTACT INFO REPLACEMENT
+    //     Replace ALL unique phone numbers and emails (not just the first one
+    //     found). Real sites have multiple phone numbers (header, footer,
+    //     contact section, click-to-call) and multiple emails (contact@, info@,
+    //     sales@). Also swap tel: and mailto: href links for operational parity.
+    if (client_phone) {
+      const phoneRegex = /(\+?1[-.\s]?)?\(?(\d{3})\)?[-.\s]?(\d{3})[-.\s]?(\d{4})/g;
+      const phoneSet = new Set<string>(); let pmg;
+      while ((pmg = phoneRegex.exec(clonedHtml)) !== null) {
+        const digits = pmg[0].replace(/\D/g, '');
+        if (digits.length >= 10 && digits.length <= 11) phoneSet.add(pmg[0]);
+      }
+      for (const phone of phoneSet) {
+        clonedHtml = clonedHtml.split(phone).join(client_phone);
+      }
+      // Replace all tel: href links with the client's phone
+      clonedHtml = clonedHtml.replace(/href=["']tel:[^"']*["']/gi, `href="tel:${client_phone.replace(/[^\d+]/g, '')}"`);
     }
-    // Swap email
-    const emailMatch = clonedHtml.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-    if (emailMatch && client_email) {
-      clonedHtml = clonedHtml.split(emailMatch[0]).join(client_email);
+    if (client_email) {
+      const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g;
+      const emailSet = new Set<string>(); let emg;
+      while ((emg = emailRegex.exec(clonedHtml)) !== null) {
+        // Skip emails that are part of script src URLs or API endpoints
+        if (!/\.(js|css|png|jpg|svg)$/i.test(emg[0])) emailSet.add(emg[0]);
+      }
+      for (const email of emailSet) {
+        clonedHtml = clonedHtml.split(email).join(client_email);
+      }
+      // Replace all mailto: href links with the client's email
+      clonedHtml = clonedHtml.replace(/href=["']mailto:[^"']*["']/gi, `href="mailto:${client_email}"`);
     }
 
     // 8a. FORM INJECTION FALLBACK: if the clone has no <form> element (common on
@@ -417,6 +438,37 @@ export default async function(req) {
     // Remove inline Next.js hydration bootstrap scripts (small scripts that call __NEXT_DATA__)
     clonedHtml = clonedHtml.replace(/<script[^>]*>[\s\S]*?__NEXT_DATA__[\s\S]*?<\/script>/gi, '');
     // Keep our form handler, jQuery, slider libraries, and any other non-Next.js scripts
+
+    // 9b. ANALYTICS & TRACKING SCRIPT REMOVAL — remove third-party analytics
+    //     (Google Analytics, GTM, Facebook Pixel, Hotjar, LinkedIn, Twitter, Bing)
+    //     to prevent data leakage back to the target's accounts and avoid broken
+    //     script errors when the clone is served from a different domain.
+    const trackingSrcPatterns = [
+      'google-analytics.com', 'googletagmanager.com', 'connect.facebook.net',
+      'static.hotjar.com', 'cdn.mxpnl.com', 'cdn.segment.com', 'snap.licdn.com',
+      'bat.bing.com', 'platform.twitter.com', 'platform.linkedin.com',
+      'adservice.google.com', 'doubleclick.net', 'cse.google.com',
+      'widget.trustpilot.com', 'cdn.sanity.io'
+    ];
+    clonedHtml = clonedHtml.replace(/<script[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi, (match, src) => {
+      if (trackingSrcPatterns.some(p => src.toLowerCase().includes(p))) return '';
+      return match;
+    });
+    // Remove inline Google Analytics / GTM / FB Pixel init snippets
+    clonedHtml = clonedHtml.replace(/<script[^>]*>[\s\S]*?gtag\('js'[\s\S]*?<\/script>/gi, '');
+    clonedHtml = clonedHtml.replace(/<script[^>]*>[\s\S]*?fbq\('init'[\s\S]*?<\/script>/gi, '');
+    clonedHtml = clonedHtml.replace(/<noscript[^>]*>[\s\S]*?googletagmanager[\s\S]*?<\/noscript>/gi, '');
+    clonedHtml = clonedHtml.replace(/<noscript[^>]*>[\s\S]*?facebook\.com\/tr[\s\S]*?<\/noscript>/gi, '');
+
+    // 9c. META TAG SANITIZATION — remove canonical URLs and og:url that point
+    //     to the target's domain (causes SEO confusion and social sharing to
+    //     point to the target instead of the clone). Update og:site_name.
+    clonedHtml = clonedHtml.replace(/<link[^>]+rel=["']canonical["'][^>]*>/gi, '');
+    clonedHtml = clonedHtml.replace(/<meta[^>]+property=["']og:url["'][^>]*>/gi, '');
+    if (business_name) {
+      clonedHtml = clonedHtml.replace(/<meta[^>]+property=["']og:site_name["'][^>]+content=["']([^"']*)["'][^>]*>/gi,
+        `<meta property="og:site_name" content="${business_name}">`);
+    }
 
     // Add DOCTYPE if missing (stealth browser returns document.documentElement.outerHTML
     // which doesn't include the DOCTYPE declaration — without it, browsers render in
