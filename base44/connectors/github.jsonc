@@ -1,6 +1,7 @@
 {
   "type": "github",
   "scopes": [
-    "repo"
+    "repo",
+    "delete_repo"
   ]
 }
