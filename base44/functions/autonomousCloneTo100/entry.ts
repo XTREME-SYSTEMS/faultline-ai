@@ -129,7 +129,8 @@ async function runEngine(base44, orgId, p) {
       add('Backend built — clone is operational');
 
       add('Launching to Drive/GitHub/Supabase/Vercel…');
-      const lp = await base44.functions.invoke('launchProject', { project_name: p.project_name || `${bizName} Clone`, website_html: cloneHtml });
+      const launchName = `${p.project_name || bizName || 'Clone'}-${Date.now().toString(36).slice(-5)}`;
+      const lp = await base44.functions.invoke('launchProject', { project_name: launchName, website_html: cloneHtml });
       const ld = lp?.data || lp;
       if (ld.status !== 'success') throw new Error(`Launch failed: ${JSON.stringify(ld.errors)}`);
       urls = { drive: ld.results?.drive?.url, github: ld.results?.github?.url, supabase: ld.results?.supabase?.url, vercel: ld.results?.vercel?.deploy?.url || ld.results?.vercel?.deploy?.alias?.[0] };
@@ -158,7 +159,7 @@ async function runEngine(base44, orgId, p) {
       const fc = f3.data || f3;
       const br = await base44.functions.invoke('buildInferredBackend', { clone_html: fc.website_html, organization_id: orgId, clone_id: p.tracker_id });
       const b = br?.data || br;
-      const lp = await base44.functions.invoke('launchProject', { project_name: `${bizName || 'Clone'} heal ${i}`, website_html: b.operational_html });
+      const lp = await base44.functions.invoke('launchProject', { project_name: `${bizName || 'Clone'}-heal${i}-${Date.now().toString(36).slice(-4)}`, website_html: b.operational_html });
       const ld = lp?.data || lp;
       if (ld.status === 'success') urls.vercel = ld.results?.vercel?.deploy?.url || ld.results?.vercel?.deploy?.alias?.[0];
       add(`Iteration ${i}: re-deployed to ${urls.vercel}`);

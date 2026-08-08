@@ -25,6 +25,11 @@ export default function Projects() {
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState('');
   const [expanded, setExpanded] = useState(null);
+  const [mode, setMode] = useState('design_pack'); // 'design_pack' | 'clone_url'
+  const [cloning, setCloning] = useState(false);
+  const [cloneForm, setCloneForm] = useState({
+    target_url: '', business_name: '', industry: '', project_name: ''
+  });
   const [form, setForm] = useState({
     project_name: '', project_type: 'website',
     client_name: '', client_email: '', client_phone: '',
@@ -70,6 +75,34 @@ export default function Projects() {
     }
   };
 
+  const updateClone = (k, v) => setCloneForm(prev => ({ ...prev, [k]: v }));
+
+  const startClone = async () => {
+    setError('');
+    if (!cloneForm.target_url) { setError('Target URL is required'); return; }
+    let url = cloneForm.target_url.trim();
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
+    setCloning(true);
+    try {
+      const res = await base44.functions.invoke('autonomousCloneTo100', {
+        target_url: url,
+        industry: cloneForm.industry || 'General Contractor',
+        business_name: cloneForm.business_name || '',
+        project_name: cloneForm.project_name || `Clone ${new URL(url).hostname}`,
+        max_iterations: 5
+      });
+      const data = res?.data || res;
+      if (data.error) throw new Error(data.error);
+      setCloneForm({ target_url: '', business_name: '', industry: '', project_name: '' });
+      setShowForm(false);
+      loadProjects();
+    } catch (e) {
+      setError(e.message || 'Failed to start clone');
+    } finally {
+      setCloning(false);
+    }
+  };
+
   const scoreBadge = (score) => {
     if (score == null) return <span style={{ color: '#aaa', fontSize: 12 }}>—</span>;
     const pass = score >= 100;
@@ -92,14 +125,53 @@ export default function Projects() {
       {showForm && (
         <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 24, marginBottom: 20 }}>
           <h3 style={{ margin: '0 0 6px', fontSize: 16 }}>Start an Autonomous Launch</h3>
-          <p style={{ fontSize: 13, color: '#666', margin: '0 0 18px' }}>Upload a web/brand design pack and enter the client's business info. The pipeline ingests the pack, generates a pixel-faithful site, provisions Drive + GitHub + Supabase + Vercel, validates 100% parity & operational via Browserbase, and scores 100/100 mandatory — retrying up to 3 times. The client is added to your CRM automatically.</p>
+          <p style={{ fontSize: 13, color: '#666', margin: '0 0 18px' }}>Choose how to launch: clone an existing website (scrape → reproduce → deploy → validate to 100/100), or upload a design pack for a pixel-faithful custom build.</p>
 
-          <div style={{ marginBottom: 18 }}>
-            <p style={{ fontSize: 12, fontWeight: 700, margin: '0 0 8px' }}>1. Upload Design Pack (vision-extracted — reproduced exactly)</p>
-            <DesignPackUploader packType="web_pack" onIngested={(packId) => setDesignPackId(packId)} />
-            {designPackId && <p style={{ fontSize: 12, color: '#237A4B', marginTop: 10 }}>✓ Design pack bound — generation will reproduce it exactly.</p>}
+          {/* Mode toggle */}
+          <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderRadius: 8, overflow: 'hidden', border: '1px solid #ddd' }}>
+            <button onClick={() => setMode('clone_url')} style={{ flex: 1, padding: '14px 18px', fontSize: 13, fontWeight: 700, background: mode === 'clone_url' ? '#0b0b0b' : '#fff', color: mode === 'clone_url' ? '#fff' : '#666', border: 0, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              🧬 Clone Existing Site
+            </button>
+            <button onClick={() => setMode('design_pack')} style={{ flex: 1, padding: '14px 18px', fontSize: 13, fontWeight: 700, background: mode === 'design_pack' ? '#0b0b0b' : '#fff', color: mode === 'design_pack' ? '#fff' : '#666', border: 0, cursor: 'pointer', borderLeft: '1px solid #ddd', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+              📐 From Design Pack
+            </button>
           </div>
 
+          {mode === 'clone_url' ? (
+            <>
+              <p style={{ fontSize: 13, color: '#666', margin: '0 0 16px', background: '#f8f7f4', padding: 12, borderRadius: 6, lineHeight: 1.6 }}>Enter any website URL. The pipeline scrapes it with Browserbase stealth (CAPTCHA-solving + proxies), extracts its design DNA (colors, fonts, nav, headings, contact), generates a faithful clone, injects a working lead-capture backend, provisions Drive + GitHub + Supabase + Vercel, then recursively validates and auto-heals to 100/100 parity.</p>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
+                <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700, gridColumn: '1 / -1' }}>Target URL *
+                  <input value={cloneForm.target_url} onChange={e => updateClone('target_url', e.target.value)} placeholder="https://xtremepolishingsystems.com" style={{ padding: 12, border: '1px solid #ddd', borderRadius: 6, fontSize: 14 }} />
+                </label>
+                <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700 }}>Project Name
+                  <input value={cloneForm.project_name} onChange={e => updateClone('project_name', e.target.value)} placeholder="Xtreme Polishing Clone" style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: 13 }} />
+                </label>
+                <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700 }}>Business Name
+                  <input value={cloneForm.business_name} onChange={e => updateClone('business_name', e.target.value)} placeholder="Xtreme Polishing Systems" style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: 13 }} />
+                </label>
+                <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700, gridColumn: '1 / -1' }}>Industry
+                  <input value={cloneForm.industry} onChange={e => updateClone('industry', e.target.value)} placeholder="Concrete Polishing & Epoxy Flooring" style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: 13 }} />
+                </label>
+              </div>
+              <button onClick={startClone} disabled={cloning} className="btn dark" style={{ padding: '14px 24px', fontSize: 14, opacity: cloning ? 0.6 : 1 }}>
+                {cloning ? 'Starting clone engine…' : '🧬 Clone & Deploy to 100/100'}
+              </button>
+              <p style={{ fontSize: 11, color: '#999', marginTop: 10 }}>The autonomous engine runs in the background — watch the project appear below and update in real time as it scrapes, generates, deploys, and heals to 100/100.</p>
+            </>
+          ) : (
+            <>
+              <p style={{ fontSize: 13, color: '#666', margin: '0 0 18px' }}>Upload a web/brand design pack and enter the client's business info. The pipeline ingests the pack, generates a pixel-faithful site, provisions Drive + GitHub + Supabase + Vercel, validates 100% parity & operational via Browserbase, and scores 100/100 mandatory — retrying up to 3 times. The client is added to your CRM automatically.</p>
+
+              <div style={{ marginBottom: 18 }}>
+                <p style={{ fontSize: 12, fontWeight: 700, margin: '0 0 8px' }}>1. Upload Design Pack (vision-extracted — reproduced exactly)</p>
+                <DesignPackUploader packType="web_pack" onIngested={(packId) => setDesignPackId(packId)} />
+                {designPackId && <p style={{ fontSize: 12, color: '#237A4B', marginTop: 10 }}>✓ Design pack bound — generation will reproduce it exactly.</p>}
+              </div>
+            </>
+          )}
+
+          {mode === 'design_pack' && (<>
           <p style={{ fontSize: 12, fontWeight: 700, margin: '0 0 10px' }}>2. Project & Client Info</p>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
             <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700 }}>Project Name *
@@ -154,6 +226,7 @@ export default function Projects() {
             {creating ? 'Starting pipeline…' : '🚀 Launch Autonomous Pipeline'}
           </button>
           <p style={{ fontSize: 11, color: '#999', marginTop: 10 }}>The workflow triggers automatically once the project is created. Watch the status update in real time below.</p>
+          </>)}
         </div>
       )}
 
