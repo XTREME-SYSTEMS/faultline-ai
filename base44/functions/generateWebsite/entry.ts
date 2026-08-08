@@ -23,7 +23,8 @@ export default async function(req) {
     const {
       business_name, industry, description, target_audience,
       primary_color, secondary_color, font_style,
-      pages, tone, include_features, company_id, competitor_analysis, logo_url, platform, design_pack_id
+      pages, tone, include_features, company_id, competitor_analysis, logo_url, platform, design_pack_id,
+      part, first_html, second_html
     } = body;
 
     if (!business_name) return Response.json({ error: 'business_name required' }, { status: 400 });
@@ -106,6 +107,100 @@ FAITHFULNESS CONTRACT:
       });
     }
     // ===== end pack-driven path =====
+
+    // ===== Split (2-call) path: keeps each browser call under the ~60s gateway timeout =====
+    // The frontend calls first_half, then second_half with the returned html.
+    // Both calls use a lean prompt (no PCU library load) and the second half does NOT
+    // feed first_html back into the LLM — it only uses it for the final stitch — so each
+    // call stays well under the gateway limit.
+    if (part === 'first_half' || part === 'second_half' || part === 'third_half') {
+      const sharedCtx = `You are an elite web designer and developer. Output ONLY valid HTML — no markdown, no code fences, no explanations.
+
+BUSINESS: ${business_name}
+INDUSTRY: ${industry || 'General'}
+DESCRIPTION: ${description}
+TARGET AUDIENCE: ${target_audience || 'General consumers and businesses'}
+BRAND COLOR: ${color}
+SECONDARY COLOR: ${color2}
+FONT STYLE: ${font} (modern=sans-serif, classic=serif, bold=condensed)
+TONE: ${voice}
+LOGO: ${logo_url ? `Use this logo image URL in the navbar and footer: ${logo_url}` : 'No logo — create a text-based wordmark'}
+GOOGLE FONTS: ${googleFonts}`;
+
+      if (part === 'first_half') {
+        const firstPrompt = `${sharedCtx}
+
+Generate the FIRST HALF of a single-page website as ONE complete HTML document. Start with <!DOCTYPE html>. Include <head> with: charset, viewport, title, meta description, Open Graph tags, Schema.org JSON-LD (LocalBusiness), Google Fonts links, and ALL CSS inside a single <style> tag (use CSS custom properties --primary:${color} and --secondary:${color2}; fully responsive mobile-first; modern animations, gradients, shadows, glassmorphism, micro-interactions). Then open <body> and include these sections ONLY: sticky navbar with mobile hamburger toggle, hero (gradient/animated background, compelling headline, dual CTA buttons), services grid (inline SVG icons, hover lift), about (gradient image placeholder), stats with animated counters. Write REAL compelling copy tailored to ${business_name} from the description — no placeholder text, no fake stats. STOP after the stats section — do NOT output testimonials, contact, footer, </body>, or </html>.`;
+
+        const r1 = await base44.integrations.Core.InvokeLLM({ prompt: firstPrompt, model: 'gemini_3_flash' });
+        let html = typeof r1 === 'string' ? r1 : r1?.content || r1?.text || JSON.stringify(r1);
+        html = html.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+        return Response.json({ status: 'success', part: 'first_half', html });
+      }
+
+      // second_half — testimonials + contact + footer ONLY (HTML fragments, no <script>).
+      // Keeping JS out of this call keeps it fast; the script is generated in third_half.
+      if (part === 'second_half') {
+        const secondPrompt = `${sharedCtx}
+
+Generate the SECOND PART of the same single-page website. Output ONLY HTML fragments — NO <!DOCTYPE>, NO <html>, NO <head>, NO <style>, NO <script>. Assume the CSS (with --primary:${color} and --secondary:${color2} custom properties) and Google Fonts are already loaded. Output these sections in order, using CSS classes for styling (NOT inline styles): a testimonials section (simple responsive grid of 3 quote cards — do NOT build a JS carousel), a contact section (working form: name, email, message, submit button), and a footer (links, inline SVG social icons, copyright). Fully responsive. Write REAL compelling copy for ${business_name} — no placeholder text, no fake testimonials.`;
+
+        const r2 = await base44.integrations.Core.InvokeLLM({ prompt: secondPrompt, model: 'gemini_3_flash' });
+        let secondHtml = typeof r2 === 'string' ? r2 : r2?.content || r2?.text || JSON.stringify(r2);
+        secondHtml = secondHtml.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+        return Response.json({ status: 'success', part: 'second_half', html: secondHtml });
+      }
+
+      // third_half — the <script> JS + stitch all three parts + upload + deliverable
+      const thirdPrompt = `${sharedCtx}
+
+Generate ONLY the JavaScript for the same single-page website. Output a SINGLE <script> tag and nothing else — no HTML sections, no <!DOCTYPE>. The script must wire up: mobile nav hamburger toggle, IntersectionObserver fade-in-on-scroll for elements with a "reveal" class, animated stat counters (count up when visible), testimonial carousel auto-rotation (if slides exist), smooth anchor scrolling, and a back-to-top button. Use plain vanilla JS. Keep it concise and correct.`;
+
+      const r3 = await base44.integrations.Core.InvokeLLM({ prompt: thirdPrompt, model: 'gemini_3_flash' });
+      let scriptTag = typeof r3 === 'string' ? r3 : r3?.content || r3?.text || JSON.stringify(r3);
+      scriptTag = scriptTag.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
+      if (!/^<script/i.test(scriptTag)) scriptTag = '<script>\n' + scriptTag + '\n</script>';
+
+      // Stitch: first_html + second_html + script, inserted before </body>
+      const combined = (second_html || '') + '\n' + scriptTag;
+      let websiteHtml;
+      if (first_html && /<\/body>/i.test(first_html)) {
+        websiteHtml = first_html.replace(/<\/body>/i, combined + '\n</body>');
+        if (!/<\/html>/i.test(websiteHtml)) websiteHtml += '\n</html>';
+      } else {
+        websiteHtml = (first_html || '') + '\n' + combined;
+        if (!/<!DOCTYPE/i.test(websiteHtml)) websiteHtml = '<!DOCTYPE html>\n' + websiteHtml;
+      }
+
+      // Upload + save deliverable
+      let fileUrl = null;
+      try {
+        const fileObj = typeof File !== 'undefined'
+          ? new File([websiteHtml], 'index.html', { type: 'text/html' })
+          : new Blob([websiteHtml], { type: 'text/html' });
+        const upload = await base44.integrations.Core.UploadFile({ file: fileObj });
+        fileUrl = upload?.file_url || null;
+      } catch (e) { console.error('generateWebsite upload failed:', e); }
+
+      const deliverableData = {
+        organization_id: orgId,
+        deliverable_type: 'website',
+        title: `Website — ${business_name}`,
+        content: fileUrl ? '' : websiteHtml.slice(0, 5000),
+        file_url: fileUrl,
+        metadata: { business_name, industry, primary_color: color, secondary_color: color2, font_style: font, tone: voice, generated_at: new Date().toISOString() },
+        status: 'generated'
+      };
+      if (company_id) deliverableData.company_id = company_id;
+      const deliverable = await base44.asServiceRole.entities.Deliverable.create(deliverableData);
+      await base44.asServiceRole.entities.Receipt.create({
+        organization_id: orgId, system: 'website_generator', action: 'generate', status: 'success',
+        summary: `Generated website for ${business_name} (${industry || 'general'})`,
+        evidence: { deliverable_id: deliverable.id, business_name, industry, file_url: fileUrl }
+      });
+      return Response.json({ status: 'success', deliverable_id: deliverable.id, website_html: websiteHtml, file_url: fileUrl, business_name, message: 'Website generated successfully' });
+    }
+    // ===== end split path =====
 
     const competitorSection = competitor_analysis ? `
 COMPETITOR ANALYSIS — you must create a website that is EQUIVALENT OR BETTER than these top 3 competitors:

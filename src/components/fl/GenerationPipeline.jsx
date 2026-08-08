@@ -80,13 +80,18 @@ export default function GenerationPipeline() {
     const wRes = await base44.functions.invoke('generateDesignPack', { pack_type: 'web_pack', business_name: full.name, industry: full.industry });
     setStepStates(s => ({ ...s, webpack: { status: 'done', result: wRes.data || wRes } }));
 
-    // Step 7: Website
+    // Step 7: Website (split into 3 LLM calls to stay under the gateway timeout)
     setActiveStep(6);
-    setStepStates(s => ({ ...s, website: { status: 'running' } }));
-    const wsRes = await base44.functions.invoke('generateWebsite', {
+    setStepStates(s => ({ ...s, website: { status: 'running', status_text: 'Generating part 1 of 3…' } }));
+    const wsParams = {
       business_name: full.name, industry: full.industry,
       description: full.value_proposition || full.niche || `${full.name} — ${full.industry} platform`
-    });
+    };
+    const wsFirst = await base44.functions.invoke('generateWebsite', { ...wsParams, part: 'first_half' });
+    setStepStates(s => ({ ...s, website: { status: 'running', status_text: 'Generating part 2 of 3…' } }));
+    const wsSecond = await base44.functions.invoke('generateWebsite', { ...wsParams, part: 'second_half' });
+    setStepStates(s => ({ ...s, website: { status: 'running', status_text: 'Generating part 3 of 3…' } }));
+    const wsRes = await base44.functions.invoke('generateWebsite', { ...wsParams, part: 'third_half', first_html: (wsFirst.data || wsFirst).html, second_html: (wsSecond.data || wsSecond).html });
     setStepStates(s => ({ ...s, website: { status: 'done', result: wsRes.data || wsRes } }));
 
     // Step 8: Launch
@@ -227,11 +232,14 @@ export default function GenerationPipeline() {
           break;
         }
         case 'website': {
-          const res = await base44.functions.invoke('generateWebsite', {
+          const wsParams = {
             business_name: selectedPerformer?.name || 'New Business',
             industry: selectedPerformer?.industry || 'Technology',
             description: selectedPerformer?.value_proposition || selectedPerformer?.niche || `${selectedPerformer?.name || 'New Business'} — ${selectedPerformer?.industry || 'Technology'} platform`
-          });
+          };
+          const first = await base44.functions.invoke('generateWebsite', { ...wsParams, part: 'first_half' });
+          const second = await base44.functions.invoke('generateWebsite', { ...wsParams, part: 'second_half' });
+          const res = await base44.functions.invoke('generateWebsite', { ...wsParams, part: 'third_half', first_html: (first.data || first).html, second_html: (second.data || second).html });
           result = res.data || res;
           break;
         }
