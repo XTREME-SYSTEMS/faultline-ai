@@ -93,6 +93,7 @@ export default function GenerationPipeline() {
     setActiveStep(7);
     setStepStates(s => ({ ...s, launch: { status: 'running' } }));
     const lpRes = await base44.entities.LaunchProject.create({
+      organization_id: user?.data?.organization_id,
       project_name: `${full.name} Website`, project_type: 'website',
       business_name: full.name, industry: full.industry, client_name: full.name
     });
@@ -237,6 +238,7 @@ export default function GenerationPipeline() {
         case 'launch': {
           // Create a LaunchProject to trigger the autonomous pipeline
           const res = await base44.entities.LaunchProject.create({
+            organization_id: user?.data?.organization_id,
             project_name: selectedPerformer?.name || 'New Business Website',
             project_type: 'website',
             business_name: selectedPerformer?.name || 'New Business',
