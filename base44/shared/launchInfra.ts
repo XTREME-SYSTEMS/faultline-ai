@@ -59,7 +59,15 @@ export async function createSupabaseProject(token, name) {
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify({ name, db_pass: dbPass, region: 'us-east-1', plan: 'free', ...(orgId ? { organization_id: orgId } : {}) })
   });
-  if (!res.ok) throw new Error(`Supabase project failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
+  if (!res.ok) {
+    const raw = await res.text();
+    let msg = raw;
+    try { const j = JSON.parse(raw); msg = j.message || j.error || raw; } catch (e) {}
+    const limitHit = /limit|quota|free.?tier|exceeded/i.test(msg);
+    throw new Error(limitHit
+      ? `Supabase free-tier project limit reached — delete an unused project in the Supabase dashboard to free a slot. (${res.status})`
+      : `Supabase project failed (${res.status}): ${String(msg).slice(0, 300)}`);
+  }
   const d = await res.json();
   return { id: d.id, ref: d.ref, url: `https://supabase.com/dashboard/project/${d.ref}`, db_password: dbPass, status: d.status };
 }
