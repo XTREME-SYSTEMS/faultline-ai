@@ -51,6 +51,10 @@ async function runEngine(base44, orgId, p) {
       await base44.asServiceRole.entities.LaunchProject.update(p.tracker_id, {
         status: parityScore >= 100 ? 'passed' : 'validating',
         parity_score: parityScore, last_validation_summary: summary,
+        drive_folder_url: urls.drive || undefined,
+        github_repo_url: urls.github || undefined,
+        supabase_project_url: urls.supabase || undefined,
+        vercel_deployment_url: urls.vercel || undefined,
         metadata: { autonomous: true, log: log.slice(-12), urls, ...extra }
       });
     } catch (e) {}

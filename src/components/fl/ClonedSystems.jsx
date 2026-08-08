@@ -76,10 +76,11 @@ export default function ClonedSystems() {
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 10 }}>
             {launches.map(p => {
+              const vercelUrl = p.vercel_deployment_url || p.vercel_project_url;
               const proofLinks = [
                 { url: p.drive_folder_url, Icon: Cloud, label: 'Drive', color: '#4285F4' },
                 { url: p.github_repo_url, Icon: Github, label: 'GitHub', color: '#181717' },
-                { url: p.vercel_deployment_url, Icon: Globe, label: 'Vercel', color: '#000' },
+                { url: vercelUrl, Icon: Globe, label: p.vercel_deployment_url ? 'Live Site' : 'Vercel', color: '#000' },
                 { url: p.supabase_project_url, Icon: Database, label: 'Supabase', color: '#3ECF8E' }
               ].filter(l => l.url);
               return (
@@ -105,6 +106,11 @@ export default function ClonedSystems() {
                     </div>
                   )}
                   {p.domain_name && <small style={{ fontSize: 11, color: '#888' }}>{p.domain_name}</small>}
+                  {p.vercel_deployment_url && (
+                    <a href={p.vercel_deployment_url} target="_blank" rel="noreferrer" style={{ marginTop: 4, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '8px 12px', borderRadius: 6, background: 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+                      <Globe size={14} /> View Live Site
+                    </a>
+                  )}
                 </div>
               );
             })}
