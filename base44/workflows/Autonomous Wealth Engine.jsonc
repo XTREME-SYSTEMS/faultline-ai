@@ -1,0 +1,99 @@
+{
+  "description": "24/7 autonomous wealth generation loop: discovers high-value expensive targets via LLM + web search, clones them to 100/100 parity, extracts reusable template components into the library. Runs every 6 hours. Each run: discover \u2192 clone \u2192 extract \u2192 compound.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 */6 * * *",
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "name": "Autonomous Wealth Engine",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "autonomous_wealth_engine",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "discover": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "wealthDiscoveryEngine",
+            "args": {
+              "max_targets": 10
+            }
+          },
+          "then": "clone",
+          "x-base44": {
+            "title": "Discover wealth targets",
+            "description": "LLM + web search finds expensive, in-demand tools to clone"
+          }
+        }
+      },
+      {
+        "clone": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "autonomousCloneTo100",
+            "args": {
+              "scan": true,
+              "max_iterations": 5
+            }
+          },
+          "then": "check_clone",
+          "x-base44": {
+            "title": "Clone highest-priority target",
+            "description": "Pulls from queue, clones to 100/100 parity, deploys to Vercel"
+          }
+        }
+      },
+      {
+        "check_clone": {
+          "switch": [
+            {
+              "when": "${ .clone.vercel_url != null and .clone.vercel_url != \"\" }",
+              "then": "extract"
+            },
+            {
+              "when": "${ true }",
+              "then": "end"
+            }
+          ],
+          "x-base44": {
+            "title": "Check clone deployed",
+            "description": "Skip extraction if clone failed or no URL"
+          }
+        }
+      },
+      {
+        "extract": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "extractReusableTemplates",
+            "args": {
+              "live_url": "${ .clone.vercel_url }",
+              "source_url": "${ .clone.vercel_url }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Extract reusable templates",
+            "description": "Decomposes clone into reusable components for the library"
+          }
+        }
+      }
+    ]
+  }
+}
