@@ -132,6 +132,16 @@ export default async function(req) {
     while ((pm = preloadRe.exec(html)) !== null) {
       if (!pm[1].startsWith('data:')) addImageUrl(pm[1]);
     }
+    // <video poster="..."> — poster/thumbnail image
+    const videoPosterRe = /<video[^>]+poster=["']([^"']+)["']/gi; let vpm;
+    while ((vpm = videoPosterRe.exec(html)) !== null) {
+      if (!vpm[1].startsWith('data:')) addImageUrl(vpm[1]);
+    }
+    // <video src="..."> and <source src="..."> — video files
+    const videoSrcRe = /<(?:video|source)[^>]+src=["']([^"']+)["']/gi; let vsm;
+    while ((vsm = videoSrcRe.exec(html)) !== null) {
+      if (!vsm[1].startsWith('data:') && !vsm[1].startsWith('blob:')) addImageUrl(vsm[1]);
+    }
 
     // 4. Re-host images (download from target → upload to our storage)
     //    Skip data: URIs, SVGs (small, keep inline), and already-our-host URLs.
@@ -153,7 +163,7 @@ export default async function(req) {
       !/\.svg$/i.test(u) &&
       !/media\.base44\.com|static\.wixstatic\.com/.test(u)
     );
-    console.log(`Re-hosting ${imagesToRehost.length} images from ${target_url}`);
+    console.log(`Re-hosting ${imagesToRehost.length} media files (images + videos) from ${target_url}`);
 
     // Process in batches of 5 to avoid overwhelming storage
     for (let i = 0; i < imagesToRehost.length; i += 5) {
@@ -176,10 +186,12 @@ export default async function(req) {
           });
           if (!ir.ok) { console.error(`Re-host ${ir.status} for ${fetchUrl.slice(0, 80)}`); return; }
           const ct = ir.headers.get('content-type') || 'image/jpeg';
-          if (!ct.startsWith('image/')) { console.error(`Not image (${ct}) for ${fetchUrl.slice(0, 80)}`); return; }
+          if (!ct.startsWith('image/') && !ct.startsWith('video/')) { console.error(`Not media (${ct}) for ${fetchUrl.slice(0, 80)}`); return; }
           const buf = await ir.arrayBuffer();
           if (buf.byteLength < 100) return; // skip tiny/empty responses
-          const ext = ct.includes('png') ? 'png' : ct.includes('webp') ? 'webp' : ct.includes('gif') ? 'gif' : ct.includes('svg') ? 'svg' : 'jpg';
+          const ext = ct.includes('png') ? 'png' : ct.includes('webp') ? 'webp' : ct.includes('gif') ? 'gif'
+            : ct.includes('svg') ? 'svg' : ct.includes('mp4') ? 'mp4' : ct.includes('webm') ? 'webm'
+            : ct.includes('ogg') ? 'ogg' : ct.includes('quicktime') ? 'mov' : 'jpg';
           const filename = `clone-img-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
           const file = new File([buf], filename, { type: ct });
           const upload = await base44.integrations.Core.UploadFile({ file });
@@ -254,7 +266,8 @@ export default async function(req) {
       const brandRe = new RegExp(targetBrand.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'gi');
       clonedHtml = clonedHtml.replace(brandRe, business_name);
     }
-    // Swap phone number
+
+    // Swap phone number (if client provided one, override everything)
     const phoneMatch = clonedHtml.match(/(\+?1[-.\s]?)?\(?(\d{3})\)?[-.\s]?(\d{3})[-.\s]?(\d{4})/);
     if (phoneMatch && client_phone) {
       clonedHtml = clonedHtml.split(phoneMatch[0]).join(client_phone);
@@ -312,16 +325,24 @@ export default async function(req) {
       clonedHtml += formScript;
     }
 
-    // 9. Remove ALL external scripts. The deep render already captured the fully
-    //    rendered DOM (all JS-rendered content is in the HTML). Keeping external
-    //    scripts (especially Next.js bundles) causes re-hydration which injects
-    //    different content than the captured DOM — creating visual artifacts like
-    //    extra icons, wrong backgrounds, and mismatched elements. A static snapshot
-    //    of the rendered DOM achieves higher visual parity than a re-hydrated page.
-    clonedHtml = clonedHtml.replace(/<script[^>]+src=["']([^"']+)["'][^>]*><\/script>/gi, (match, src) => {
-      if (src.includes('ingestCloneLead')) return match; // keep our form handler
-      return ''; // remove all external scripts
-    });
+    // 9. Selective script removal. The deep render captured the fully rendered DOM
+    //    (all JS-rendered content is in the HTML). We need to keep functional scripts
+    //    (jQuery, sliders, accordions, custom JS) so interactive elements work, but
+    //    remove Next.js re-hydration scripts that re-render content differently from
+    //    the captured DOM (causing visual artifacts like extra icons, wrong backgrounds).
+    //    Strategy: remove __NEXT_DATA__ (hydration data) + Next.js chunk bundles, keep
+    //    everything else. Without __NEXT_DATA__, Next.js won't attempt re-hydration even
+    //    if some chunk scripts remain (they'll error harmlessly in try/catch).
+    
+    // Remove __NEXT_DATA__ JSON script (the hydration data Next.js needs to re-render)
+    clonedHtml = clonedHtml.replace(/<script[^>]*id=["']__NEXT_DATA__["'][^>]*>[\s\S]*?<\/script>/gi, '');
+    // Remove inline assignments of __NEXT_DATA__
+    clonedHtml = clonedHtml.replace(/window\.__NEXT_DATA__\s*=\s*[\s\S]*?;\s*<\/script>/gi, '</script>');
+    // Remove Next.js chunk bundles (/_next/static/chunks/...) — these are the re-hydration scripts
+    clonedHtml = clonedHtml.replace(/<script[^>]+src=["'][^"']*\/_next\/static\/[^"']*["'][^>]*><\/script>/gi, '');
+    // Remove inline Next.js hydration bootstrap scripts (small scripts that call __NEXT_DATA__)
+    clonedHtml = clonedHtml.replace(/<script[^>]*>[\s\S]*?__NEXT_DATA__[\s\S]*?<\/script>/gi, '');
+    // Keep our form handler, jQuery, slider libraries, and any other non-Next.js scripts
 
     // Add DOCTYPE if missing (stealth browser returns document.documentElement.outerHTML
     // which doesn't include the DOCTYPE declaration — without it, browsers render in
