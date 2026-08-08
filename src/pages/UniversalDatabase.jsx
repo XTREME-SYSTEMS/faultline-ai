@@ -3,6 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import { useTheme } from 'next-themes';
 import UniversalChat from '@/components/fl/UniversalChat';
+import { Link } from 'react-router-dom';
+import { portalNavCategories } from '@/components/fl/data';
 import { Database, Search, Play, Loader2, ExternalLink, CheckCircle2, AlertCircle, Clock, Sun, Moon, ChevronLeft, MessageSquare } from 'lucide-react';
 
 const CATEGORIES = [
@@ -77,6 +79,7 @@ export default function UniversalDatabase() {
   const [running, setRunning] = useState(false);
   const [runMsg, setRunMsg] = useState('');
   const [chatOpen, setChatOpen] = useState(true);
+  const [leftTab, setLeftTab] = useState('categories');
   const [stats, setStats] = useState({ total: 0, validated: 0, cloned: 0, pending: 0 });
 
   const load = useCallback(async () => {
@@ -141,13 +144,28 @@ export default function UniversalDatabase() {
             <p style={{ color: 'var(--db-accent)', fontSize: 11, fontWeight: 800, letterSpacing: '.14em', textTransform: 'uppercase', margin: '0 0 6px', display: 'flex', alignItems: 'center', gap: 7 }}><Database size={13} /> A-Z Database</p>
             <h2 style={{ font: "400 19px 'Libre Caslon Display', serif", margin: 0 }}>Universal Catalog</h2>
           </div>
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--db-border)' }}>
+            <button type="button" onClick={() => setLeftTab('categories')} style={{ flex: 1, padding: '9px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', border: 0, cursor: 'pointer', background: leftTab === 'categories' ? 'var(--db-surface)' : 'transparent', color: leftTab === 'categories' ? 'var(--db-text)' : 'var(--db-muted)', borderBottom: leftTab === 'categories' ? '2px solid var(--db-accent)' : '2px solid transparent' }}>Categories</button>
+            <button type="button" onClick={() => setLeftTab('tools')} style={{ flex: 1, padding: '9px', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.08em', border: 0, cursor: 'pointer', background: leftTab === 'tools' ? 'var(--db-surface)' : 'transparent', color: leftTab === 'tools' ? 'var(--db-text)' : 'var(--db-muted)', borderBottom: leftTab === 'tools' ? '2px solid var(--db-accent)' : '2px solid transparent' }}>Tools</button>
+          </div>
           <nav style={{ flex: 1, overflow: 'auto', padding: '10px 10px' }}>
-            {CATEGORIES.map(c => (
-              <button key={c.key || 'all'} type="button" onClick={() => setCat(c.key)} style={{
-                display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', marginBottom: 2, borderRadius: 7, fontSize: 13, fontWeight: cat === c.key ? 700 : 500, cursor: 'pointer',
-                border: 0, background: cat === c.key ? 'var(--db-accent)' : 'transparent', color: cat === c.key ? 'var(--db-accent-fg)' : 'var(--db-text)'
-              }}>{c.label}</button>
-            ))}
+            {leftTab === 'categories' ? (
+              CATEGORIES.map(c => (
+                <button key={c.key || 'all'} type="button" onClick={() => setCat(c.key)} style={{
+                  display: 'block', width: '100%', textAlign: 'left', padding: '8px 12px', marginBottom: 2, borderRadius: 7, fontSize: 13, fontWeight: cat === c.key ? 700 : 500, cursor: 'pointer',
+                  border: 0, background: cat === c.key ? 'var(--db-accent)' : 'transparent', color: cat === c.key ? 'var(--db-accent-fg)' : 'var(--db-text)'
+                }}>{c.label}</button>
+              ))
+            ) : (
+              portalNavCategories.map(grp => (
+                <div key={grp.step} style={{ marginBottom: 8 }}>
+                  <div style={{ fontSize: 9, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.1em', color: 'var(--db-muted)', padding: '6px 12px 4px' }}>{grp.icon} {grp.label}</div>
+                  {grp.items.map(([label, path]) => (
+                    <Link key={path} to={path} style={{ display: 'block', padding: '6px 12px', fontSize: 12, color: 'var(--db-text)', textDecoration: 'none', borderRadius: 6 }}>{label}</Link>
+                  ))}
+                </div>
+              ))
+            )}
           </nav>
           <div style={{ padding: 14, borderTop: '1px solid var(--db-border)', display: 'flex', flexDirection: 'column', gap: 9 }}>
             {isAdmin && (
