@@ -4,6 +4,7 @@ import { useAuth } from '@/lib/AuthContext';
 import { useTheme } from 'next-themes';
 import { Link, useNavigate } from 'react-router-dom';
 import { portalNavCategories } from '@/components/fl/data';
+import { TOOL_CATEGORIES } from '@/components/fl/toolRegistry';
 import UniversalChat from '@/components/fl/UniversalChat';
 import { Database, Search, Play, Loader2, ExternalLink, CheckCircle2, AlertCircle, Clock, Sun, Moon, MessageSquare, ChevronRight, ChevronLeft, Sparkles, LogOut } from 'lucide-react';
 
@@ -83,6 +84,7 @@ export default function UniversalDatabase() {
   const [runMsg, setRunMsg] = useState('');
   const [chatOpen, setChatOpen] = useState(true);
   const [openGroups, setOpenGroups] = useState({});
+  const [menuTab, setMenuTab] = useState('pages');
   const [stats, setStats] = useState({ total: 0, validated: 0, cloned: 0, pending: 0 });
 
   useEffect(() => { setTheme('dark'); /* dark dashboard by default */ }, [setTheme]);
@@ -149,23 +151,47 @@ export default function UniversalDatabase() {
           <div style={{ padding: '18px 18px 16px', borderBottom: '1px solid var(--db-border)', display: 'flex', alignItems: 'center', gap: 10 }}>
             <img src={LOGO_LIGHT} alt="Xtreme AI Systems" style={{ height: 30, width: 'auto' }} />
           </div>
-          <nav style={{ flex: 1, overflow: 'auto', padding: '10px 8px' }}>
-            {portalNavCategories.map((grp, gi) => {
-              const open = openGroups[grp.step] !== false;
-              return (
-                <div key={grp.step} style={{ marginBottom: 4 }}>
-                  <button type="button" onClick={() => setOpenGroups(s => ({ ...s, [grp.step]: !open }))} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: 'transparent', border: 0, color: 'var(--db-text)', cursor: 'pointer', textAlign: 'left' }}>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--db-accent)' }}>{gi + 1}</span>
-                    <span style={{ flex: 1, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.08em' }}>{grp.label}</span>
-                    <ChevronRight size={13} style={{ color: 'var(--db-muted)', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }} />
-                  </button>
-                  {open && grp.items.map(([label, path]) => {
-                    const active = path === '/app/database';
-                    return <Link key={path} to={path} style={{ display: 'block', padding: '7px 10px 7px 30px', fontSize: 12.5, color: active ? 'var(--db-accent)' : 'var(--db-text)', textDecoration: 'none', borderRadius: 6, lineHeight: 1.3, borderLeft: active ? '2px solid var(--db-accent)' : '2px solid transparent', background: active ? 'var(--db-surface-2)' : 'transparent' }}>{label}</Link>;
-                  })}
-                </div>
-              );
-            })}
+          <div style={{ display: 'flex', borderBottom: '1px solid var(--db-border)' }}>
+            {['pages', 'tools'].map(t => (
+              <button key={t} type="button" onClick={() => setMenuTab(t)} style={{ flex: 1, padding: '10px', background: 'transparent', border: 0, borderBottom: menuTab === t ? '2px solid var(--db-accent)' : '2px solid transparent', color: menuTab === t ? 'var(--db-accent)' : 'var(--db-muted)', fontSize: 10, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.12em', cursor: 'pointer' }}>{t}</button>
+            ))}
+          </div>
+          <nav style={{ flex: 1, overflow: 'auto', padding: '8px 8px' }}>
+            {menuTab === 'pages' ? (
+              portalNavCategories.map((grp, gi) => {
+                const open = openGroups['p' + grp.step] !== false;
+                return (
+                  <div key={grp.step} style={{ marginBottom: 4 }}>
+                    <button type="button" onClick={() => setOpenGroups(s => ({ ...s, ['p' + grp.step]: !open }))} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: 'transparent', border: 0, color: 'var(--db-text)', cursor: 'pointer', textAlign: 'left' }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: 'var(--db-accent)' }}>{gi + 1}</span>
+                      <span style={{ flex: 1, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.08em' }}>{grp.label}</span>
+                      <ChevronRight size={13} style={{ color: 'var(--db-muted)', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }} />
+                    </button>
+                    {open && grp.items.map(([label, path]) => {
+                      const active = path === '/app/database';
+                      return <Link key={path} to={path} style={{ display: 'block', padding: '7px 10px 7px 30px', fontSize: 12.5, color: active ? 'var(--db-accent)' : 'var(--db-text)', textDecoration: 'none', borderRadius: 6, lineHeight: 1.3, borderLeft: active ? '2px solid var(--db-accent)' : '2px solid transparent', background: active ? 'var(--db-surface-2)' : 'transparent' }}>{label}</Link>;
+                    })}
+                  </div>
+                );
+              })
+            ) : (
+              TOOL_CATEGORIES.map(tc => {
+                const open = openGroups['t' + tc.id] !== false;
+                return (
+                  <div key={tc.id} style={{ marginBottom: 4 }}>
+                    <button type="button" onClick={() => setOpenGroups(s => ({ ...s, ['t' + tc.id]: !open }))} style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', background: 'transparent', border: 0, color: 'var(--db-text)', cursor: 'pointer', textAlign: 'left' }}>
+                      <span style={{ fontSize: 13 }}>{tc.icon}</span>
+                      <span style={{ flex: 1, fontSize: 11, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.06em' }}>{tc.name}</span>
+                      <span style={{ fontSize: 9, color: 'var(--db-muted)', fontWeight: 700 }}>{tc.tools.length}</span>
+                      <ChevronRight size={13} style={{ color: 'var(--db-muted)', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform .15s' }} />
+                    </button>
+                    {open && tc.tools.map(tool => (
+                      <Link key={tool.id} to="/app/command-center" title={tool.desc} style={{ display: 'block', padding: '6px 10px 6px 34px', fontSize: 12, color: 'var(--db-text)', textDecoration: 'none', borderRadius: 6, lineHeight: 1.3 }}>{tool.label}</Link>
+                    ))}
+                  </div>
+                );
+              })
+            )}
           </nav>
           <div style={{ padding: 12, borderTop: '1px solid var(--db-border)', display: 'flex', flexDirection: 'column', gap: 8 }}>
             <button type="button" onClick={() => setChatOpen(true)} style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7, padding: '10px', background: 'transparent', color: 'var(--db-accent)', border: '1px solid var(--db-accent)', borderRadius: 7, fontSize: 12, fontWeight: 800, cursor: 'pointer' }}>
