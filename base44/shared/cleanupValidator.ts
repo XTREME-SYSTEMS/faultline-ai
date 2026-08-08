@@ -83,7 +83,10 @@ export function validateDeletion(resourceType, resourceId, linkedProject, protec
   }
 
   // Layer 3: Test pattern check (fl-test-* is always safe)
-  const isTestPattern = /^fl-test-/i.test(String(resourceId));
+  // Check the full ID AND the last path segment (e.g. owner/fl-test-xxx)
+  const idStr = String(resourceId);
+  const lastSegment = idStr.split('/').pop() || idStr;
+  const isTestPattern = /^fl-test-/i.test(idStr) || /^fl-test-/i.test(lastSegment);
   if (isTestPattern) return { safe: true, reason: 'Test pattern (fl-test-*) — validated' };
 
   // If linked to a candidate project, safe
