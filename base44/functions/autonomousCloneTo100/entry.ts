@@ -193,7 +193,7 @@ async function runEngine(base44, orgId, p) {
         }
       } catch (e) {}
       add(`Iteration ${i}/${maxIter}: validating ${urls.vercel}…`);
-      const vr = await withTimeout(base44.functions.invoke('validateFullStack', { live_url: urls.vercel, target_dna: targetDna, organization_id: orgId, clone_id: p.tracker_id }), 90000, 'validateFullStack');
+      const vr = await withTimeout(base44.functions.invoke('validateFullStack', { live_url: urls.vercel, target_url: p.target_url, target_dna: targetDna, organization_id: orgId, clone_id: p.tracker_id }), 120000, 'validateFullStack');
       const v = vr?.data || vr;
       score = v.score || 0; failures = v.failures || [];
       add(`Iteration ${i}: score=${score} (visual=${v.visual_score} operational=${v.operational_score}) failures=${failures.length}`);
