@@ -114,6 +114,12 @@ async function runEngine(base44, orgId, p) {
       targetDna = s.dna; bizName = bizName || s.bizName;
       add(`Scraped ${bizName}: ${s.rendered_chars} chars, nav=${targetDna.nav?.length || 0}`);
 
+      add('Generating benchmark discovery report…');
+      try {
+        await base44.functions.invoke('discoverBenchmarkSite', { target_url: p.target_url, industry: p.industry, business_name: bizName, launch_project_id: p.tracker_id });
+        add('Benchmark discovery report generated');
+      } catch (e) { add(`Benchmark report failed: ${e.message}`); }
+
       add('Inferring backend…');
       await base44.functions.invoke('inferTargetBackend', { target_url: p.target_url, industry: p.industry, scrape_result: s });
       add('Backend blueprint inferred');
