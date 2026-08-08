@@ -29,6 +29,7 @@ export interface StealthOptions {
   geoState?: string;
   geoCity?: string;
   projectId?: string;
+  viewport?: { width: number; height: number; mobile?: boolean; deviceScaleFactor?: number };
 }
 
 export interface ScrapeResult {
@@ -217,6 +218,16 @@ export async function scrapeWithStealth(url: string, options: StealthOptions = {
     await cdp.send('Page.enable', {}, sessionId);
     await cdp.send('Runtime.enable', {}, sessionId);
     await cdp.send('Network.enable', {}, sessionId);
+
+    // Set viewport override if specified (for mobile responsive validation)
+    if (options.viewport) {
+      await cdp.send('Emulation.setDeviceMetricsOverride', {
+        width: options.viewport.width,
+        height: options.viewport.height,
+        deviceScaleFactor: options.viewport.deviceScaleFactor || 1,
+        mobile: options.viewport.mobile || false,
+      }, sessionId);
+    }
 
     // Track captcha solving events
     let captchaSolved = false;

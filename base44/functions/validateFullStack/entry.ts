@@ -29,14 +29,16 @@ export default async function(req) {
       hasFormHandler: /ingestCloneLead/i.test(html)
     };
 
-    // 2. Browserbase screenshots of BOTH the clone and the original target
-    //    (stealth session + CDP capture — returns base64 PNG)
-    //    Run in PARALLEL to halve validation time (was sequential = 60s, now ~30s)
-    let cloneScreenshotB64 = null, targetScreenshotB64 = null;
+    // 2. Browserbase screenshots: desktop clone + target + MOBILE clone (responsive)
+    //    Run in PARALLEL. If a cached target screenshot URL is provided (from a
+    //    previous validation in the heal loop), reuse it — saves 15-20s per heal.
+    let cloneScreenshotB64 = null, targetScreenshotB64 = null, mobileScreenshotB64 = null;
     let cloneRendered = '', targetRendered = '';
-    const [cloneBB, targetBB] = await Promise.allSettled([
+    const cachedTargetUrl = body.cached_target_screenshot || null;
+    const [cloneBB, targetBB, mobileBB] = await Promise.allSettled([
       fetchRenderedWithScreenshot(live_url, { timeout: 20000 }),
-      target_url ? fetchRenderedWithScreenshot(target_url, { timeout: 20000 }) : Promise.resolve(null)
+      (target_url && !cachedTargetUrl) ? fetchRenderedWithScreenshot(target_url, { timeout: 20000 }) : Promise.resolve(null),
+      fetchRenderedWithScreenshot(live_url, { timeout: 20000, viewport: { width: 375, height: 812, mobile: true, deviceScaleFactor: 2 } }),
     ]);
     if (cloneBB.status === 'fulfilled' && cloneBB.value) {
       cloneScreenshotB64 = cloneBB.value.screenshot;
@@ -49,6 +51,11 @@ export default async function(req) {
       targetRendered = targetBB.value.html || '';
     } else if (targetBB.status === 'rejected') {
       console.error('Target screenshot failed:', targetBB.reason?.message || targetBB.reason);
+    }
+    if (mobileBB.status === 'fulfilled' && mobileBB.value) {
+      mobileScreenshotB64 = mobileBB.value.screenshot;
+    } else if (mobileBB.status === 'rejected') {
+      console.error('Mobile screenshot failed:', mobileBB.reason?.message || mobileBB.reason);
     }
 
     // 2b. Upload base64 screenshots to storage so the vision LLM can fetch them
@@ -66,10 +73,13 @@ export default async function(req) {
         return file_url;
       } catch (e) { console.error(`${label} upload failed: ${e.message}`); return null; }
     };
-    const [cloneScreenshot, targetScreenshot] = await Promise.all([
+    const [cloneScreenshot, targetScreenshot, mobileScreenshot] = await Promise.all([
       uploadScreenshot(cloneScreenshotB64, 'clone'),
-      uploadScreenshot(targetScreenshotB64, 'target')
+      uploadScreenshot(targetScreenshotB64, 'target'),
+      uploadScreenshot(mobileScreenshotB64, 'clone-mobile'),
     ]);
+    // Use cached target screenshot if provided (heal iteration optimization)
+    const finalTargetScreenshot = cachedTargetUrl || targetScreenshot;
 
     // 3. STRUCTURAL CONTENT AUDIT — compare the clone's rendered HTML against
     //    the target's rendered HTML to detect MISSING SECTIONS. The vision LLM
@@ -113,9 +123,9 @@ export default async function(req) {
     let visualScore = 0;
     let visualFailures = [];
     let llmSummary = '';
-    const fileUrls = [cloneScreenshot, targetScreenshot].filter(Boolean);
+    const fileUrls = [cloneScreenshot, finalTargetScreenshot, mobileScreenshot].filter(Boolean);
 
-    if (fileUrls.length === 2) {
+    if (fileUrls.length >= 2) {
       const scoringRes = await base44.integrations.Core.InvokeLLM({
         prompt: `You are the FaultLine Visual Parity Engine — STRICT MODE. Compare a cloned website screenshot against the original target site screenshot. Score how faithfully the clone reproduces the original's visual design.
 
@@ -129,9 +139,13 @@ TARGET DNA (scraped design metadata):
 - Section headings: ${(target_dna?.h2 || []).join(', ')}
 - Phone: ${target_dna?.phone || 'N/A'}
 
-Two screenshots are attached:
-1. The CLONE (generated site)
-2. The TARGET (original site)
+Screenshots are attached in this order:
+1. CLONE desktop (generated site)
+2. TARGET desktop (original site)
+3. CLONE mobile 375px viewport (responsive validation — if present)
+
+Score MOBILE RESPONSIVENESS as part of visual parity: if the mobile layout is broken
+(overflow, tiny text, unstacked columns, horizontal scroll), deduct points.
 
 Score VISUAL PARITY 0-100 based on:
 - Color scheme match (do the clone's colors match the target's colors?)
@@ -223,7 +237,8 @@ Be EXTREMELY STRICT. Only award 100 when the clone is pixel-perfect. List EVERY 
       status: 'success', score, visual_score: visualScore, operational_score: operationalScore,
       passed: score >= 100, failures, checks,
       visual_checks: { method: fileUrls.length === 2 ? 'screenshot_comparison' : 'content_fallback', summary: llmSummary },
-      screenshots: { clone: cloneScreenshot, target: targetScreenshot },
+      screenshots: { clone: cloneScreenshot, target: finalTargetScreenshot, mobile: mobileScreenshot },
+      target_screenshot: finalTargetScreenshot,
       live_url, target_url, target_org: targetOrg
     });
   } catch (error) {

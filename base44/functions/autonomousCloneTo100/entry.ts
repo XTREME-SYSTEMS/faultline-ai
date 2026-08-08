@@ -205,6 +205,7 @@ async function runEngine(base44, orgId, p) {
 
     // HEAL LOOP — validate -> fix -> re-deploy -> re-validate until 100 or max iterations
     const maxIter = p.max_iterations || 5;
+    let cachedTargetScreenshot = null;
     for (let i = 1; i <= maxIter; i++) {
       // Check for user cancellation before starting this iteration
       try {
@@ -216,9 +217,10 @@ async function runEngine(base44, orgId, p) {
         }
       } catch (e) {}
       add(`Iteration ${i}/${maxIter}: validating ${urls.vercel}…`);
-      const vr = await withTimeout(base44.functions.invoke('validateFullStack', { live_url: urls.vercel, target_url: p.target_url, target_dna: targetDna, organization_id: orgId, clone_id: p.tracker_id }), 120000, 'validateFullStack');
+      const vr = await withTimeout(base44.functions.invoke('validateFullStack', { live_url: urls.vercel, target_url: p.target_url, target_dna: targetDna, organization_id: orgId, clone_id: p.tracker_id, cached_target_screenshot: cachedTargetScreenshot }), 120000, 'validateFullStack');
       const v = vr?.data || vr;
       score = v.score || 0; failures = v.failures || [];
+      if (v.target_screenshot && !cachedTargetScreenshot) cachedTargetScreenshot = v.target_screenshot;
       add(`Iteration ${i}: score=${score} (visual=${v.visual_score} operational=${v.operational_score}) failures=${failures.length}`);
       await setProgress(55 + Math.round((i / maxIter) * 40), `Validation iter ${i}: ${score}/100`);
       await updateTracker(`Iter ${i}: ${score}/100 — ${failures.length} failures`, score);

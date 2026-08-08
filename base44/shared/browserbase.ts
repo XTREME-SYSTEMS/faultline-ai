@@ -125,6 +125,7 @@ export async function fetchRenderedWithScreenshot(url, options = {}) {
       waitAfterLoad: 3000,
       solveCaptchas: true,
       proxies: true,
+      viewport: options.viewport,
     });
     if (result.ok || result.screenshot) {
       return {
