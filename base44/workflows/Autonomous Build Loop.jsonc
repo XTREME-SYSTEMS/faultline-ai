@@ -1,0 +1,45 @@
+{
+  "name": "Autonomous Build Loop",
+  "description": "Runs the autonomous build cycle every 30 minutes, 24/7. Each run pulls the next pending SystemEnhancement (a logged roadmap item), builds the deliverable via the Template Factory or optimization engine, validates it against acceptance criteria, reflects on the result, and updates status. This is the self-managing, self-reflecting, self-optimizing loop that builds the roadmap autonomously.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "*/30 * * * *",
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "autonomous_build_loop",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_cycle": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "autonomousBuildCycle",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Run autonomous build cycle",
+            "description": "Pull next roadmap item, build, validate, reflect"
+          }
+        }
+      }
+    ]
+  }
+}
