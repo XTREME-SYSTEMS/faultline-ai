@@ -36,6 +36,17 @@ export default function EpoxyEstimateFunnel() {
 
   const update = (k, v) => setData(d => ({ ...d, [k]: v }));
 
+  const scrollToSection = (sectionId) => {
+    if (step !== 0) {
+      setStep(0);
+      setTimeout(() => {
+        document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+      }, 300);
+    } else {
+      document.getElementById(sectionId)?.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
   // ─── Upload photo + generate before/after ───
   const handlePhotoUpload = async (file) => {
     if (!file) return;
@@ -199,10 +210,10 @@ export default function EpoxyEstimateFunnel() {
         </div>
         <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
           <a href="tel:9545550199" style={{ background: LIME, color: '#fff', padding: '10px 20px', borderRadius: 4, fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>GET PRICING</a>
-          <a href="#verifloor" style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, textDecoration: 'none' }}>XPS CERTIFIED™</a>
-          <a href="#systems" style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, textDecoration: 'none' }}>What We Offer</a>
-          <a href="#about" style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, textDecoration: 'none' }}>Who We Are</a>
-          <a href="#testimonials" style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, textDecoration: 'none' }}>Where We Are</a>
+          <button onClick={() => scrollToSection('verifloor')} style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>XPS CERTIFIED™</button>
+          <button onClick={() => scrollToSection('systems')} style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>What We Offer</button>
+          <button onClick={() => scrollToSection('about')} style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>Who We Are</button>
+          <button onClick={() => scrollToSection('locations')} style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, background: 'none', border: 'none', cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}>Where We Are</button>
         </div>
       </header>
 

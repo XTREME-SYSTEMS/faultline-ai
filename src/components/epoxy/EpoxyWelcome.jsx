@@ -1,5 +1,5 @@
 import { COATING_SYSTEMS, GALLERY_IMAGES, APPLICATIONS, TESTIMONIALS } from '@/lib/epoxyVisualizerData';
-import { ArrowRight, ArrowUp, ShieldCheck, Award, FileCheck } from 'lucide-react';
+import { ArrowRight, ArrowUp, ShieldCheck, Award, FileCheck, MapPin } from 'lucide-react';
 
 const LIME = '#7AB800';
 const LIGHT_GREY = '#B7B7B7';
@@ -184,6 +184,27 @@ export default function EpoxyWelcome({ onStart }) {
               <div style={{ fontSize: 13, fontWeight: 700, color: CHARCOAL }}>— {t.author}</div>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* ═══ 9b. WHERE WE ARE — Service Areas ═══ */}
+      <div id="locations" style={{ padding: '80px 24px', background: '#f5f5f5' }}>
+        <div style={{ textAlign: 'center', marginBottom: 50 }}>
+          <h2 style={{ fontSize: 36, fontWeight: 800, color: CHARCOAL, margin: 0 }}>Where We Are</h2>
+          <p style={{ fontSize: 15, color: '#666', marginTop: 12, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>XPS Certified serves homeowners across the country. Find your local team and get a free estimate today.</p>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, maxWidth: 900, margin: '0 auto' }}>
+          {['Florida', 'Georgia', 'Texas', 'California', 'North Carolina', 'South Carolina', 'Tennessee', 'Arizona'].map(state => (
+            <div key={state} style={{ background: '#fff', borderRadius: 8, padding: 24, textAlign: 'center', border: '1px solid #eee', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
+              <MapPin size={28} color={LIME} style={{ margin: '0 auto 12px' }} />
+              <div style={{ fontSize: 14, fontWeight: 700, color: CHARCOAL }}>{state}</div>
+            </div>
+          ))}
+        </div>
+        <div style={{ textAlign: 'center', marginTop: 40 }}>
+          <button onClick={onStart} style={{ background: LIME, color: '#fff', border: 'none', padding: '14px 28px', borderRadius: 4, fontWeight: 700, fontSize: 14, cursor: 'pointer', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+            Check Availability <ArrowRight size={16} />
+          </button>
         </div>
       </div>
 
