@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
-import { COATING_SYSTEMS, getColorsBySystem } from '@/lib/epoxyVisualizerData';
+import { COATING_SYSTEMS, getColorsBySystem, SHEEN_OPTIONS } from '@/lib/epoxyVisualizerData';
 import { GARAGE_SIZES, FLOOR_CONDITIONS } from '@/lib/epoxyFlakeColors';
 import ColorSwatch from '@/components/vq/ColorSwatch';
 import EpoxyWelcome from '@/components/epoxy/EpoxyWelcome';
@@ -27,7 +27,7 @@ export default function EpoxyEstimateFunnel() {
     address: '', city: '', state: '', zip: '',
     garageSize: '', systemType: 'flake',
     floorConditions: [],
-    photoUrl: '', flakeColor: null,
+    photoUrl: '', flakeColor: null, sheen: 'gloss',
     name: '', email: '', phone: '',
     leadId: null, garageSqft: 0, lowEstimate: 0, highEstimate: 0,
     beforeUrl: '', afterUrl: '', generating: false, scraping: false
@@ -49,7 +49,9 @@ export default function EpoxyEstimateFunnel() {
           action: 'generate_visualization',
           photo_url: file_url,
           flake_color_name: data.flakeColor.color_name,
-          flake_hex: data.flakeColor.hex
+          flake_hex: data.flakeColor.hex,
+          color_image_url: data.flakeColor.image_url,
+          sheen: data.sheen
         });
         const d = res?.data || res;
         if (d.after_url) {
@@ -72,7 +74,32 @@ export default function EpoxyEstimateFunnel() {
           action: 'generate_visualization',
           photo_url: data.photoUrl,
           flake_color_name: color.color_name,
-          flake_hex: color.hex
+          flake_hex: color.hex,
+          color_image_url: color.image_url,
+          sheen: data.sheen
+        });
+        const d = res?.data || res;
+        if (d.after_url) {
+          update('afterUrl', d.after_url);
+          update('beforeUrl', d.before_url || data.photoUrl);
+        }
+      } catch (e) { console.error('Viz failed:', e); }
+      update('generating', false);
+    }
+  };
+
+  const pickSheen = async (sheenId) => {
+    update('sheen', sheenId);
+    if (data.photoUrl && data.flakeColor) {
+      update('generating', true);
+      try {
+        const res = await base44.functions.invoke('epoxyEstimatorEngine', {
+          action: 'generate_visualization',
+          photo_url: data.photoUrl,
+          flake_color_name: data.flakeColor.color_name,
+          flake_hex: data.flakeColor.hex,
+          color_image_url: data.flakeColor.image_url,
+          sheen: sheenId
         });
         const d = res?.data || res;
         if (d.after_url) {
@@ -302,7 +329,7 @@ export default function EpoxyEstimateFunnel() {
                 </>
               ) : data.photoUrl ? (
                 <>
-                  <Image src={data.photoUrl} fittingType="fit" className="w-full max-h-48 rounded-lg object-cover" />
+                  <Image src={data.photoUrl} fittingType="fill" className="w-full h-48 rounded-lg" />
                   <span style={{ fontSize: 13, color: LIME, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
                     <Check size={16} /> Photo uploaded — tap to change
                   </span>
@@ -321,10 +348,10 @@ export default function EpoxyEstimateFunnel() {
               <div style={{ marginBottom: 24 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-                    <Image src={data.beforeUrl} fittingType="fill" className="w-full h-56 object-cover" />
+                    <Image src={data.beforeUrl} fittingType="fill" className="w-full h-80 object-cover" />
                   </div>
                   <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-                    <Image src={data.afterUrl} fittingType="fill" className="w-full h-56 object-cover" />
+                    <Image src={data.afterUrl} fittingType="fill" className="w-full h-80 object-cover" />
                   </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>
@@ -356,6 +383,24 @@ export default function EpoxyEstimateFunnel() {
                     <div style={{ fontSize: 11, fontWeight: 600, color: CHARCOAL, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.color_name}</div>
                     <div style={{ fontSize: 9, color: '#888' }}>{c.code}</div>
                   </div>
+                </button>
+              ))}
+            </div>
+
+            {/* Sheen selector — Matte / Satin / Gloss */}
+            <div style={{ fontSize: 13, fontWeight: 700, color: CHARCOAL, marginBottom: 12, marginTop: 20 }}>
+              Select Your Sheen:
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 10, marginBottom: 20 }}>
+              {SHEEN_OPTIONS.map(s => (
+                <button key={s.id} onClick={() => pickSheen(s.id)} style={{
+                  ...cardBtnStyle,
+                  flexDirection: 'column', gap: 4, textAlign: 'center', padding: '14px',
+                  borderColor: data.sheen === s.id ? LIME : '#e0e0e0',
+                  background: data.sheen === s.id ? '#f5ffe8' : '#fff'
+                }}>
+                  <span style={{ fontWeight: 700, fontSize: 14, color: CHARCOAL }}>{s.name}</span>
+                  <span style={{ fontSize: 11, color: '#888' }}>{s.desc}</span>
                 </button>
               ))}
             </div>
@@ -411,10 +456,10 @@ export default function EpoxyEstimateFunnel() {
               <div style={{ marginBottom: 20 }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-                    <Image src={data.beforeUrl} fittingType="fill" className="w-full h-56 object-cover" />
+                    <Image src={data.beforeUrl} fittingType="fill" className="w-full h-80 object-cover" />
                   </div>
                   <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid #e2e8f0' }}>
-                    <Image src={data.afterUrl} fittingType="fill" className="w-full h-56 object-cover" />
+                    <Image src={data.afterUrl} fittingType="fill" className="w-full h-80 object-cover" />
                   </div>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 8 }}>

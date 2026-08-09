@@ -11,13 +11,21 @@ export default async function (req) {
     // ─── ACTION 1: Generate Before/After Visualization ───
     // User uploads garage photo + picks flake color → AI generates "after" image
     if (action === 'generate_visualization') {
-      const { photo_url, flake_color_name, flake_hex } = body;
+      const { photo_url, flake_color_name, flake_hex, color_image_url, sheen } = body;
       if (!photo_url) return Response.json({ error: 'photo_url required' }, { status: 400 });
 
-      // Generate the "after" image — epoxy flake floor in the chosen color
+      const sheenDesc = sheen === 'matte' ? 'matte (flat, low-reflection, no shine)' : sheen === 'satin' ? 'satin (soft sheen, subtle reflection)' : 'gloss (high shine, mirror-like reflection)';
+
+      // Generate the "after" image — use the uploaded photo as the base and the
+      // color chart swatch image as the exact color reference so the AI matches it precisely
+      const refImages = color_image_url ? [photo_url, color_image_url] : [photo_url];
       const afterRes = await base44.integrations.Core.GenerateImage({
-        prompt: `Professional photograph of a garage floor that has been resurfaced with a premium epoxy flake coating in the color "${flake_color_name}" (hex ${flake_hex}). The floor has a speckled, decorative flake finish with uniform color distribution. The garage is clean, well-lit, with walls and a garage door visible. Photorealistic, high-end home improvement photography, wide angle. The floor looks brand new, glossy, and professionally installed.`,
-        existing_image_urls: [photo_url]
+        prompt: `Professional photograph of a garage floor that has been resurfaced with a premium epoxy coating in the EXACT color "${flake_color_name}" (hex ${flake_hex}).
+
+CRITICAL: Match the exact color from the provided color chart swatch image. The floor color must be an exact match to the swatch — do not alter, shift, or approximate the color. The floor has a decorative finish with uniform color distribution. The sheen/finish must be ${sheenDesc}.
+
+Use the uploaded garage photo as the base — keep the same room layout, walls, and garage door. Only change the floor surface to show the new ${flake_color_name} coating with a ${sheen || 'gloss'} finish. The garage is clean, well-lit. Photorealistic, high-end home improvement photography, wide angle. The floor looks brand new and professionally installed.`,
+        existing_image_urls: refImages
       });
 
       return Response.json({
@@ -25,7 +33,8 @@ export default async function (req) {
         before_url: photo_url,
         after_url: afterRes.url,
         flake_color: flake_color_name,
-        flake_hex
+        flake_hex,
+        sheen: sheen || 'gloss'
       });
     }
 

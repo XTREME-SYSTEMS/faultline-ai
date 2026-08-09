@@ -3,7 +3,7 @@ import { COLOR_DATA } from '../../base44/shared/colorData';
 // 6 coating systems — exact GarageForce descriptions + 6th for even grid
 export const COATING_SYSTEMS = [
   { id: 'flake', name: 'Full Chip System', desc: 'The Full Chip, or Decorative Chip, System is our most popular concrete coating system. This three-layer system is easy to install in as little as a day and you\'ll be back on your floor in just 24 hours!', image: 'https://garageforce.com/wp-content/uploads/2022/11/square-full-chip.png', systemKey: 'flake' },
-  { id: 'medici', name: 'XPS Signature System', desc: 'The XPS Signature Polyurea Coating System creates a custom, decorative finish that will outlast any other acrylic or acid stain system on the market. This system is easy to maintain without waxing or re-coating.', image: 'https://garageforce.com/wp-content/uploads/2024/02/Medici-Patio.png', systemKey: 'flake' },
+  { id: 'medici', name: 'XPS Signature System', desc: 'The XPS Signature Polyurea Coating System creates a custom, decorative finish that will outlast any other acrylic or acid stain system on the market. This system is easy to maintain without waxing or re-coating.', image: 'https://garageforce.com/wp-content/uploads/2022/11/garageforce-41.jpg', systemKey: 'flake' },
   { id: 'metallic', name: 'Metallic System', desc: 'The pearlescent Metallic Coating System is a durable, high-end flooring system that uses metallic powder tints to create a flowing, metallic look. Tough and luxurious, the Metallic System gives the appearance of movement and variation, similar to liquid metal or natural marble.', image: 'https://garageforce.com/wp-content/uploads/2024/02/Metallic-Empty-Store.png', systemKey: 'metallic' },
   { id: 'solid', name: 'Solid Color System', desc: 'The Solid Color Concrete Coating System is an incredibly durable flooring option that provides rich, vibrant colors. This direct-to-concrete coating system is made of cyclo-aliphatic hybrid properties.', image: 'https://garageforce.com/wp-content/uploads/2024/02/Solid-Color-Pallet-Jack.png', systemKey: 'solid' },
   { id: 'quartz', name: 'Quartz System', desc: 'The Quartz Concrete Coating System is a super durable concrete coating that offers extreme abrasion resistance and a rough texture that conforms to all Occupational Safety and Health Administration (OSHA) slip requirements.', image: 'https://garageforce.com/wp-content/uploads/2024/02/Quartz-Fork-Lift.png', systemKey: 'quartz' },
@@ -37,6 +37,12 @@ export const TESTIMONIALS = [
   { text: "Our garage floor looks beautiful! Only regret is that we didn't do it sooner! Thank you XPS team!", author: "Nicole Niven" },
   { text: "XPS did an excellent job of communicating with me. They were on time and the results are great.", author: "Mark Nash" },
   { text: "I got quotes from multiple companies before deciding on XPS. One of the main reasons was how responsive our local expert was — he was the only one to consistently respond within 24 hours. His pricing was transparent and up-front. I would use XPS again in the future.", author: "Seth Kinast" }
+];
+
+export const SHEEN_OPTIONS = [
+  { id: 'matte', name: 'Matte', desc: 'Low reflection, flat finish' },
+  { id: 'satin', name: 'Satin', desc: 'Soft sheen, subtle reflection' },
+  { id: 'gloss', name: 'Gloss', desc: 'High shine, mirror-like reflection' }
 ];
 
 export function getColorsBySystem(systemKey) {
