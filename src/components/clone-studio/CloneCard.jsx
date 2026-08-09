@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { Image } from '@/components/ui/image';
 import { ExternalLink, Wand2, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function CloneCard({ clone }) {
@@ -38,18 +37,23 @@ export default function CloneCard({ clone }) {
       border: '1px solid #ddd', borderRadius: 10, overflow: 'hidden', background: '#fff',
       display: 'flex', flexDirection: 'column',
     }}>
-      {/* Thumbnail */}
-      <div style={{ position: 'relative', height: 160, background: 'linear-gradient(135deg, #1a1a1a, #2a2a2a)' }}>
+      {/* Thumbnail — screenshot of the clone's home page */}
+      <div style={{ position: 'relative', height: 160, background: 'linear-gradient(135deg, #1a1a1a, #2a2a2a)', overflow: 'hidden' }}>
         {clone.thumbnail ? (
-          <Image src={clone.thumbnail} alt={clone.name} fittingType="fill" style={{ width: '100%', height: '100%' }} />
-        ) : (
-          <div style={{
-            width: '100%', height: '100%', display: 'grid', placeItems: 'center',
-            color: '#E7C86E', fontFamily: "'Libre Caslon Display', serif", fontSize: 28,
-          }}>
-            {clone.name?.slice(0, 2).toUpperCase()}
-          </div>
-        )}
+          <img
+            src={clone.thumbnail}
+            alt={clone.name}
+            loading="lazy"
+            onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'grid'; }}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
+          />
+        ) : null}
+        <div style={{
+          width: '100%', height: '100%', display: clone.thumbnail ? 'none' : 'grid', placeItems: 'center',
+          color: '#E7C86E', fontFamily: "'Libre Caslon Display', serif", fontSize: 28,
+        }}>
+          {clone.name?.slice(0, 2).toUpperCase()}
+        </div>
         {/* Score badge */}
         <div style={{
           position: 'absolute', top: 8, right: 8, padding: '4px 10px', borderRadius: 20,

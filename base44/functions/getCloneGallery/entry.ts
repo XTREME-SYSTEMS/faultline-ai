@@ -1,8 +1,43 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
+// Derive the original site name from a Vercel deployment URL.
+// Pattern: {site-slug}-heal{N}-{rand}-{rand}-xtreme-ai-systems.vercel.app
+// e.g. revolut-heal1-gzpj-qtigfrruf-... → "Revolut"
+//      gong-io-heal1-syaw-...            → "Gong Io"
+//      clone-heal1-2jg6-...             → null (no site name embedded)
+function deriveNameFromVercelUrl(url) {
+  try {
+    const host = new URL(url).hostname;
+    const subdomain = host.replace(/\.vercel\.app$/, '');
+    const withoutTeam = subdomain.replace(/-xtreme-ai-systems$/, '');
+    const parts = withoutTeam.split('-');
+    // Find the heal/codeheal marker (not "clone" — that's a generic slug)
+    const markerIdx = parts.findIndex(p => /^(heal|codeheal)\d*$/.test(p));
+    if (markerIdx > 0) {
+      const slug = parts.slice(0, markerIdx).join('-');
+      if (slug && slug !== 'clone' && !slug.startsWith('autonomous')) {
+        return slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+      }
+    }
+    // Fallback: find a random-looking ID (4+ chars, has both letters and digits)
+    const uniqueId = parts.find(p =>
+      p.length >= 4 && /[a-zA-Z]/.test(p) && /[0-9]/.test(p) &&
+      !p.startsWith('iter') && !/^(heal|codeheal|clone)\d*$/.test(p)
+    );
+    if (uniqueId) return `Clone ${uniqueId}`;
+    return null;
+  } catch { return null; }
+}
+
+// Decode common HTML entities in names (e.g. "Banking &amp; Beyond" → "Banking & Beyond")
+function decodeHtmlEntities(str) {
+  if (!str) return str;
+  return str.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
+}
+
 // Clone Gallery — returns all cloned LaunchProjects that have a live Vercel URL,
-// grouped by industry, with a thumbnail (og:image) extracted from each live site.
-// Only clones with a working URL are included — every card links to a real Vercel deployment.
+// grouped by industry, with a screenshot thumbnail of each clone's home page.
+// Names are derived from the Vercel URL pattern when the stored name is generic.
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -11,40 +46,33 @@ export default async function(req) {
     const orgId = user.data?.organization_id;
     if (!orgId) return Response.json({ error: 'No organization found' }, { status: 400 });
 
-    // Fetch all launch projects, sorted by most recent
     const projects = await base44.asServiceRole.entities.LaunchProject.filter(
       { organization_id: orgId }, '-created_date', 100
     );
 
-    // Keep only clones that have a Vercel deployment URL (working URL required)
     const cloned = projects.filter(p =>
       p.vercel_deployment_url || p.metadata?.vercel_deployment_url
     );
 
-    // Fetch thumbnails (og:image) from each live site in parallel — 8s timeout each
-    const withThumbs = await Promise.all(cloned.map(async (p) => {
+    const withThumbs = cloned.map((p) => {
       const url = p.vercel_deployment_url || p.metadata?.vercel_deployment_url;
-      let thumbnail = null;
-      try {
-        const res = await fetch(url, {
-          headers: { 'User-Agent': 'FaultLine-CloneGallery/1.0' },
-          signal: AbortSignal.timeout(8000), redirect: 'follow'
-        });
-        const html = await res.text();
-        // Try og:image first, then twitter:image, then first large img
-        const ogMatch = html.match(/<meta[^>]*property=["']og:image["'][^>]*content=["']([^"']*)["']/i)
-          || html.match(/<meta[^>]*name=["']twitter:image["'][^>]*content=["']([^"']*)["']/i);
-        if (ogMatch) {
-          thumbnail = ogMatch[1];
-        } else {
-          const imgMatch = html.match(/<img[^>]*src=["'](https?:\/\/[^"']+\.(?:png|jpg|jpeg|webp|svg)[^"']*)["']/i);
-          if (imgMatch) thumbnail = imgMatch[1];
-        }
-      } catch (e) { /* thumbnail stays null — frontend shows placeholder */ }
+
+      // Use the original site name when the stored name is generic
+      const isGeneric = !p.project_name ||
+        p.project_name.startsWith('Autonomous Clone') ||
+        p.project_name === 'Clone' || p.project_name === 'CLONE' ||
+        /^Clone (heal\d+|[a-z0-9]{3,})$/.test(p.project_name);
+      const derivedName = isGeneric ? deriveNameFromVercelUrl(url) : null;
+      const rawName = (isGeneric && derivedName) ? derivedName : (p.project_name || 'Untitled Clone');
+      const name = decodeHtmlEntities(rawName);
+
+      // Screenshot of the clone's home page (mShots generates + caches on first request)
+      const thumbnail = `https://s.wordpress.com/mshots/v1/${encodeURIComponent(url)}?w=480&h=360`;
+
       return {
         id: p.id,
-        name: p.project_name || p.business_name || 'Untitled Clone',
-        business_name: p.business_name || '',
+        name,
+        business_name: p.business_name || derivedName || '',
         industry: p.industry || p.metadata?.target_dna?.industry || 'Uncategorized',
         url,
         thumbnail,
@@ -52,8 +80,17 @@ export default async function(req) {
         status: p.status,
         target_url: p.metadata?.target_url || '',
         created_date: p.created_date,
+        needsRename: isGeneric && derivedName ? true : false,
       };
-    }));
+    });
+
+    // Fix generic names in the DB (non-blocking, one-time)
+    const toRename = withThumbs.filter(c => c.needsRename);
+    if (toRename.length > 0) {
+      base44.asServiceRole.entities.LaunchProject.bulkUpdate(
+        toRename.map(c => ({ id: c.id, project_name: c.name, business_name: c.name }))
+      ).catch(() => {});
+    }
 
     // Group by industry
     const groups = {};
