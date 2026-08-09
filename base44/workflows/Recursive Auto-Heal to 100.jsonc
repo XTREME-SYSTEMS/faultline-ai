@@ -1,5 +1,5 @@
 {
-  "description": "Scheduled 24/7 autonomous loop: scans for launched clones below 100/100 parity (or discovered performers to build), then runs the recursive auto-heal engine \u2014 validate, auto-fix, re-deploy, re-validate \u2014 until 100/100 visual + operational parity is reached.",
+  "description": "Scheduled 24/7 autonomous loop: batch-heals ALL launched clones below 100/100 parity in a single pass \u2014 validate, auto-fix, re-deploy, re-validate \u2014 until 100/100 visual + operational parity is reached across the entire catalog.",
   "name": "Recursive Auto-Heal to 100",
   "trigger": {
     "condition": null,
@@ -22,24 +22,23 @@
     "document": {
       "dsl": "1.0.0",
       "name": "recursive_auto_heal_to_100",
-      "version": "1.0",
+      "version": "1.1",
       "namespace": "base44"
     },
     "do": [
       {
-        "scan_and_heal": {
+        "batch_heal_all": {
           "call": "invoke_backend_function",
           "with": {
-            "function_name": "autonomousCloneTo100",
+            "function_name": "healAllClonesTo100",
             "args": {
-              "scan": true,
-              "max_iterations": 5
+              "max_iterations": 3
             }
           },
           "then": "end",
           "x-base44": {
-            "title": "Scan & heal clones to 100",
-            "description": "Find work + run recursive auto-heal engine"
+            "title": "Batch heal ALL clones to 100",
+            "description": "Heal every launched clone below 100/100 in one batch pass"
           }
         }
       }
