@@ -2,7 +2,7 @@ import { NavLink } from 'react-router-dom';
 import { LayoutDashboard, Terminal, MessageSquare, Building2, Settings as SettingsIcon } from 'lucide-react';
 
 const TABS = [
-  { to: '/app', label: 'Overview', icon: LayoutDashboard, end: true },
+  { to: '/app', label: 'XtremeOS', icon: LayoutDashboard, end: true },
   { to: '/app/command-center', label: 'Command', icon: Terminal },
   { to: '/app/chat', label: 'Chat', icon: MessageSquare },
   { to: '/app/business', label: 'Build', icon: Building2 },

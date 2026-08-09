@@ -3,14 +3,14 @@ import { lazy, Suspense, useState, useEffect } from 'react';
 import BottomNav from './BottomNav';
 
 // Lazy-load the 5 bottom-nav tab pages for keep-alive (display:none when inactive)
-const Overview = lazy(() => import('@/pages/Overview'));
+const XtremeOS = lazy(() => import('@/pages/XtremeOS'));
 const CommandCenter = lazy(() => import('@/pages/CommandCenter'));
 const Chat = lazy(() => import('@/pages/Chat'));
 const BusinessHub = lazy(() => import('@/pages/business/BusinessHub'));
 const Settings = lazy(() => import('@/pages/Settings'));
 
 const TAB_ROUTES = [
-  { path: '/app', component: Overview },
+  { path: '/app', component: XtremeOS },
   { path: '/app/command-center', component: CommandCenter },
   { path: '/app/chat', component: Chat },
   { path: '/app/business', component: BusinessHub },

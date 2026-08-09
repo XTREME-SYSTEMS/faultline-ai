@@ -26,6 +26,8 @@ const PRODUCT_ARCHETYPES = [
   { type: 'AI Tool', price: 29, category: 'ai_tool' },
   { type: 'Web Pack', price: 49, category: 'web_pack' },
   { type: 'App Pack', price: 99, category: 'app_pack' },
+  { type: 'Logo Pack', price: 19, category: 'logo_pack' },
+  { type: 'Brand Pack', price: 39, category: 'brand_pack' },
   { type: 'CRM System', price: 149, category: 'crm' },
   { type: 'Estimating Tool', price: 39, category: 'estimating' },
   { type: 'Lead Gen System', price: 79, category: 'lead_gen' },

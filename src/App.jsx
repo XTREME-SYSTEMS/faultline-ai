@@ -110,6 +110,7 @@ const NicheWebsiteStudio = lazy(() => import('@/pages/NicheWebsiteStudio'));
 const VideoStudio = lazy(() => import('@/pages/VideoStudio'));
 const SocialMediaManager = lazy(() => import('@/pages/SocialMediaManager'));
 const AiBidWriter = lazy(() => import('@/pages/tools/AiBidWriter'));
+const XtremeOS = lazy(() => import('@/pages/XtremeOS'));
 
 const PageLoader = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -169,7 +170,7 @@ const AuthenticatedApp = () => {
       {/* Protected portal */}
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<PortalLayout />}>
-        <Route path="/app" element={<Overview />} />
+        <Route path="/app" element={<XtremeOS />} />
         <Route path="/app/setup" element={<SetupWizard />} />
         <Route path="/app/client-setup" element={<ClientSetupWizard />} />
         <Route path="/app/discovery-engine" element={<DiscoveryEngine />} />
@@ -241,6 +242,7 @@ const AuthenticatedApp = () => {
           <Route path="guardrails" element={<XVGuardrails />} />
           <Route path="settings" element={<XVSettings />} />
         </Route>
+        <Route path="/app/xtremeos" element={<XtremeOS />} />
         <Route path="/app/settings" element={<Settings />} />
         <Route path="/app/pcu-control" element={<PCUControlCenter />} />
         <Route path="/app/enhancement-engine" element={<EnhancementEngine />} />
