@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Copy, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
@@ -26,6 +26,16 @@ export default function CloneStudio() {
   const [selections, setSelections] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // If opened with ?project=<id> (from the Clone Gallery), skip straight to Customize
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get('project');
+    if (projectId) {
+      setLaunchId(projectId);
+      setStep(4);
+    }
+  }, []);
 
   async function handleDiscover(input, mode) {
     setLoading(true);
