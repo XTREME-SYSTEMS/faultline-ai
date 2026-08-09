@@ -23,6 +23,15 @@ export default function SeoHead() {
     setMeta('geo.position', '26.1224;-80.1373');
     setMeta('ICBM', '26.1224, -80.1373');
 
+    // ── PWA ──
+    setMeta('theme-color', '#7AB800');
+    setMeta('apple-mobile-web-app-capable', 'yes');
+    setMeta('apple-mobile-web-app-status-bar-style', 'default');
+    setMeta('apple-mobile-web-app-title', 'Epoxy Floors');
+    setMeta('mobile-web-app-capable', 'yes');
+    setLink('manifest', '/epoxy-manifest.json');
+    setLink('apple-touch-icon', '/epoxy-icon.svg');
+
     // ── Open Graph ──
     setMeta('og:title', `${siteName} — Free Instant Epoxy Garage Floor Estimates`, true);
     setMeta('og:description', description, true);

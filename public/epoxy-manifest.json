@@ -1,0 +1,25 @@
+{
+  "name": "Epoxy Garage Floors Near You",
+  "short_name": "Epoxy Floors",
+  "description": "Free instant epoxy garage floor estimates near you. One-day installation, 30+ colors, lifetime warranty.",
+  "start_url": "/epoxy-estimate",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#7AB800",
+  "icons": [
+    {
+      "src": "/epoxy-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/epoxy-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

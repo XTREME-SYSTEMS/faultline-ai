@@ -8,6 +8,7 @@ import ProcessTimeline from '@/components/epoxy/ProcessTimeline';
 import SocialProofCounter from '@/components/epoxy/SocialProofCounter';
 import StickyMobileCta from '@/components/epoxy/StickyMobileCta';
 import ExitIntentPopup from '@/components/epoxy/ExitIntentPopup';
+import InstallPwaButton from '@/components/epoxy/InstallPwaButton';
 import { ArrowRight, ArrowUp, ShieldCheck, Award, FileCheck, MapPin } from 'lucide-react';
 
 const LIME = '#7AB800';
@@ -260,6 +261,7 @@ export default function EpoxyWelcome({ onStart }) {
         </button>
       </div>
 
+      <InstallPwaButton />
       <StickyMobileCta onStart={onStart} />
       <ExitIntentPopup onStart={onStart} />
     </>
