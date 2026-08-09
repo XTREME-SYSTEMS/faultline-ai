@@ -10,14 +10,19 @@ export default function ForensicAuditCenter() {
   const [expanded, setExpanded] = useState(null);
   const [runResult, setRunResult] = useState(null);
   const [healEnabled, setHealEnabled] = useState(true);
+  const [repairTasks, setRepairTasks] = useState([]);
+  const [codeHealRunning, setCodeHealRunning] = useState(false);
+  const [codeHealResult, setCodeHealResult] = useState(null);
 
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
-      const [allProjects, qaReports, batchReceipts] = await Promise.all([
+      const [allProjects, qaReports, batchReceipts, repairTaskList, codeHealReceipts] = await Promise.all([
         base44.entities.LaunchProject.list('-created_date', 200),
         base44.entities.QAReport.filter({ target_type: 'website' }, '-created_date', 100),
-        base44.entities.Receipt.filter({ system: 'batch_forensic_audit' }, '-created_date', 10)
+        base44.entities.Receipt.filter({ system: 'batch_forensic_audit' }, '-created_date', 10),
+        base44.entities.RepairTask.list('-created_date', 200),
+        base44.entities.Receipt.filter({ system: 'autonomous_code_heal' }, '-created_date', 10)
       ]);
 
       // Deduplicate projects by vercel_deployment_url (keep newest)
@@ -42,7 +47,8 @@ export default function ForensicAuditCenter() {
 
       setSites(uniqueSites.map(s => ({ ...s, latestReport: reportMap[s.id] || null })));
       setReports(qaReports);
-      setReceipts(batchReceipts);
+      setReceipts([...batchReceipts, ...codeHealReceipts].sort((a, b) => new Date(b.created_date) - new Date(a.created_date)));
+      setRepairTasks(repairTaskList);
     } catch (e) {
       console.error(e);
     }
@@ -68,6 +74,23 @@ export default function ForensicAuditCenter() {
       setRunResult({ error: e.message });
     }
     setRunning(false);
+  };
+
+  const runCodeHeal = async () => {
+    setCodeHealRunning(true);
+    setCodeHealResult(null);
+    try {
+      const res = await base44.functions.invoke('autonomousCodeHeal', {
+        max_iterations: 5,
+        max_sites: 10
+      });
+      const data = res?.data || res;
+      setCodeHealResult(data);
+      await loadData();
+    } catch (e) {
+      setCodeHealResult({ error: e.message });
+    }
+    setCodeHealRunning(false);
   };
 
   const passed = sites.filter(s => (s.parity_score || 0) >= 100).length;
@@ -108,10 +131,18 @@ export default function ForensicAuditCenter() {
           {running ? 'Running…' : (healEnabled ? 'Run Full Audit + Heal' : 'Run Audit Only')}
         </button>
         <button
+          className="btn gold"
+          onClick={runCodeHeal}
+          disabled={codeHealRunning || running}
+          style={{ opacity: codeHealRunning || running ? 0.6 : 1 }}
+        >
+          {codeHealRunning ? 'Coding…' : 'Run Code Heal (Recursive)'}
+        </button>
+        <button
           className="btn outline"
           onClick={loadData}
-          disabled={loading || running}
-          style={{ opacity: loading || running ? 0.6 : 1 }}
+          disabled={loading || running || codeHealRunning}
+          style={{ opacity: loading || running || codeHealRunning ? 0.6 : 1 }}
         >
           Refresh
         </button>
@@ -266,6 +297,75 @@ export default function ForensicAuditCenter() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {/* Code heal result */}
+      {codeHealResult && (
+        <div style={{
+          background: codeHealResult.error ? '#f5d8d5' : '#e8f5e9',
+          border: `1px solid ${codeHealResult.error ? '#a52d23' : '#237A4B'}`,
+          borderRadius: 8, padding: 16, marginBottom: 20, fontSize: 13
+        }}>
+          {codeHealResult.error ? (
+            <span style={{ color: '#a52d23' }}>Error: {codeHealResult.error}</span>
+          ) : (
+            <span style={{ color: '#237A4B' }}>
+              ✓ Code heal complete — {codeHealResult.total_sites} sites processed, {codeHealResult.healed} healed to 100/100
+            </span>
+          )}
+        </div>
+      )}
+
+      {/* Repair Task To-Do List */}
+      {repairTasks.length > 0 && (
+        <div style={{ marginTop: 30 }}>
+          <h3 style={{ font: '400 24px Libre Caslon Display, serif', marginBottom: 16 }}>
+            Code Heal To-Do List ({repairTasks.filter(t => t.status !== 'resolved' && t.status !== 'wont_fix').length} open)
+          </h3>
+          <div className="table" style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' }}>
+            <table>
+              <thead>
+                <tr style={{ background: '#f7f7f5' }}>
+                  <th>Gap</th>
+                  <th>Site</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                  <th>Strategy</th>
+                </tr>
+              </thead>
+              <tbody>
+                {repairTasks.slice(0, 50).map(task => {
+                  const siteName = sites.find(s => s.id === task.project_id)?.project_name || 'Unknown';
+                  return (
+                    <tr key={task.id}>
+                      <td style={{ maxWidth: 400 }}>
+                        <small style={{ color: '#555', lineHeight: 1.4 }}>{task.description}</small>
+                      </td>
+                      <td><small>{siteName}</small></td>
+                      <td>
+                        <span className="pill" style={{
+                          background: task.priority === 'critical' ? '#f5d8d5' : task.priority === 'high' ? '#f8e5ce' : '#f4edca',
+                          color: task.priority === 'critical' ? '#a52d23' : task.priority === 'high' ? '#a85c00' : '#7e6b00'
+                        }}>
+                          {task.priority?.toUpperCase()}
+                        </span>
+                      </td>
+                      <td>
+                        <span className="pill" style={{
+                          background: task.status === 'resolved' ? '#e8f5e9' : task.status === 'blocked' ? '#f5d8d5' : task.status === 'in_progress' ? '#f8e5ce' : '#f7f7f5',
+                          color: task.status === 'resolved' ? '#237A4B' : task.status === 'blocked' ? '#a52d23' : task.status === 'in_progress' ? '#a85c00' : '#666'
+                        }}>
+                          {task.status?.toUpperCase()}
+                        </span>
+                      </td>
+                      <td><small style={{ color: '#888' }}>{task.fix_strategy || 'autonomous code fix'}</small></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
 
