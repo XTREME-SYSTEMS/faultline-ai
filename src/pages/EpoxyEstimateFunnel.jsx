@@ -7,7 +7,7 @@ import EpoxyWelcome from '@/components/epoxy/EpoxyWelcome';
 import SeoHead from '@/components/epoxy/SeoHead';
 import EpoxyLogo from '@/components/epoxy/EpoxyLogo';
 import { Image } from '@/components/ui/image';
-import { Upload, Check, Clock, Search, Phone, ArrowRight, ArrowLeft, Camera, Loader2, ShieldCheck, Square, Wrench, Droplet, Layers, AlertTriangle, Droplets, MapPin } from 'lucide-react';
+import { Upload, Check, Clock, Search, Phone, ArrowRight, ArrowLeft, Camera, Loader2, ShieldCheck, Square, Wrench, Droplet, Layers, AlertTriangle, Droplets } from 'lucide-react';
 
 const LIME = '#7AB800';
 const LIGHT_GREY = '#B7B7B7';

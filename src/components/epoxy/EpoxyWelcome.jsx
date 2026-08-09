@@ -10,7 +10,7 @@ import StickyMobileCta from '@/components/epoxy/StickyMobileCta';
 import ExitIntentPopup from '@/components/epoxy/ExitIntentPopup';
 import InstallPwaButton from '@/components/epoxy/InstallPwaButton';
 import StateSilhouette from '@/components/epoxy/StateSilhouette';
-import { ArrowRight, ArrowUp, ShieldCheck, Award, FileCheck, MapPin } from 'lucide-react';
+import { ArrowRight, ArrowUp, ShieldCheck, Award, FileCheck } from 'lucide-react';
 
 const LIME = '#7AB800';
 const LIGHT_GREY = '#B7B7B7';
