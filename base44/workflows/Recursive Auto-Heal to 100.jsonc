@@ -1,5 +1,5 @@
 {
-  "description": "Scheduled 24/7 autonomous loop: batch-heals ALL launched clones below 100/100 parity in a single pass \u2014 validate, auto-fix, re-deploy, re-validate \u2014 until 100/100 visual + operational parity is reached across the entire catalog.",
+  "description": "Scheduled 24/7 autonomous loop: every 30 min \u2014 batch-heals ALL launched clones to 100/100 parity, then runs a deep forensic audit (security headers, HTML structure, form handlers, content depth), auto-fixes, auto-hardens, and re-validates. Sites still failing get re-healed on the next cycle until every cloned site passes both parity AND forensic checks at 100/100.",
   "name": "Recursive Auto-Heal to 100",
   "trigger": {
     "condition": null,
@@ -22,7 +22,7 @@
     "document": {
       "dsl": "1.0.0",
       "name": "recursive_auto_heal_to_100",
-      "version": "1.1",
+      "version": "2.0",
       "namespace": "base44"
     },
     "do": [
@@ -35,10 +35,26 @@
               "max_iterations": 3
             }
           },
+          "then": "forensic_audit",
+          "x-base44": {
+            "title": "Batch heal all clones to 100",
+            "description": "Heal every launched clone below 100/100 parity"
+          }
+        }
+      },
+      {
+        "forensic_audit": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "forensicAuditAndHarden",
+            "args": {
+              "max_iterations": 2
+            }
+          },
           "then": "end",
           "x-base44": {
-            "title": "Batch heal ALL clones to 100",
-            "description": "Heal every launched clone below 100/100 in one batch pass"
+            "title": "Deep forensic audit + harden",
+            "description": "Security headers, HTML structure, form handlers \u2014 auto-fix + auto-harden + re-validate"
           }
         }
       }
