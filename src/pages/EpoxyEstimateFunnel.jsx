@@ -171,9 +171,11 @@ export default function EpoxyEstimateFunnel() {
           </div>
         </div>
         <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
-          <a href="#systems" style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, textDecoration: 'none' }}>What We Offer</a>
-          <a href="#process" style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, textDecoration: 'none' }}>Our Process</a>
           <a href="tel:9545550199" style={{ background: LIME, color: '#fff', padding: '10px 20px', borderRadius: 4, fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>GET PRICING</a>
+          <a href="#verifloor" style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, textDecoration: 'none' }}>VERIFLOOR™</a>
+          <a href="#systems" style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, textDecoration: 'none' }}>What We Offer</a>
+          <a href="#about" style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, textDecoration: 'none' }}>Who We Are</a>
+          <a href="#testimonials" style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, textDecoration: 'none' }}>Where We Are</a>
         </div>
       </header>
 
