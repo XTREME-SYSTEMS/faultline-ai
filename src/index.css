@@ -442,6 +442,12 @@ td small { color: #888; margin-top: 4px; }
 .fl-input::placeholder { color: #aaa; }
 textarea.fl-input { resize: vertical; min-height: 80px; }
 
+/* ===== XtremeOS responsive ===== */
+@media (max-width: 900px) {
+  .xtremeos-content { margin-left: 0 !important; }
+  .xtremeos-sidebar { display: none !important; }
+}
+
 /* ===== iOS WebView / Mobile bottom navigation ===== */
 .fl-bottom-nav {
   display: none;

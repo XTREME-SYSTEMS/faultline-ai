@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
+import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
+import XtremeOSRightPanel from '@/components/fl/XtremeOSRightPanel';
 import {
   Activity, Package, Globe, Shield, TrendingUp, Zap, CheckCircle2,
   AlertCircle, Clock, Cpu, DollarSign, Layers
@@ -66,7 +68,10 @@ export default function XtremeOS() {
   ];
 
   return (
-    <div className="portal-page" style={{ background: '#f7f7f5', minHeight: 'calc(100vh - 72px)' }}>
+    <>
+      <XtremeOSSidebar />
+      <XtremeOSRightPanel />
+      <div className="portal-page xtremeos-content" style={{ background: '#f7f7f5', minHeight: '100vh', marginLeft: 240, transition: 'margin .3s' }}>
       {/* XtremeOS Header */}
       <div style={{
         background: 'radial-gradient(circle at 82% 40%, #C89B3C45, transparent 25%), #0a0a0a',
@@ -181,6 +186,7 @@ export default function XtremeOS() {
           </Link>
         ))}
       </div>
-    </div>
+      </div>
+    </>
   );
 }
