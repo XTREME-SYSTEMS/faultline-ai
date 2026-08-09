@@ -3,7 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Terminal, MessageSquare, Building2, Globe, Shield,
   Search, TrendingUp, Package, DollarSign, Users, FileText, PenTool,
-  Database, Video, Share2, Settings, Layers, Cpu, Zap, ChevronDown
+  Database, Video, Share2, Settings, Layers, Cpu, Zap, ChevronDown, Copy
 } from 'lucide-react';
 
 const NAV_GROUPS = [
@@ -24,6 +24,7 @@ const NAV_GROUPS = [
       { to: '/app/universal-builder', label: 'Universal Builder', icon: Layers },
       { to: '/app/brand-generator', label: 'Brand Generator', icon: PenTool },
       { to: '/app/niche-websites', label: 'Niche Websites', icon: Globe },
+      { to: '/app/clone-studio', label: 'Clone Studio', icon: Copy },
     ]
   },
   {

@@ -110,6 +110,7 @@ const NicheWebsiteStudio = lazy(() => import('@/pages/NicheWebsiteStudio'));
 const VideoStudio = lazy(() => import('@/pages/VideoStudio'));
 const SocialMediaManager = lazy(() => import('@/pages/SocialMediaManager'));
 const AiBidWriter = lazy(() => import('@/pages/tools/AiBidWriter'));
+const CloneStudio = lazy(() => import('@/pages/CloneStudio'));
 const XtremeOS = lazy(() => import('@/pages/XtremeOS'));
 
 const PageLoader = () => (
@@ -171,6 +172,7 @@ const AuthenticatedApp = () => {
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<PortalLayout />}>
         <Route path="/app" element={<XtremeOS />} />
+        <Route path="/app/clone-studio" element={<CloneStudio />} />
         <Route path="/app/setup" element={<SetupWizard />} />
         <Route path="/app/client-setup" element={<ClientSetupWizard />} />
         <Route path="/app/discovery-engine" element={<DiscoveryEngine />} />
