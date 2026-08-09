@@ -6,7 +6,7 @@ import ColorSwatch from '@/components/vq/ColorSwatch';
 import EpoxyWelcome from '@/components/epoxy/EpoxyWelcome';
 import SeoHead from '@/components/epoxy/SeoHead';
 import { Image } from '@/components/ui/image';
-import { Upload, Check, Clock, Search, Phone, ArrowRight, ArrowLeft, Camera, Loader2, ShieldCheck, Square, Wrench, Droplet, Layers, AlertTriangle, Droplets } from 'lucide-react';
+import { Upload, Check, Clock, Search, Phone, ArrowRight, ArrowLeft, Camera, Loader2, ShieldCheck, Square, Wrench, Droplet, Layers, AlertTriangle, Droplets, MapPin } from 'lucide-react';
 
 const LIME = '#7AB800';
 const LIGHT_GREY = '#B7B7B7';
@@ -206,7 +206,7 @@ export default function EpoxyEstimateFunnel() {
       {/* ─── HEADER ─── */}
       <header style={{ background: '#fff', borderBottom: `3px solid ${LIME}`, padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 72 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 40, height: 40, background: LIME, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 20 }}>X</div>
+          <div style={{ width: 40, height: 40, background: LIME, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 20 }}><MapPin size={20} color="#fff" /></div>
           <div>
             <div style={{ fontWeight: 800, fontSize: 14, color: CHARCOAL, letterSpacing: 0.3 }}>EPOXY GARAGE FLOORS</div>
             <div style={{ fontSize: 10, color: LIME, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' }}>Near You</div>
@@ -511,7 +511,7 @@ export default function EpoxyEstimateFunnel() {
       {/* ─── FOOTER — white ─── */}
       <footer style={{ background: '#f5f5f5', color: CHARCOAL, padding: '40px 24px', textAlign: 'center', borderTop: `1px solid #e0e0e0` }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 16 }}>
-          <div style={{ width: 36, height: 36, background: LIME, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 18 }}>X</div>
+          <div style={{ width: 36, height: 36, background: LIME, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 18 }}><MapPin size={18} color="#fff" /></div>
           <div style={{ fontWeight: 800, fontSize: 14 }}>EPOXY GARAGE FLOORS NEAR YOU</div>
         </div>
         <div style={{ fontSize: 12, color: '#888' }}>© 2026 Epoxy Garage Floors Near You. The Original One-Day Flooring Solution.</div>
