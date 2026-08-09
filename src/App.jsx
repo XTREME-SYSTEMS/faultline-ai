@@ -110,11 +110,6 @@ const NicheWebsiteStudio = lazy(() => import('@/pages/NicheWebsiteStudio'));
 const VideoStudio = lazy(() => import('@/pages/VideoStudio'));
 const SocialMediaManager = lazy(() => import('@/pages/SocialMediaManager'));
 const AiBidWriter = lazy(() => import('@/pages/tools/AiBidWriter'));
-const EpoxyFloorGallery = lazy(() => import('@/pages/EpoxyFloorGallery'));
-const DriveWorkspace = lazy(() => import('@/pages/DriveWorkspace'));
-const ForensicAuditCenter = lazy(() => import('@/pages/ForensicAuditCenter'));
-const EpoxyEstimateFunnel = lazy(() => import('@/pages/EpoxyEstimateFunnel'));
-const EpoxyColorCharts = lazy(() => import('@/pages/EpoxyColorCharts'));
 
 const PageLoader = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -161,11 +156,8 @@ const AuthenticatedApp = () => {
       <Route path="/web-packs" element={<WebPackGallery />} />
       <Route path="/store" element={<Store />} />
       <Route path="/tools/ai-bid-writer" element={<AiBidWriter />} />
-      <Route path="/epoxy-gallery" element={<EpoxyFloorGallery />} />
       <Route path="/portal/:companyId" element={<CustomerPortal />} />
       <Route path="/funnel" element={<ClientFunnel />} />
-      <Route path="/epoxy-estimate" element={<EpoxyEstimateFunnel />} />
-      <Route path="/epoxy-colors" element={<EpoxyColorCharts />} />
       <Route path="/sign/:token" element={<SignDocument />} />
 
       {/* Auth */}
@@ -259,8 +251,6 @@ const AuthenticatedApp = () => {
         <Route path="/app/niche-websites" element={<NicheWebsiteStudio />} />
         <Route path="/app/video-studio" element={<VideoStudio />} />
         <Route path="/app/social-media" element={<SocialMediaManager />} />
-        <Route path="/app/drive-workspace" element={<DriveWorkspace />} />
-        <Route path="/app/forensic-audit" element={<ForensicAuditCenter />} />
         <Route path="/app/:slug" element={<Module />} />
         <Route path="/admin" element={<Admin />} />
         </Route>

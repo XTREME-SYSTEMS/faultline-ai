@@ -57,7 +57,7 @@ export default function ColorSwatch({ color, system, className = "" }) {
   }, [hex, system, seed]);
 
   if (color.image_url) {
-    return <Image src={color.image_url} fittingType="fill" focalPointY={0.35} className={`block w-full ${className}`} />;
+    return <Image src={color.image_url} fittingType="fill" className={`block w-full ${className}`} />;
   }
   return <div className={className} style={style} />;
 }

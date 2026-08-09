@@ -117,8 +117,6 @@ export const portalNavCategories = [
       ['Partner API', '/app/partner-api'],
       ['Integrations', '/app/integrations'],
       ['Drive Sync', '/app/drive-sync'],
-      ['Drive Workspace', '/app/drive-workspace'],
-      ['Forensic Audit', '/app/forensic-audit'],
       ['Settings', '/app/settings']
     ]
   }
