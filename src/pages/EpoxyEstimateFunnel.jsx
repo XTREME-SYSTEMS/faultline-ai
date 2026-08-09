@@ -291,7 +291,7 @@ export default function EpoxyEstimateFunnel() {
             <button onClick={() => fileRef.current?.click()} style={{
               width: '100%', minHeight: 280, padding: '32px',
               border: `2px dashed ${data.photoUrl ? LIME : '#ccc'}`,
-              borderRadius: 12, background: data.photoUrl ? '#f5ffe8' : '#fafafa',
+              borderRadius: 12, background: '#fff',
               cursor: 'pointer', marginBottom: 20,
               display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12
             }}>
@@ -398,7 +398,7 @@ export default function EpoxyEstimateFunnel() {
             </div>
 
             {/* Price range — white card with lime border */}
-            <div style={{ border: `2px solid ${LIME}`, borderRadius: 8, padding: 28, marginBottom: 20, textAlign: 'center', background: '#f5ffe8' }}>
+            <div style={{ border: `2px solid ${LIME}`, borderRadius: 8, padding: 28, marginBottom: 20, textAlign: 'center', background: '#fff' }}>
               <div style={{ fontSize: 12, textTransform: 'uppercase', letterSpacing: 2, color: LIME, marginBottom: 10, fontWeight: 700 }}>Estimated Price Range</div>
               <div style={{ fontSize: 44, fontWeight: 800, color: CHARCOAL }}>${data.lowEstimate} – ${data.highEstimate}</div>
               <div style={{ fontSize: 14, color: '#666', marginTop: 8 }}>
@@ -463,7 +463,7 @@ export default function EpoxyEstimateFunnel() {
 // ─── Helper Components ───
 const inputStyle = {
   width: '100%', padding: '14px 16px', border: '1px solid #ddd', borderRadius: 4,
-  fontSize: 16, fontFamily: 'inherit', marginBottom: 12, outline: 'none'
+  fontSize: 16, fontFamily: 'inherit', marginBottom: 12, outline: 'none', background: '#fff'
 };
 
 const cardBtnStyle = {
@@ -550,7 +550,7 @@ function ScrapeProgress({ data }) {
       <div style={{ maxWidth: 400, margin: '0 auto', textAlign: 'left' }}>
         {steps.map((s, i) => (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', opacity: i <= progressStep ? 1 : 0.4 }}>
-            <div style={{ width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: i < progressStep ? LIME : i === progressStep ? '#fff' : '#eee', border: `2px solid ${i <= progressStep ? LIME : '#ddd'}` }}>
+            <div style={{ width: 24, height: 24, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',               background: '#fff', border: `2px solid ${i <= progressStep ? LIME : '#ddd'}` }}>
               {i < progressStep ? <Check size={12} color="#fff" /> : i === progressStep ? <div className="gf-dot" style={{ width: 8, height: 8, borderRadius: '50%', background: LIME }} /> : null}
             </div>
             <span style={{ fontSize: 14, fontWeight: i <= progressStep ? 600 : 400, color: i <= progressStep ? CHARCOAL : '#999' }}>{s}</span>
