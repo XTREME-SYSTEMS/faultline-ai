@@ -1,5 +1,13 @@
 import { COATING_SYSTEMS, GALLERY_IMAGES, APPLICATIONS, TESTIMONIALS } from '@/lib/epoxyVisualizerData';
 import FaqSection from '@/components/epoxy/FaqSection';
+import NotificationBar from '@/components/epoxy/NotificationBar';
+import TrustBadges from '@/components/epoxy/TrustBadges';
+import StatsBanner from '@/components/epoxy/StatsBanner';
+import ComparisonTable from '@/components/epoxy/ComparisonTable';
+import ProcessTimeline from '@/components/epoxy/ProcessTimeline';
+import SocialProofCounter from '@/components/epoxy/SocialProofCounter';
+import StickyMobileCta from '@/components/epoxy/StickyMobileCta';
+import ExitIntentPopup from '@/components/epoxy/ExitIntentPopup';
 import { ArrowRight, ArrowUp, ShieldCheck, Award, FileCheck, MapPin } from 'lucide-react';
 
 const LIME = '#7AB800';
@@ -14,6 +22,8 @@ export default function EpoxyWelcome({ onStart }) {
       <style>{`
         .gf-hero-bg { background-image: linear-gradient(rgba(0,0,0,0.45), rgba(0,0,0,0.65)), url('https://garageforce.com/wp-content/uploads/2022/11/garageforce-42.jpg'); background-size: cover; background-position: center; }
       `}</style>
+
+      <NotificationBar onStart={onStart} />
 
       {/* ═══ 1. HERO ═══ */}
       <div className="gf-hero-bg" style={{ minHeight: 600, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', color: '#fff', padding: '80px 24px' }}>
@@ -36,6 +46,8 @@ export default function EpoxyWelcome({ onStart }) {
           Get My Free Estimate <ArrowRight size={20} />
         </button>
       </div>
+
+      <StatsBanner />
 
       {/* ═══ 2. THREE COLUMNS — Our Coatings / Our Process / Our Local Professionals ═══ */}
       <div id="process" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', minHeight: 320 }}>
@@ -61,6 +73,8 @@ export default function EpoxyWelcome({ onStart }) {
           </p>
         </div>
       </div>
+
+      <TrustBadges />
 
       {/* ═══ 3. VERIFLOOR SECTION ═══ */}
       <div id="verifloor" style={{ padding: '80px 24px', background: '#fff', textAlign: 'center' }}>
@@ -106,6 +120,8 @@ export default function EpoxyWelcome({ onStart }) {
         </div>
       </div>
 
+      <ComparisonTable />
+
       {/* ═══ 5. APPLICATIONS GRID — 8 applications ═══ */}
       <div style={{ padding: '60px 24px', background: '#fff' }}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 20, maxWidth: 900, margin: '0 auto' }}>
@@ -143,6 +159,8 @@ export default function EpoxyWelcome({ onStart }) {
           </div>
         </div>
       </div>
+
+      <ProcessTimeline />
 
       {/* ═══ 7. OUR WORK GALLERY ═══ */}
       <div style={{ padding: '80px 24px', background: '#fff' }}>
@@ -187,6 +205,8 @@ export default function EpoxyWelcome({ onStart }) {
           ))}
         </div>
       </div>
+
+      <SocialProofCounter />
 
       {/* ═══ 9b. WHERE WE ARE — Service Areas ═══ */}
       <div id="locations" style={{ padding: '80px 24px', background: '#f5f5f5' }}>
@@ -239,6 +259,9 @@ export default function EpoxyWelcome({ onStart }) {
           Get My Free Estimate <ArrowRight size={18} />
         </button>
       </div>
+
+      <StickyMobileCta onStart={onStart} />
+      <ExitIntentPopup onStart={onStart} />
     </>
   );
 }

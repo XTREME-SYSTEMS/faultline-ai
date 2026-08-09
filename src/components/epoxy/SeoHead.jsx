@@ -142,6 +142,32 @@ export default function SeoHead() {
       ]
     });
 
+    // ── JSON-LD: VideoObject ──
+    injectJsonLd('video', {
+      '@context': 'https://schema.org',
+      '@type': 'VideoObject',
+      name: 'Professional Epoxy Garage Floor Installation in a Day',
+      description: 'Watch our proprietary one-day epoxy garage floor coating installation process from start to finish.',
+      thumbnailUrl: `${siteUrl}/epoxy-estimate/og-image.jpg`,
+      uploadDate: '2026-01-01',
+      contentUrl: 'https://media.base44.com/videos/public/6a6e5a0e8a902b5e240d7633/38585a5f7_Epoxy_Install_Video.mp4'
+    });
+
+    // ── JSON-LD: HowTo ──
+    injectJsonLd('howto', {
+      '@context': 'https://schema.org',
+      '@type': 'HowTo',
+      name: 'How to Install an Epoxy Garage Floor',
+      description: 'Professional one-day epoxy garage floor coating installation process.',
+      totalTime: 'P1D',
+      step: [
+        { '@type': 'HowToStep', position: 1, name: 'Free Estimate', text: 'Get your free instant estimate using our online calculator and AI visualizer.' },
+        { '@type': 'HowToStep', position: 2, name: 'Surface Preparation', text: 'Professional mechanical grinding, crack repair, and oil stain removal to ensure proper adhesion.' },
+        { '@type': 'HowToStep', position: 3, name: 'Coating Application', text: 'Primer, base coat, flake broadcast, and clear top coat applied in a single day.' },
+        { '@type': 'HowToStep', position: 4, name: 'Cure and Enjoy', text: 'Floor cures in 24 hours for foot traffic and 72 hours for full vehicle traffic. Backed by lifetime warranty.' }
+      ]
+    });
+
     return () => {
       document.querySelectorAll('[data-seo-head]').forEach(el => el.remove());
     };
