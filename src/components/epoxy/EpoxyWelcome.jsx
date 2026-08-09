@@ -9,6 +9,7 @@ import SocialProofCounter from '@/components/epoxy/SocialProofCounter';
 import StickyMobileCta from '@/components/epoxy/StickyMobileCta';
 import ExitIntentPopup from '@/components/epoxy/ExitIntentPopup';
 import InstallPwaButton from '@/components/epoxy/InstallPwaButton';
+import StateSilhouette from '@/components/epoxy/StateSilhouette';
 import { ArrowRight, ArrowUp, ShieldCheck, Award, FileCheck, MapPin } from 'lucide-react';
 
 const LIME = '#7AB800';
@@ -217,9 +218,13 @@ export default function EpoxyWelcome({ onStart }) {
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, maxWidth: 900, margin: '0 auto' }}>
           {['Florida', 'Georgia', 'Texas', 'California', 'North Carolina', 'South Carolina', 'Tennessee', 'Arizona'].map(state => (
-            <div key={state} style={{ background: '#fff', borderRadius: 8, padding: 24, textAlign: 'center', border: '1px solid #eee', boxShadow: '0 2px 8px rgba(0,0,0,0.04)' }}>
-              <MapPin size={28} color={LIME} style={{ margin: '0 auto 12px' }} />
-              <div style={{ fontSize: 14, fontWeight: 700, color: CHARCOAL }}>{state}</div>
+            <div key={state} style={{
+              background: '#fff', borderRadius: 8, padding: '24px 16px', textAlign: 'center',
+              border: '1px solid #eee',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.04), 1.5px 1.5px 0 rgba(0,0,0,0.07)'
+            }}>
+              <StateSilhouette stateName={state} size={72} />
+              <div style={{ fontSize: 14, fontWeight: 700, color: CHARCOAL, marginTop: 10 }}>{state}</div>
             </div>
           ))}
         </div>
