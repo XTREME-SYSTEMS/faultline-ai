@@ -10,6 +10,9 @@ export default function CloneGallery() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [healingAll, setHealingAll] = useState(false);
+  const [search, setSearch] = useState('');
+  const [industryFilter, setIndustryFilter] = useState('all');
+  const [scoreFilter, setScoreFilter] = useState('all');
 
   async function loadGallery() {
     setLoading(true);
@@ -39,6 +42,22 @@ export default function CloneGallery() {
       setHealingAll(false);
     }
   }
+
+  // Apply filters to the gallery data
+  const filteredGroups = (data?.groups || [])
+    .filter(g => industryFilter === 'all' || g.industry === industryFilter)
+    .map(g => ({
+      ...g,
+      clones: g.clones.filter(c => {
+        if (search && !c.name?.toLowerCase().includes(search.toLowerCase())) return false;
+        if (scoreFilter === 'at100' && c.score < 100) return false;
+        if (scoreFilter === 'below100' && c.score >= 100) return false;
+        return true;
+      }),
+    }))
+    .filter(g => g.clones.length > 0);
+
+  const allIndustries = (data?.groups || []).map(g => g.industry).sort();
 
   return (
     <>
@@ -80,6 +99,35 @@ export default function CloneGallery() {
           </div>
         )}
 
+        {/* Filter bar */}
+        {data && data.total > 0 && (
+          <div style={{ display: 'flex', gap: 10, marginBottom: 20, flexWrap: 'wrap' }}>
+            <input
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="Search clones by name…"
+              style={{ flex: 1, minWidth: 200, padding: '11px 14px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', background: '#fff' }}
+            />
+            <select
+              value={industryFilter}
+              onChange={e => setIndustryFilter(e.target.value)}
+              style={{ padding: '11px 14px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', background: '#fff', cursor: 'pointer' }}
+            >
+              <option value="all">All Industries</option>
+              {allIndustries.map(ind => <option key={ind} value={ind}>{ind}</option>)}
+            </select>
+            <select
+              value={scoreFilter}
+              onChange={e => setScoreFilter(e.target.value)}
+              style={{ padding: '11px 14px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, fontFamily: 'inherit', background: '#fff', cursor: 'pointer' }}
+            >
+              <option value="all">All Scores</option>
+              <option value="at100">At 100/100</option>
+              <option value="below100">Below 100/100</option>
+            </select>
+          </div>
+        )}
+
         {error && (
           <div style={{ padding: 14, background: '#f5d8d5', borderRadius: 8, color: '#a52d23', fontSize: 13, marginBottom: 20 }}>
             {error}
@@ -101,7 +149,7 @@ export default function CloneGallery() {
           </div>
         )}
 
-        {!loading && data && data.groups?.map(group => (
+        {!loading && data && filteredGroups.map(group => (
           <div key={group.industry} style={{ marginBottom: 32 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
               <h2 style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 24, margin: 0, textTransform: 'capitalize' }}>
@@ -119,6 +167,12 @@ export default function CloneGallery() {
             </div>
           </div>
         ))}
+
+        {!loading && data && data.total > 0 && filteredGroups.length === 0 && (
+          <div style={{ textAlign: 'center', padding: 60, color: '#999' }}>
+            <p style={{ fontSize: 15, margin: 0 }}>No clones match your filters.</p>
+          </div>
+        )}
       </div>
     </>
   );

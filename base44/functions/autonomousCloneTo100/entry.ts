@@ -21,6 +21,16 @@ const withTimeout = (promise, ms, label) =>
 // Always runs synchronously (waitUntil background processes get killed by the platform).
 // Live progress is written to a tracking LaunchProject each iteration; the final result
 // is logged to a QAReport + Receipt. Goal: 100/100 visual + operational parity, autonomously.
+// Derive a readable site name from a URL (e.g. https://stripe.com → "Stripe")
+const deriveSiteName = (url) => {
+  if (!url) return null;
+  try {
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    const domain = host.split('.')[0];
+    return domain.charAt(0).toUpperCase() + domain.slice(1);
+  } catch { return null; }
+};
+
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -126,9 +136,13 @@ async function runEngine(base44, orgId, p) {
       targetDna = proj.metadata?.target_dna || null;
       p.target_url = proj.metadata?.target_url || p.target_url;
       p.industry = proj.industry || p.industry;
-      bizName = proj.business_name || bizName;
+      bizName = proj.business_name || bizName || deriveSiteName(p.target_url);
       p.brief = proj.metadata?.brief || p.brief;
       urls.vercel = proj.vercel_deployment_url || proj.metadata?.vercel_deployment_url;
+      // Rename generic "Autonomous Clone xxx" tracker to the original site name
+      if (bizName) {
+        try { await base44.asServiceRole.entities.LaunchProject.update(p.tracker_id, { project_name: bizName, business_name: bizName }); } catch (e) {}
+      }
       if (!targetDna && p.target_url) {
         add('Re-scraping for target DNA…');
         const sr = await withTimeout(base44.functions.invoke('deepCloneTarget', { target_url: p.target_url, industry: p.industry }), 90000, 'deepCloneTarget (heal re-scrape)');
@@ -145,6 +159,10 @@ async function runEngine(base44, orgId, p) {
       if (s.status !== 'success') throw new Error(`Scrape failed: ${s.error}`);
       targetDna = s.dna; bizName = bizName || s.bizName;
       add(`Scraped ${bizName}: ${s.rendered_chars} chars, nav=${targetDna.nav?.length || 0}`);
+      // Use the original site's name as the clone name (not "Autonomous Clone xxx")
+      if (bizName) {
+        try { await base44.asServiceRole.entities.LaunchProject.update(p.tracker_id, { project_name: bizName, business_name: bizName }); } catch (e) {}
+      }
       await setProgress(5, 'Target site scraped');
 
       add('Generating benchmark discovery report (background, non-blocking)…');

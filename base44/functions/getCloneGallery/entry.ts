@@ -63,10 +63,13 @@ export default async function(req) {
       groups[ind].push(c);
     }
 
-    // Convert to array of { industry, clones }
+    // Sort clones alphabetically within each group, then group industries alphabetically
     const grouped = Object.entries(groups)
-      .map(([industry, clones]) => ({ industry, clones }))
-      .sort((a, b) => b.clones.length - a.clones.length);
+      .map(([industry, clones]) => ({
+        industry,
+        clones: clones.sort((a, b) => (a.name || '').localeCompare(b.name || '', undefined, { sensitivity: 'base' }))
+      }))
+      .sort((a, b) => (a.industry || '').localeCompare(b.industry || '', undefined, { sensitivity: 'base' }));
 
     return Response.json({
       total: withThumbs.length,
