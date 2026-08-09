@@ -1,4 +1,5 @@
 import { COATING_SYSTEMS, GALLERY_IMAGES, APPLICATIONS, TESTIMONIALS } from '@/lib/epoxyVisualizerData';
+import FaqSection from '@/components/epoxy/FaqSection';
 import { ArrowRight, ArrowUp, ShieldCheck, Award, FileCheck, MapPin } from 'lucide-react';
 
 const LIME = '#7AB800';
@@ -207,6 +208,9 @@ export default function EpoxyWelcome({ onStart }) {
           </button>
         </div>
       </div>
+
+      {/* ═══ 9c. FAQ — AEO ═══ */}
+      <FaqSection />
 
       {/* ═══ 10. VIDEO + CTA ═══ */}
       <div style={{ padding: '80px 24px', background: '#f5f5f5', textAlign: 'center' }}>

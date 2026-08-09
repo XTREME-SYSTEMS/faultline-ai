@@ -4,6 +4,7 @@ import { COATING_SYSTEMS, getColorsBySystem, SHEEN_OPTIONS } from '@/lib/epoxyVi
 import { GARAGE_SIZES, FLOOR_CONDITIONS } from '@/lib/epoxyFlakeColors';
 import ColorSwatch from '@/components/vq/ColorSwatch';
 import EpoxyWelcome from '@/components/epoxy/EpoxyWelcome';
+import SeoHead from '@/components/epoxy/SeoHead';
 import { Image } from '@/components/ui/image';
 import { Upload, Check, Clock, Search, Phone, ArrowRight, ArrowLeft, Camera, Loader2, ShieldCheck, Square, Wrench, Droplet, Layers, AlertTriangle, Droplets } from 'lucide-react';
 
@@ -194,6 +195,7 @@ export default function EpoxyEstimateFunnel() {
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff', fontFamily: "'DM Sans', system-ui, sans-serif" }}>
+      <SeoHead />
       <style>{`
         @keyframes gf-pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
         @keyframes gf-spin { to { transform: rotate(360deg); } }

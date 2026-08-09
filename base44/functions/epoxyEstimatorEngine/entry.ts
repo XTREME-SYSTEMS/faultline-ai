@@ -113,7 +113,7 @@ Return the detected garage square footage and property details. If you cannot fi
 
       // Generate professional bid via LLM
       const bidRes = await base44.integrations.Core.InvokeLLM({
-        prompt: `You are a professional epoxy garage floor contractor bid writer for Xtreme Polishing Systems. Generate a detailed, professional bid proposal for the following customer:
+        prompt: `You are a professional epoxy garage floor contractor bid writer for Epoxy Garage Floors Near You. Generate a detailed, professional bid proposal for the following customer:
 
 Customer: ${name}
 Address: ${address}
@@ -133,7 +133,7 @@ Write a professional bid proposal that includes:
 7. Warranty (lifetime residential)
 8. Next steps
 
-Format as clean HTML for email. Professional, trustworthy tone. Brand: Xtreme Polishing Systems.`,
+Format as clean HTML for email. Professional, trustworthy tone. Brand: Epoxy Garage Floors Near You.`,
         response_json_schema: {
           type: 'object',
           properties: {
@@ -150,7 +150,7 @@ Format as clean HTML for email. Professional, trustworthy tone. Brand: Xtreme Po
         await base44.integrations.Core.SendEmail({
           to: email,
           subject: `Your Epoxy Garage Floor Estimate — ${flake_color} — $${lowEstimate}–$${highEstimate}`,
-          body: bidRes.bid_html || `<h2>Your Epoxy Garage Floor Estimate</h2><p>Hi ${name},</p><p>Based on your garage at ${address} (${garage_sqft} sq ft detected from public records), your estimated price range for a Full Flake Epoxy System in ${flake_color} is <strong>$${lowEstimate} – $${highEstimate}</strong>.</p><p>A specialist from Xtreme Polishing Systems will contact you within 24 hours to schedule your free in-home consultation.</p><p>Call us: (954) 555-0199</p>`
+          body: bidRes.bid_html || `<h2>Your Epoxy Garage Floor Estimate</h2><p>Hi ${name},</p><p>Based on your garage at ${address} (${garage_sqft} sq ft detected from public records), your estimated price range for a Full Flake Epoxy System in ${flake_color} is <strong>$${lowEstimate} – $${highEstimate}</strong>.</p><p>A specialist from Epoxy Garage Floors Near You will contact you within 24 hours to schedule your free in-home consultation.</p><p>Call us: (954) 555-0199</p>`
         });
       } catch (e) {
         console.error('Email send failed:', e.message);
@@ -197,7 +197,7 @@ Format as clean HTML for email. Professional, trustworthy tone. Brand: Xtreme Po
         status: 'new',
         source: 'lead_generator',
         organization_id: orgId,
-        notes: `Garage: ${garage_size} | Conditions: ${floor_condition} | Source: epoxygaragefloorestimate.com`
+        notes: `Garage: ${garage_size} | Conditions: ${floor_condition} | Source: epoxygaragefloorsnearyou.com`
       });
 
       return Response.json({ status: 'success', lead_id: lead.id });

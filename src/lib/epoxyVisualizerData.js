@@ -1,6 +1,6 @@
 import { COLOR_DATA } from '../../base44/shared/colorData';
 
-// 6 coating systems — exact GarageForce descriptions + 6th for even grid
+// 6 coating systems for Epoxy Garage Floors Near You
 export const COATING_SYSTEMS = [
   { id: 'flake', name: 'Full Chip System', desc: 'The Full Chip, or Decorative Chip, System is our most popular concrete coating system. This three-layer system is easy to install in as little as a day and you\'ll be back on your floor in just 24 hours!', image: 'https://garageforce.com/wp-content/uploads/2022/11/square-full-chip.png', systemKey: 'flake' },
   { id: 'medici', name: 'XPS Signature System', desc: 'The XPS Signature Polyurea Coating System creates a custom, decorative finish that will outlast any other acrylic or acid stain system on the market. This system is easy to maintain without waxing or re-coating.', image: 'https://garageforce.com/wp-content/uploads/2022/11/garageforce-41.jpg', systemKey: 'flake' },
