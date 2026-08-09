@@ -35,7 +35,7 @@ export default function EpoxyWelcome({ onStart }) {
           The World's Largest Installer of Garage Floor Coatings
         </p>
         <p style={{ fontSize: 17, maxWidth: 650, lineHeight: 1.6, marginBottom: 36, opacity: 0.9 }}>
-          Proprietary CycloSpartic™ – 20x Stronger than Epoxy, Installed in a Day, Proven for Life.
+          Proprietary XPS – 20x Stronger than Epoxy, Installed in a Day, Proven for Life.
         </p>
         <button onClick={onStart} style={{
           background: LIME, color: '#fff', border: 'none', padding: '20px 52px', borderRadius: 4,
@@ -55,14 +55,14 @@ export default function EpoxyWelcome({ onStart }) {
           <ArrowUp size={28} color={LIME} style={{ marginBottom: 16 }} />
           <h3 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 14px', textTransform: 'uppercase' }}>Our Coatings</h3>
           <p style={{ fontSize: 14, lineHeight: 1.7, color: '#555', margin: 0 }}>
-            The benefits of a CycloSpartic™ floor coating put traditional epoxy and polyurea floors to shame. Not only are they higher-quality, more durable and damage-resistant, but CycloSpartic™ floors also cure in a fraction of the time versus traditional epoxy floors and are exclusive to XPS.
+            The benefits of a XPS floor coating put traditional epoxy and polyurea floors to shame. Not only are they higher-quality, more durable and damage-resistant, but XPS floors also cure in a fraction of the time versus traditional epoxy floors and are exclusive to XPS.
           </p>
         </div>
         <div style={{ background: LIME, color: '#fff', padding: '48px 36px', display: 'flex', flexDirection: 'column' }}>
           <ArrowUp size={28} color="#fff" style={{ marginBottom: 16 }} />
           <h3 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 14px', textTransform: 'uppercase' }}>Our Process</h3>
           <p style={{ fontSize: 14, lineHeight: 1.7, opacity: 0.95, margin: 0 }}>
-            Our comprehensive installation process covers everything including professionally evaluating your floor, mechanically preparing the surface, and applying our exclusive CycloSpartic™ coating system. Our expert-level process provides superior lifetime results.
+            Our comprehensive installation process covers everything including professionally evaluating your floor, mechanically preparing the surface, and applying our exclusive XPS coating system. Our expert-level process provides superior lifetime results.
           </p>
         </div>
         <div style={{ background: LIGHT_GREY, color: '#fff', padding: '48px 36px', display: 'flex', flexDirection: 'column' }}>
@@ -103,7 +103,7 @@ export default function EpoxyWelcome({ onStart }) {
       {/* ═══ 4. COATING SOLUTIONS — 6 systems ═══ */}
       <div id="systems" style={{ padding: '80px 24px', background: '#f5f5f5' }}>
         <div style={{ textAlign: 'center', marginBottom: 50 }}>
-          <h2 style={{ fontSize: 36, fontWeight: 800, color: CHARCOAL, margin: 0 }}>Our CycloSpartic™ Floor Coating Solutions</h2>
+          <h2 style={{ fontSize: 36, fontWeight: 800, color: CHARCOAL, margin: 0 }}>Our XPS Floor Coating Solutions</h2>
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, maxWidth: 1100, margin: '0 auto' }}>
           {COATING_SYSTEMS.map(sys => (
@@ -140,7 +140,7 @@ export default function EpoxyWelcome({ onStart }) {
           <div>
             <h2 style={{ fontSize: 36, fontWeight: 800, color: CHARCOAL, margin: '0 0 20px' }}>About XPS</h2>
             <p style={{ fontSize: 15, color: '#555', lineHeight: 1.8, margin: '0 0 16px' }}>
-              Our CycloSpartic™ concrete coatings provide a custom, finished look while adding functionality to your existing concrete surface. Offering a full range of options, XPS is a leader in floor coating installation across the country. Our professional coating systems provide a durable finished floor that is both easy to maintain and protects the value in your home.
+              Our XPS concrete coatings provide a custom, finished look while adding functionality to your existing concrete surface. Offering a full range of options, XPS is a leader in floor coating installation across the country. Our professional coating systems provide a durable finished floor that is both easy to maintain and protects the value in your home.
             </p>
             <p style={{ fontSize: 15, color: '#555', lineHeight: 1.8, margin: '0 0 16px' }}>
               At XPS, our ultimate goal is to achieve 100% customer satisfaction. We want you to be absolutely thrilled with your project.
