@@ -47,6 +47,8 @@ export default function EpoxyEstimateFunnel() {
     }
   };
 
+  useEffect(() => { document.title = 'Epoxy Garage Floors Near You'; }, []);
+
   // ─── Upload photo + generate before/after ───
   const handlePhotoUpload = async (file) => {
     if (!file) return;
@@ -204,8 +206,8 @@ export default function EpoxyEstimateFunnel() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 40, height: 40, background: LIME, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 20 }}>X</div>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 15, color: CHARCOAL, letterSpacing: 0.5 }}>XPS CERTIFIED</div>
-            <div style={{ fontSize: 10, color: LIME, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' }}>Flooring Systems</div>
+            <div style={{ fontWeight: 800, fontSize: 14, color: CHARCOAL, letterSpacing: 0.3 }}>EPOXY GARAGE FLOORS</div>
+            <div style={{ fontSize: 10, color: LIME, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' }}>Near You</div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
@@ -508,9 +510,9 @@ export default function EpoxyEstimateFunnel() {
       <footer style={{ background: '#f5f5f5', color: CHARCOAL, padding: '40px 24px', textAlign: 'center', borderTop: `1px solid #e0e0e0` }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 16 }}>
           <div style={{ width: 36, height: 36, background: LIME, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 18 }}>X</div>
-          <div style={{ fontWeight: 800, fontSize: 14 }}>XPS CERTIFIED</div>
+          <div style={{ fontWeight: 800, fontSize: 14 }}>EPOXY GARAGE FLOORS NEAR YOU</div>
         </div>
-        <div style={{ fontSize: 12, color: '#888' }}>© 2026 XPS Certified. The Original One-Day Flooring Solution.</div>
+        <div style={{ fontSize: 12, color: '#888' }}>© 2026 Epoxy Garage Floors Near You. The Original One-Day Flooring Solution.</div>
       </footer>
     </div>
   );
