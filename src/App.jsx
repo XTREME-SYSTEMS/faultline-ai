@@ -112,6 +112,7 @@ const SocialMediaManager = lazy(() => import('@/pages/SocialMediaManager'));
 const AiBidWriter = lazy(() => import('@/pages/tools/AiBidWriter'));
 const EpoxyFloorGallery = lazy(() => import('@/pages/EpoxyFloorGallery'));
 const DriveWorkspace = lazy(() => import('@/pages/DriveWorkspace'));
+const ForensicAuditCenter = lazy(() => import('@/pages/ForensicAuditCenter'));
 
 const PageLoader = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -255,6 +256,7 @@ const AuthenticatedApp = () => {
         <Route path="/app/video-studio" element={<VideoStudio />} />
         <Route path="/app/social-media" element={<SocialMediaManager />} />
         <Route path="/app/drive-workspace" element={<DriveWorkspace />} />
+        <Route path="/app/forensic-audit" element={<ForensicAuditCenter />} />
         <Route path="/app/:slug" element={<Module />} />
         <Route path="/admin" element={<Admin />} />
         </Route>

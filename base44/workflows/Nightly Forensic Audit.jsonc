@@ -1,0 +1,50 @@
+{
+  "name": "Nightly Forensic Audit",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 1 * * *",
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Deep forensic audit of all cloned websites every night at 1am ET. Identifies gaps, writes QA reports with proof scores, heals sites below 100/100, and re-validates after each heal.",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "nightly_forensic_audit",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_batch_audit": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "batchForensicAudit",
+            "args": {
+              "heal": true,
+              "max_sites": 30,
+              "max_heal_sites": 10,
+              "parallel_batch_size": 3
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Run batch forensic audit",
+            "description": "Audit all sites, heal below 100, write proof"
+          }
+        }
+      }
+    ]
+  }
+}
