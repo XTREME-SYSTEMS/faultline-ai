@@ -164,15 +164,15 @@ export default function EpoxyEstimateFunnel() {
       {/* ─── HEADER ─── */}
       <header style={{ background: '#fff', borderBottom: `3px solid ${LIME}`, padding: '0 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', height: 72 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 40, height: 40, background: LIME, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 20 }}>E</div>
+          <div style={{ width: 40, height: 40, background: LIME, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 20 }}>X</div>
           <div>
-            <div style={{ fontWeight: 800, fontSize: 15, color: CHARCOAL, letterSpacing: 0.5 }}>EPOXY GARAGE FLOOR</div>
-            <div style={{ fontSize: 10, color: LIME, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' }}>Estimate.com</div>
+            <div style={{ fontWeight: 800, fontSize: 15, color: CHARCOAL, letterSpacing: 0.5 }}>XPS CERTIFIED</div>
+            <div style={{ fontSize: 10, color: LIME, fontWeight: 700, letterSpacing: 1.5, textTransform: 'uppercase' }}>Flooring Systems</div>
           </div>
         </div>
         <div style={{ display: 'flex', gap: 24, alignItems: 'center' }}>
           <a href="tel:9545550199" style={{ background: LIME, color: '#fff', padding: '10px 20px', borderRadius: 4, fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>GET PRICING</a>
-          <a href="#verifloor" style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, textDecoration: 'none' }}>VERIFLOOR™</a>
+          <a href="#verifloor" style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, textDecoration: 'none' }}>XPS CERTIFIED™</a>
           <a href="#systems" style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, textDecoration: 'none' }}>What We Offer</a>
           <a href="#about" style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, textDecoration: 'none' }}>Who We Are</a>
           <a href="#testimonials" style={{ fontSize: 13, fontWeight: 600, color: CHARCOAL, textDecoration: 'none' }}>Where We Are</a>
@@ -451,10 +451,10 @@ export default function EpoxyEstimateFunnel() {
       {/* ─── FOOTER — white ─── */}
       <footer style={{ background: '#f5f5f5', color: CHARCOAL, padding: '40px 24px', textAlign: 'center', borderTop: `1px solid #e0e0e0` }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, marginBottom: 16 }}>
-          <div style={{ width: 36, height: 36, background: LIME, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 18 }}>E</div>
-          <div style={{ fontWeight: 800, fontSize: 14 }}>EPOXY GARAGE FLOOR ESTIMATE</div>
+          <div style={{ width: 36, height: 36, background: LIME, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 18 }}>X</div>
+          <div style={{ fontWeight: 800, fontSize: 14 }}>XPS CERTIFIED</div>
         </div>
-        <div style={{ fontSize: 12, color: '#888' }}>© 2026 Epoxy Garage Floor Estimate. The Original One-Day Flooring Solution.</div>
+        <div style={{ fontSize: 12, color: '#888' }}>© 2026 XPS Certified. The Original One-Day Flooring Solution.</div>
       </footer>
     </div>
   );

@@ -42,7 +42,7 @@ export default function EpoxyWelcome({ onStart }) {
           <ArrowUp size={28} color={LIME} style={{ marginBottom: 16 }} />
           <h3 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 14px', textTransform: 'uppercase' }}>Our Coatings</h3>
           <p style={{ fontSize: 14, lineHeight: 1.7, color: '#555', margin: 0 }}>
-            The benefits of a CycloSpartic™ floor coating put traditional epoxy and polyurea floors to shame. Not only are they higher-quality, more durable and damage-resistant, but CycloSpartic™ floors also cure in a fraction of the time versus traditional epoxy floors and are exclusive to Garage Force.
+            The benefits of a CycloSpartic™ floor coating put traditional epoxy and polyurea floors to shame. Not only are they higher-quality, more durable and damage-resistant, but CycloSpartic™ floors also cure in a fraction of the time versus traditional epoxy floors and are exclusive to XPS.
           </p>
         </div>
         <div style={{ background: LIME, color: '#fff', padding: '48px 36px', display: 'flex', flexDirection: 'column' }}>
@@ -56,31 +56,31 @@ export default function EpoxyWelcome({ onStart }) {
           <ArrowUp size={28} color="#fff" style={{ marginBottom: 16 }} />
           <h3 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 14px', textTransform: 'uppercase' }}>Our Local Professionals</h3>
           <p style={{ fontSize: 14, lineHeight: 1.7, opacity: 0.9, margin: 0 }}>
-            Not only are our expert installers the best at what they do, but they are also locally based in your area. As part of the community, your local Garage Force teams care just as much as you do about getting the best results possible for your project (if not more)!
+            Not only are our expert installers the best at what they do, but they are also locally based in your area. As part of the community, your local XPS teams care just as much as you do about getting the best results possible for your project (if not more)!
           </p>
         </div>
       </div>
 
       {/* ═══ 3. VERIFLOOR SECTION ═══ */}
       <div id="verifloor" style={{ padding: '80px 24px', background: '#fff', textAlign: 'center' }}>
-        <img src="https://garageforce.com/wp-content/uploads/2025/07/garage-force-verifloor.png" alt="VeriFloor" style={{ height: 80, marginBottom: 16 }} />
+        <div style={{ fontSize: 36, fontWeight: 800, color: CHARCOAL, marginBottom: 8, letterSpacing: 1 }}>XPS <span style={{ color: LIME }}>Certified™</span></div>
         <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: LIME, marginBottom: 50 }}>See the Difference</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 40, maxWidth: 1000, margin: '0 auto', textAlign: 'left' }}>
           <div>
             <ShieldCheck size={32} color={LIME} style={{ marginBottom: 12 }} />
             <h4 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 8px' }}>BUY <span style={{ fontWeight: 400 }}>With Confidence</span></h4>
-            <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, margin: 0 }}>VeriFloor™ ensures that the product you choose is the product you receive...guaranteed! In an industry that is NOT well regulated, be confident that the product we show you is the product we use. No gimmicks.</p>
+            <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, margin: 0 }}>XPS Certified™ ensures that the product you choose is the product you receive...guaranteed! In an industry that is NOT well regulated, be confident that the product we show you is the product we use. No gimmicks.</p>
           </div>
           <div>
             <Award size={32} color={LIME} style={{ marginBottom: 12 }} />
             <h4 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 8px' }}>UNIQUE <span style={{ fontWeight: 400 }}>Floor Properties</span></h4>
-            <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, margin: 0 }}>Garage Force is the only company that provides a unique serial number to every floor it installs; all stored in the VeriFloor™ coin code.</p>
-            <img src="https://garageforce.com/wp-content/uploads/2025/04/VF-Coin-Icon.png" alt="VeriFloor Coin" style={{ width: 60, marginTop: 12 }} />
+            <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, margin: 0 }}>XPS is the only company that provides a unique serial number to every floor it installs; all stored in the XPS Certified™ coin code.</p>
+            <div style={{ width: 60, height: 60, borderRadius: '50%', background: LIME, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 20, marginTop: 12 }}>XPS</div>
           </div>
           <div>
             <FileCheck size={32} color={LIME} style={{ marginBottom: 12 }} />
             <h4 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 8px' }}>EASY <span style={{ fontWeight: 400 }}>Warranty Registration</span></h4>
-            <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, margin: 0 }}>VeriFloor™ makes warranty registration a breeze. With the scan of the code, all of your information is filled out and ready for you to register.</p>
+            <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, margin: 0 }}>XPS Certified™ makes warranty registration a breeze. With the scan of the code, all of your information is filled out and ready for you to register.</p>
           </div>
         </div>
       </div>
@@ -121,15 +121,15 @@ export default function EpoxyWelcome({ onStart }) {
       <div id="about" style={{ padding: '80px 24px', background: '#f5f5f5' }}>
         <div style={{ maxWidth: 1100, margin: '0 auto', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 50, alignItems: 'center' }}>
           <div>
-            <h2 style={{ fontSize: 36, fontWeight: 800, color: CHARCOAL, margin: '0 0 20px' }}>About Garage Force</h2>
+            <h2 style={{ fontSize: 36, fontWeight: 800, color: CHARCOAL, margin: '0 0 20px' }}>About XPS</h2>
             <p style={{ fontSize: 15, color: '#555', lineHeight: 1.8, margin: '0 0 16px' }}>
-              Our CycloSpartic™ concrete coatings provide a custom, finished look while adding functionality to your existing concrete surface. Offering a full range of options, Garage Force is a leader in floor coating installation across the country. Our professional coating systems provide a durable finished floor that is both easy to maintain and protects the value in your home.
+              Our CycloSpartic™ concrete coatings provide a custom, finished look while adding functionality to your existing concrete surface. Offering a full range of options, XPS is a leader in floor coating installation across the country. Our professional coating systems provide a durable finished floor that is both easy to maintain and protects the value in your home.
             </p>
             <p style={{ fontSize: 15, color: '#555', lineHeight: 1.8, margin: '0 0 16px' }}>
-              At Garage Force, our ultimate goal is to achieve 100% customer satisfaction. We want you to be absolutely thrilled with your project.
+              At XPS, our ultimate goal is to achieve 100% customer satisfaction. We want you to be absolutely thrilled with your project.
             </p>
             <p style={{ fontSize: 16, fontWeight: 700, color: CHARCOAL, margin: '0 0 20px' }}>
-              Let one of our expert professionals show you the Garage Force Difference!
+              Let one of our expert professionals show you the XPS Difference!
             </p>
             <div style={{ display: 'flex', gap: 12 }}>
               <button onClick={onStart} style={{ background: LIME, color: '#fff', border: 'none', padding: '14px 28px', borderRadius: 4, fontWeight: 700, fontSize: 14, cursor: 'pointer', textTransform: 'uppercase' }}>Our Process</button>
@@ -163,7 +163,7 @@ export default function EpoxyWelcome({ onStart }) {
           <div>
             <h2 style={{ fontSize: 36, fontWeight: 800, color: CHARCOAL, margin: '0 0 20px' }}>Storage & Organization</h2>
             <p style={{ fontSize: 15, color: '#555', lineHeight: 1.8, margin: '0 0 24px' }}>
-              Garage Force offers superior garage slatwall panels for your garage storage needs. Our premium garage wall panels are perfect for keeping your space organized.
+              XPS offers superior garage slatwall panels for your garage storage needs. Our premium garage wall panels are perfect for keeping your space organized.
             </p>
             <button onClick={onStart} style={{ background: LIME, color: '#fff', border: 'none', padding: '14px 28px', borderRadius: 4, fontWeight: 700, fontSize: 14, cursor: 'pointer', textTransform: 'uppercase' }}>See Storage Options</button>
           </div>
