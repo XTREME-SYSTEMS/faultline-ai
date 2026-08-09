@@ -1,43 +1,56 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
-// Derive the original site name from a Vercel deployment URL.
-// Pattern: {site-slug}-heal{N}-{rand}-{rand}-xtreme-ai-systems.vercel.app
-// e.g. revolut-heal1-gzpj-qtigfrruf-... → "Revolut"
-//      gong-io-heal1-syaw-...            → "Gong Io"
-//      clone-heal1-2jg6-...             → null (no site name embedded)
-function deriveNameFromVercelUrl(url) {
+// Derive a readable site name from any URL (e.g. https://gong.io → "Gong.io", https://revolut.com → "Revolut")
+function deriveNameFromUrl(url) {
+  if (!url) return null;
   try {
-    const host = new URL(url).hostname;
-    const subdomain = host.replace(/\.vercel\.app$/, '');
-    const withoutTeam = subdomain.replace(/-xtreme-ai-systems$/, '');
-    const parts = withoutTeam.split('-');
-    // Find the heal/codeheal marker (not "clone" — that's a generic slug)
-    const markerIdx = parts.findIndex(p => /^(heal|codeheal)\d*$/.test(p));
-    if (markerIdx > 0) {
-      const slug = parts.slice(0, markerIdx).join('-');
-      if (slug && slug !== 'clone' && !slug.startsWith('autonomous')) {
-        return slug.split('-').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+    const host = new URL(url).hostname.replace(/^www\./, '');
+    // Use the full domain (e.g. "gong.io", "revolut.com") but strip the TLD
+    const parts = host.split('.');
+    if (parts.length >= 2) {
+      const domain = parts[0];
+      // For two-letter domains like "io", keep the second part (e.g. "gong.io" → keep "gong.io")
+      if (parts.length === 2 && parts[1].length <= 3) {
+        return domain.charAt(0).toUpperCase() + domain.slice(1) + '.' + parts[1];
       }
+      return domain.charAt(0).toUpperCase() + domain.slice(1);
     }
-    // Fallback: find a random-looking ID (4+ chars, has both letters and digits)
-    const uniqueId = parts.find(p =>
-      p.length >= 4 && /[a-zA-Z]/.test(p) && /[0-9]/.test(p) &&
-      !p.startsWith('iter') && !/^(heal|codeheal|clone)\d*$/.test(p)
-    );
-    if (uniqueId) return `Clone ${uniqueId}`;
-    return null;
+    return host.charAt(0).toUpperCase() + host.slice(1);
   } catch { return null; }
 }
 
-// Decode common HTML entities in names (e.g. "Banking &amp; Beyond" → "Banking & Beyond")
+// Decode common HTML entities in names
 function decodeHtmlEntities(str) {
   if (!str) return str;
   return str.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
 }
 
+// Find the parent project ID from a heal tracker's logs
+function findParentId(p) {
+  const log = p.metadata?.log || [];
+  const healLog = log.find(l => l.includes('Heal mode: loading project'));
+  if (healLog) {
+    const match = healLog.match(/loading project ([a-f0-9]+)/);
+    return match ? match[1] : null;
+  }
+  return null;
+}
+
+// Trace the heal chain to find the original benchmark_url
+function traceBenchmarkUrl(p, projectMap, visited = new Set()) {
+  if (!p || visited.has(p.id)) return null;
+  visited.add(p.id);
+  if (p.benchmark_url) return p.benchmark_url;
+  const parentId = findParentId(p);
+  if (parentId && projectMap.has(parentId)) {
+    return traceBenchmarkUrl(projectMap.get(parentId), projectMap, visited);
+  }
+  return null;
+}
+
 // Clone Gallery — returns all cloned LaunchProjects that have a live Vercel URL,
-// grouped by industry, with a screenshot thumbnail of each clone's home page.
-// Names are derived from the Vercel URL pattern when the stored name is generic.
+// with the original site name (traced via benchmark_url or heal chain),
+// the original URL, and the Vercel clone URL.
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -46,39 +59,47 @@ export default async function(req) {
     const orgId = user.data?.organization_id;
     if (!orgId) return Response.json({ error: 'No organization found' }, { status: 400 });
 
+    // Load ALL projects (not just 100) so we can trace heal chains
     const projects = await base44.asServiceRole.entities.LaunchProject.filter(
-      { organization_id: orgId }, '-created_date', 100
+      { organization_id: orgId }, '-created_date', 500
     );
+
+    // Build a lookup map for heal-chain tracing
+    const projectMap = new Map(projects.map(p => [p.id, p]));
 
     const cloned = projects.filter(p =>
       p.vercel_deployment_url || p.metadata?.vercel_deployment_url
     );
 
     const withThumbs = cloned.map((p) => {
-      const url = p.vercel_deployment_url || p.metadata?.vercel_deployment_url;
+      const vercelUrl = p.vercel_deployment_url || p.metadata?.vercel_deployment_url;
 
-      // Use the original site name when the stored name is generic
+      // Trace the original target URL: check this project's benchmark_url first,
+      // then walk the heal chain via logs to find an ancestor that has it.
+      const originalUrl = p.benchmark_url || traceBenchmarkUrl(p, projectMap);
+
+      // Derive the site name from the original URL when the stored name is generic
       const isGeneric = !p.project_name ||
         p.project_name.startsWith('Autonomous Clone') ||
         p.project_name === 'Clone' || p.project_name === 'CLONE' ||
         /^Clone (heal\d+|[a-z0-9]{3,})$/.test(p.project_name);
-      const derivedName = isGeneric ? deriveNameFromVercelUrl(url) : null;
+      const derivedName = originalUrl ? deriveNameFromUrl(originalUrl) : null;
       const rawName = (isGeneric && derivedName) ? derivedName : (p.project_name || 'Untitled Clone');
       const name = decodeHtmlEntities(rawName);
 
-      // Screenshot of the clone's home page (mShots generates + caches on first request)
-      const thumbnail = `https://s.wordpress.com/mshots/v1/${encodeURIComponent(url)}?w=480&h=360`;
+      // Screenshot of the clone's Vercel home page (mShots generates + caches on first request)
+      const thumbnail = `https://s.wordpress.com/mshots/v1/${encodeURIComponent(vercelUrl)}?w=480&h=360`;
 
       return {
         id: p.id,
         name,
         business_name: p.business_name || derivedName || '',
         industry: p.industry || p.metadata?.target_dna?.industry || 'Uncategorized',
-        url,
+        url: vercelUrl,
+        target_url: originalUrl || '',
         thumbnail,
         score: p.parity_score || 0,
         status: p.status,
-        target_url: p.metadata?.target_url || '',
         created_date: p.created_date,
         needsRename: isGeneric && derivedName ? true : false,
       };
@@ -88,7 +109,7 @@ export default async function(req) {
     const toRename = withThumbs.filter(c => c.needsRename);
     if (toRename.length > 0) {
       base44.asServiceRole.entities.LaunchProject.bulkUpdate(
-        toRename.map(c => ({ id: c.id, project_name: c.name, business_name: c.name }))
+        toRename.map(c => ({ id: c.id, project_name: c.name, business_name: c.name, benchmark_url: c.target_url || undefined }))
       ).catch(() => {});
     }
 

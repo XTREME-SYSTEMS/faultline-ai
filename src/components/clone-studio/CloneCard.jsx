@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import { ExternalLink, Wand2, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ExternalLink, Wand2, Loader2, CheckCircle2, AlertCircle, Globe } from 'lucide-react';
 
 export default function CloneCard({ clone }) {
   const navigate = useNavigate();
   const [healing, setHealing] = useState(false);
   const [healResult, setHealResult] = useState(null);
+  const [imgError, setImgError] = useState(false);
 
   async function handleHeal(e) {
     e.stopPropagation();
@@ -32,28 +33,35 @@ export default function CloneCard({ clone }) {
 
   const scoreColor = clone.score >= 100 ? '#237A4B' : clone.score >= 70 ? '#B88214' : '#C63D34';
 
+  // Shorten a URL for display: strip protocol, keep host + path start
+  const shortUrl = (url) => {
+    if (!url) return '';
+    return url.replace(/^https?:\/\//, '').replace(/\/$/, '').slice(0, 38);
+  };
+
   return (
     <div style={{
       border: '1px solid #ddd', borderRadius: 10, overflow: 'hidden', background: '#fff',
       display: 'flex', flexDirection: 'column',
     }}>
-      {/* Thumbnail — screenshot of the clone's home page */}
+      {/* Thumbnail — screenshot of the clone's Vercel home page */}
       <div style={{ position: 'relative', height: 160, background: 'linear-gradient(135deg, #1a1a1a, #2a2a2a)', overflow: 'hidden' }}>
-        {clone.thumbnail ? (
+        {clone.thumbnail && !imgError ? (
           <img
             src={clone.thumbnail}
             alt={clone.name}
             loading="lazy"
-            onError={(e) => { e.target.style.display = 'none'; e.target.nextSibling.style.display = 'grid'; }}
+            onError={() => setImgError(true)}
             style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }}
           />
-        ) : null}
-        <div style={{
-          width: '100%', height: '100%', display: clone.thumbnail ? 'none' : 'grid', placeItems: 'center',
-          color: '#E7C86E', fontFamily: "'Libre Caslon Display', serif", fontSize: 28,
-        }}>
-          {clone.name?.slice(0, 2).toUpperCase()}
-        </div>
+        ) : (
+          <div style={{
+            width: '100%', height: '100%', display: 'grid', placeItems: 'center',
+            color: '#E7C86E', fontFamily: "'Libre Caslon Display', serif", fontSize: 28,
+          }}>
+            {clone.name?.slice(0, 2).toUpperCase()}
+          </div>
+        )}
         {/* Score badge */}
         <div style={{
           position: 'absolute', top: 8, right: 8, padding: '4px 10px', borderRadius: 20,
@@ -75,9 +83,27 @@ export default function CloneCard({ clone }) {
       <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
         <div>
           <b style={{ fontSize: 14, display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{clone.name}</b>
+        </div>
+
+        {/* URLs — original site + Vercel clone */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          {clone.target_url ? (
+            <a href={clone.target_url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
+              title={clone.target_url}
+              style={{ color: '#666', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none' }}>
+              <Globe size={11} style={{ flexShrink: 0 }} />
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shortUrl(clone.target_url)}</span>
+            </a>
+          ) : (
+            <span style={{ color: '#999', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4 }}>
+              <Globe size={11} /> Original URL not stored
+            </span>
+          )}
           <a href={clone.url} target="_blank" rel="noreferrer" onClick={e => e.stopPropagation()}
-            style={{ color: '#2563eb', fontSize: 11, display: 'flex', alignItems: 'center', gap: 3, marginTop: 2 }}>
-            <ExternalLink size={11} /> Live URL
+            title={clone.url}
+            style={{ color: '#2563eb', fontSize: 11, display: 'flex', alignItems: 'center', gap: 4, textDecoration: 'none' }}>
+            <ExternalLink size={11} style={{ flexShrink: 0 }} />
+            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{shortUrl(clone.url)}</span>
           </a>
         </div>
 

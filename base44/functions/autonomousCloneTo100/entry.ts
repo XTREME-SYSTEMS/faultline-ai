@@ -49,6 +49,7 @@ export default async function(req) {
       organization_id: orgId, project_name: params.project_name || `Autonomous Clone ${Date.now().toString(36)}`,
       project_type: 'website', status: 'queued', parity_score: 0,
       last_validation_summary: 'Autonomous clone-to-100 engine started',
+      benchmark_url: params.target_url || undefined,
       metadata: { autonomous: true, scan: params.scan, target_url: params.target_url }
     });
 
@@ -96,6 +97,7 @@ async function runEngine(base44, orgId, p) {
         github_repo_url: urls.github || undefined,
         supabase_project_url: urls.supabase || undefined,
         vercel_deployment_url: urls.vercel || undefined,
+        benchmark_url: p.benchmark_url || p.target_url || undefined,
         metadata: { autonomous: true, log: log.slice(-12), urls, progress_history: progressHistory.slice(-60), ...extra }
       });
     } catch (e) {}
@@ -135,13 +137,14 @@ async function runEngine(base44, orgId, p) {
       if (!proj) throw new Error('LaunchProject not found');
       targetDna = proj.metadata?.target_dna || null;
       p.target_url = proj.metadata?.target_url || p.target_url;
+      p.benchmark_url = proj.benchmark_url || p.target_url || undefined;
       p.industry = proj.industry || p.industry;
       bizName = proj.business_name || bizName || deriveSiteName(p.target_url);
       p.brief = proj.metadata?.brief || p.brief;
       urls.vercel = proj.vercel_deployment_url || proj.metadata?.vercel_deployment_url;
-      // Rename generic "Autonomous Clone xxx" tracker to the original site name
+      // Rename generic "Autonomous Clone xxx" tracker to the original site name + store benchmark_url
       if (bizName) {
-        try { await base44.asServiceRole.entities.LaunchProject.update(p.tracker_id, { project_name: bizName, business_name: bizName }); } catch (e) {}
+        try { await base44.asServiceRole.entities.LaunchProject.update(p.tracker_id, { project_name: bizName, business_name: bizName, benchmark_url: p.benchmark_url }); } catch (e) {}
       }
       if (!targetDna && p.target_url) {
         add('Re-scraping for target DNA…');
@@ -158,6 +161,7 @@ async function runEngine(base44, orgId, p) {
       const s = sr?.data || sr;
       if (s.status !== 'success') throw new Error(`Scrape failed: ${s.error}`);
       targetDna = s.dna; bizName = bizName || s.bizName;
+      p.benchmark_url = p.target_url;
       add(`Scraped ${bizName}: ${s.rendered_chars} chars, nav=${targetDna.nav?.length || 0}`);
       // Use the original site's name as the clone name (not "Autonomous Clone xxx")
       if (bizName) {
