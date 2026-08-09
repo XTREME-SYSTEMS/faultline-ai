@@ -1,0 +1,44 @@
+{
+  "description": "Deposit-triggered onboarding. Fires immediately when a Stripe payment succeeds (deposit paid). Creates the full gated onboarding flow: CustomerAccount, ClientProject, 5-stage approval chain, 15-min consultation appointment, and welcome email. This is the first point of contact after a customer pays a deposit.",
+  "name": "Deposit Onboarding",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "app_payment",
+      "events": [
+        "payment_succeeded"
+      ]
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "deposit_onboarding",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "trigger_onboarding": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "triggerDepositOnboarding",
+            "args": {
+              "customer_email": "${ .event.customer_email }",
+              "customer_name": "${ .event.customer_name }",
+              "plan_name": "${ .event.plan_name }",
+              "amount_total": "${ .event.amount_total }",
+              "session_id": "${ .event.session_id }",
+              "project_type": "${ .event.product_name }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Trigger deposit onboarding",
+            "description": "Create customer account, project, approval chain, and consultation appointment"
+          }
+        }
+      }
+    ]
+  }
+}
