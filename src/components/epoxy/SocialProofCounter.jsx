@@ -11,7 +11,7 @@ export default function SocialProofCounter() {
   const [count, setCount] = useState(0);
   const [visible, setVisible] = useState(false);
   const ref = useRef(null);
-  const target = 2847;
+  const target = 1362;
 
   useEffect(() => {
     const observer = new IntersectionObserver(

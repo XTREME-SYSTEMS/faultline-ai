@@ -59,7 +59,8 @@ export default function ExitIntentPopup({ onStart }) {
         </button>
         <div style={{
           width: 60, height: 60, borderRadius: '50%', background: LIME,
-          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginBottom: 16,
+          boxShadow: '0 2px 0 rgba(0,0,0,0.25)'
         }}>
           <ShieldCheck size={28} color="#fff" />
         </div>
@@ -70,12 +71,13 @@ export default function ExitIntentPopup({ onStart }) {
         <button onClick={() => { setShow(false); onStart(); }} style={{
           background: LIME, color: '#fff', border: 'none', padding: '16px 32px', borderRadius: 6,
           fontWeight: 800, fontSize: 16, cursor: 'pointer', textTransform: 'uppercase', fontFamily: 'inherit',
-          display: 'inline-flex', alignItems: 'center', gap: 8, width: '100%', justifyContent: 'center'
+          display: 'inline-flex', alignItems: 'center', gap: 8, width: '100%', justifyContent: 'center',
+          boxShadow: '0 3px 0 rgba(0,0,0,0.2)'
         }}>
           Get My Free Estimate <ArrowRight size={18} />
         </button>
         <p style={{ fontSize: 12, color: '#999', marginTop: 16 }}>
-          Join 2,847+ homeowners who got their estimate today
+          Join 1,362+ homeowners who got their estimate today
         </p>
       </div>
     </div>

@@ -114,6 +114,7 @@ const EpoxyFloorGallery = lazy(() => import('@/pages/EpoxyFloorGallery'));
 const DriveWorkspace = lazy(() => import('@/pages/DriveWorkspace'));
 const ForensicAuditCenter = lazy(() => import('@/pages/ForensicAuditCenter'));
 const EpoxyEstimateFunnel = lazy(() => import('@/pages/EpoxyEstimateFunnel'));
+const EpoxyColorCharts = lazy(() => import('@/pages/EpoxyColorCharts'));
 
 const PageLoader = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -164,6 +165,7 @@ const AuthenticatedApp = () => {
       <Route path="/portal/:companyId" element={<CustomerPortal />} />
       <Route path="/funnel" element={<ClientFunnel />} />
       <Route path="/epoxy-estimate" element={<EpoxyEstimateFunnel />} />
+      <Route path="/epoxy-colors" element={<EpoxyColorCharts />} />
       <Route path="/sign/:token" element={<SignDocument />} />
 
       {/* Auth */}

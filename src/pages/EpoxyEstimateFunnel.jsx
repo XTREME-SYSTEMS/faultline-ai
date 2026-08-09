@@ -515,7 +515,7 @@ export default function EpoxyEstimateFunnel() {
           <div style={{ width: 36, height: 36, background: LIME, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 18 }}><EpoxyLogo size={36} /></div>
           <div style={{ fontWeight: 800, fontSize: 14 }}>EPOXY GARAGE FLOORS NEAR YOU</div>
         </div>
-        <div style={{ fontSize: 12, color: '#888' }}>© 2026 Epoxy Garage Floors Near You. The Original One-Day Flooring Solution.</div>
+        <div style={{ fontSize: 12, color: '#888' }}>© 2026 Epoxy Garage Floors Near You. The Original 2-Day Flooring Solution.</div>
       </footer>
     </div>
   );

@@ -53,7 +53,7 @@ export default function SeoHead() {
       '@context': 'https://schema.org',
       '@type': 'HomeAndConstructionBusiness',
       name: siteName,
-      description: 'Professional epoxy garage floor coating installation. One-day installation, 30+ colors, lifetime warranty.',
+      description: 'Professional epoxy garage floor coating installation. 2-day installation, 12 colors, 10 year warranty.',
       telephone: phone,
       email,
       url: siteUrl,
@@ -67,7 +67,7 @@ export default function SeoHead() {
       }],
       aggregateRating: {
         '@type': 'AggregateRating',
-        ratingValue: '4.9',
+        ratingValue: '4.5',
         reviewCount: '847',
         bestRating: '5',
         worstRating: '1'
@@ -137,16 +137,16 @@ export default function SeoHead() {
       '@context': 'https://schema.org',
       '@type': 'Product',
       name: 'Epoxy Garage Floor Coating',
-      description: 'Professional one-day epoxy garage floor coating with lifetime warranty',
+      description: 'Professional 2-day epoxy garage floor coating with 10 year warranty',
       brand: { '@type': 'Brand', name: siteName },
       aggregateRating: {
         '@type': 'AggregateRating',
-        ratingValue: '4.9',
+        ratingValue: '4.5',
         reviewCount: '847'
       },
       review: [
         { '@type': 'Review', reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' }, author: { '@type': 'Person', name: 'Beacher2' }, reviewBody: 'Flawlessly installed with enough tooth to the floor to ensure a relatively no-slip surface without losing the gloss.' },
-        { '@type': 'Review', reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' }, author: { '@type': 'Person', name: 'Michael Kohen' }, reviewBody: 'From sales to completion, excellent job on our garage floor. Lifetime warranty gives peace of mind.' },
+        { '@type': 'Review', reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' }, author: { '@type': 'Person', name: 'Michael Kohen' }, reviewBody: 'From sales to completion, excellent job on our garage floor. 10 year warranty gives peace of mind.' },
         { '@type': 'Review', reviewRating: { '@type': 'Rating', ratingValue: '5', bestRating: '5' }, author: { '@type': 'Person', name: 'Brian Hunnius' }, reviewBody: 'Excellent work. On time, friendly, great work and the results are amazing.' }
       ]
     });
@@ -155,8 +155,8 @@ export default function SeoHead() {
     injectJsonLd('video', {
       '@context': 'https://schema.org',
       '@type': 'VideoObject',
-      name: 'Professional Epoxy Garage Floor Installation in a Day',
-      description: 'Watch our proprietary one-day epoxy garage floor coating installation process from start to finish.',
+      name: 'Professional Epoxy Garage Floor Installation in 2 Days',
+      description: 'Watch our proprietary 2-day epoxy garage floor coating installation process from start to finish.',
       thumbnailUrl: `${siteUrl}/epoxy-estimate/og-image.jpg`,
       uploadDate: '2026-01-01',
       contentUrl: 'https://media.base44.com/videos/public/6a6e5a0e8a902b5e240d7633/38585a5f7_Epoxy_Install_Video.mp4'
@@ -167,13 +167,13 @@ export default function SeoHead() {
       '@context': 'https://schema.org',
       '@type': 'HowTo',
       name: 'How to Install an Epoxy Garage Floor',
-      description: 'Professional one-day epoxy garage floor coating installation process.',
-      totalTime: 'P1D',
+      description: 'Professional 2-day epoxy garage floor coating installation process.',
+      totalTime: 'P2D',
       step: [
         { '@type': 'HowToStep', position: 1, name: 'Free Estimate', text: 'Get your free instant estimate using our online calculator and AI visualizer.' },
         { '@type': 'HowToStep', position: 2, name: 'Surface Preparation', text: 'Professional mechanical grinding, crack repair, and oil stain removal to ensure proper adhesion.' },
-        { '@type': 'HowToStep', position: 3, name: 'Coating Application', text: 'Primer, base coat, flake broadcast, and clear top coat applied in a single day.' },
-        { '@type': 'HowToStep', position: 4, name: 'Cure and Enjoy', text: 'Floor cures in 24 hours for foot traffic and 72 hours for full vehicle traffic. Backed by lifetime warranty.' }
+        { '@type': 'HowToStep', position: 3, name: 'Coating Application', text: 'Primer, base coat, flake broadcast, and clear top coat applied over 2 days.' },
+        { '@type': 'HowToStep', position: 4, name: 'Cure and Enjoy', text: 'Floor cures in 24 hours for foot traffic and 72 hours for full vehicle traffic. Backed by 10 year warranty.' }
       ]
     });
 

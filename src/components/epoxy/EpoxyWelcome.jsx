@@ -11,6 +11,8 @@ import ExitIntentPopup from '@/components/epoxy/ExitIntentPopup';
 import InstallPwaButton from '@/components/epoxy/InstallPwaButton';
 import StateSilhouette from '@/components/epoxy/StateSilhouette';
 import { ArrowRight, ArrowUp, ShieldCheck, Award, FileCheck } from 'lucide-react';
+import { Image } from '@/components/ui/image';
+import { Link } from 'react-router-dom';
 
 const LIME = '#7AB800';
 const LIGHT_GREY = '#B7B7B7';
@@ -29,7 +31,7 @@ export default function EpoxyWelcome({ onStart }) {
 
       {/* ═══ 1. HERO ═══ */}
       <div className="gf-hero-bg" style={{ minHeight: 600, display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center', textAlign: 'center', color: '#fff', padding: '80px 24px' }}>
-        <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: LIME, marginBottom: 24 }}>The Original One-Day Flooring Solution</div>
+        <div style={{ fontSize: 18, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: '#fff', marginBottom: 24, background: LIME, display: 'inline-block', padding: '8px 22px', borderRadius: 4, boxShadow: '0 2px 0 rgba(0,0,0,0.25)' }}>The Original 2-Day Flooring Solution</div>
         <h1 style={{ fontSize: 'clamp(36px, 5vw, 60px)', fontWeight: 800, lineHeight: 1.05, margin: '0 0 16px', maxWidth: 900, textAlign: 'center' }}>
           Your Local Garage Floor Coating Solution
         </h1>
@@ -37,13 +39,13 @@ export default function EpoxyWelcome({ onStart }) {
           The World's Largest Installer of Garage Floor Coatings
         </p>
         <p style={{ fontSize: 17, maxWidth: 650, lineHeight: 1.6, marginBottom: 36, opacity: 0.9 }}>
-          Proprietary XPS – 20x Stronger than Epoxy, Installed in a Day, Proven for Life.
+          Proprietary XPS – 20x More Flex than Epoxy, Installed in 2 Days, 10 Year Warranty.
         </p>
         <button onClick={onStart} style={{
           background: LIME, color: '#fff', border: 'none', padding: '20px 52px', borderRadius: 4,
           fontSize: 18, fontWeight: 800, cursor: 'pointer', letterSpacing: 0.5, textTransform: 'uppercase',
           display: 'inline-flex', alignItems: 'center', gap: 10,
-          boxShadow: '0 8px 30px rgba(122,184,0,0.4)'
+          boxShadow: '0 8px 30px rgba(122,184,0,0.4), 0 3px 0 rgba(0,0,0,0.2)'
         }}>
           Get My Free Estimate <ArrowRight size={20} />
         </button>
@@ -60,7 +62,7 @@ export default function EpoxyWelcome({ onStart }) {
             The benefits of a XPS floor coating put traditional epoxy and polyurea floors to shame. Not only are they higher-quality, more durable and damage-resistant, but XPS floors also cure in a fraction of the time versus traditional epoxy floors and are exclusive to XPS.
           </p>
         </div>
-        <div style={{ background: LIME, color: '#fff', padding: '48px 36px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ background: LIME, color: '#fff', padding: '48px 36px', display: 'flex', flexDirection: 'column', boxShadow: 'inset 0 -3px 0 rgba(0,0,0,0.15)' }}>
           <ArrowUp size={28} color="#fff" style={{ marginBottom: 16 }} />
           <h3 style={{ fontSize: 22, fontWeight: 800, margin: '0 0 14px', textTransform: 'uppercase' }}>Our Process</h3>
           <p style={{ fontSize: 14, lineHeight: 1.7, opacity: 0.95, margin: 0 }}>
@@ -82,7 +84,7 @@ export default function EpoxyWelcome({ onStart }) {
       <div id="verifloor" style={{ padding: '80px 24px', background: '#fff', textAlign: 'center' }}>
         <div style={{ fontSize: 36, fontWeight: 800, color: CHARCOAL, marginBottom: 8, letterSpacing: 1 }}>XPS <span style={{ color: LIME }}>Certified™</span></div>
         <div style={{ fontSize: 14, fontWeight: 700, letterSpacing: 2, textTransform: 'uppercase', color: LIME, marginBottom: 50 }}>See the Difference</div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 40, maxWidth: 1000, margin: '0 auto', textAlign: 'left' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 40, maxWidth: 1000, margin: '0 auto', textAlign: 'center' }}>
           <div>
             <ShieldCheck size={32} color={LIME} style={{ marginBottom: 12 }} />
             <h4 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 8px' }}>BUY <span style={{ fontWeight: 400 }}>With Confidence</span></h4>
@@ -92,7 +94,7 @@ export default function EpoxyWelcome({ onStart }) {
             <Award size={32} color={LIME} style={{ marginBottom: 12 }} />
             <h4 style={{ fontSize: 16, fontWeight: 800, margin: '0 0 8px' }}>UNIQUE <span style={{ fontWeight: 400 }}>Floor Properties</span></h4>
             <p style={{ fontSize: 13, color: '#666', lineHeight: 1.6, margin: 0 }}>XPS is the only company that provides a unique serial number to every floor it installs; all stored in the XPS Certified™ coin code.</p>
-            <div style={{ width: 60, height: 60, borderRadius: '50%', background: LIME, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 20, marginTop: 12 }}>XPS</div>
+            <div style={{ width: 60, height: 60, borderRadius: '50%', background: LIME, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 800, fontSize: 20, margin: '12px auto 0', boxShadow: '0 2px 0 rgba(0,0,0,0.25)' }}>XPS</div>
           </div>
           <div>
             <FileCheck size={32} color={LIME} style={{ marginBottom: 12 }} />
@@ -151,12 +153,12 @@ export default function EpoxyWelcome({ onStart }) {
               Let one of our expert professionals show you the XPS Difference!
             </p>
             <div style={{ display: 'flex', gap: 12 }}>
-              <button onClick={onStart} style={{ background: LIME, color: '#fff', border: 'none', padding: '14px 28px', borderRadius: 4, fontWeight: 700, fontSize: 14, cursor: 'pointer', textTransform: 'uppercase' }}>Our Process</button>
-              <button onClick={onStart} style={{ background: '#fff', color: CHARCOAL, border: '1px solid #ddd', padding: '14px 28px', borderRadius: 4, fontWeight: 700, fontSize: 14, cursor: 'pointer', textTransform: 'uppercase' }}>Color Options</button>
+              <button onClick={onStart} style={{ background: LIME, color: '#fff', border: 'none', padding: '14px 28px', borderRadius: 4, fontWeight: 700, fontSize: 14, cursor: 'pointer', textTransform: 'uppercase', boxShadow: '0 2px 0 rgba(0,0,0,0.2)' }}>Our Process</button>
+              <Link to="/epoxy-colors" style={{ background: '#fff', color: CHARCOAL, border: '1px solid #ddd', padding: '14px 28px', borderRadius: 4, fontWeight: 700, fontSize: 14, cursor: 'pointer', textTransform: 'uppercase', textDecoration: 'none', display: 'inline-flex', alignItems: 'center' }}>Color Options</Link>
             </div>
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-            <img src="https://garageforce.com/wp-content/uploads/2026/06/IMG_0236.jpg" alt="Installation" style={{ width: '100%', borderRadius: 8, height: 250, objectFit: 'cover' }} />
+            <Image src="https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/90fa1f932_ChatGPTImageJun9202605_07_04PM1.png" fittingType="fill" className="w-full h-[250px] rounded-lg" />
             <img src="https://garageforce.com/wp-content/uploads/2022/11/garageforce-39.jpg" alt="Finished floor" style={{ width: '100%', borderRadius: 8, height: 250, objectFit: 'cover' }} />
           </div>
         </div>
@@ -186,7 +188,7 @@ export default function EpoxyWelcome({ onStart }) {
             <p style={{ fontSize: 15, color: '#555', lineHeight: 1.8, margin: '0 0 24px' }}>
               XPS offers superior garage slatwall panels for your garage storage needs. Our premium garage wall panels are perfect for keeping your space organized.
             </p>
-            <button onClick={onStart} style={{ background: LIME, color: '#fff', border: 'none', padding: '14px 28px', borderRadius: 4, fontWeight: 700, fontSize: 14, cursor: 'pointer', textTransform: 'uppercase' }}>See Storage Options</button>
+            <button onClick={onStart} style={{ background: LIME, color: '#fff', border: 'none', padding: '14px 28px', borderRadius: 4, fontWeight: 700, fontSize: 14, cursor: 'pointer', textTransform: 'uppercase', boxShadow: '0 2px 0 rgba(0,0,0,0.2)' }}>See Storage Options</button>
           </div>
           <img src="https://garageforce.com/wp-content/uploads/2024/03/storewall.jpg" alt="Storage wall" style={{ width: '100%', borderRadius: 8, height: 300, objectFit: 'cover' }} />
         </div>
@@ -229,7 +231,7 @@ export default function EpoxyWelcome({ onStart }) {
           ))}
         </div>
         <div style={{ textAlign: 'center', marginTop: 40 }}>
-          <button onClick={onStart} style={{ background: LIME, color: '#fff', border: 'none', padding: '14px 28px', borderRadius: 4, fontWeight: 700, fontSize: 14, cursor: 'pointer', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+          <button onClick={onStart} style={{ background: LIME, color: '#fff', border: 'none', padding: '14px 28px', borderRadius: 4, fontWeight: 700, fontSize: 14, cursor: 'pointer', textTransform: 'uppercase', display: 'inline-flex', alignItems: 'center', gap: 8, boxShadow: '0 2px 0 rgba(0,0,0,0.2)' }}>
             Check Availability <ArrowRight size={16} />
           </button>
         </div>
@@ -248,19 +250,19 @@ export default function EpoxyWelcome({ onStart }) {
         <button onClick={onStart} style={{
           marginTop: 40, background: LIME, color: '#fff', border: 'none', padding: '18px 48px', borderRadius: 4,
           fontSize: 16, fontWeight: 800, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: 0.5,
-          display: 'inline-flex', alignItems: 'center', gap: 10
+          display: 'inline-flex', alignItems: 'center', gap: 10, boxShadow: '0 3px 0 rgba(0,0,0,0.2)'
         }}>
           Get My Free Estimate <ArrowRight size={18} />
         </button>
       </div>
 
       {/* ═══ 11. FINAL CTA ═══ */}
-      <div style={{ background: LIME, padding: '60px 24px', textAlign: 'center' }}>
+      <div style={{ background: LIME, padding: '60px 24px', textAlign: 'center', boxShadow: 'inset 0 -3px 0 rgba(0,0,0,0.15)' }}>
         <h2 style={{ fontSize: 32, fontWeight: 800, color: '#fff', margin: '0 0 24px' }}>Ready to Transform Your Garage?</h2>
         <button onClick={onStart} style={{
           background: '#fff', color: CHARCOAL, border: 'none', padding: '18px 48px', borderRadius: 4,
           fontSize: 16, fontWeight: 800, cursor: 'pointer', textTransform: 'uppercase', letterSpacing: 0.5,
-          display: 'inline-flex', alignItems: 'center', gap: 10
+          display: 'inline-flex', alignItems: 'center', gap: 10, boxShadow: '0 3px 0 rgba(0,0,0,0.15)'
         }}>
           Get My Free Estimate <ArrowRight size={18} />
         </button>

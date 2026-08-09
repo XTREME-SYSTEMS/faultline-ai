@@ -129,8 +129,8 @@ Write a professional bid proposal that includes:
 3. Recommended system: Full Flake Epoxy System in ${flake_color}
 4. Price breakdown (materials, labor, preparation, coating)
 5. What's included (surface prep, crack repair, primer, base coat, flake broadcast, top coat)
-6. Timeline (1-day installation, 24-hour cure)
-7. Warranty (lifetime residential)
+6. Timeline (2-day installation, 24-hour cure)
+7. Warranty (10 year residential)
 8. Next steps
 
 Format as clean HTML for email. Professional, trustworthy tone. Brand: Epoxy Garage Floors Near You.`,
