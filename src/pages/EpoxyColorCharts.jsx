@@ -15,8 +15,8 @@ const CHARCOAL = '#1a1a1a';
  */
 export default function EpoxyColorCharts() {
   const [activeSystem, setActiveSystem] = useState('flake');
-  const colors = getColorsBySystem(activeSystem);
   const activeSys = COATING_SYSTEMS.find(s => s.id === activeSystem);
+  const colors = getColorsBySystem(activeSys?.systemKey || activeSystem);
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff', fontFamily: "'DM Sans', system-ui, sans-serif" }}>

@@ -192,7 +192,7 @@ export default function EpoxyEstimateFunnel() {
   };
 
   const totalSteps = 8;
-  const colors = getColorsBySystem(data.systemType);
+  const colors = getColorsBySystem(COATING_SYSTEMS.find(s => s.id === data.systemType)?.systemKey || data.systemType);
 
   return (
     <div style={{ minHeight: '100vh', background: '#fff', fontFamily: "'DM Sans', system-ui, sans-serif" }}>
