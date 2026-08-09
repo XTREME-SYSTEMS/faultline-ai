@@ -113,6 +113,7 @@ const AiBidWriter = lazy(() => import('@/pages/tools/AiBidWriter'));
 const EpoxyFloorGallery = lazy(() => import('@/pages/EpoxyFloorGallery'));
 const DriveWorkspace = lazy(() => import('@/pages/DriveWorkspace'));
 const ForensicAuditCenter = lazy(() => import('@/pages/ForensicAuditCenter'));
+const EpoxyEstimateFunnel = lazy(() => import('@/pages/EpoxyEstimateFunnel'));
 
 const PageLoader = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -162,6 +163,7 @@ const AuthenticatedApp = () => {
       <Route path="/epoxy-gallery" element={<EpoxyFloorGallery />} />
       <Route path="/portal/:companyId" element={<CustomerPortal />} />
       <Route path="/funnel" element={<ClientFunnel />} />
+      <Route path="/epoxy-estimate" element={<EpoxyEstimateFunnel />} />
       <Route path="/sign/:token" element={<SignDocument />} />
 
       {/* Auth */}
