@@ -1,0 +1,47 @@
+{
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "monthly_drive_refresh",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "refresh_docs": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "bootstrapXtremeDrive",
+            "args": {
+              "regenerate_docs": true
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Refresh strategic documents",
+            "description": "Regenerate all 10 docs in Google Drive"
+          }
+        }
+      }
+    ]
+  },
+  "name": "Monthly Drive Document Refresh",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "recurring",
+      "cron_expression": "0 3 1 * *",
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": null,
+      "interval_unit": null,
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "description": "Regenerates all 10 strategic documents in the Xtreme AI Systems Google Drive workspace on the 1st of every month at 3am ET. Keeps market research, financial projections, and strategic plans fresh with latest data."
+}
