@@ -6,6 +6,7 @@ import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
 import CategoryCard from '@/components/clone-gallery/CategoryCard';
 import SubIndustryCard from '@/components/clone-gallery/SubIndustryCard';
 import CloneDetailCard from '@/components/clone-gallery/CloneDetailCard';
+import GallerySearch from '@/components/clone-gallery/GallerySearch';
 import SiteSpecsModal from '@/components/clone-studio/SiteSpecsModal';
 import { CLONE_INDUSTRIES, getIndustryGroups } from '@/lib/cloneIndustries';
 import { CATEGORY_IMAGES } from '@/lib/industryImages';
@@ -109,6 +110,11 @@ export default function CloneGallery() {
             <Link to="/app" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#aaa', fontSize: 13 }}>
               <ChevronLeft size={16} /> Back to XtremeOS
             </Link>
+          </div>
+
+          {/* Autocomplete search bar — always visible at top of gallery */}
+          <div style={{ marginBottom: 20 }}>
+            <GallerySearch onPickClone={(clone) => setSpecsClone(clone)} />
           </div>
 
           {view !== 'categories' && (

@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import PwaInstallButton from '@/components/PwaInstallButton';
 import CloneList from '@/components/fl/CloneList';
+import FailedClonesCard from '@/components/fl/FailedClonesCard';
 
 export default function XtremeOS() {
   const { user } = useAuth();
@@ -217,6 +218,11 @@ export default function XtremeOS() {
             <span style={{ fontSize: 11, color: '#999' }}>{m.sub}</span>
           </article>
         ))}
+      </div>
+
+      {/* Failed clones — auto-retried 5× then moved here */}
+      <div style={{ marginTop: 13 }}>
+        <FailedClonesCard />
       </div>
 
       {/* Categorized clone list with search */}

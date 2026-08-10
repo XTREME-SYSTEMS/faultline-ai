@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
 import PwaInstallButton from '@/components/PwaInstallButton';
+import BulkUpload from '@/components/clone-queue/BulkUpload';
 
 export default function CloneQueue() {
   const [items, setItems] = useState([]);
@@ -273,6 +274,9 @@ export default function CloneQueue() {
             </div>
           )}
         </div>
+
+        {/* Bulk Upload by Paste */}
+        <BulkUpload onDone={loadQueue} />
 
         {/* Stats bar */}
         <div style={{ display: 'flex', gap: 13, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>

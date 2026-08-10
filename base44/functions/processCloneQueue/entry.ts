@@ -52,7 +52,7 @@ export default async function(req) {
         // Phase 1: Clone to 100/100
         await base44.asServiceRole.entities.CloneQueue.update(item.id, {
           status: 'validating',
-          notes: `Cloning attempt ${(item.attempts || 0) + 1}/${item.max_attempts || 3}`,
+          notes: `Cloning attempt ${(item.attempts || 0) + 1}/${item.max_attempts || 5}`,
         });
 
         const cloneRes = await withTimeout(
@@ -151,24 +151,42 @@ export default async function(req) {
             score: finalScore, vercel_url: vercelUrl, audit_passed: true,
           });
         } else {
-          await base44.asServiceRole.entities.CloneQueue.update(item.id, {
-            status: 'failed',
-            audit_passed: false,
-            error: `Rigorous gate failed at ${finalScore}/100`,
-            notes: `Failed rigorous gate after recursive healing: ${(gateData.failures || []).slice(0, 3).join('; ')}`,
-          });
+          // Gate failed — auto-retry up to max_attempts (5) before moving to failed card.
+          // Each retry re-runs the full audit → analyze → fix → heal → harden cycle.
+          const currentAttempt = (item.attempts || 0) + 1;
+          const maxAttempts = item.max_attempts || 5;
 
-          results.push({
-            id: item.id, site_name: item.site_name, status: 'failed',
-            score: finalScore, vercel_url: vercelUrl, audit_passed: false,
-            error: (gateData.failures || []).join('; '),
-          });
+          if (currentAttempt < maxAttempts) {
+            await base44.asServiceRole.entities.CloneQueue.update(item.id, {
+              status: 'queued',
+              audit_passed: false,
+              final_score: finalScore,
+              error: `Rigorous gate failed at ${finalScore}/100`,
+              notes: `Gate failed (attempt ${currentAttempt}/${maxAttempts}). Auto-retrying — system will audit, analyze, fix, heal, and harden again.`,
+            });
+            results.push({
+              id: item.id, site_name: item.site_name, status: 'retrying',
+              score: finalScore, attempts: currentAttempt,
+            });
+          } else {
+            await base44.asServiceRole.entities.CloneQueue.update(item.id, {
+              status: 'failed',
+              audit_passed: false,
+              error: `Rigorous gate failed at ${finalScore}/100`,
+              notes: `Failed after ${currentAttempt} attempts. Moved to failed card. Use Retry or Auto-Heal on the dashboard to investigate and fix.`,
+            });
+            results.push({
+              id: item.id, site_name: item.site_name, status: 'failed',
+              score: finalScore, vercel_url: vercelUrl, audit_passed: false,
+              error: (gateData.failures || []).join('; '),
+            });
+          }
         }
 
       } catch (err) {
         console.error(`Clone failed for ${item.site_name}:`, err.message);
         const attempts = (item.attempts || 0) + 1;
-        const maxAttempts = item.max_attempts || 3;
+        const maxAttempts = item.max_attempts || 5;
 
         if (attempts >= maxAttempts) {
           await base44.asServiceRole.entities.CloneQueue.update(item.id, {

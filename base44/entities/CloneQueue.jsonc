@@ -78,7 +78,7 @@
     },
     "max_attempts": {
       "type": "number",
-      "default": 3
+      "default": 5
     },
     "source": {
       "type": "string",
