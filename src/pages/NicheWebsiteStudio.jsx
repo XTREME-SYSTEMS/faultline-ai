@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Loader2, Rocket, Globe, ExternalLink, Sparkles, Eye } from 'lucide-react';
+import { getIndustryGroups } from '@/lib/cloneIndustries';
 
 export default function NicheWebsiteStudio() {
   const [maxNiches, setMaxNiches] = useState(5);
@@ -9,6 +10,8 @@ export default function NicheWebsiteStudio() {
   const [results, setResults] = useState([]);
   const [error, setError] = useState(null);
   const [recentSites, setRecentSites] = useState([]);
+
+  const industryGroups = useMemo(() => getIndustryGroups(), []);
 
   const loadRecent = useCallback(async () => {
     try {
@@ -36,7 +39,7 @@ export default function NicheWebsiteStudio() {
   };
 
   return (
-    <div className="portal-page" style={{ maxWidth: 1100, margin: '0 auto' }}>
+    <div className="portal-page" style={{ maxWidth: 1100, margin: '0 auto', background: '#fff', minHeight: 'calc(100vh - 60px)' }}>
       <div className="page-head">
         <div>
           <p className="eyebrow">Niche Website Engine</p>
@@ -54,9 +57,18 @@ export default function NicheWebsiteStudio() {
               style={{ padding: '12px', border: '1px solid #ddd', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, background: '#fff', color: '#111', outline: 'none' }} />
           </label>
           <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700 }}>
-            Industry Focus <span style={{ fontWeight: 400, color: '#999' }}>(optional)</span>
-            <input value={industry} onChange={e => setIndustry(e.target.value)} placeholder="general"
-              style={{ padding: '12px', border: '1px solid #ddd', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, background: '#fff', color: '#111', outline: 'none' }} />
+            Industry Focus <span style={{ fontWeight: 400, color: '#999' }}>(aligned with Clone System)</span>
+            <select value={industry} onChange={e => setIndustry(e.target.value)}
+              style={{ padding: '12px', border: '1px solid #ddd', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, background: '#fff', color: '#111', outline: 'none', cursor: 'pointer' }}>
+              <option value="general">General (Auto-discover trending)</option>
+              {industryGroups.map(g => (
+                <optgroup key={g.group} label={g.group}>
+                  {g.industries.map(ind => (
+                    <option key={ind.id} value={ind.label}>{ind.label}</option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
           </label>
         </div>
         <button onClick={generate} disabled={loading}
@@ -119,7 +131,7 @@ export default function NicheWebsiteStudio() {
       {!loading && results.length === 0 && recentSites.length === 0 && (
         <div style={{ padding: 40, border: '1px dashed #ddd', borderRadius: 12, textAlign: 'center', color: '#888' }}>
           <Globe size={32} style={{ margin: '0 auto 12px', opacity: 0.3 }} />
-          <p style={{ fontSize: 14 }}>Configure the engine above and click "Discover & Generate" to build polished niche websites with Google Analytics tracking.</p>
+          <p style={{ fontSize: 14 }}>Pick an industry above and click "Discover & Generate" to build polished niche websites.</p>
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 import { Outlet, useLocation, matchPath } from 'react-router-dom';
 import { lazy, Suspense, useState, useEffect } from 'react';
 import BottomNav from './BottomNav';
+import XtremeTopBar from './XtremeTopBar';
 
 // Lazy-load the 5 bottom-nav tab pages for keep-alive (display:none when inactive)
 const XtremeOS = lazy(() => import('@/pages/XtremeOS'));
@@ -41,6 +42,7 @@ export default function PortalLayout() {
 
   return (
     <>
+      <XtremeTopBar />
       {/* Keep-alive tab stacks: visited tabs stay mounted, hidden via display:none */}
       {TAB_ROUTES.map(({ path, component: Comp }) => {
         if (!visited.has(path)) return null;

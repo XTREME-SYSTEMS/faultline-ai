@@ -97,7 +97,7 @@ export default function XtremeOSSidebar() {
   return (
     <aside className="xtremeos-sidebar" style={{
       width: 240, flexShrink: 0, background: '#090909', color: '#fff',
-      position: 'fixed', left: 0, top: 0, bottom: 0, overflowY: 'auto',
+      position: 'fixed', left: 0, top: 60, bottom: 0, overflowY: 'auto',
       zIndex: 60, borderRight: '1px solid #2b2b2b',
       paddingBottom: 'env(safe-area-inset-bottom)',
     }}>
