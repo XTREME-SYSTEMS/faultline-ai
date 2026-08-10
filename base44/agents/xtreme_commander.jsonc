@@ -922,43 +922,43 @@
     },
     {
       "function_name": "processCloneQueue",
-      "description": "Process queued clone items \u2014 starts the cloning pipeline for pending URLs"
+      "description": "Process queued clone items \u2014 starts the cloning pipeline"
     },
     {
       "function_name": "autonomousCloneTo100",
-      "description": "Heal a clone to 100/100 parity \u2014 auto-fixes, re-deploys, and validates until perfect"
+      "description": "Heal a clone to 100/100 parity"
     },
     {
       "function_name": "forensicAuditAndHarden",
-      "description": "Full audit \u2192 analyze \u2192 fix \u2192 heal \u2192 harden cycle for all failing clones"
+      "description": "Full audit \u2192 fix \u2192 heal \u2192 harden cycle"
     },
     {
       "function_name": "deepCloneTarget",
-      "description": "Deep clone a target website using stealth browser \u2014 full content extraction"
+      "description": "Deep clone a website using stealth browser"
     },
     {
       "function_name": "deterministicClone",
-      "description": "Deterministic clone of a website \u2014 basic fetch with stealth browser fallback"
+      "description": "Deterministic clone of a website"
     },
     {
       "function_name": "deepDiscoveryScan",
-      "description": "Deep discovery scan of a target site \u2014 financial, strategy, niche, stack analysis"
+      "description": "Deep discovery scan of a target site"
     },
     {
       "function_name": "discoverCloneCandidates",
-      "description": "Discover clone candidate sites in an industry or niche"
+      "description": "Discover clone candidate sites"
     },
     {
       "function_name": "discoverTopPerformers",
-      "description": "Discover top-performing sites in a category"
+      "description": "Discover top-performing sites"
     },
     {
       "function_name": "searchTopWebsitesByIndustry",
-      "description": "Search for top-ranking websites by industry keyword"
+      "description": "Search top websites by industry"
     },
     {
       "function_name": "scanCompany",
-      "description": "Scan a company website for system map, findings, and opportunities"
+      "description": "Scan a company website"
     },
     {
       "function_name": "scanCompetitors",
@@ -966,23 +966,23 @@
     },
     {
       "function_name": "categorizeWebsite",
-      "description": "Categorize a website by industry, niche, and type using AI"
+      "description": "Categorize a website by industry"
     },
     {
       "function_name": "generateWebsite",
-      "description": "Generate a complete website from a prompt/spec"
+      "description": "Generate a complete website"
     },
     {
       "function_name": "generateApp",
-      "description": "Generate a complete app from a prompt/spec"
+      "description": "Generate a complete app"
     },
     {
       "function_name": "generateBrandAssets",
-      "description": "Generate brand assets \u2014 logos, kits, marketing collateral"
+      "description": "Generate brand assets"
     },
     {
       "function_name": "generateSiteAll",
-      "description": "Generate a complete site with all pages and assets"
+      "description": "Generate a complete site with all pages"
     },
     {
       "function_name": "generateSiteBatch",
@@ -990,31 +990,31 @@
     },
     {
       "function_name": "editGeneratedContent",
-      "description": "Surgical find/replace edit on generated site content"
+      "description": "Surgical find/replace edit on site content"
     },
     {
       "function_name": "generateCustomizationOptions",
-      "description": "Generate customization options for a cloned site"
+      "description": "Generate customization options for a clone"
     },
     {
       "function_name": "applyCustomization",
-      "description": "Apply branding/customization to a cloned site"
+      "description": "Apply branding/customization to a clone"
     },
     {
       "function_name": "rebuildCustomClone",
-      "description": "Rebuild a custom clone with new parameters"
+      "description": "Rebuild a custom clone"
     },
     {
       "function_name": "healAllClonesTo100",
-      "description": "Heal all clones below 100/100 to perfect parity"
+      "description": "Heal all clones below 100/100"
     },
     {
       "function_name": "resumeStuckClones",
-      "description": "Resume stuck or stalled clone projects"
+      "description": "Resume stuck clone projects"
     },
     {
       "function_name": "cleanupBrokenClones",
-      "description": "Clean up broken/failed clone projects"
+      "description": "Clean up broken clone projects"
     },
     {
       "function_name": "rigorousCloneGate",
@@ -1022,23 +1022,23 @@
     },
     {
       "function_name": "assignVercelDomain",
-      "description": "Assign a Vercel domain to a deployed project"
+      "description": "Assign a Vercel domain to a project"
     },
     {
       "function_name": "provisionProject",
-      "description": "Provision a new project \u2014 create repo, deploy, configure"
+      "description": "Provision a new project"
     },
     {
       "function_name": "launchProject",
-      "description": "Launch a project through the full pipeline"
+      "description": "Launch a project through the pipeline"
     },
     {
       "function_name": "launchPipelineStart",
-      "description": "Start the launch pipeline for a project"
+      "description": "Start the launch pipeline"
     },
     {
       "function_name": "launchPipelineValidate",
-      "description": "Validate a project in the launch pipeline"
+      "description": "Validate a project in the pipeline"
     },
     {
       "function_name": "launchPipelineFinalize",
@@ -1046,15 +1046,15 @@
     },
     {
       "function_name": "launchPipelineRetry",
-      "description": "Retry a failed launch pipeline step"
+      "description": "Retry a failed pipeline step"
     },
     {
       "function_name": "stitchSite",
-      "description": "Stitch site pages together into a complete site"
+      "description": "Stitch site pages together"
     },
     {
       "function_name": "clonePlatform",
-      "description": "Clone an entire platform or marketplace"
+      "description": "Clone an entire platform"
     },
     {
       "function_name": "cloneTopWebsites",
@@ -1062,11 +1062,11 @@
     },
     {
       "function_name": "nicheWebsiteEngine",
-      "description": "Niche website discovery and analysis engine"
+      "description": "Niche website discovery engine"
     },
     {
       "function_name": "generateDeliverable",
-      "description": "Generate a deliverable (proposal, report, brand, etc.)"
+      "description": "Generate a deliverable"
     },
     {
       "function_name": "generateReport",
@@ -1074,11 +1074,11 @@
     },
     {
       "function_name": "generateBidProposal",
-      "description": "Generate a bid proposal for a project"
+      "description": "Generate a bid proposal"
     },
     {
       "function_name": "generateRepairPlan",
-      "description": "Generate a repair plan for failing systems"
+      "description": "Generate a repair plan"
     },
     {
       "function_name": "generateUniversalPlan",
@@ -1086,7 +1086,7 @@
     },
     {
       "function_name": "generateEnhancedSystem",
-      "description": "Generate an enhanced system configuration"
+      "description": "Generate an enhanced system"
     },
     {
       "function_name": "generateSecurityProposal",
@@ -1118,7 +1118,7 @@
     },
     {
       "function_name": "generateRebrandPackages",
-      "description": "Generate rebrand packages for a clone"
+      "description": "Generate rebrand packages"
     },
     {
       "function_name": "generateCustomizationStudio",
@@ -1126,15 +1126,15 @@
     },
     {
       "function_name": "publicScan",
-      "description": "Public scan of a website \u2014 no auth required"
+      "description": "Public scan of a website"
     },
     {
       "function_name": "deepSecurityScan",
-      "description": "Deep security scan of a site or system"
+      "description": "Deep security scan"
     },
     {
       "function_name": "securityComplianceCheck",
-      "description": "Security compliance check against frameworks"
+      "description": "Security compliance check"
     },
     {
       "function_name": "runSecurityPipeline",
@@ -1146,11 +1146,11 @@
     },
     {
       "function_name": "applyAutoFix",
-      "description": "Apply automatic fixes to a failing system"
+      "description": "Apply automatic fixes"
     },
     {
       "function_name": "runHeadlessTest",
-      "description": "Run headless browser tests on a site"
+      "description": "Run headless browser tests"
     },
     {
       "function_name": "autonomousHeadlessScan",
@@ -1158,7 +1158,7 @@
     },
     {
       "function_name": "autonomousBuildCycle",
-      "description": "Autonomous build cycle \u2014 generate, validate, deploy"
+      "description": "Autonomous build cycle"
     },
     {
       "function_name": "autonomousCodeSystem",
@@ -1166,19 +1166,19 @@
     },
     {
       "function_name": "autonomousMarketplaceStocker",
-      "description": "Autonomously stock the marketplace with products"
+      "description": "Autonomously stock the marketplace"
     },
     {
       "function_name": "universalDiscovery",
-      "description": "Universal discovery \u2014 find opportunities across all sources"
+      "description": "Universal discovery"
     },
     {
       "function_name": "universalOrchestrator",
-      "description": "Universal orchestrator \u2014 coordinate all systems"
+      "description": "Universal orchestrator"
     },
     {
       "function_name": "businessOrchestrator",
-      "description": "Business orchestrator \u2014 coordinate business operations"
+      "description": "Business orchestrator"
     },
     {
       "function_name": "monitoringOrchestrator",
@@ -1190,7 +1190,7 @@
     },
     {
       "function_name": "computeSystemScore",
-      "description": "Compute the system health score"
+      "description": "Compute system health score"
     },
     {
       "function_name": "computeIndustryBenchmarks",
@@ -1202,7 +1202,7 @@
     },
     {
       "function_name": "recommendToolStack",
-      "description": "Recommend a tool stack for a business"
+      "description": "Recommend a tool stack"
     },
     {
       "function_name": "identifyChangeableParts",
@@ -1214,7 +1214,7 @@
     },
     {
       "function_name": "getCloneGallery",
-      "description": "Get the clone gallery data"
+      "description": "Get clone gallery data"
     },
     {
       "function_name": "getSiteSpecs",
@@ -1222,7 +1222,7 @@
     },
     {
       "function_name": "getStoreCatalog",
-      "description": "Get the store catalog"
+      "description": "Get store catalog"
     },
     {
       "function_name": "getPortalData",
@@ -1242,7 +1242,7 @@
     },
     {
       "function_name": "createSignatureEnvelope",
-      "description": "Create a new signature envelope"
+      "description": "Create a signature envelope"
     },
     {
       "function_name": "signEnvelope",
@@ -1274,7 +1274,7 @@
     },
     {
       "function_name": "sendInvoice",
-      "description": "Send an invoice to a client"
+      "description": "Send an invoice"
     },
     {
       "function_name": "recordInvoicePayment",
@@ -1294,11 +1294,11 @@
     },
     {
       "function_name": "draftOutreach",
-      "description": "Draft outreach content for a prospect"
+      "description": "Draft outreach content"
     },
     {
       "function_name": "sendApprovedOutreach",
-      "description": "Send approved outreach email"
+      "description": "Send approved outreach"
     },
     {
       "function_name": "outreachGate",
@@ -1306,7 +1306,7 @@
     },
     {
       "function_name": "pushOpportunityToHubSpot",
-      "description": "Push an opportunity to HubSpot CRM"
+      "description": "Push opportunity to HubSpot"
     },
     {
       "function_name": "syncToHubSpot",
@@ -1314,19 +1314,19 @@
     },
     {
       "function_name": "facebookManager",
-      "description": "Manage Facebook pages and posts"
+      "description": "Manage Facebook pages"
     },
     {
       "function_name": "sendSmsAlert",
-      "description": "Send an SMS alert via Twilio"
+      "description": "Send SMS alert"
     },
     {
       "function_name": "sendLeadFollowup",
-      "description": "Send a lead follow-up message"
+      "description": "Send lead follow-up"
     },
     {
       "function_name": "weeklyDigest",
-      "description": "Generate and send a weekly digest"
+      "description": "Generate weekly digest"
     },
     {
       "function_name": "partnerApi",
@@ -1334,7 +1334,7 @@
     },
     {
       "function_name": "ingestCloneLead",
-      "description": "Ingest a clone lead from a form"
+      "description": "Ingest a clone lead"
     },
     {
       "function_name": "ingestDesignPack",
@@ -1342,7 +1342,7 @@
     },
     {
       "function_name": "queueMediaGeneration",
-      "description": "Queue a media generation job"
+      "description": "Queue media generation"
     },
     {
       "function_name": "compileGenerator",
@@ -1358,7 +1358,7 @@
     },
     {
       "function_name": "validateFullStack",
-      "description": "Validate a full-stack project"
+      "description": "Validate full-stack project"
     },
     {
       "function_name": "qaValidateStep",
@@ -1370,7 +1370,7 @@
     },
     {
       "function_name": "quantifyFindings",
-      "description": "Quantify audit findings"
+      "description": "Quantify findings"
     },
     {
       "function_name": "logRecommendations",
@@ -1378,11 +1378,11 @@
     },
     {
       "function_name": "mapCompanySystems",
-      "description": "Map company systems and relationships"
+      "description": "Map company systems"
     },
     {
       "function_name": "scanIndustriesForNiches",
-      "description": "Scan industries for niche opportunities"
+      "description": "Scan industries for niches"
     },
     {
       "function_name": "scrapeIndustryTemplates",
@@ -1394,7 +1394,7 @@
     },
     {
       "function_name": "discoverBenchmarkSite",
-      "description": "Discover a benchmark site for comparison"
+      "description": "Discover benchmark site"
     },
     {
       "function_name": "discoverIndustryOpportunities",
@@ -1418,11 +1418,11 @@
     },
     {
       "function_name": "triggerDepositOnboarding",
-      "description": "Trigger deposit onboarding flow"
+      "description": "Trigger deposit onboarding"
     },
     {
       "function_name": "processFulfillmentStep",
-      "description": "Process a fulfillment step"
+      "description": "Process fulfillment step"
     },
     {
       "function_name": "processCodeQueue",
@@ -1450,7 +1450,7 @@
     },
     {
       "function_name": "refreshXpsCatalog",
-      "description": "Refresh the XPS product catalog"
+      "description": "Refresh XPS catalog"
     },
     {
       "function_name": "scrapeXpsCatalog",
@@ -1470,11 +1470,11 @@
     },
     {
       "function_name": "inferTargetBackend",
-      "description": "Infer the target backend for a project"
+      "description": "Infer target backend"
     },
     {
       "function_name": "buildInferredBackend",
-      "description": "Build an inferred backend"
+      "description": "Build inferred backend"
     },
     {
       "function_name": "testProvisioning",
@@ -1497,5 +1497,23 @@
       "description": "Monitoring orchestrator"
     }
   ],
+  "context_files": [],
+  "app_user_connector_configs": [],
+  "selected_skill_names": [],
+  "selected_workspace_skill_ids": [],
+  "model": "automatic",
+  "whatsapp_greeting": null,
+  "telegram_greeting": null,
+  "line_greeting": null,
+  "memory_config": {
+    "enabled": true,
+    "scope": "both",
+    "include_other_conversation_context": false,
+    "instructions": null
+  },
+  "voice_config": {
+    "voice_id": null
+  },
+  "allow_anonymous_access": false,
   "name": "xtreme_commander"
 }
