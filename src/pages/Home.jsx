@@ -130,7 +130,7 @@ export default function Home() {
             <a href="#services" style={{ color: '#fff' }}>Services</a>
             <Link to="/pricing" style={{ color: '#fff' }}>Pricing</Link>
           </nav>
-          <div className="header-actions" style={{ color: '#fff' }}>{user ? <><Link to="/app/xv" style={{ fontWeight: 600, color: '#fff' }}>Visualizer</Link><Link to="/app" className="button button--gold button--small">Client Portal <Icon name="arrow-right" /></Link></> : <><Link to="/login" style={{ color: '#fff' }}>Sign In</Link><button className="button button--gold button--small" type="button" onClick={() => navigate('/consultation')}>Get a Website <Icon name="arrow-right" /></button></>}</div>
+          <div className="header-actions" style={{ color: '#fff' }}>{user ? <><Link to="/app" className="button button--gold button--small">Client Portal <Icon name="arrow-right" /></Link></> : <><Link to="/login" style={{ color: '#fff' }}>Sign In</Link><button className="button button--gold button--small" type="button" onClick={() => navigate('/consultation')}>Get a Website <Icon name="arrow-right" /></button></>}</div>
         </div>
       </header>
 
@@ -143,7 +143,7 @@ export default function Home() {
               <h1 style={{ font: "400 clamp(40px, 5vw, 70px)/1 'Libre Caslon Display', serif", letterSpacing: '-.035em', margin: '0 0 18px' }}>Win More Jobs.<br /><span style={{ color: '#FFD60A' }}>Scale Your Floor Business.</span></h1>
               <p style={{ fontSize: 18, lineHeight: 1.7, color: '#c9c9cc', maxWidth: 540, margin: 0 }}>Xtreme AI Systems is the client portal for students of Xtreme Polishing Systems &amp; Polished Concrete University. Buy AI tools, generate photoreal floor visualizations, and get a custom website built for your business.</p>
               <div className="button-row" style={{ marginTop: 28 }}>
-                <Link to="/app/xv" className="button button--gold">Explore AI Tools <Icon name="arrow-right" /></Link>
+                <Link to="/app" className="button button--gold">Explore AI Tools <Icon name="arrow-right" /></Link>
                 <button type="button" className="button button--dark-outline" onClick={() => navigate('/consultation')}>Get a Website <Icon name="arrow-right" /></button>
               </div>
               <ul className="hero-trust" style={{ color: '#9a9a9e', marginTop: 22 }}>
@@ -196,7 +196,7 @@ export default function Home() {
               <h2 style={{ font: "400 clamp(34px, 3.5vw, 52px)/1.05 'Libre Caslon Display', serif", margin: '0 0 16px' }}>Show Clients the Transformation.</h2>
               <p style={{ fontSize: 17, lineHeight: 1.7, color: '#bbb' }}>Use the Xtreme Visualizer to turn a drab, cracked slab into a flawless flake-epoxy showpiece — then drop the before/after straight into your bid or website. Clients buy the outcome when they can see it.</p>
               <div style={{ marginTop: 26 }}>
-                <Link to="/app/xv" className="button button--gold">Try the Visualizer <Icon name="arrow-right" /></Link>
+                <Link to="/app" className="button button--gold">Try the Visualizer <Icon name="arrow-right" /></Link>
               </div>
             </div>
           </div>
@@ -225,7 +225,7 @@ export default function Home() {
               })}
             </div>
             <div className="center-action" style={{ marginTop: 32 }}>
-              <Link to="/app/xv" className="button button--dark">Open the XV Suite <Icon name="arrow-right" /></Link>
+              <Link to="/app" className="button button--dark">Open the XV Suite <Icon name="arrow-right" /></Link>
             </div>
           </div>
         </section>
