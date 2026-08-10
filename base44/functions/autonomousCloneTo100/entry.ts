@@ -144,9 +144,15 @@ async function runEngine(base44, orgId, p) {
       bizName = proj.business_name || bizName || deriveSiteName(p.target_url);
       p.brief = proj.metadata?.brief || p.brief;
       urls.vercel = proj.vercel_deployment_url || proj.metadata?.vercel_deployment_url;
-      // Rename generic "Autonomous Clone xxx" tracker to the original site name + store benchmark_url
+      // Rename generic "Autonomous Clone xxx" tracker to "OriginalSite Clone" + store benchmark_url
       if (bizName) {
-        try { await base44.asServiceRole.entities.LaunchProject.update(p.tracker_id, { project_name: bizName, business_name: bizName, benchmark_url: p.benchmark_url }); } catch (e) {}
+        const cloneName = `${bizName} Clone`;
+        try { await base44.asServiceRole.entities.LaunchProject.update(p.tracker_id, { project_name: cloneName, business_name: bizName, benchmark_url: p.benchmark_url }); } catch (e) {}
+      }
+      // Auto-classify industry if not already set
+      if (!p.industry && p.target_url) {
+        const inferred = classifyByBusinessRef(bizName, p.target_url);
+        if (inferred) { p.industry = inferred; add(`Auto-classified industry: ${inferred}`); }
       }
       if (!targetDna && p.target_url) {
         add('Re-scraping for target DNA…');
@@ -170,9 +176,10 @@ async function runEngine(base44, orgId, p) {
         const inferred = classifyByBusinessRef(bizName, p.target_url);
         if (inferred) { p.industry = inferred; add(`Auto-classified industry: ${inferred}`); }
       }
-      // Use the original site's name as the clone name (not "Autonomous Clone xxx")
+      // Use the original site's name + "Clone" suffix (e.g. "Stripe Clone")
       if (bizName) {
-        try { await base44.asServiceRole.entities.LaunchProject.update(p.tracker_id, { project_name: bizName, business_name: bizName }); } catch (e) {}
+        const cloneName = `${bizName} Clone`;
+        try { await base44.asServiceRole.entities.LaunchProject.update(p.tracker_id, { project_name: cloneName, business_name: bizName, industry: p.industry || undefined }); } catch (e) {}
       }
       await setProgress(5, 'Target site scraped');
 

@@ -40,12 +40,10 @@ export default async function(req) {
       const originalUrl = p.benchmark_url || traceBenchmarkUrl(p, projectMap);
 
       // Derive the site name from the original URL when the stored name is generic
-      const isGeneric = !p.project_name ||
-        p.project_name.startsWith('Autonomous Clone') ||
-        p.project_name === 'Clone' || p.project_name === 'CLONE' ||
-        /^Clone (heal\d+|[a-z0-9]{3,})$/.test(p.project_name);
+      const isGeneric = isGenericName(p.project_name);
       const derivedName = originalUrl ? deriveNameFromUrl(originalUrl) : null;
-      const rawName = (isGeneric && derivedName) ? derivedName : (p.project_name || 'Untitled Clone');
+      const derivedCloneName = derivedName ? `${derivedName} Clone` : null;
+      const rawName = (isGeneric && derivedCloneName) ? derivedCloneName : (p.project_name || 'Untitled Clone');
       const name = decodeHtmlEntities(rawName);
 
       // Screenshot of the clone's Vercel home page (mShots generates + caches on first request)
@@ -76,7 +74,7 @@ export default async function(req) {
     const toRename = withThumbs.filter(c => c.needsRename);
     if (toRename.length > 0) {
       base44.asServiceRole.entities.LaunchProject.bulkUpdate(
-        toRename.map(c => ({ id: c.id, project_name: c.name, business_name: c.name, benchmark_url: c.target_url || undefined }))
+        toRename.map(c => ({ id: c.id, project_name: c.name, business_name: c.name, benchmark_url: c.target_url || undefined, industry: c.industry !== 'Uncategorized' ? c.industry : undefined }))
       ).catch(() => {});
     }
 

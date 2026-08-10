@@ -49,8 +49,11 @@ export function traceBenchmarkUrl(p, projectMap, visited = new Set()) {
 
 // Check if a project name is generic (auto-generated, not from the original site)
 export function isGenericName(name) {
-  return !name ||
-    name.startsWith('Autonomous Clone') ||
-    name === 'Clone' || name === 'CLONE' ||
-    /^Clone (heal\d+|[a-z0-9]{3,})$/.test(name);
+  if (!name) return true;
+  if (name.startsWith('Autonomous Clone')) return true;
+  if (name === 'Clone' || name === 'CLONE') return true;
+  if (/^Clone (heal\d+|[a-z0-9]{3,})$/.test(name)) return true;
+  // Names that don't end with "Clone" are from the old naming scheme and need renaming
+  if (!/\bClone\b/.test(name)) return true;
+  return false;
 }

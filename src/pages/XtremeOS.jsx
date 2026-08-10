@@ -6,8 +6,9 @@ import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
 import XtremeOSRightPanel from '@/components/fl/XtremeOSRightPanel';
 import {
   Activity, Package, Globe, Shield, TrendingUp, Zap, CheckCircle2,
-  AlertCircle, Clock, Cpu, DollarSign, Layers, Loader2, X
+  AlertCircle, Clock, Cpu, DollarSign, Layers, Loader2, X, Copy, ListChecks, Images, Building2
 } from 'lucide-react';
+import PwaInstallButton from '@/components/PwaInstallButton';
 
 export default function XtremeOS() {
   const { user } = useAuth();
@@ -103,6 +104,9 @@ export default function XtremeOS() {
           <p style={{ color: '#E7C86E', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.16em', margin: 0 }}>xtremeclonesystems.com</p>
           <h1 style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 42, margin: '8px 0 4px', letterSpacing: '-.03em' }}>Xtreme<span style={{ color: '#E7C86E' }}>Clone</span> System</h1>
           <p style={{ color: '#aaa', fontSize: 14, margin: 0 }}>Autonomous site cloning, forensic auditing, and one-click business formation</p>
+          <div style={{ marginTop: 14 }}>
+            <PwaInstallButton />
+          </div>
         </div>
         <div style={{ textAlign: 'center' }}>
           <div style={{ width: 110, height: 110, borderRadius: '50%', border: '8px solid #C89B3C', display: 'grid', placeItems: 'center', margin: '0 auto' }}>
@@ -240,10 +244,10 @@ export default function XtremeOS() {
       {/* Quick Links */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 13, marginTop: 13 }}>
         {[
-          { label: 'Store', path: '/store', icon: Package },
-          { label: 'Command Center', path: '/app/command-center', icon: Activity },
-          { label: 'Discovery Engine', path: '/app/discovery-engine', icon: Globe },
-          { label: 'QA Dashboard', path: '/app/qa-center', icon: Shield },
+          { label: 'Clone Studio', path: '/app/clone-studio', icon: Copy },
+          { label: 'Clone Queue', path: '/app/clone-queue', icon: ListChecks },
+          { label: 'Clone Gallery', path: '/app/clone-gallery', icon: Images },
+          { label: 'Business Hub', path: '/app/business', icon: Building2 },
         ].map(l => (
           <Link key={l.path} to={l.path} style={{ background: '#fff', border: '1px solid #ddd', padding: 20, display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'inherit' }}>
             <l.icon size={22} style={{ color: '#C89B3C' }} />
