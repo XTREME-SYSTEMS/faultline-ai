@@ -127,6 +127,7 @@ export default function CloneList() {
                 )}
                 {results.map(c => {
                   const scoreColor = (c.score || 0) >= 100 ? '#237A4B' : (c.score || 0) >= 70 ? '#B88214' : '#C63D34';
+                  const host = (u) => { try { return new URL(u).hostname.replace(/^www\./, ''); } catch { return u; } };
                   return (
                     <div key={c.id} style={{
                       display: 'grid', gridTemplateColumns: '120px 1fr', gap: 16,
@@ -141,44 +142,48 @@ export default function CloneList() {
                           onError={e => { e.target.style.opacity = 0.15; }} />
                       </a>
                       {/* Details */}
-                      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                      <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
                           <b style={{ fontSize: 15, color: '#111' }}>{c.name}</b>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
-                            {c.industry && c.industry !== 'Uncategorized' && (
-                              <span style={{ fontSize: 10, fontWeight: 600, color: '#8A641C', background: '#C89B3C20', padding: '3px 8px', borderRadius: 12 }}>
-                                {c.industry}
-                              </span>
-                            )}
-                            <span style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 16, color: scoreColor }}>{c.score || 0}<small style={{ fontSize: 9, color: '#bbb' }}>/100</small></span>
-                          </div>
+                          <span style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 16, color: scoreColor }}>{c.score || 0}<small style={{ fontSize: 9, color: '#bbb' }}>/100</small></span>
+                        </div>
+                        {/* Category */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <small style={{ fontSize: 10, fontWeight: 700, color: '#999', textTransform: 'uppercase', letterSpacing: '.08em' }}>Category:</small>
+                          <span style={{ fontSize: 11, fontWeight: 600, color: '#8A641C', background: '#C89B3C20', padding: '3px 10px', borderRadius: 12 }}>
+                            {c.industry || 'Uncategorized'}
+                          </span>
                         </div>
                         {/* Summary */}
                         {c.summary ? (
-                          <p style={{ fontSize: 12, color: '#666', lineHeight: 1.5, margin: 0, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                          <p style={{ fontSize: 12, color: '#666', lineHeight: 1.6, margin: 0 }}>
                             {c.summary}
                           </p>
                         ) : (
                           <p style={{ fontSize: 12, color: '#bbb', fontStyle: 'italic', margin: 0 }}>No summary available.</p>
                         )}
-                        {/* Links */}
+                        {/* Links — original + vercel, both showing the actual URL */}
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 2 }}>
                           {c.target_url && (
-                            <a href={c.target_url} target="_blank" rel="noreferrer" style={{
-                              display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px',
+                            <a href={c.target_url} target="_blank" rel="noreferrer" title={c.target_url} style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px',
                               background: '#f8f7f4', border: '1px solid #e5e1da', borderRadius: 6,
                               fontSize: 11, fontWeight: 600, color: '#666', textDecoration: 'none',
+                              maxWidth: '100%',
                             }}>
-                              <ExternalLink size={11} /> Original
+                              <ExternalLink size={12} style={{ flexShrink: 0 }} />
+                              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{host(c.target_url)}</span>
                             </a>
                           )}
                           {c.url && (
-                            <a href={c.url} target="_blank" rel="noreferrer" style={{
-                              display: 'inline-flex', alignItems: 'center', gap: 5, padding: '5px 10px',
+                            <a href={c.url} target="_blank" rel="noreferrer" title={c.url} style={{
+                              display: 'inline-flex', alignItems: 'center', gap: 6, padding: '7px 12px',
                               background: '#0b0b0b', border: 0, borderRadius: 6,
                               fontSize: 11, fontWeight: 700, color: '#fff', textDecoration: 'none',
+                              maxWidth: '100%',
                             }}>
-                              <ExternalLink size={11} /> Vercel Clone
+                              <ExternalLink size={12} style={{ flexShrink: 0 }} />
+                              <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{host(c.url)}</span>
                             </a>
                           )}
                         </div>
