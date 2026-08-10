@@ -7,6 +7,7 @@ import {
   Tag, ExternalLink, Images, Mic, MicOff,
 } from 'lucide-react';
 import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
+import PwaInstallButton from '@/components/PwaInstallButton';
 
 export default function CloneQueue() {
   const [items, setItems] = useState([]);
@@ -161,9 +162,12 @@ export default function CloneQueue() {
               Type any website URL. The system auto-categorizes it, queues it, clones it, and sends it to the gallery.
             </p>
           </div>
-          <Link to="/app" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#aaa', fontSize: 13 }}>
-            <ChevronLeft size={16} /> Back
-          </Link>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+            <PwaInstallButton variant="dark" />
+            <Link to="/app" style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#aaa', fontSize: 13 }}>
+              <ChevronLeft size={16} /> Back
+            </Link>
+          </div>
         </div>
 
         {/* URL Input — the main feature */}
