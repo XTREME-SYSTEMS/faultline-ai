@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Image } from '@/components/ui/image';
-import { Loader2, RefreshCw, Palette, Check, Download, RotateCw, Sun, Moon, Columns2 } from 'lucide-react';
+import { Loader2, RefreshCw, Palette, Check, Download, RotateCw, Sun, Moon, Columns2, ZoomIn } from 'lucide-react';
 import ColorControl from './ColorControl';
 import SpectrumPicker from './SpectrumPicker';
+import ImageLightbox from './ImageLightbox';
 import { BG_COLOR_PRESETS, FONT_COLOR_PRESETS, ACCENT_COLOR_PRESETS } from './options';
 
 function hexToHsl(hex) {
@@ -43,6 +44,8 @@ export default function StepBrand({ form, update, next, back }) {
   const [fontOverride, setFontOverride] = useState('');
   const [accentOverride, setAccentOverride] = useState('');
   const [regenerating, setRegenerating] = useState('');
+  const [lightbox, setLightbox] = useState(null);
+  const [kitAccentShift, setKitAccentShift] = useState('');
 
   // Website preview state
   const [websitePreviews, setWebsitePreviews] = useState({ light: null, dark: null });
@@ -210,6 +213,7 @@ export default function StepBrand({ form, update, next, back }) {
   };
 
   const accentVal = accentOverride || selectedOption?.accent_color || '#C89B3C';
+  const kitHueRotate = kitAccentShift ? hueDiff(form.accent_color || '#C89B3C', kitAccentShift) : 0;
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto' }}>
@@ -271,8 +275,14 @@ export default function StepBrand({ form, update, next, back }) {
                   width: '100%', border: 0, background: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', padding: 0,
                 }}>
                   {opt.logo_url && (
-                    <div style={{ height: 130, background: bgOverride || opt.bg_color || '#f8f7f4', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14, filter: `hue-rotate(${cardHue}deg)` }}>
+                    <div style={{ height: 130, background: bgOverride || opt.bg_color || '#f8f7f4', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14, filter: `hue-rotate(${cardHue}deg)`, position: 'relative' }}>
                       <Image src={opt.logo_url} alt={opt.name} fittingType="fit" className="w-full h-full" />
+                      <button onClick={(e) => { e.stopPropagation(); setLightbox({ src: opt.logo_url, label: `${opt.name} — Logo` }); }} style={{
+                        position: 'absolute', top: 6, right: 6, background: 'rgba(255,255,255,.85)', border: '1px solid #ddd',
+                        borderRadius: 4, padding: 4, cursor: 'zoom-in', display: 'flex', alignItems: 'center', fontFamily: 'inherit',
+                      }}>
+                        <ZoomIn size={12} />
+                      </button>
                     </div>
                   )}
                   <div style={{ padding: 14 }}>
@@ -334,7 +344,7 @@ export default function StepBrand({ form, update, next, back }) {
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>
                     <Sun size={11} style={{ display: 'inline', marginRight: 4 }} />Light Mode
                   </div>
-                  <div style={{ border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden', filter: `hue-rotate(${selectedHueRotate}deg)` }}>
+                  <div onClick={() => setLightbox({ src: websitePreviews.light, label: 'Website — Light Mode' })} style={{ border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden', filter: `hue-rotate(${selectedHueRotate}deg)`, cursor: 'zoom-in' }}>
                     <Image src={websitePreviews.light} alt="Website light mode" fittingType="fit" className="w-full" />
                   </div>
                 </div>
@@ -344,7 +354,7 @@ export default function StepBrand({ form, update, next, back }) {
                   <div style={{ fontSize: 10, fontWeight: 700, color: '#888', textTransform: 'uppercase', letterSpacing: '.06em', marginBottom: 6 }}>
                     <Moon size={11} style={{ display: 'inline', marginRight: 4 }} />Dark Mode
                   </div>
-                  <div style={{ border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden', filter: `hue-rotate(${selectedHueRotate}deg)` }}>
+                  <div onClick={() => setLightbox({ src: websitePreviews.dark, label: 'Website — Dark Mode' })} style={{ border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden', filter: `hue-rotate(${selectedHueRotate}deg)`, cursor: 'zoom-in' }}>
                     <Image src={websitePreviews.dark} alt="Website dark mode" fittingType="fit" className="w-full" />
                   </div>
                 </div>
@@ -416,7 +426,9 @@ export default function StepBrand({ form, update, next, back }) {
                         {regenerating === item.key ? (
                           <Loader2 size={20} className="animate-spin" style={{ color: '#C89B3C' }} />
                         ) : item.image_url ? (
-                          <Image src={item.image_url} alt={item.label} fittingType="fit" className="w-full h-full" />
+                          <div onClick={() => setLightbox({ src: item.image_url, label: item.label })} style={{ cursor: 'zoom-in', width: '100%', height: '100%', filter: `hue-rotate(${kitHueRotate}deg)` }}>
+                            <Image src={item.image_url} alt={item.label} fittingType="fit" className="w-full h-full" />
+                          </div>
                         ) : (
                           <span style={{ fontSize: 12, color: '#999' }}>Failed</span>
                         )}
@@ -438,6 +450,24 @@ export default function StepBrand({ form, update, next, back }) {
           </div>
         );
       })()}
+
+      {/* Global Accent Shifter — applies hue-rotate to ALL kit images */}
+      {kit.length > 0 && !kitGenerating && (
+        <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 16, marginBottom: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <Palette size={16} style={{ color: '#C89B3C' }} />
+            <b style={{ fontSize: 13 }}>Global Accent Shifter</b>
+            <span style={{ fontSize: 11, color: '#999' }}>· Pick a color to shift the accent across ALL kit images at once</span>
+          </div>
+          <SpectrumPicker value={kitAccentShift || form.accent_color || '#C89B3C'} onChange={setKitAccentShift} />
+          {kitAccentShift && (
+            <button onClick={() => setKitAccentShift('')} style={{
+              marginTop: 8, fontSize: 11, color: '#999', background: 'none', border: '1px solid #ddd',
+              borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit',
+            }}>Reset to original accent</button>
+          )}
+        </div>
+      )}
 
       {/* Selected brand summary */}
       {form.logo_url && (
@@ -469,6 +499,8 @@ export default function StepBrand({ form, update, next, back }) {
           fontSize: 15, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
         }}>Continue →</button>
       </div>
+
+      {lightbox && <ImageLightbox src={lightbox.src} label={lightbox.label} onClose={() => setLightbox(null)} />}
     </div>
   );
 }

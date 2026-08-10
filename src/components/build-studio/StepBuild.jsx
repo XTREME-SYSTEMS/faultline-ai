@@ -178,7 +178,7 @@ export default function StepBuild({ form, update, back }) {
           </span>
           <textarea value={form.description} onChange={e => update('description', e.target.value)}
             placeholder="What does the business do? What problems does it solve?"
-            style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: 13, minHeight: 80, resize: 'vertical' }} />
+            style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: 13, minHeight: 80, resize: 'vertical', background: '#fff', color: '#111' }} />
         </label>
 
         <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700, marginBottom: 14 }}>
@@ -187,20 +187,20 @@ export default function StepBuild({ form, update, back }) {
           </span>
           <input value={form.target_audience} onChange={e => update('target_audience', e.target.value)}
             placeholder="e.g. Small business owners, enterprise CTOs"
-            style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: 13 }} />
+            style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: 13, background: '#fff', color: '#111' }} />
         </label>
 
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 14 }}>
           <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700 }}>Primary Color
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <input type="color" value={form.primary_color} onChange={e => update('primary_color', e.target.value)} style={{ width: 40, height: 36, border: '1px solid #ddd', borderRadius: 6, cursor: 'pointer' }} />
-              <input value={form.primary_color} onChange={e => update('primary_color', e.target.value)} style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: 12, flex: 1 }} />
+              <input value={form.primary_color} onChange={e => update('primary_color', e.target.value)} style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: 12, flex: 1, background: '#fff', color: '#111' }} />
             </div>
           </label>
           <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700 }}>Secondary Color
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <input type="color" value={form.secondary_color} onChange={e => update('secondary_color', e.target.value)} style={{ width: 40, height: 36, border: '1px solid #ddd', borderRadius: 6, cursor: 'pointer' }} />
-              <input value={form.secondary_color} onChange={e => update('secondary_color', e.target.value)} style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: 12, flex: 1 }} />
+              <input value={form.secondary_color} onChange={e => update('secondary_color', e.target.value)} style={{ padding: 10, border: '1px solid #ddd', borderRadius: 6, fontSize: 12, flex: 1, background: '#fff', color: '#111' }} />
             </div>
           </label>
         </div>
@@ -247,7 +247,7 @@ export default function StepBuild({ form, update, back }) {
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6 }}>
             {featureOptions.map(f => (
               <label key={f.id} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, cursor: 'pointer' }}>
-                <input type="checkbox" checked={form.features.includes(f.id)} onChange={() => toggle('features', f.id)} style={{ cursor: 'pointer' }} />
+                <input type="checkbox" checked={form.features.includes(f.id)} onChange={() => toggle('features', f.id)} style={{ cursor: 'pointer', width: 16, height: 16, accentColor: '#C89B3C' }} />
                 {f.label}
               </label>
             ))}
