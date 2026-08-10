@@ -20,6 +20,9 @@ export default function XtremeOS() {
   const [hardening, setHardening] = useState(false);
   const [hardenResult, setHardenResult] = useState(null);
   const [hardenError, setHardenError] = useState('');
+  const [forcing, setForcing] = useState(false);
+  const [forceResult, setForceResult] = useState(null);
+  const [forceError, setForceError] = useState('');
   const [chatExpanded, setChatExpanded] = useState(false);
 
   useEffect(() => {
@@ -89,6 +92,30 @@ export default function XtremeOS() {
     }
   }
 
+  async function runForceTo100() {
+    setForcing(true);
+    setForceError('');
+    setForceResult(null);
+    try {
+      const res = await base44.functions.invoke('forceClonesTo100', { rebuild_limit: 2, heal_limit: 5, quarantine_limit: 20 });
+      const d = res.data || res;
+      if (d.error) throw new Error(d.error);
+      setForceResult(d);
+      setTimeout(() => {
+        (async () => {
+          const projects = await base44.entities.LaunchProject.list('-created_date', 100).catch(() => []);
+          const gallery = projects.filter(p => p.vercel_deployment_url || p.metadata?.vercel_deployment_url);
+          const at100 = gallery.filter(p => (p.parity_score || 0) >= 100).length;
+          setMetrics(m => ({ ...m, totalClones: gallery.length, at100, healthPct: gallery.length ? Math.round((at100 / gallery.length) * 100) : 0 }));
+        })();
+      }, 2000);
+    } catch (e) {
+      setForceError(e.message || 'Force-to-100 failed');
+    } finally {
+      setForcing(false);
+    }
+  }
+
   if (loading) return <div style={{ padding: 60, textAlign: 'center' }}>Loading Xtreme Clone System…</div>;
 
   const metricCards = [
@@ -137,8 +164,59 @@ export default function XtremeOS() {
             {hardening ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
             {hardening ? 'Auditing & Hardening...' : 'Auto Audit · Analyze · Fix · Heal · Harden'}
           </button>
+          <button
+            onClick={runForceTo100}
+            disabled={forcing}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, padding: '10px 18px',
+              background: forcing ? '#333' : '#0a0a0a',
+              color: forcing ? '#888' : '#E7C86E', border: '1px solid #C89B3C', borderRadius: 8,
+              fontWeight: 700, fontSize: 12, cursor: forcing ? 'wait' : 'pointer', whiteSpace: 'nowrap',
+            }}
+          >
+            {forcing ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
+            {forcing ? 'Forcing to 100...' : 'Force All to 100'}
+          </button>
         </div>
       </div>
+
+      {/* Force-to-100 Results */}
+      {(forceResult || forceError) && (
+        <div style={{
+          marginBottom: 13, padding: 20, borderRadius: 8,
+          background: forceError ? '#f5d8d5' : '#1a0d00',
+          border: `1px solid ${forceError ? '#C63D34' : '#C89B3C'}`,
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <b style={{ fontSize: 15, color: forceError ? '#a52d23' : '#E7C86E' }}>
+              {forceError ? 'Force-to-100 Failed' : `Force-to-100: ${forceResult.health_pct}% Health`}
+            </b>
+            <button onClick={() => { setForceResult(null); setForceError(''); }} style={{ background: 'none', border: 0, cursor: 'pointer', color: '#999' }}>
+              <X size={16} />
+            </button>
+          </div>
+          {forceError ? (
+            <p style={{ fontSize: 13, color: '#a52d23', margin: 0 }}>{forceError}</p>
+          ) : (
+            <>
+              <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 13, color: '#ddd' }}>
+                <span><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22, color: '#fff' }}>{forceResult.at_100}</b> at 100/100</span>
+                <span style={{ color: '#237A4B' }}><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{forceResult.healed}</b> healed</span>
+                <span style={{ color: '#E7C86E' }}><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{forceResult.rebuilt}</b> rebuilt</span>
+                <span style={{ color: '#B88214' }}><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{forceResult.quarantined}</b> quarantined</span>
+                <span style={{ color: '#888' }}><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{forceResult.ghosts_removed}</b> ghosts removed</span>
+                {forceResult.still_failing > 0 && <span style={{ color: '#C63D34' }}><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{forceResult.still_failing}</b> still failing</span>}
+                {forceResult.still_running > 0 && <span style={{ color: '#2563eb' }}><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{forceResult.still_running}</b> running</span>}
+              </div>
+              {forceResult.quarantined > 0 && (
+                <p style={{ fontSize: 11, color: '#B88214', marginTop: 10, marginBottom: 0 }}>
+                  {forceResult.quarantined} clones quarantined — their target sites are dead/parked and can't be matched.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* Auto-Harden Results */}
       {(hardenResult || hardenError) && (

@@ -1,0 +1,49 @@
+{
+  "name": "Force Clones to 100",
+  "description": "Aggressive enforcer: cleans up ghost trackers, quarantines dead-target clones, rebuilds score-0 clones from scratch, and heals below-100 clones until 100/100. Runs every 2 hours.",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "force_clones_to_100",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "enforce": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "forceClonesTo100",
+            "args": {
+              "rebuild_limit": 2,
+              "heal_limit": 5,
+              "quarantine_limit": 20
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Force clones to 100/100",
+            "description": "Quarantine dead targets, rebuild score-0, heal below-100"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": 2,
+      "interval_unit": "hours",
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  }
+}
