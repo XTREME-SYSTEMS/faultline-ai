@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import {
   Loader2, X, Check, Globe, Palette, Type, Image as ImageIcon, Zap,
-  ExternalLink, Sparkles, ArrowRight, ArrowLeft, Building2,
+  ExternalLink, Sparkles, ArrowRight, ArrowLeft, Building2, Share2,
 } from 'lucide-react';
+import SocialAutomationPanel from '@/components/clone-queue/SocialAutomationPanel';
 
 // CustomizationStudio — full rebrand workflow for a discovered site.
 // Generates 20 names, 20 domains, 20 color palettes, 20 content packs.
@@ -25,6 +26,7 @@ export default function CustomizationStudio({ site, onClose }) {
   const [launching, setLaunching] = useState(false);
   const [launchResult, setLaunchResult] = useState(null);
   const [launchError, setLaunchError] = useState('');
+  const [showSocial, setShowSocial] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -341,7 +343,7 @@ export default function CustomizationStudio({ site, onClose }) {
           )}
 
           {/* Launch result */}
-          {launchResult && (
+          {launchResult && !showSocial && (
             <div style={{ padding: 20, background: '#e8f5ec', border: '1px solid #237A4B', borderRadius: 10 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
                 <Check size={24} style={{ color: '#237A4B' }} />
@@ -350,17 +352,40 @@ export default function CustomizationStudio({ site, onClose }) {
               <p style={{ fontSize: 14, color: '#333', margin: '0 0 12px' }}>
                 <b>{launchResult.business_name}</b> is now live. Audit & hardening are running in the background to reach 100/100.
               </p>
-              <a href={launchResult.vercel_url} target="_blank" rel="noreferrer" style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px',
-                background: '#0a0a0a', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 13,
-              }}>
-                <ExternalLink size={16} /> View Live Site
-              </a>
-              <button onClick={onClose} style={{
-                marginLeft: 10, padding: '10px 20px', background: '#fff', border: '1px solid #ddd',
-                borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer',
-              }}>Back to Discovery</button>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <a href={launchResult.vercel_url} target="_blank" rel="noreferrer" style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px',
+                  background: '#0a0a0a', color: '#fff', borderRadius: 8, fontWeight: 700, fontSize: 13,
+                }}>
+                  <ExternalLink size={16} /> View Live Site
+                </a>
+                <button onClick={() => setShowSocial(true)} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 20px',
+                  background: 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111',
+                  border: 0, borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                }}>
+                  <Share2 size={16} /> Promote on Social Media
+                </button>
+                <button onClick={onClose} style={{
+                  padding: '10px 20px', background: '#fff', border: '1px solid #ddd',
+                  borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                }}>Back to Discovery</button>
+              </div>
             </div>
+          )}
+
+          {/* Social automation panel */}
+          {launchResult && showSocial && (
+            <SocialAutomationPanel
+              clone={{
+                business_name: launchResult.business_name,
+                industry: data?.industry,
+                niche: site.niche,
+                vercel_url: launchResult.vercel_url,
+                content_pack: selectedContent,
+              }}
+              onClose={() => setShowSocial(false)}
+            />
           )}
         </Section>
       )}
