@@ -10,6 +10,7 @@ import {
 import PwaInstallButton from '@/components/PwaInstallButton';
 import CloneList from '@/components/fl/CloneList';
 import FailedClonesCard from '@/components/fl/FailedClonesCard';
+import XtremeAIChat from '@/components/fl/XtremeAIChat';
 
 export default function XtremeOS() {
   const { user } = useAuth();
@@ -18,6 +19,7 @@ export default function XtremeOS() {
   const [hardening, setHardening] = useState(false);
   const [hardenResult, setHardenResult] = useState(null);
   const [hardenError, setHardenError] = useState('');
+  const [chatExpanded, setChatExpanded] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -95,7 +97,8 @@ export default function XtremeOS() {
     <>
       <XtremeOSSidebar />
       <XtremeOSRightPanel />
-      <div className="portal-page xtremeos-content" style={{ background: '#f7f7f5', minHeight: '100vh', marginLeft: 240, transition: 'margin .3s' }}>
+      <XtremeAIChat expanded={chatExpanded} onToggle={setChatExpanded} />
+      <div className="portal-page xtremeos-content" style={{ background: '#f7f7f5', minHeight: '100vh', marginLeft: 240, marginRight: chatExpanded ? 420 : 0, transition: 'margin .3s' }}>
       {/* XtremeOS Header */}
       <div style={{
         background: 'radial-gradient(circle at 82% 40%, #C89B3C45, transparent 25%), #0a0a0a',

@@ -1,0 +1,1501 @@
+{
+  "description": "Full-access AI commander for the Xtreme Clone System \u2014 can read/write/execute across all entities, backend functions, and site operations including cloning, editing, queue management, discovery, generation, deployment, healing, and business formation.",
+  "instructions": "You are the Xtreme Commander \u2014 the AI operator for the Xtreme Clone System (xtremeclonesystems.com). You have full read, write, and execute access to every part of the site.\n\n## Your Capabilities\nYou can operate every function in the system:\n- **Clone Queue**: Add URLs to the queue, process the queue, retry failed clones, bulk operations\n- **Clone Studio**: Edit cloned sites, customize branding, apply rebrands, rebuild clones, surgical content edits\n- **Clone Gallery**: Browse clones, view scores, manage deployments\n- **Build Studio**: Generate websites, apps, systems, tools, brand kits from scratch\n- **Discovery Engine**: Search niches, discover top performers, scan competitors, find industry opportunities\n- **Business Hub**: Form businesses, generate ideas, create universal plans\n- **Launch Pipeline**: Provision projects, deploy to Vercel, assign domains, validate, retry\n- **Healing System**: Auto-audit, analyze, fix, heal, and harden clones to 100/100 parity\n- **Security**: Run security scans, compliance checks, penetration tests, apply auto-fixes\n- **Media**: Generate images, videos, social content, marketing materials\n- **Books**: Create invoices, track expenses, manage ledger accounts, financial reports\n- **E-Signature**: Create envelopes, send for signature, track signing status\n- **CRM/Leads**: Manage leads, draft outreach, push to HubSpot, send follow-ups\n- **Store**: Manage products, create checkout sessions, process payments\n- **Settings**: Update system config, manage organizations, memberships, white-label\n\n## How to Operate\n1. When the user asks to add something to the queue, create a CloneQueue record with the target URL and call processCloneQueue\n2. When the user asks to edit a site, use editGeneratedContent for surgical edits or applyCustomization for branding changes\n3. When the user asks to clone a site, use deepCloneTarget or deterministicClone, then track via LaunchProject\n4. When the user asks to heal/fix clones, call forensicAuditAndHarden or autonomousCloneTo100\n5. When the user asks to discover sites, use searchTopWebsitesByIndustry, discoverCloneCandidates, or nicheWebsiteEngine\n6. When the user asks to generate something, use the appropriate generate* function\n7. When the user asks to deploy, use provisionProject then launchPipelineStart then assignVercelDomain\n8. When the user asks about status, read the relevant entities (LaunchProject, CloneQueue, etc.)\n\n## Rules\n- Always confirm destructive operations (delete, cancel) before executing\n- Provide clear status updates on long-running operations\n- Use entity reads to check current state before making changes\n- When a clone fails, automatically trigger healing with forensicAuditAndHarden\n- Be concise but thorough \u2014 explain what you did and what happened\n- If you don't have a tool for something, say so and suggest the closest alternative",
+  "tool_configs": [
+    {
+      "entity_name": "CloneQueue",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "LaunchProject",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "ToolProduct",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "UniversalCatalog",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "BusinessProject",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Company",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Lead",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Website",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "SystemConfig",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Organization",
+      "allowed_operations": [
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Membership",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Receipt",
+      "allowed_operations": [
+        "read"
+      ]
+    },
+    {
+      "entity_name": "WorkflowRun",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "QAReport",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Deliverable",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Product",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Subscription",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "ProductPackage",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "DesignPack",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "BrandAsset",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "MediaAsset",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "MediaGenerationJob",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "SocialPost",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "RepairPlan",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "RepairTask",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Finding",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Risk",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "SystemNode",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "SystemEdge",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "SystemHealthScore",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "SystemEnhancement",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "IndustryOpportunity",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "TopPerformer",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "AuditLead",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "OutreachDraft",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Proposal",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Invoice",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Expense",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "LedgerAccount",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "CostOfBusiness",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "MarketPrice",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "PricingProfile",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "PricingRule",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "ColorChart",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "FloorSystem",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "FinishProfile",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "ContractorService",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "ImplementationService",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "CustomerAccount",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "ClientProject",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "ClientPortalConfig",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "ClientSuccessScore",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Appointment",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Course",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "StudentProfile",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "NewsletterSubscriber",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "StrategyCallRequest",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "SignatureEnvelope",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "ConsentRecord",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "PartnerApiKey",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "WhiteLabelConfig",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "WorkflowDefinition",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "GeneratorDefinition",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "GeneratorNode",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "GeneratorVersion",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "PromptTemplate",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "PromptRun",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "VisualPrompt",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "VisualQAReview",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Artifact",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "AgentJob",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "SourceSnapshot",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "ScanSnapshot",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "MonitoringRule",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "MonitoringEvent",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "SyncState",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "WebhookEndpoint",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "BuildQueueItem",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "ToolBundle",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "ToolRecommendation",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "EnvironmentProfile",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "SecurityProposal",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "RepairAction",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "ValidationResult",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "GateReview",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "ActivityReceipt",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "AuditEvent",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "AuditTemplate",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Audit",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Evidence",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "Approval",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "MessageTemplate",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "AiTool",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "CartOrder",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "ProductCatalogItem",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "ProductEntitlement",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "IntakeResponse",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "StepRun",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "WebsiteLibraryAsset",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "AutomationBlueprint",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "RevenueLeak",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "MediaProviderAdapter",
+      "allowed_operations": [
+        "create",
+        "update",
+        "delete",
+        "read"
+      ]
+    },
+    {
+      "entity_name": "User",
+      "allowed_operations": [
+        "read"
+      ]
+    },
+    {
+      "function_name": "processCloneQueue",
+      "description": "Process queued clone items \u2014 starts the cloning pipeline for pending URLs"
+    },
+    {
+      "function_name": "autonomousCloneTo100",
+      "description": "Heal a clone to 100/100 parity \u2014 auto-fixes, re-deploys, and validates until perfect"
+    },
+    {
+      "function_name": "forensicAuditAndHarden",
+      "description": "Full audit \u2192 analyze \u2192 fix \u2192 heal \u2192 harden cycle for all failing clones"
+    },
+    {
+      "function_name": "deepCloneTarget",
+      "description": "Deep clone a target website using stealth browser \u2014 full content extraction"
+    },
+    {
+      "function_name": "deterministicClone",
+      "description": "Deterministic clone of a website \u2014 basic fetch with stealth browser fallback"
+    },
+    {
+      "function_name": "deepDiscoveryScan",
+      "description": "Deep discovery scan of a target site \u2014 financial, strategy, niche, stack analysis"
+    },
+    {
+      "function_name": "discoverCloneCandidates",
+      "description": "Discover clone candidate sites in an industry or niche"
+    },
+    {
+      "function_name": "discoverTopPerformers",
+      "description": "Discover top-performing sites in a category"
+    },
+    {
+      "function_name": "searchTopWebsitesByIndustry",
+      "description": "Search for top-ranking websites by industry keyword"
+    },
+    {
+      "function_name": "scanCompany",
+      "description": "Scan a company website for system map, findings, and opportunities"
+    },
+    {
+      "function_name": "scanCompetitors",
+      "description": "Scan competitors in an industry for competitive intelligence"
+    },
+    {
+      "function_name": "categorizeWebsite",
+      "description": "Categorize a website by industry, niche, and type using AI"
+    },
+    {
+      "function_name": "generateWebsite",
+      "description": "Generate a complete website from a prompt/spec"
+    },
+    {
+      "function_name": "generateApp",
+      "description": "Generate a complete app from a prompt/spec"
+    },
+    {
+      "function_name": "generateBrandAssets",
+      "description": "Generate brand assets \u2014 logos, kits, marketing collateral"
+    },
+    {
+      "function_name": "generateSiteAll",
+      "description": "Generate a complete site with all pages and assets"
+    },
+    {
+      "function_name": "generateSiteBatch",
+      "description": "Generate multiple sites in batch"
+    },
+    {
+      "function_name": "editGeneratedContent",
+      "description": "Surgical find/replace edit on generated site content"
+    },
+    {
+      "function_name": "generateCustomizationOptions",
+      "description": "Generate customization options for a cloned site"
+    },
+    {
+      "function_name": "applyCustomization",
+      "description": "Apply branding/customization to a cloned site"
+    },
+    {
+      "function_name": "rebuildCustomClone",
+      "description": "Rebuild a custom clone with new parameters"
+    },
+    {
+      "function_name": "healAllClonesTo100",
+      "description": "Heal all clones below 100/100 to perfect parity"
+    },
+    {
+      "function_name": "resumeStuckClones",
+      "description": "Resume stuck or stalled clone projects"
+    },
+    {
+      "function_name": "cleanupBrokenClones",
+      "description": "Clean up broken/failed clone projects"
+    },
+    {
+      "function_name": "rigorousCloneGate",
+      "description": "Rigorous quality gate check on a clone"
+    },
+    {
+      "function_name": "assignVercelDomain",
+      "description": "Assign a Vercel domain to a deployed project"
+    },
+    {
+      "function_name": "provisionProject",
+      "description": "Provision a new project \u2014 create repo, deploy, configure"
+    },
+    {
+      "function_name": "launchProject",
+      "description": "Launch a project through the full pipeline"
+    },
+    {
+      "function_name": "launchPipelineStart",
+      "description": "Start the launch pipeline for a project"
+    },
+    {
+      "function_name": "launchPipelineValidate",
+      "description": "Validate a project in the launch pipeline"
+    },
+    {
+      "function_name": "launchPipelineFinalize",
+      "description": "Finalize a launched project"
+    },
+    {
+      "function_name": "launchPipelineRetry",
+      "description": "Retry a failed launch pipeline step"
+    },
+    {
+      "function_name": "stitchSite",
+      "description": "Stitch site pages together into a complete site"
+    },
+    {
+      "function_name": "clonePlatform",
+      "description": "Clone an entire platform or marketplace"
+    },
+    {
+      "function_name": "cloneTopWebsites",
+      "description": "Clone top websites in an industry"
+    },
+    {
+      "function_name": "nicheWebsiteEngine",
+      "description": "Niche website discovery and analysis engine"
+    },
+    {
+      "function_name": "generateDeliverable",
+      "description": "Generate a deliverable (proposal, report, brand, etc.)"
+    },
+    {
+      "function_name": "generateReport",
+      "description": "Generate a comprehensive report"
+    },
+    {
+      "function_name": "generateBidProposal",
+      "description": "Generate a bid proposal for a project"
+    },
+    {
+      "function_name": "generateRepairPlan",
+      "description": "Generate a repair plan for failing systems"
+    },
+    {
+      "function_name": "generateUniversalPlan",
+      "description": "Generate a universal business plan"
+    },
+    {
+      "function_name": "generateEnhancedSystem",
+      "description": "Generate an enhanced system configuration"
+    },
+    {
+      "function_name": "generateSecurityProposal",
+      "description": "Generate a security proposal"
+    },
+    {
+      "function_name": "generateAutomationEnhancements",
+      "description": "Generate automation enhancements for a system"
+    },
+    {
+      "function_name": "generateMarketingVideo",
+      "description": "Generate a marketing video"
+    },
+    {
+      "function_name": "generateSocialContent",
+      "description": "Generate social media content"
+    },
+    {
+      "function_name": "generateTemplatePack",
+      "description": "Generate a template pack"
+    },
+    {
+      "function_name": "generateDesignPack",
+      "description": "Generate a design pack"
+    },
+    {
+      "function_name": "generateIndustryImage",
+      "description": "Generate an industry-specific image"
+    },
+    {
+      "function_name": "generateRebrandPackages",
+      "description": "Generate rebrand packages for a clone"
+    },
+    {
+      "function_name": "generateCustomizationStudio",
+      "description": "Generate customization studio options"
+    },
+    {
+      "function_name": "publicScan",
+      "description": "Public scan of a website \u2014 no auth required"
+    },
+    {
+      "function_name": "deepSecurityScan",
+      "description": "Deep security scan of a site or system"
+    },
+    {
+      "function_name": "securityComplianceCheck",
+      "description": "Security compliance check against frameworks"
+    },
+    {
+      "function_name": "runSecurityPipeline",
+      "description": "Run the full security pipeline"
+    },
+    {
+      "function_name": "securityPenTest",
+      "description": "Security penetration test"
+    },
+    {
+      "function_name": "applyAutoFix",
+      "description": "Apply automatic fixes to a failing system"
+    },
+    {
+      "function_name": "runHeadlessTest",
+      "description": "Run headless browser tests on a site"
+    },
+    {
+      "function_name": "autonomousHeadlessScan",
+      "description": "Autonomous headless scan of sites"
+    },
+    {
+      "function_name": "autonomousBuildCycle",
+      "description": "Autonomous build cycle \u2014 generate, validate, deploy"
+    },
+    {
+      "function_name": "autonomousCodeSystem",
+      "description": "Autonomous code generation system"
+    },
+    {
+      "function_name": "autonomousMarketplaceStocker",
+      "description": "Autonomously stock the marketplace with products"
+    },
+    {
+      "function_name": "universalDiscovery",
+      "description": "Universal discovery \u2014 find opportunities across all sources"
+    },
+    {
+      "function_name": "universalOrchestrator",
+      "description": "Universal orchestrator \u2014 coordinate all systems"
+    },
+    {
+      "function_name": "businessOrchestrator",
+      "description": "Business orchestrator \u2014 coordinate business operations"
+    },
+    {
+      "function_name": "monitoringOrchestrator",
+      "description": "Monitoring orchestrator \u2014 coordinate monitoring"
+    },
+    {
+      "function_name": "clientWorkflowEngine",
+      "description": "Client workflow engine \u2014 manage client processes"
+    },
+    {
+      "function_name": "computeSystemScore",
+      "description": "Compute the system health score"
+    },
+    {
+      "function_name": "computeIndustryBenchmarks",
+      "description": "Compute industry benchmarks"
+    },
+    {
+      "function_name": "computeClientSuccess",
+      "description": "Compute client success score"
+    },
+    {
+      "function_name": "recommendToolStack",
+      "description": "Recommend a tool stack for a business"
+    },
+    {
+      "function_name": "identifyChangeableParts",
+      "description": "Identify changeable parts of a cloned site"
+    },
+    {
+      "function_name": "extractReusableTemplates",
+      "description": "Extract reusable templates from a site"
+    },
+    {
+      "function_name": "getCloneGallery",
+      "description": "Get the clone gallery data"
+    },
+    {
+      "function_name": "getSiteSpecs",
+      "description": "Get site specifications"
+    },
+    {
+      "function_name": "getStoreCatalog",
+      "description": "Get the store catalog"
+    },
+    {
+      "function_name": "getPortalData",
+      "description": "Get portal data for a client"
+    },
+    {
+      "function_name": "getCustomerPortalData",
+      "description": "Get customer portal data"
+    },
+    {
+      "function_name": "getFinancialSummary",
+      "description": "Get financial summary"
+    },
+    {
+      "function_name": "getSignatureEnvelope",
+      "description": "Get a signature envelope by ID"
+    },
+    {
+      "function_name": "createSignatureEnvelope",
+      "description": "Create a new signature envelope"
+    },
+    {
+      "function_name": "signEnvelope",
+      "description": "Sign a signature envelope"
+    },
+    {
+      "function_name": "sendForSignature",
+      "description": "Send an envelope for signature"
+    },
+    {
+      "function_name": "createCheckout",
+      "description": "Create a Stripe checkout session"
+    },
+    {
+      "function_name": "createStoreCheckout",
+      "description": "Create a store checkout session"
+    },
+    {
+      "function_name": "createImplementationCheckout",
+      "description": "Create an implementation service checkout"
+    },
+    {
+      "function_name": "toolioCheckout",
+      "description": "Toolio marketplace checkout"
+    },
+    {
+      "function_name": "createInvoice",
+      "description": "Create an invoice"
+    },
+    {
+      "function_name": "sendInvoice",
+      "description": "Send an invoice to a client"
+    },
+    {
+      "function_name": "recordInvoicePayment",
+      "description": "Record an invoice payment"
+    },
+    {
+      "function_name": "syncQuickBooks",
+      "description": "Sync with QuickBooks"
+    },
+    {
+      "function_name": "exportToSheets",
+      "description": "Export data to Google Sheets"
+    },
+    {
+      "function_name": "driveSync",
+      "description": "Sync files with Google Drive"
+    },
+    {
+      "function_name": "draftOutreach",
+      "description": "Draft outreach content for a prospect"
+    },
+    {
+      "function_name": "sendApprovedOutreach",
+      "description": "Send approved outreach email"
+    },
+    {
+      "function_name": "outreachGate",
+      "description": "Outreach approval gate check"
+    },
+    {
+      "function_name": "pushOpportunityToHubSpot",
+      "description": "Push an opportunity to HubSpot CRM"
+    },
+    {
+      "function_name": "syncToHubSpot",
+      "description": "Sync data to HubSpot"
+    },
+    {
+      "function_name": "facebookManager",
+      "description": "Manage Facebook pages and posts"
+    },
+    {
+      "function_name": "sendSmsAlert",
+      "description": "Send an SMS alert via Twilio"
+    },
+    {
+      "function_name": "sendLeadFollowup",
+      "description": "Send a lead follow-up message"
+    },
+    {
+      "function_name": "weeklyDigest",
+      "description": "Generate and send a weekly digest"
+    },
+    {
+      "function_name": "partnerApi",
+      "description": "Partner API operations"
+    },
+    {
+      "function_name": "ingestCloneLead",
+      "description": "Ingest a clone lead from a form"
+    },
+    {
+      "function_name": "ingestDesignPack",
+      "description": "Ingest a design pack"
+    },
+    {
+      "function_name": "queueMediaGeneration",
+      "description": "Queue a media generation job"
+    },
+    {
+      "function_name": "compileGenerator",
+      "description": "Compile a generator definition"
+    },
+    {
+      "function_name": "compileVisualPrompt",
+      "description": "Compile a visual prompt"
+    },
+    {
+      "function_name": "validateArtifact",
+      "description": "Validate an artifact"
+    },
+    {
+      "function_name": "validateFullStack",
+      "description": "Validate a full-stack project"
+    },
+    {
+      "function_name": "qaValidateStep",
+      "description": "QA validate a pipeline step"
+    },
+    {
+      "function_name": "createQAReview",
+      "description": "Create a QA review"
+    },
+    {
+      "function_name": "quantifyFindings",
+      "description": "Quantify audit findings"
+    },
+    {
+      "function_name": "logRecommendations",
+      "description": "Log recommendations for a system"
+    },
+    {
+      "function_name": "mapCompanySystems",
+      "description": "Map company systems and relationships"
+    },
+    {
+      "function_name": "scanIndustriesForNiches",
+      "description": "Scan industries for niche opportunities"
+    },
+    {
+      "function_name": "scrapeIndustryTemplates",
+      "description": "Scrape industry templates"
+    },
+    {
+      "function_name": "scanTopSitesInCategory",
+      "description": "Scan top sites in a category"
+    },
+    {
+      "function_name": "discoverBenchmarkSite",
+      "description": "Discover a benchmark site for comparison"
+    },
+    {
+      "function_name": "discoverIndustryOpportunities",
+      "description": "Discover industry opportunities"
+    },
+    {
+      "function_name": "discoverMissingOpportunities",
+      "description": "Discover missing opportunities"
+    },
+    {
+      "function_name": "discoverCompanies",
+      "description": "Discover companies in an industry"
+    },
+    {
+      "function_name": "sentinelReflect",
+      "description": "Sentinel reflection \u2014 system self-analysis"
+    },
+    {
+      "function_name": "rescanMonitor",
+      "description": "Re-scan monitored sites"
+    },
+    {
+      "function_name": "triggerDepositOnboarding",
+      "description": "Trigger deposit onboarding flow"
+    },
+    {
+      "function_name": "processFulfillmentStep",
+      "description": "Process a fulfillment step"
+    },
+    {
+      "function_name": "processCodeQueue",
+      "description": "Process the code generation queue"
+    },
+    {
+      "function_name": "processQueue",
+      "description": "Process a general queue"
+    },
+    {
+      "function_name": "suggestBusinessDomains",
+      "description": "Suggest business names and domains"
+    },
+    {
+      "function_name": "suggestDomains",
+      "description": "Suggest available domains"
+    },
+    {
+      "function_name": "seedColorCharts",
+      "description": "Seed color chart data"
+    },
+    {
+      "function_name": "seedPromptLibrary",
+      "description": "Seed the prompt library"
+    },
+    {
+      "function_name": "refreshXpsCatalog",
+      "description": "Refresh the XPS product catalog"
+    },
+    {
+      "function_name": "scrapeXpsCatalog",
+      "description": "Scrape the XPS catalog"
+    },
+    {
+      "function_name": "setupRagDatabase",
+      "description": "Set up the RAG database"
+    },
+    {
+      "function_name": "ragIngest",
+      "description": "Ingest data into RAG"
+    },
+    {
+      "function_name": "ragQuery",
+      "description": "Query the RAG database"
+    },
+    {
+      "function_name": "inferTargetBackend",
+      "description": "Infer the target backend for a project"
+    },
+    {
+      "function_name": "buildInferredBackend",
+      "description": "Build an inferred backend"
+    },
+    {
+      "function_name": "testProvisioning",
+      "description": "Test provisioning setup"
+    },
+    {
+      "function_name": "cleanupTestResources",
+      "description": "Clean up test resources"
+    },
+    {
+      "function_name": "deleteUserAccount",
+      "description": "Delete a user account"
+    },
+    {
+      "function_name": "generateAutomationEnhancements",
+      "description": "Generate automation enhancements"
+    },
+    {
+      "function_name": "monitoringOrchestrator",
+      "description": "Monitoring orchestrator"
+    }
+  ],
+  "name": "xtreme_commander"
+}
