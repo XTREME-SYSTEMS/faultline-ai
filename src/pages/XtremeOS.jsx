@@ -5,8 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
 import XtremeOSRightPanel from '@/components/fl/XtremeOSRightPanel';
 import {
-  Activity, Package, Globe, Shield, TrendingUp, Zap, CheckCircle2,
-  AlertCircle, Clock, Cpu, DollarSign, Layers, Loader2, X, Copy, ListChecks, Images, Building2, PenTool, Search
+  Activity, Package, Globe, Shield, Zap, Cpu, Loader2, X, Copy, ListChecks, Images, Building2, PenTool, Search
 } from 'lucide-react';
 import PwaInstallButton from '@/components/PwaInstallButton';
 
@@ -14,8 +13,6 @@ export default function XtremeOS() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [metrics, setMetrics] = useState(null);
-  const [recentActions, setRecentActions] = useState([]);
-  const [clones, setClones] = useState([]);
   const [hardening, setHardening] = useState(false);
   const [hardenResult, setHardenResult] = useState(null);
   const [hardenError, setHardenError] = useState('');
@@ -50,8 +47,6 @@ export default function XtremeOS() {
           discoveredPerformers: performers.length,
           recentActions: autonomousReceipts.length,
         });
-        setRecentActions(autonomousReceipts.slice(0, 12));
-        setClones(projects.filter(p => p.parity_score > 0).slice(0, 8));
       } catch (e) {
         console.error('XtremeOS load failed:', e);
       } finally {
@@ -75,7 +70,6 @@ export default function XtremeOS() {
           const projects = await base44.entities.LaunchProject.list('-created_date', 100).catch(() => []);
           const at100 = projects.filter(p => (p.parity_score || 0) >= 100).length;
           setMetrics(m => ({ ...m, totalClones: projects.length, at100, healthPct: projects.length ? Math.round((at100 / projects.length) * 100) : 0 }));
-          setClones(projects.filter(p => p.parity_score > 0).slice(0, 8));
         })();
       }, 2000);
     } catch (e) {
@@ -217,73 +211,6 @@ export default function XtremeOS() {
           </article>
         ))}
       </div>
-
-      {/* Two-column: Clone Health + Recent Actions */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 13, marginTop: 13 }}>
-        {/* Clone Health */}
-        <article style={{ background: '#fff', border: '1px solid #ddd', padding: 20 }}>
-          <h3 style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22, margin: '0 0 16px' }}>Clone Health Monitor</h3>
-          {clones.length === 0 ? (
-            <p style={{ color: '#999', fontSize: 13 }}>No active clones yet.</p>
-          ) : (
-            <div style={{ display: 'grid', gap: 10 }}>
-              {clones.map(c => (
-                <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid #eee' }}>
-                  <div>
-                    <b style={{ fontSize: 13 }}>{c.project_name?.slice(0, 40)}</b>
-                    <small style={{ display: 'block', color: '#888', fontSize: 11 }}>{c.status} · {c.business_name || 'N/A'}</small>
-                  </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <b style={{
-                      fontFamily: "'Libre Caslon Display', serif", fontSize: 22,
-                      color: (c.parity_score || 0) >= 100 ? '#237A4B' : (c.parity_score || 0) >= 70 ? '#B88214' : '#C63D34'
-                    }}>{c.parity_score || 0}</b>
-                    <small style={{ display: 'block', color: '#999', fontSize: 10 }}>/100</small>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-          <Link to="/app/command-center" style={{ display: 'inline-block', marginTop: 14, fontSize: 12, color: '#C89B3C', fontWeight: 700 }}>View all clones →</Link>
-        </article>
-
-        {/* Recent Autonomous Actions */}
-        <article style={{ background: '#fff', border: '1px solid #ddd', padding: 20 }}>
-          <h3 style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22, margin: '0 0 16px' }}>Autonomous Activity Log</h3>
-          {recentActions.length === 0 ? (
-            <p style={{ color: '#999', fontSize: 13 }}>No recent autonomous actions.</p>
-          ) : (
-            <div style={{ display: 'grid', gap: 8 }}>
-              {recentActions.map((r, i) => (
-                <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', padding: '8px 0', borderBottom: '1px solid #eee' }}>
-                  {r.status === 'success' ? <CheckCircle2 size={16} style={{ color: '#237A4B', flexShrink: 0, marginTop: 2 }} /> :
-                   r.status === 'partial' ? <AlertCircle size={16} style={{ color: '#B88214', flexShrink: 0, marginTop: 2 }} /> :
-                   <Clock size={16} style={{ color: '#999', flexShrink: 0, marginTop: 2 }} />}
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <b style={{ fontSize: 12, display: 'block' }}>{r.summary?.slice(0, 70)}</b>
-                    <small style={{ color: '#999', fontSize: 10 }}>{r.system} · {new Date(r.created_date).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</small>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </article>
-      </div>
-
-      {/* Marketplace Breakdown */}
-      <article style={{ background: '#fff', border: '1px solid #ddd', padding: 20, marginTop: 13 }}>
-        <h3 style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22, margin: '0 0 16px' }}>Marketplace Inventory</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, 1fr)', gap: 12 }}>
-          {Object.entries(metrics.byCategory).map(([cat, count]) => (
-            <div key={cat} style={{ textAlign: 'center', padding: 16, background: '#f8f7f4', border: '1px solid #eee' }}>
-              <Layers size={20} style={{ color: '#C89B3C' }} />
-              <b style={{ display: 'block', fontFamily: "'Libre Caslon Display', serif", fontSize: 24, margin: '8px 0 4px' }}>{count}</b>
-              <small style={{ color: '#888', fontSize: 10, textTransform: 'capitalize' }}>{cat.replace(/_/g, ' ')}</small>
-            </div>
-          ))}
-        </div>
-        <Link to="/store" style={{ display: 'inline-block', marginTop: 14, fontSize: 12, color: '#C89B3C', fontWeight: 700 }}>Visit marketplace →</Link>
-      </article>
 
       </div>
     </>
