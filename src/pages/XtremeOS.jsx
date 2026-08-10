@@ -65,7 +65,7 @@ export default function XtremeOS() {
     setHardenError('');
     setHardenResult(null);
     try {
-      const res = await base44.functions.invoke('forensicAuditAndHarden', { max_iterations: 1, heal_limit: 3 });
+      const res = await base44.functions.invoke('forensicAuditAndHarden', { max_iterations: 1, heal_limit: 1 });
       const d = res.data || res;
       if (d.error) throw new Error(d.error);
       setHardenResult(d);

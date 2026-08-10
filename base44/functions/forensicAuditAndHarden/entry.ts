@@ -76,6 +76,21 @@ export default async function(req) {
       p => p.vercel_deployment_url || p.metadata?.target_url
     );
 
+    // Clean up ghost tracker projects from previous heal calls — these are
+    // autonomous trackers that never produced a working clone (no vercel URL,
+    // score < 100). They dilute the clone health percentage and should be removed.
+    const ghosts = allProjects.filter(p =>
+      p.metadata?.autonomous === true &&
+      !p.vercel_deployment_url &&
+      (p.parity_score || 0) < 100
+    );
+    if (ghosts.length > 0) {
+      console.log(`Cleaning up ${ghosts.length} ghost tracker projects`);
+      for (const g of ghosts) {
+        try { await base44.asServiceRole.entities.LaunchProject.delete(g.id); } catch (e) {}
+      }
+    }
+
     // Quick forensic audit pass on all sites (fast HTTP checks), then only
     // heal the worst `healLimit` projects to stay within function timeout.
     console.log(`forensicAuditAndHarden: auditing ${auditable.length} sites, healing top ${healLimit}`);
@@ -103,14 +118,16 @@ export default async function(req) {
       auditScores.push({ project, auditResult, beforeScore });
     }
 
-    // Phase 2: sort by worst score, heal only the top `healLimit`
+    // Phase 2: only heal sites with stored parity_score < 100 (the actual clone
+    // quality score). The forensic audit (security headers etc.) is informational
+    // — missing CSP/HSTS on a Vercel static site is a config issue, not a reason
+    // to re-clone and potentially destroy a good clone.
     const needsHealing = auditScores
-      .filter(a => a.auditResult.score < 100 || a.beforeScore < 100)
-      .sort((a, b) => a.auditResult.score - b.auditResult.score)
+      .filter(a => a.beforeScore < 100)
+      .sort((a, b) => a.beforeScore - b.beforeScore)
       .slice(0, healLimit);
 
-    const clearCount = auditScores.length - needsHealing.length;
-    allClear = clearCount;
+    allClear = auditScores.filter(a => a.beforeScore >= 100).length;
 
     for (const { project, auditResult, beforeScore } of needsHealing) {
       const liveUrl = project.vercel_deployment_url;
@@ -127,7 +144,7 @@ export default async function(req) {
               harden: true, // signal to apply security headers during re-clone
               forensic_findings: auditResult.checks
             }),
-            110000,
+            170000,
             `forensic heal ${project.project_name}`
           ).catch(e => ({ error: e.message }));
 
@@ -159,7 +176,7 @@ export default async function(req) {
 
     // Add clear sites to results (summary only, not healed)
     for (const a of auditScores) {
-      if (a.auditResult.score >= 100 && a.beforeScore >= 100) {
+      if (a.beforeScore >= 100) {
         results.push({
           id: a.project.id, name: a.project.project_name,
           before: a.beforeScore, after: a.beforeScore,

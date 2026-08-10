@@ -46,19 +46,35 @@ export default async function(req) {
     };
 
     // Tracking LaunchProject for live progress
-    const tracker = await base44.asServiceRole.entities.LaunchProject.create({
-      organization_id: orgId, project_name: params.project_name || `Autonomous Clone ${Date.now().toString(36)}`,
-      project_type: 'website', status: 'queued', parity_score: 0,
-      last_validation_summary: 'Autonomous clone-to-100 engine started',
-      benchmark_url: params.target_url || undefined,
-      metadata: { autonomous: true, scan: params.scan, target_url: params.target_url }
-    });
+    // In HEAL mode (launch_project_id provided), reuse the existing project
+    // instead of creating a new one — creating ghost projects dilutes the
+    // clone health percentage with empty trackers that never produced a real clone.
+    let tracker;
+    if (params.launch_project_id) {
+      tracker = await base44.asServiceRole.entities.LaunchProject.get(params.launch_project_id);
+      if (!tracker) throw new Error('LaunchProject not found for heal');
+      await base44.asServiceRole.entities.LaunchProject.update(tracker.id, {
+        status: 'validating', progress: 0,
+        last_validation_summary: 'Heal cycle started'
+      });
+    } else {
+      tracker = await base44.asServiceRole.entities.LaunchProject.create({
+        organization_id: orgId, project_name: params.project_name || `Autonomous Clone ${Date.now().toString(36)}`,
+        project_type: 'website', status: 'queued', parity_score: 0,
+        last_validation_summary: 'Autonomous clone-to-100 engine started',
+        benchmark_url: params.target_url || undefined,
+        metadata: { autonomous: true, scan: params.scan, target_url: params.target_url }
+      });
+    }
 
     // Always run synchronously — waitUntil background processes get killed by the
     // platform before long-running clone/launch/validate operations complete.
     // Sync mode ensures the full pipeline finishes within the function's lifetime
     // (the function continues server-side even if the HTTP client disconnects).
-    await runEngine(base44, orgId, { ...params, tracker_id: tracker.id, fix_directives: body.fix_directives });
+    await runEngine(base44, orgId, { ...params, tracker_id: tracker.id, fix_directives: body.fix_directives,
+      original_score: tracker.parity_score || 0,
+      original_vercel_url: tracker.vercel_deployment_url || tracker.metadata?.vercel_deployment_url || null,
+    });
     const final = await base44.asServiceRole.entities.LaunchProject.get(tracker.id);
     return Response.json({
       status: 'completed', launch_project_id: tracker.id,
@@ -322,10 +338,19 @@ async function runEngine(base44, orgId, p) {
       await new Promise(r => setTimeout(r, 3000)); // let Vercel settle before re-validation
     }
 
-    const passed = score >= 100;
-    add(`Final: ${score}/100 — ${passed ? 'PASSED' : 'PARTIAL'}`);
-    await setProgress(passed ? 100 : progress, passed ? '100/100 achieved' : `Final ${score}/100`);
-    await updateTracker(passed ? '100/100 achieved' : `Final ${score}/100`, score, { final: true });
+    // In heal mode, if the new score is worse than the original, restore the
+    // original score and URL — healing should only improve, never destroy.
+    if (launchProjectId && score < (p.original_score || 0)) {
+      add(`Heal produced worse score (${p.original_score} → ${score}) — restoring original`);
+      score = p.original_score;
+      if (p.original_vercel_url) urls.vercel = p.original_vercel_url;
+      await updateTracker(`Heal did not improve (kept ${score}/100)`, score, { final: true });
+    } else {
+      const passed = score >= 100;
+      add(`Final: ${score}/100 — ${passed ? 'PASSED' : 'PARTIAL'}`);
+      await setProgress(passed ? 100 : progress, passed ? '100/100 achieved' : `Final ${score}/100`);
+      await updateTracker(passed ? '100/100 achieved' : `Final ${score}/100`, score, { final: true });
+    }
     await finishQa(base44, orgId, p, { score, status: passed ? 'passed' : 'failed', log, urls, failures, launch_project_id: p.tracker_id, bizName });
     await base44.asServiceRole.entities.Receipt.create({
       organization_id: orgId, system: 'autonomous_clone', action: 'run',
