@@ -45,13 +45,13 @@ export default function StepName({ form, update, next, back }) {
             Keywords / Description
             <input value={keywords} onChange={e => setKeywords(e.target.value)}
               placeholder="e.g. epoxy flooring, coffee shop, SaaS dashboard"
-              style={{ padding: 11, border: '1px solid #ddd', borderRadius: 6, fontSize: 13 }} />
+              style={{ padding: 11, border: '1px solid #ddd', borderRadius: 6, fontSize: 13, background: '#fff' }} />
           </label>
           <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700, flex: 1, minWidth: 200 }}>
             Industry (optional)
             <input value={industry} onChange={e => setIndustry(e.target.value)}
               placeholder="e.g. Construction, SaaS, Healthcare"
-              style={{ padding: 11, border: '1px solid #ddd', borderRadius: 6, fontSize: 13 }} />
+              style={{ padding: 11, border: '1px solid #ddd', borderRadius: 6, fontSize: 13, background: '#fff' }} />
           </label>
           <button onClick={generate} disabled={loading} style={{
             background: '#0a0a0a', color: '#fff', border: 0, borderRadius: 6,
