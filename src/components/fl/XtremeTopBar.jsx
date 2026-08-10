@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Home, Copy, ListChecks, Images, Building2, Globe, Cpu, PenTool, Layers, Terminal, MessageSquare, Package, Zap, Database, Settings as SettingsIcon } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Menu, X, ChevronLeft, Home, Copy, ListChecks, Images, Building2, Globe, Cpu, PenTool, Layers, Terminal, MessageSquare, Package, Zap, Database, Settings as SettingsIcon } from 'lucide-react';
 
 const NAV_LINKS = [
   { to: '/app', label: 'Dashboard', icon: Home, end: true },
@@ -24,6 +24,8 @@ const NAV_LINKS = [
 export default function XtremeTopBar() {
   const [open, setOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const isDashboard = location.pathname === '/app';
 
   return (
     <>
@@ -33,20 +35,34 @@ export default function XtremeTopBar() {
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: '0 20px', boxShadow: '0 1px 3px rgba(0,0,0,.04)',
       }}>
-        {/* Logo = home button */}
-        <Link to="/app" aria-label="Go to dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg, #E7C86E, #C89B3C)',
-            display: 'grid', placeItems: 'center', fontSize: 18, fontWeight: 700, color: '#111',
-            flexShrink: 0,
-          }}>X</div>
-          <div style={{ minWidth: 0 }}>
-            <b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 16, color: '#111', display: 'block', lineHeight: 1.1 }}>
-              Xtreme<span style={{ color: '#C89B3C' }}>Clone</span> System
-            </b>
-            <small style={{ color: '#999', fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em' }}>Home</small>
-          </div>
-        </Link>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {/* Back button — hidden on dashboard */}
+          {!isDashboard && (
+            <button onClick={() => navigate(-1)} aria-label="Go back" style={{
+              display: 'flex', alignItems: 'center', gap: 4, background: '#fff',
+              border: '1px solid #ddd', borderRadius: 8, padding: '8px 12px',
+              cursor: 'pointer', color: '#111', fontSize: 13, fontWeight: 700,
+              fontFamily: 'inherit',
+            }}>
+              <ChevronLeft size={18} />
+              <span className="hidden sm:inline">Back</span>
+            </button>
+          )}
+          {/* Logo = home button */}
+          <Link to="/app" aria-label="Go to dashboard" style={{ display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none' }}>
+            <div style={{
+              width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg, #E7C86E, #C89B3C)',
+              display: 'grid', placeItems: 'center', fontSize: 18, fontWeight: 700, color: '#111',
+              flexShrink: 0,
+            }}>X</div>
+            <div style={{ minWidth: 0 }}>
+              <b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 16, color: '#111', display: 'block', lineHeight: 1.1 }}>
+                Xtreme<span style={{ color: '#C89B3C' }}>Clone</span> System
+              </b>
+              <small style={{ color: '#999', fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em' }}>Home</small>
+            </div>
+          </Link>
+        </div>
 
         {/* Hamburger menu */}
         <button onClick={() => setOpen(o => !o)} aria-label="Toggle navigation" aria-expanded={open} style={{
