@@ -9,6 +9,7 @@ import { CATEGORY_IMAGES } from '@/lib/industryImages';
 import CategoryCard from '@/components/clone-gallery/CategoryCard';
 import SubIndustryCard from '@/components/clone-gallery/SubIndustryCard';
 import SiteAnalysisCard from '@/components/clone-queue/SiteAnalysisCard';
+import CustomizationStudio from '@/components/clone-queue/CustomizationStudio';
 
 // DiscoveryView — the industry → sub-industry → scan → results flow.
 // Mirrors Clone Gallery's 3-tier hierarchy: pick a category, pick a sub-industry,
@@ -21,6 +22,7 @@ export default function DiscoveryView() {
   const [scanError, setScanError] = useState('');
   const [scanResults, setScanResults] = useState(null);
   const [addedSites, setAddedSites] = useState(new Set());
+  const [studioSite, setStudioSite] = useState(null);
 
   const taxonomyGroups = getIndustryGroups();
 
@@ -72,6 +74,29 @@ export default function DiscoveryView() {
 
   function handleSiteAdded(site) {
     setAddedSites(prev => new Set([...prev, site.url]));
+  }
+
+  function handleCustomize(site) {
+    setStudioSite(site);
+  }
+
+  function closeStudio() {
+    setStudioSite(null);
+  }
+
+  // Studio view — full screen customization
+  if (studioSite) {
+    return (
+      <div>
+        <button onClick={closeStudio} style={{
+          display: 'flex', alignItems: 'center', gap: 6, marginBottom: 16,
+          background: 'none', border: 0, color: '#666', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+        }}>
+          <ChevronRight size={14} style={{ transform: 'rotate(180deg)' }} /> Back to Discovery
+        </button>
+        <CustomizationStudio site={studioSite} onClose={closeStudio} />
+      </div>
+    );
   }
 
   return (
@@ -230,6 +255,7 @@ export default function DiscoveryView() {
                     key={site.url || site.rank}
                     site={site}
                     onAddToQueue={handleSiteAdded}
+                    onCustomize={handleCustomize}
                     adding={addedSites.has(site.url)}
                   />
                 ))}

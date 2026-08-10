@@ -9,7 +9,7 @@ import {
 // business intelligence: market share, revenue, customer base, niche,
 // competition, audit (strengths/weaknesses/leaks), recommendations, enhancements.
 // User can expand for details and add the site to the clone queue.
-export default function SiteAnalysisCard({ site, onAddToQueue, adding }) {
+export default function SiteAnalysisCard({ site, onAddToQueue, adding, onCustomize }) {
   const [expanded, setExpanded] = useState(false);
   const [added, setAdded] = useState(false);
 
@@ -89,19 +89,33 @@ export default function SiteAnalysisCard({ site, onAddToQueue, adding }) {
               <Globe size={10} /> {site.url?.replace(/^https?:\/\//, '').slice(0, 35)}
             </a>
           </div>
-          <button
-            onClick={handleAdd}
-            disabled={added || adding}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 4, padding: '6px 12px',
-              background: added ? '#237A4B' : 'linear-gradient(135deg, #E7C86E, #C89B3C)',
-              color: '#111', border: 0, borderRadius: 6, fontSize: 11, fontWeight: 700,
-              cursor: added ? 'default' : 'pointer', whiteSpace: 'nowrap', flexShrink: 0,
-            }}
-          >
-            {added ? <CheckCircle2 size={12} /> : <Plus size={12} />}
-            {added ? 'Queued' : 'Clone'}
-          </button>
+          <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+            <button
+              onClick={handleAdd}
+              disabled={added || adding}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4, padding: '6px 10px',
+                background: added ? '#237A4B' : '#fff',
+                color: added ? '#fff' : '#666',
+                border: '1px solid #ddd', borderRadius: 6, fontSize: 11, fontWeight: 700,
+                cursor: added ? 'default' : 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              {added ? <CheckCircle2 size={12} /> : <Plus size={12} />}
+              {added ? 'Queued' : 'Queue'}
+            </button>
+            <button
+              onClick={() => onCustomize?.(site)}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 4, padding: '6px 10px',
+                background: 'linear-gradient(135deg, #E7C86E, #C89B3C)',
+                color: '#111', border: 0, borderRadius: 6, fontSize: 11, fontWeight: 700,
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}
+            >
+              <Zap size={12} /> Customize
+            </button>
+          </div>
         </div>
 
         {/* Quick stats */}
