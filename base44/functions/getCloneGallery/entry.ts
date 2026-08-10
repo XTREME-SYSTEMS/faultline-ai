@@ -4,7 +4,27 @@ import { classifyByBusinessRef } from '../../shared/industryBusinesses.ts';
 
 // Clone Gallery — returns all cloned LaunchProjects that have a live Vercel URL,
 // with the original site name (traced via benchmark_url or heal chain),
-// the original URL, and the Vercel clone URL.
+// the original URL, the Vercel clone URL, and a page summary.
+async function fetchSummary(url) {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const res = await fetch(url, { signal: controller.signal, redirect: 'follow' });
+    clearTimeout(timeout);
+    if (!res.ok) return '';
+    const html = await res.text();
+    const ogDesc = html.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i);
+    if (ogDesc?.[1]) return decodeHtmlEntities(ogDesc[1].trim()).slice(0, 240);
+    const metaDesc = html.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i);
+    if (metaDesc?.[1]) return decodeHtmlEntities(metaDesc[1].trim()).slice(0, 240);
+    const pMatch = html.match(/<p[^>]*>([^<]{50,})<\/p>/i);
+    if (pMatch?.[1]) return decodeHtmlEntities(pMatch[1].replace(/<[^>]+>/g, '').trim()).slice(0, 240);
+    return '';
+  } catch {
+    return '';
+  }
+}
+
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -63,12 +83,24 @@ export default async function(req) {
         url: vercelUrl,
         target_url: originalUrl || '',
         thumbnail,
+        summary: p.metadata?.summary || p.description || '',
         score: p.parity_score || 0,
         status: p.status,
         created_date: p.created_date,
         needsRename: isGeneric && derivedName ? true : false,
       };
     });
+
+    // Fetch missing summaries from deployed pages in parallel (cached in metadata)
+    const needSummary = withThumbs.filter(c => !c.summary && c.url);
+    if (needSummary.length > 0) {
+      const summaries = await Promise.all(needSummary.map(c => fetchSummary(c.url)));
+      needSummary.forEach((c, i) => { c.summary = summaries[i] || ''; });
+      // Cache fetched summaries non-blocking
+      base44.asServiceRole.entities.LaunchProject.bulkUpdate(
+        needSummary.filter(c => c.summary).map(c => ({ id: c.id, metadata: { ...(projectMap.get(c.id)?.metadata || {}), summary: c.summary } }))
+      ).catch(() => {});
+    }
 
     // Fix generic names in the DB (non-blocking, one-time)
     const toRename = withThumbs.filter(c => c.needsRename);
