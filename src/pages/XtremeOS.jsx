@@ -176,25 +176,25 @@ export default function XtremeOS() {
       {/* Quick Links — primary navigation hubs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 13, marginBottom: 13 }}>
         {[
-          { label: 'Clone Studio', path: '/app/clone-studio', icon: Copy, desc: 'Build & customize clones' },
-          { label: 'Clone Queue', path: '/app/clone-queue', icon: ListChecks, desc: 'Manage clone pipeline' },
-          { label: 'Clone Gallery', path: '/app/clone-gallery', icon: Images, desc: 'Browse all clones' },
-          { label: 'Business Hub', path: '/app/business', icon: Building2, desc: 'Form DBAs & LLCs' },
+          { label: 'Clone Studio', path: '/app/clone-studio', icon: Copy, desc: 'Build & customize clones', bg: '#C89B3C', iconBg: 'rgba(255,255,255,.2)' },
+          { label: 'Clone Queue', path: '/app/clone-queue', icon: ListChecks, desc: 'Manage clone pipeline', bg: '#2563eb', iconBg: 'rgba(255,255,255,.2)' },
+          { label: 'Clone Gallery', path: '/app/clone-gallery', icon: Images, desc: 'Browse all clones', bg: '#7c3aed', iconBg: 'rgba(255,255,255,.2)' },
+          { label: 'Business Hub', path: '/app/business', icon: Building2, desc: 'Form DBAs & LLCs', bg: '#0B0B0D', iconBg: 'rgba(255,255,255,.15)' },
         ].map(l => (
           <Link key={l.path} to={l.path} style={{
-            background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 18,
-            display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none', color: 'inherit',
-            transition: 'box-shadow .15s, border-color .15s',
+            background: l.bg, border: 0, borderRadius: 8, padding: 18,
+            display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none', color: '#fff',
+            transition: 'transform .15s, box-shadow .15s',
           }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = '#C89B3C'; e.currentTarget.style.boxShadow = '0 4px 12px #C89B3C22'; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#ddd'; e.currentTarget.style.boxShadow = 'none'; }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,.2)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
           >
-            <span style={{ width: 42, height: 42, borderRadius: 8, background: 'linear-gradient(135deg, #E7C86E22, #C89B3C22)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-              <l.icon size={22} style={{ color: '#C89B3C' }} />
+            <span style={{ width: 42, height: 42, borderRadius: 8, background: l.iconBg, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+              <l.icon size={22} style={{ color: '#fff' }} />
             </span>
             <div>
-              <b style={{ fontSize: 14, display: 'block' }}>{l.label}</b>
-              <small style={{ fontSize: 11, color: '#999' }}>{l.desc}</small>
+              <b style={{ fontSize: 14, display: 'block', color: '#fff' }}>{l.label}</b>
+              <small style={{ fontSize: 11, color: 'rgba(255,255,255,.75)' }}>{l.desc}</small>
             </div>
           </Link>
         ))}
