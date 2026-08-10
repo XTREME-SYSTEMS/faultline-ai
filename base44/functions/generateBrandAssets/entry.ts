@@ -38,7 +38,7 @@ export default async function(req) {
     if (!orgId) return Response.json({ error: 'No organization found' }, { status: 400 });
 
     const body = await req.json().catch(() => ({}));
-    const { type, prompt, business_name, industry, project_id } = body;
+    const { type, prompt, business_name, industry, project_id, domain, brand_concept, accent_color } = body;
 
     if (!type) return Response.json({ error: 'type is required (logo, brand, or image)' }, { status: 400 });
     if (!prompt && !business_name) return Response.json({ error: 'prompt or business_name is required' }, { status: 400 });
@@ -85,16 +85,15 @@ export default async function(req) {
     // ── BRAND: 6 complete identity options + logo images ───────
     if (type === 'brand') {
       // Step 1: Generate 6 brand identity concepts via LLM (prompt from library)
-      const brandPrompt = await resolvePrompt(base44, orgId, 'fl-brand', 'GENERATE',
-        { BUSINESS_NAME: bizName, INDUSTRY: ind, DESCRIPTION: subject },
-        `You are an elite brand strategist. Generate 6 DISTINCT, complete brand identity concepts for a business.
+      const brandPrompt = `You are an elite brand strategist. Generate 10 DISTINCT, complete brand identity concepts for a business.
 
-BUSINESS: ${bizName}
+BUSINESS NAME: ${bizName} (use this EXACT name — do NOT invent new business names)
+DOMAIN: ${domain || 'N/A'}
 INDUSTRY: ${ind}
 DESCRIPTION: ${subject}
 
-Return a JSON object with an "options" array of 6 items. Each item must have:
-- name: a distinct brand name (can be a variation of "${bizName}" or a creative new name)
+Return a JSON object with an "options" array of 10 items. Each item must have:
+- name: the brand name (use "${bizName}" — you may add a stylistic suffix like "Co.", "Group", "Studio" but the core name MUST be "${bizName}")
 - tagline: a memorable tagline (max 8 words)
 - positioning: one-sentence positioning statement
 - personality: 3 personality traits
@@ -106,8 +105,7 @@ Return a JSON object with an "options" array of 6 items. Each item must have:
 - voice: brand voice description (2-3 words)
 - logo_concept: a detailed visual description of the logo concept (used for AI image generation)
 
-Make each concept visually and tonally distinct. Use real, specific color hex codes and real Google Font names.`
-      );
+Make each concept visually and tonally distinct. Use real, specific color hex codes and real Google Font names. ALL concepts must use the business name "${bizName}".`;
       const llmRes = await base44.asServiceRole.integrations.Core.InvokeLLM({
         prompt: brandPrompt,
         response_json_schema: {
@@ -136,12 +134,12 @@ Make each concept visually and tonally distinct. Use real, specific color hex co
         }
       });
 
-      const brandOptions = llmRes?.options || [];
+      const brandOptions = (llmRes?.options || []).slice(0, 10);
 
-      // Step 2: Generate a logo image for each brand concept (6 in parallel)
+      // Step 2: Generate a logo image for each brand concept (10 in parallel)
       const logoPromises = brandOptions.map((opt, i) =>
         base44.asServiceRole.integrations.Core.GenerateImage({
-          prompt: `Professional logo for "${opt.name}". ${opt.logo_concept}. Colors: ${opt.primary_color}, ${opt.secondary_color}, ${opt.accent_color}. Clean, brand-ready, high quality, no watermark, no text artifacts.`
+          prompt: `Professional logo for "${opt.name}", a ${ind} business. Domain: ${domain || 'N/A'}. ${opt.logo_concept}. Colors: ${opt.primary_color}, ${opt.secondary_color}, ${opt.accent_color}. Clean, brand-ready, high quality, no watermark, no text artifacts.`
         }).then(res => ({ ...opt, index: i, logo_url: res?.url || res?.image_url || res }))
           .catch(err => ({ ...opt, index: i, logo_url: null, logo_error: err.message }))
       );
@@ -154,16 +152,66 @@ Make each concept visually and tonally distinct. Use real, specific color hex co
         artifact_type: 'brand',
         content: JSON.stringify({ type: 'brand', business_name: bizName, industry: ind, options: optionsWithLogos }),
         status: 'generated',
-        metadata: { type: 'brand', business_name: bizName, industry: ind, option_count: 6 }
+        metadata: { type: 'brand', business_name: bizName, industry: ind, option_count: 10 }
       });
 
       await base44.asServiceRole.entities.Receipt.create({
         organization_id: orgId, system: 'brand_generator', action: 'generate_brand',
-        status: 'success', summary: `Generated 6 brand identity options for ${bizName}`,
-        evidence: { artifact_id: artifact.id, option_count: 6 }
+        status: 'success', summary: `Generated 10 brand identity options for ${bizName}`,
+        evidence: { artifact_id: artifact.id, option_count: 10 }
       });
 
       return Response.json({ status: 'success', type: 'brand', options: optionsWithLogos, artifact_id: artifact.id });
+    }
+
+    // ── FULL_KIT: complete design kit for a selected brand ───
+    if (type === 'full_kit') {
+      if (!brand_concept) return Response.json({ error: 'brand_concept is required' }, { status: 400 });
+      const concept = brand_concept;
+      const ac = accent_color || concept.accent_color;
+      const colors = `${concept.primary_color}, ${concept.secondary_color}, ${ac}`;
+      const fonts = `Heading font: ${concept.font_heading}, Body font: ${concept.font_body}`;
+      const tagline = concept.tagline || '';
+
+      const kitItems = [
+        { key: 'logo', label: 'Primary Logo', prompt: `Professional logo for "${bizName}", a ${ind} business. Domain: ${domain || 'N/A'}. ${concept.logo_concept}. Colors: ${colors}. Clean, brand-ready, high quality, no watermark.` },
+        { key: 'logo_dark', label: 'Logo (Dark BG)', prompt: `Professional logo for "${bizName}" on dark background. ${concept.logo_concept}. Colors: ${colors}. Clean, brand-ready, high quality, no watermark.` },
+        { key: 'website', label: 'Website Homepage', prompt: `Website homepage design for "${bizName}", a ${ind} business. Domain: ${domain || 'N/A'}. Modern professional landing page with hero section, navigation, services, call-to-action, and footer. Tagline: "${tagline}". Colors: ${colors}. ${fonts}. High quality UI design, no watermark.` },
+        { key: 'tshirt', label: 'T-Shirt Design', prompt: `T-shirt design for "${bizName}" brand. ${concept.logo_concept}. Front chest logo placement on premium apparel. Colors: ${colors}. Professional apparel mockup, high quality, no watermark.` },
+        { key: 'brochure', label: 'Brochure Design', prompt: `Tri-fold brochure design for "${bizName}", a ${ind} business. Professional layout with services, about, contact info, and branding. Tagline: "${tagline}". Colors: ${colors}. ${fonts}. High quality print design, no watermark.` },
+        { key: 'app', label: 'App Design', prompt: `Mobile app home screen design for "${bizName}", a ${ind} business. Modern app UI with navigation, cards, and branding. Colors: ${colors}. ${fonts}. High quality UI design, no watermark.` },
+        { key: 'favicon', label: 'Favicon', prompt: `Favicon icon for "${bizName}". Simple, recognizable mark derived from the logo concept. ${concept.logo_concept}. Colors: ${colors}. Clean, scalable, high quality, no watermark.` },
+        { key: 'icon', label: 'App Icon', prompt: `App icon for "${bizName}", a ${ind} business. ${concept.logo_concept}. Rounded square format. Colors: ${colors}. Clean, modern, high quality, no watermark.` },
+        { key: 'hat', label: 'Hat Design', prompt: `Embroidered hat design for "${bizName}" brand. ${concept.logo_concept} embroidered on a baseball cap. Colors: ${colors}. Professional apparel mockup, high quality, no watermark.` },
+        { key: 'business_card', label: 'Business Card', prompt: `Business card design for "${bizName}", a ${ind} business. Domain: ${domain || 'N/A'}. Front and back layout with logo, contact info, and branding. Colors: ${colors}. ${fonts}. High quality print design, no watermark.` },
+        { key: 'brand_guidelines', label: 'Brand Guidelines', prompt: `Brand guidelines sheet for "${bizName}". Color palette swatches (${colors}), typography (${fonts}), logo usage examples, and tagline "${tagline}". Professional layout, high quality, no watermark.` },
+        { key: 'social_pack', label: 'Social Media Pack', prompt: `Social media profile and cover design pack for "${bizName}", a ${ind} business. Domain: ${domain || 'N/A'}. Profile picture, cover banner, and post template. Colors: ${colors}. ${fonts}. High quality, no watermark.` },
+      ];
+
+      const imagePromises = kitItems.map((item, i) =>
+        base44.asServiceRole.integrations.Core.GenerateImage({ prompt: item.prompt })
+          .then(res => ({ ...item, index: i, image_url: res?.url || res?.image_url || res }))
+          .catch(err => ({ ...item, index: i, image_url: null, error: err.message }))
+      );
+      const kitResults = await Promise.all(imagePromises);
+
+      const artifact = await base44.asServiceRole.entities.Artifact.create({
+        organization_id: orgId,
+        project_id: project_id || '',
+        name: `Full Brand Kit — ${bizName}`,
+        artifact_type: 'brand',
+        content: JSON.stringify({ type: 'full_kit', business_name: bizName, domain, industry: ind, brand_concept: concept, accent_color: ac, kit: kitResults }),
+        status: 'generated',
+        metadata: { type: 'full_kit', business_name: bizName, industry: ind, item_count: kitResults.length }
+      });
+
+      await base44.asServiceRole.entities.Receipt.create({
+        organization_id: orgId, system: 'brand_generator', action: 'generate_full_kit',
+        status: 'success', summary: `Generated full brand kit (${kitResults.length} assets) for ${bizName}`,
+        evidence: { artifact_id: artifact.id, item_count: kitResults.length }
+      });
+
+      return Response.json({ status: 'success', type: 'full_kit', kit: kitResults, brand_concept: concept, accent_color: ac, artifact_id: artifact.id });
     }
 
     // ── IMAGE: 6 ultra-lifelike photorealistic variations ──────
