@@ -26,10 +26,7 @@ const MODULES = [
       { to: '/app/clone-studio', label: 'Clone Studio', icon: Copy },
       { to: '/app/clone-gallery', label: 'Clone Gallery', icon: Images },
       { to: '/app/business', label: 'Business Hub', icon: Building2 },
-      { to: '/app/website-generator', label: 'Website Generator', icon: Globe },
-      { to: '/app/app-generator', label: 'App Generator', icon: Cpu },
-      { to: '/app/brand-generator', label: 'Brand Generator', icon: PenTool },
-      { to: '/app/universal-builder', label: 'Universal Builder', icon: Layers },
+      { to: '/app/build-studio', label: 'Build Studio', icon: Layers },
     ]
   },
   {

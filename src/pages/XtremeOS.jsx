@@ -5,7 +5,7 @@ import { useAuth } from '@/lib/AuthContext';
 import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
 import XtremeOSRightPanel from '@/components/fl/XtremeOSRightPanel';
 import {
-  Activity, Package, Globe, Shield, Zap, Cpu, Loader2, X, Copy, ListChecks, Images, Building2, PenTool, Search
+  Activity, Package, Globe, Shield, Zap, Cpu, Loader2, X, Copy, ListChecks, Images, Building2, PenTool, Search, Layers
 } from 'lucide-react';
 import PwaInstallButton from '@/components/PwaInstallButton';
 import CloneList from '@/components/fl/CloneList';
@@ -176,9 +176,7 @@ export default function XtremeOS() {
           { label: 'Clone Studio', path: '/app/clone-studio', icon: Copy, desc: 'Build & customize', bg: '#0B0B0D' },
           { label: 'Clone Gallery', path: '/app/clone-gallery', icon: Images, desc: 'Browse clones', bg: '#7c3aed' },
           { label: 'Business Hub', path: '/app/business', icon: Building2, desc: 'Form DBAs & LLCs', bg: '#0B0B0D' },
-          { label: 'Website Gen', path: '/app/website-generator', icon: Globe, desc: 'Generate websites', bg: '#059669' },
-          { label: 'App Gen', path: '/app/app-generator', icon: Cpu, desc: 'Generate apps', bg: '#dc2626' },
-          { label: 'Brand Gen', path: '/app/brand-generator', icon: PenTool, desc: 'Generate brands', bg: '#7c3aed' },
+          { label: 'Build Studio', path: '/app/build-studio', icon: Layers, desc: 'Build apps & sites', bg: '#059669' },
         ].map(l => (
           <Link key={l.path} to={l.path} style={{
             background: l.bg, border: 0, borderRadius: 7, padding: 11,

@@ -91,6 +91,7 @@ const CloneStudio = lazy(() => import('@/pages/CloneStudio'));
 const CloneGallery = lazy(() => import('@/pages/CloneGallery'));
 const CloneQueue = lazy(() => import('@/pages/CloneQueue'));
 const XtremeOS = lazy(() => import('@/pages/XtremeOS'));
+const BuildStudio = lazy(() => import('@/pages/BuildStudio'));
 
 const PageLoader = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -151,6 +152,7 @@ const AuthenticatedApp = () => {
       <Route element={<ProtectedRoute unauthenticatedElement={<Navigate to="/login" replace />} />}>
         <Route element={<PortalLayout />}>
         <Route path="/app" element={<XtremeOS />} />
+        <Route path="/app/build-studio" element={<BuildStudio />} />
         <Route path="/app/clone-studio" element={<CloneStudio />} />
         <Route path="/app/clone-queue" element={<CloneQueue />} />
         <Route path="/app/clone-gallery" element={<CloneGallery />} />
