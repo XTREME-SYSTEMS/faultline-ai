@@ -27,12 +27,12 @@ export default async function(req) {
     const prompt = `You are a business naming expert. A user wants to start a business in the "${industry || keywords}" space.
 They described it as: "${keywords}"
 
-Generate exactly 10 creative, professional business names. For each name, also suggest the best domain version.
+Search the web to research existing businesses in this space, then generate exactly 10 creative, professional business names that are NOT already used by real operating companies.
 Rules:
 - Names should be memorable, short (1-2 words), and brandable
 - Mix exact-match, keyword-rich, and creative variations
 - Domain extensions: .com (preferred), .io, .co, .ai, .net, .build, .contractors where appropriate
-- Avoid names that are obvious trademarks of existing companies
+- CRITICAL: Search online and avoid names already used by existing real businesses or trademarks
 - Each name must be distinct from the others
 - Use seed "${seed}" to ensure unique results on retry
 
@@ -56,9 +56,26 @@ Return a JSON array of objects with "name" (business name) and "domain" (suggest
       required: ['suggestions']
     };
 
-    const result = await base44.integrations.Core.InvokeLLM({ prompt, response_json_schema: schema });
+    const result = await base44.integrations.Core.InvokeLLM({ prompt, response_json_schema: schema, model: 'gemini_3_flash', add_context_from_internet: true });
     const data = typeof result === 'string' ? JSON.parse(result) : result;
-    const suggestions = (data.suggestions || []).slice(0, 10);
+    let suggestions = (data.suggestions || []).slice(0, 10);
+
+    // 1b. Verify names aren't already used by real businesses — web search check
+    const verifyPrompt = `Search the web for each of these business names. Identify which ones are already used by real, operating businesses or are well-known trademarks/brands.
+Names to check: ${suggestions.map(s => s.name).join(', ')}
+
+Return ONLY the names that are already taken by existing real businesses or trademarks. Be thorough — search each name individually.`;
+    const verifySchema = { type: 'object', properties: { conflicts: { type: 'array', items: { type: 'string' } } }, required: ['conflicts'] };
+    try {
+      const verifyResult = await base44.integrations.Core.InvokeLLM({ prompt: verifyPrompt, response_json_schema: verifySchema, model: 'gemini_3_flash', add_context_from_internet: true });
+      const verifyData = typeof verifyResult === 'string' ? JSON.parse(verifyResult) : verifyResult;
+      const conflicts = new Set((verifyData.conflicts || []).map(n => n.toLowerCase().trim()));
+      if (conflicts.size > 0) {
+        suggestions = suggestions.filter(s => !conflicts.has(s.name.toLowerCase().trim()));
+      }
+    } catch (e) {
+      console.error('Name verification failed:', e.message);
+    }
 
     // 2. Check domain availability for each via Vercel API
     const checkAvailability = async (domain) => {

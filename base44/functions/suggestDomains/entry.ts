@@ -21,12 +21,13 @@ export default async function(req) {
     const teamId = Deno.env.get('VERCEL_TEAM_ID');
 
     // 1. Generate domain suggestions via LLM
-    const prompt = `Generate 12 available domain name suggestions for a ${ind} business named "${business_name}".
+    const prompt = `Search the web to research the business "${business_name}" in the ${ind} industry, then generate 12 available domain name suggestions.
 Rules:
 - Use .com, .io, .co, .net, .ai, .build, .contractors extensions
 - Mix exact-match (businessname.com), keyword-rich (businessname+industry.com), and creative variations
 - Keep them short, memorable, and professional
 - Avoid hyphens unless necessary
+- CRITICAL: Avoid domains already used by existing real businesses — search online to verify
 Return as a simple array of domain strings (e.g. ["businessname.com", "getbusinessname.io"]).`;
     const schema = {
       type: 'object',
@@ -35,7 +36,7 @@ Return as a simple array of domain strings (e.g. ["businessname.com", "getbusine
       },
       required: ['domains']
     };
-    const result = await base44.integrations.Core.InvokeLLM({ prompt, response_json_schema: schema });
+    const result = await base44.integrations.Core.InvokeLLM({ prompt, response_json_schema: schema, model: 'gemini_3_flash', add_context_from_internet: true });
     const data = typeof result === 'string' ? JSON.parse(result) : result;
     const suggestions = (data.domains || []).slice(0, 12);
 
