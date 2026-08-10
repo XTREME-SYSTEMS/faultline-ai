@@ -32,8 +32,12 @@ export default function XtremeOS() {
           base44.entities.TopPerformer.list('-created_date', 20).catch(() => []),
         ]);
 
-        const at100 = projects.filter(p => (p.parity_score || 0) >= 100).length;
-        const below100 = projects.filter(p => (p.parity_score || 0) > 0 && (p.parity_score || 0) < 100).length;
+        // Only count actually-deployed clones (have a Vercel URL) in the health
+        // percentage — ghost/empty tracker projects and in-progress builds
+        // shouldn't drag down the health score.
+        const gallery = projects.filter(p => p.vercel_deployment_url || p.metadata?.vercel_deployment_url);
+        const at100 = gallery.filter(p => (p.parity_score || 0) >= 100).length;
+        const below100 = gallery.filter(p => (p.parity_score || 0) > 0 && (p.parity_score || 0) < 100).length;
         const validating = projects.filter(p => p.status === 'validating' || p.status === 'generating').length;
 
         const byCategory = {};
@@ -46,9 +50,9 @@ export default function XtremeOS() {
         setMetrics({
           totalProducts: products.length,
           byCategory,
-          totalClones: projects.length,
+          totalClones: gallery.length,
           at100, below100, validating,
-          healthPct: projects.length ? Math.round((at100 / projects.length) * 100) : 0,
+          healthPct: gallery.length ? Math.round((at100 / gallery.length) * 100) : 0,
           discoveredPerformers: performers.length,
           recentActions: autonomousReceipts.length,
         });
@@ -73,8 +77,9 @@ export default function XtremeOS() {
       setTimeout(() => {
         (async () => {
           const projects = await base44.entities.LaunchProject.list('-created_date', 100).catch(() => []);
-          const at100 = projects.filter(p => (p.parity_score || 0) >= 100).length;
-          setMetrics(m => ({ ...m, totalClones: projects.length, at100, healthPct: projects.length ? Math.round((at100 / projects.length) * 100) : 0 }));
+          const gallery = projects.filter(p => p.vercel_deployment_url || p.metadata?.vercel_deployment_url);
+          const at100 = gallery.filter(p => (p.parity_score || 0) >= 100).length;
+          setMetrics(m => ({ ...m, totalClones: gallery.length, at100, healthPct: gallery.length ? Math.round((at100 / gallery.length) * 100) : 0 }));
         })();
       }, 2000);
     } catch (e) {
