@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
-import BusinessShell from '@/components/fl/BusinessShell';
+import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
 
 // BusinessHub — project list + new project creation
 // Entry point for the Business Generator at /app/business
@@ -55,8 +55,10 @@ export default function BusinessHub() {
   };
 
   return (
-    <BusinessShell>
-      <div style={{ maxWidth: 900, margin: '0 auto' }}>
+    <>
+      <XtremeOSSidebar />
+      <div className="portal-page" style={{ background: '#f7f7f5', minHeight: '100vh', marginLeft: 240, transition: 'margin .3s' }}>
+        <div style={{ maxWidth: 900, margin: '0 auto' }}>
         <div style={{ marginBottom: 32 }}>
           <p style={{ color: '#D4AF37', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.16em', margin: 0 }}>Forge · Business Generator</p>
           <h1 style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 48, margin: '8px 0 0', letterSpacing: '-.03em' }}>Your Businesses</h1>
@@ -148,7 +150,8 @@ export default function BusinessHub() {
             </div>
           </div>
         )}
+        </div>
       </div>
-    </BusinessShell>
+    </>
   );
 }
