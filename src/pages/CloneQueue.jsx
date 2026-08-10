@@ -8,6 +8,12 @@ import {
 import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
 import { CLONE_INDUSTRIES, getIndustryGroups } from '@/lib/cloneIndustries';
 
+// Find real business references for a selected industry
+function getBusinessRefs(industryLabel) {
+  const ind = CLONE_INDUSTRIES.find(i => i.label === industryLabel);
+  return ind?.businesses || [];
+}
+
 export default function CloneQueue() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -248,6 +254,33 @@ export default function CloneQueue() {
                 <option value="low">Low</option>
               </select>
             </div>
+
+            {/* Real business suggestions for the selected industry */}
+            {newIndustry && getBusinessRefs(newIndustry).length > 0 && (
+              <div style={{ marginTop: 14, padding: 14, background: '#f8f7f4', borderRadius: 8, border: '1px solid #e5e1da' }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#8A641C', textTransform: 'uppercase', letterSpacing: '.08em', margin: '0 0 10px' }}>
+                  Real {newIndustry} Businesses — Click to Clone
+                </p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {getBusinessRefs(newIndustry).map(biz => (
+                    <button
+                      key={biz.url}
+                      type="button"
+                      onClick={() => { setNewUrl(biz.url); setNewName(biz.name); }}
+                      style={{
+                        display: 'flex', alignItems: 'center', gap: 6, padding: '8px 12px',
+                        background: '#fff', border: '1px solid #d9c8aa', borderRadius: 6,
+                        fontSize: 12, fontWeight: 600, cursor: 'pointer', color: '#333',
+                      }}
+                    >
+                      <Globe size={12} style={{ color: '#C89B3C' }} />
+                      {biz.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <button type="submit" disabled={adding} style={{
               marginTop: 14, display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px',
               background: adding ? '#666' : 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111',

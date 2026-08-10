@@ -1,5 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { deriveNameFromUrl, decodeHtmlEntities, findParentId, traceBenchmarkUrl, isGenericName } from '../../shared/cloneUtils.ts';
+import { classifyByBusinessRef } from '../../shared/industryBusinesses.ts';
 
 // Clone Gallery — returns all cloned LaunchProjects that have a live Vercel URL,
 // with the original site name (traced via benchmark_url or heal chain),
@@ -50,13 +51,17 @@ export default async function(req) {
       // Screenshot of the clone's Vercel home page (mShots generates + caches on first request)
       const thumbnail = `https://s.wordpress.com/mshots/v1/${encodeURIComponent(vercelUrl)}?w=480&h=360`;
 
+      // Auto-classify using real business references if no industry is stored
+      const storedIndustry = p.industry || p.metadata?.target_dna?.industry ||
+        (originalUrl && queueByTargetUrl.get(originalUrl)?.industry) ||
+        queueByLaunchId.get(p.id)?.industry;
+      const inferredIndustry = storedIndustry || classifyByBusinessRef(name, originalUrl) || classifyByBusinessRef(derivedName, originalUrl) || 'Uncategorized';
+
       return {
         id: p.id,
         name,
         business_name: p.business_name || derivedName || '',
-        industry: p.industry || p.metadata?.target_dna?.industry ||
-          (originalUrl && queueByTargetUrl.get(originalUrl)?.industry) ||
-          queueByLaunchId.get(p.id)?.industry || 'Uncategorized',
+        industry: inferredIndustry,
         url: vercelUrl,
         target_url: originalUrl || '',
         thumbnail,
@@ -76,6 +81,7 @@ export default async function(req) {
     }
 
     // Backfill industry on projects that don't have one stored (non-blocking)
+    // Uses real business reference matching to classify sites
     for (const c of withThumbs) {
       if (c.industry !== 'Uncategorized') {
         const proj = projectMap.get(c.id);

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { classifyByBusinessRef } from '../../shared/industryBusinesses.ts';
 
 // Timeout wrapper — prevents generation/launch calls from hanging indefinitely.
 // If a sub-call exceeds the deadline, we reject and the engine's catch block
@@ -164,6 +165,11 @@ async function runEngine(base44, orgId, p) {
       targetDna = s.dna; bizName = bizName || s.bizName;
       p.benchmark_url = p.target_url;
       add(`Scraped ${bizName}: ${s.rendered_chars} chars, nav=${targetDna.nav?.length || 0}`);
+      // Auto-classify industry using real business references if not provided
+      if (!p.industry) {
+        const inferred = classifyByBusinessRef(bizName, p.target_url);
+        if (inferred) { p.industry = inferred; add(`Auto-classified industry: ${inferred}`); }
+      }
       // Use the original site's name as the clone name (not "Autonomous Clone xxx")
       if (bizName) {
         try { await base44.asServiceRole.entities.LaunchProject.update(p.tracker_id, { project_name: bizName, business_name: bizName }); } catch (e) {}

@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { classifyByBusinessRef } from '../../shared/industryBusinesses.ts';
 
 // Process Clone Queue — the hardened autonomous clone pipeline.
 // Picks CloneQueue items with status 'queued', then for each:
@@ -73,11 +74,15 @@ export default async function(req) {
         const vercelUrl = cloneData.vercel_url;
         const launchProjectId = cloneData.launch_project_id;
 
-        // Save the industry on the LaunchProject so the gallery can categorize it
-        if (item.industry && launchProjectId) {
-          try {
-            await base44.asServiceRole.entities.LaunchProject.update(launchProjectId, { industry: item.industry });
-          } catch (e) { /* non-critical */ }
+        // Save the industry on the LaunchProject so the gallery can categorize it.
+        // If the queue item has no industry, auto-classify using real business references.
+        if (launchProjectId) {
+          const finalIndustry = item.industry || classifyByBusinessRef(item.site_name, item.target_url);
+          if (finalIndustry) {
+            try {
+              await base44.asServiceRole.entities.LaunchProject.update(launchProjectId, { industry: finalIndustry });
+            } catch (e) { /* non-critical */ }
+          }
         }
 
         await base44.asServiceRole.entities.CloneQueue.update(item.id, {
