@@ -1,9 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Loader2, Rocket, Globe, ExternalLink, Sparkles, TrendingUp, Eye } from 'lucide-react';
+import { Loader2, Rocket, Globe, ExternalLink, Sparkles, Eye } from 'lucide-react';
 
 export default function NicheWebsiteStudio() {
-  const [gaId, setGaId] = useState('');
   const [maxNiches, setMaxNiches] = useState(5);
   const [industry, setIndustry] = useState('general');
   const [loading, setLoading] = useState(false);
@@ -27,7 +26,6 @@ export default function NicheWebsiteStudio() {
     try {
       const res = await base44.functions.invoke('nicheWebsiteEngine', {
         max_niches: maxNiches,
-        ga_measurement_id: gaId,
         industry
       });
       setResults(res.websites || []);
@@ -43,18 +41,13 @@ export default function NicheWebsiteStudio() {
         <div>
           <p className="eyebrow">Niche Website Engine</p>
           <h1 style={{ fontSize: 36, fontFamily: 'Libre Caslon Display, serif' }}>Production-Ready Niche Websites</h1>
-          <p style={{ color: '#666', fontSize: 15, marginTop: 6 }}>Discover trending niches and generate polished, SEO-optimized websites with Google Analytics tracking — automatically.</p>
+          <p style={{ color: '#666', fontSize: 15, marginTop: 6 }}>Discover trending niches and generate polished, SEO-optimized websites — automatically.</p>
         </div>
       </div>
 
       {/* Config card */}
       <div style={{ background: '#fff', border: '1px solid #e5e1da', borderRadius: 12, padding: 24, marginBottom: 20 }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
-          <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700 }}>
-            Google Analytics ID <span style={{ fontWeight: 400, color: '#999' }}>(optional)</span>
-            <input value={gaId} onChange={e => setGaId(e.target.value)} placeholder="G-XXXXXXXXXX"
-              style={{ padding: '12px', border: '1px solid #ddd', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, background: '#fff', color: '#111', outline: 'none' }} />
-          </label>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
           <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700 }}>
             Niches to Generate (1-10)
             <input type="number" value={maxNiches} min={1} max={10} onChange={e => setMaxNiches(parseInt(e.target.value) || 5)}
@@ -70,9 +63,6 @@ export default function NicheWebsiteStudio() {
           style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '14px 28px', borderRadius: 8, background: loading ? '#ccc' : '#0b0b0b', color: '#fff', fontSize: 15, fontWeight: 700, border: 0, cursor: loading ? 'wait' : 'pointer', fontFamily: 'inherit' }}>
           {loading ? <><Loader2 size={18} className="animate-spin" /> Discovering niches & building websites...</> : <><Rocket size={18} /> Discover & Generate Websites</>}
         </button>
-        {gaId && <p style={{ fontSize: 12, color: '#237A4B', marginTop: 10, display: 'flex', alignItems: 'center', gap: 6 }}>
-          <TrendingUp size={12} /> Google Analytics 4 tracking will be injected into every site
-        </p>}
       </div>
 
       {error && <div style={{ background: '#f5d8d5', border: '1px solid #e5c5c0', borderRadius: 8, padding: 14, color: '#a52d23', fontSize: 13, marginBottom: 20 }}>{error}</div>}
