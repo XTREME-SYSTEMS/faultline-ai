@@ -1,0 +1,162 @@
+{
+  "name": "SEOProject",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "site_url": {
+      "type": "string",
+      "description": "Deployed site URL to rank"
+    },
+    "site_name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "launch_project_id": {
+      "type": "string",
+      "description": "Linked LaunchProject"
+    },
+    "github_repo_url": {
+      "type": "string",
+      "description": "GitHub repo for tag injection"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "crawling",
+        "optimizing",
+        "tagging",
+        "submitting",
+        "monitoring",
+        "ranking",
+        "failed"
+      ],
+      "default": "not_started"
+    },
+    "ga_property_id": {
+      "type": "string"
+    },
+    "ga_measurement_id": {
+      "type": "string"
+    },
+    "search_console_verified": {
+      "type": "boolean",
+      "default": false
+    },
+    "sitemap_submitted": {
+      "type": "boolean",
+      "default": false
+    },
+    "sitemap_url": {
+      "type": "string"
+    },
+    "tags_injected": {
+      "type": "boolean",
+      "default": false
+    },
+    "target_keywords": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "ranking_data": {
+      "type": "object",
+      "description": "Search Console performance data"
+    },
+    "crawl_report": {
+      "type": "object",
+      "description": "Full SEO crawl audit"
+    },
+    "generated_tags": {
+      "type": "object",
+      "description": "Generated meta tags, schema, sitemap, robots"
+    },
+    "seo_score": {
+      "type": "number",
+      "default": 0,
+      "description": "0-100 SEO health score"
+    },
+    "last_crawled": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_optimized": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_ranking_check": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "pages_indexed": {
+      "type": "number",
+      "default": 0
+    },
+    "total_clicks": {
+      "type": "number",
+      "default": 0
+    },
+    "total_impressions": {
+      "type": "number",
+      "default": 0
+    },
+    "avg_position": {
+      "type": "number",
+      "default": 0
+    },
+    "ctr": {
+      "type": "number",
+      "default": 0
+    },
+    "autonomous_enabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "optimization_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "step": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "details": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  },
+  "required": [
+    "organization_id",
+    "site_url"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -92,6 +92,7 @@ const CloneGallery = lazy(() => import('@/pages/CloneGallery'));
 const CloneQueue = lazy(() => import('@/pages/CloneQueue'));
 const XtremeOS = lazy(() => import('@/pages/XtremeOS'));
 const BuildStudio = lazy(() => import('@/pages/BuildStudio'));
+const SEOConsole = lazy(() => import('@/pages/SEOConsole'));
 
 const PageLoader = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -215,6 +216,7 @@ const AuthenticatedApp = () => {
         <Route path="/app/niche-websites" element={<NicheWebsiteStudio />} />
         <Route path="/app/video-studio" element={<VideoStudio />} />
         <Route path="/app/social-media" element={<SocialMediaManager />} />
+      <Route path="/app/seo-console" element={<SEOConsole />} />
         <Route path="/app/:slug" element={<Module />} />
         <Route path="/admin" element={<Admin />} />
         </Route>
