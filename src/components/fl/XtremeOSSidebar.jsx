@@ -21,14 +21,14 @@ const MODULES = [
     collapsed: false,
     items: [
       { to: '/app', label: 'Dashboard', icon: LayoutDashboard, end: true },
-      { to: '/app/clone-studio', label: 'Clone Studio', icon: Copy },
+      { to: '/app/niche-websites', label: 'Niche Search', icon: Search },
       { to: '/app/clone-queue', label: 'Clone Queue', icon: ListChecks },
+      { to: '/app/clone-studio', label: 'Clone Studio', icon: Copy },
       { to: '/app/clone-gallery', label: 'Clone Gallery', icon: Images },
       { to: '/app/business', label: 'Business Hub', icon: Building2 },
       { to: '/app/website-generator', label: 'Website Generator', icon: Globe },
       { to: '/app/app-generator', label: 'App Generator', icon: Cpu },
       { to: '/app/brand-generator', label: 'Brand Generator', icon: PenTool },
-      { to: '/app/niche-websites', label: 'Niche Websites', icon: Globe },
       { to: '/app/universal-builder', label: 'Universal Builder', icon: Layers },
     ]
   },

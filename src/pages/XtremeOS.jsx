@@ -177,8 +177,8 @@ export default function XtremeOS() {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10, marginBottom: 13 }}>
         {[
           { label: 'Niche Search', path: '/app/niche-websites', icon: Search, desc: 'Search & queue sites', bg: '#C89B3C' },
-          { label: 'Clone Studio', path: '/app/clone-studio', icon: Copy, desc: 'Build & customize', bg: '#0B0B0D' },
           { label: 'Clone Queue', path: '/app/clone-queue', icon: ListChecks, desc: 'Clone pipeline', bg: '#2563eb' },
+          { label: 'Clone Studio', path: '/app/clone-studio', icon: Copy, desc: 'Build & customize', bg: '#0B0B0D' },
           { label: 'Clone Gallery', path: '/app/clone-gallery', icon: Images, desc: 'Browse clones', bg: '#7c3aed' },
           { label: 'Business Hub', path: '/app/business', icon: Building2, desc: 'Form DBAs & LLCs', bg: '#0B0B0D' },
           { label: 'Website Gen', path: '/app/website-generator', icon: Globe, desc: 'Generate websites', bg: '#059669' },
