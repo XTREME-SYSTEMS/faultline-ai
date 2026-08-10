@@ -24,6 +24,11 @@ const withTimeout = (promise, ms, label) =>
     )
   ]);
 
+const isGatewayTimeout = (err) => {
+  const msg = (err?.message || '').toLowerCase();
+  return msg.includes('524') || msg.includes('gateway') || msg.includes('timed out') || msg.includes('timeout');
+};
+
 export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
@@ -158,11 +163,29 @@ Return a JSON object with:
     const reflection = llmRes || {};
     console.log('Self-reflection complete:', reflection.root_causes?.length || 0, 'root causes identified');
 
-    // 5. Match LLM fix directives to failing clones and heal them
-    const toHeal = failing.slice(0, healLimit);
+    // 5. Match LLM fix directives to failing clones and heal them.
+    // Skip clones already being healed (tracker in validating/generating status
+    // from a previous 524 timeout — the heal is still running server-side).
+    const toHeal = [];
+    let skipped = 0;
+    for (const clone of failing.slice(0, healLimit * 2)) {
+      if (toHeal.length >= healLimit) break;
+      // Check if this clone is already being healed
+      try {
+        const tracker = await base44.asServiceRole.entities.LaunchProject.get(clone.id);
+        if (tracker && ['validating', 'generating', 'provisioning'].includes(tracker.status) && (tracker.progress || 0) > 0) {
+          console.log(`Skipping ${clone.project_name} — heal already in progress (${tracker.progress}% — ${tracker.last_validation_summary || ''})`);
+          skipped++;
+          continue;
+        }
+      } catch (e) { /* if we can't read the tracker, proceed with heal */ }
+      toHeal.push(clone);
+    }
+
     const results = [];
     let healed = 0;
     let stillFailing = 0;
+    let stillRunning = 0;
 
     for (const clone of toHeal) {
       // Find the LLM-generated fix directive for this clone (match by name)
@@ -200,16 +223,32 @@ Return a JSON object with:
         else stillFailing++;
         console.log(`  → ${clone.project_name}: ${clone.parity_score || 0} → ${afterScore} ${passed ? '✓ HEALED' : 'still failing'}`);
       } catch (e) {
-        results.push({
-          id: clone.id,
-          name: clone.project_name,
-          before: clone.parity_score || 0,
-          after: clone.parity_score || 0,
-          passed: false,
-          error: e.message,
-        });
-        stillFailing++;
-        console.error(`  → ${clone.project_name}: heal failed — ${e.message}`);
+        // 524 gateway timeout = heal is still running server-side, not a failure.
+        // The next run will pick up the result from the tracker.
+        if (isGatewayTimeout(e)) {
+          results.push({
+            id: clone.id,
+            name: clone.project_name,
+            before: clone.parity_score || 0,
+            after: clone.parity_score || 0,
+            passed: false,
+            running: true,
+            error: `Heal in progress (524 timeout — pipeline running in background)`,
+          });
+          stillRunning++;
+          console.log(`  → ${clone.project_name}: heal still running in background (524)`);
+        } else {
+          results.push({
+            id: clone.id,
+            name: clone.project_name,
+            before: clone.parity_score || 0,
+            after: clone.parity_score || 0,
+            passed: false,
+            error: e.message,
+          });
+          stillFailing++;
+          console.error(`  → ${clone.project_name}: heal failed — ${e.message}`);
+        }
       }
     }
 
@@ -217,14 +256,16 @@ Return a JSON object with:
     try {
       await base44.asServiceRole.entities.Receipt.create({
         organization_id: orgId, system: 'self_reflect_heal', action: 'reflect_heal',
-        status: stillFailing === 0 ? 'success' : 'partial',
-        summary: `Self-reflect & heal: ${at100.length} at 100/100, ${failing.length} failing, ${healed} healed, ${stillFailing} still failing of ${gallery.length} total`,
+        status: stillFailing === 0 && stillRunning === 0 ? 'success' : 'partial',
+        summary: `Self-reflect & heal: ${at100.length} at 100/100, ${failing.length} failing, ${healed} healed, ${stillFailing} still failing, ${stillRunning} still running, ${skipped} skipped of ${gallery.length} total`,
         evidence: {
           total: gallery.length,
           at100: at100.length,
           failing: failing.length,
           healed,
           stillFailing,
+          stillRunning,
+          skipped,
           root_causes: reflection.root_causes,
           patterns: reflection.patterns_identified,
           results: results.slice(0, 20),
@@ -233,12 +274,14 @@ Return a JSON object with:
     } catch (e) { /* ignore */ }
 
     return Response.json({
-      status: stillFailing === 0 ? 'all_healed' : 'partial',
+      status: stillFailing === 0 && stillRunning === 0 ? (healed > 0 ? 'all_healed' : 'all_perfect') : 'partial',
       total_gallery: gallery.length,
       at_100: at100.length,
       failing: failing.length,
       healed,
       still_failing: stillFailing,
+      still_running: stillRunning,
+      skipped,
       reflection: {
         root_causes: reflection.root_causes || [],
         patterns_identified: reflection.patterns_identified || '',

@@ -346,11 +346,11 @@ async function runEngine(base44, orgId, p) {
       if (p.original_vercel_url) urls.vercel = p.original_vercel_url;
       await updateTracker(`Heal did not improve (kept ${score}/100)`, score, { final: true });
     } else {
-      const passed = score >= 100;
-      add(`Final: ${score}/100 — ${passed ? 'PASSED' : 'PARTIAL'}`);
-      await setProgress(passed ? 100 : progress, passed ? '100/100 achieved' : `Final ${score}/100`);
-      await updateTracker(passed ? '100/100 achieved' : `Final ${score}/100`, score, { final: true });
+      add(`Final: ${score}/100 — ${score >= 100 ? 'PASSED' : 'PARTIAL'}`);
+      await setProgress(score >= 100 ? 100 : progress, score >= 100 ? '100/100 achieved' : `Final ${score}/100`);
+      await updateTracker(score >= 100 ? '100/100 achieved' : `Final ${score}/100`, score, { final: true });
     }
+    const passed = score >= 100;
     await finishQa(base44, orgId, p, { score, status: passed ? 'passed' : 'failed', log, urls, failures, launch_project_id: p.tracker_id, bizName });
     await base44.asServiceRole.entities.Receipt.create({
       organization_id: orgId, system: 'autonomous_clone', action: 'run',
