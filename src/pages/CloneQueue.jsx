@@ -1,10 +1,10 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import {
   ChevronLeft, Loader2, Zap, Plus, Trash2, Globe, CheckCircle2,
   AlertCircle, Clock, RefreshCw, ListChecks, X, Search, Sparkles,
-  Tag, ExternalLink, Images,
+  Tag, ExternalLink, Images, Mic, MicOff,
 } from 'lucide-react';
 import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
 
@@ -17,6 +17,56 @@ export default function CloneQueue() {
   const [categorizing, setCategorizing] = useState(null); // shows categorization result inline
   const [processing, setProcessing] = useState(false);
   const [processResult, setProcessResult] = useState(null);
+  const [listening, setListening] = useState(false);
+  const [voiceError, setVoiceError] = useState('');
+  const recognitionRef = useRef(null);
+
+  // Voice input using the Web Speech API (Chrome/Edge supported)
+  function startListening() {
+    setVoiceError('');
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setVoiceError('Voice input is not supported in this browser. Try Chrome or Edge.');
+      return;
+    }
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+    recognition.continuous = false;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => setListening(true);
+    recognition.onend = () => setListening(false);
+    recognition.onerror = (e) => {
+      setListening(false);
+      setVoiceError(e.error === 'not-allowed' ? 'Microphone access denied. Please allow microphone permissions.' : `Voice error: ${e.error}`);
+    };
+    recognition.onresult = (e) => {
+      let transcript = '';
+      for (let i = 0; i < e.results.length; i++) {
+        transcript += e.results[i][0].transcript;
+      }
+      // Clean up the transcript: remove spaces around dots, add protocol if missing
+      let cleaned = transcript.trim().toLowerCase().replace(/\s+/g, '');
+      // "example dot com" → "example.com"
+      cleaned = cleaned.replace(/\sdot\s/g, '.').replace(/\s/g, '');
+      // Remove "www." prefix if user said it with spaces
+      cleaned = cleaned.replace(/^www\./, '');
+      if (cleaned && !cleaned.match(/^https?:\/\//)) {
+        cleaned = `https://www.${cleaned}`;
+      }
+      setUrlInput(cleaned);
+    };
+
+    recognition.start();
+  }
+
+  function stopListening() {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop();
+      setListening(false);
+    }
+  }
 
   const loadQueue = useCallback(async () => {
     setLoading(true);
@@ -147,6 +197,22 @@ export default function CloneQueue() {
                 autoFocus
               />
             </div>
+            <button
+              type="button"
+              onClick={listening ? stopListening : startListening}
+              disabled={adding}
+              style={{
+                display: 'flex', alignItems: 'center', gap: 8, padding: '14px 18px',
+                background: listening ? '#C63D34' : '#fff', color: listening ? '#fff' : '#C89B3C',
+                border: `2px solid ${listening ? '#C63D34' : '#C89B3C'}`, borderRadius: 8,
+                fontWeight: 700, fontSize: 14, cursor: adding ? 'wait' : 'pointer',
+                whiteSpace: 'nowrap', transition: 'all .15s',
+              }}
+              title={listening ? 'Stop listening' : 'Speak the website URL'}
+            >
+              {listening ? <MicOff size={18} className="animate-pulse" /> : <Mic size={18} />}
+              {listening ? 'Listening…' : 'Speak URL'}
+            </button>
             <button type="submit" disabled={adding || !urlInput.trim()} style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '14px 28px',
               background: adding ? '#666' : 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111',
@@ -157,6 +223,19 @@ export default function CloneQueue() {
               {adding ? 'Categorizing…' : 'Auto-Categorize & Queue'}
             </button>
           </form>
+
+          {/* Voice input status */}
+          {listening && (
+            <div style={{ marginTop: 12, padding: '10px 14px', background: '#f8e5ce', border: '1px solid #C89B3C', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
+              <Mic size={16} className="animate-pulse" style={{ color: '#C89B3C' }} />
+              <span style={{ fontSize: 13, color: '#a85c00', fontWeight: 600 }}>Listening… Speak the website URL (e.g. "roof maxx dot com")</span>
+            </div>
+          )}
+          {voiceError && (
+            <div style={{ marginTop: 12, padding: '10px 14px', background: '#f5d8d5', border: '1px solid #C63D34', borderRadius: 8, fontSize: 13, color: '#a52d23' }}>
+              {voiceError}
+            </div>
+          )}
 
           {/* Inline categorization result */}
           {categorizing && (
