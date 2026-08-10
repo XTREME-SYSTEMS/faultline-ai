@@ -130,21 +130,21 @@ export default function NicheWebsiteStudio() {
       {!loading && results.length > 0 && (
         <div>
           {/* Action bar */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <button onClick={selectAll} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, background: '#fff', border: '1px solid #ddd', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#333', fontFamily: 'inherit' }}>
-                {selected.size === results.length && results.length > 0 ? <CheckSquare size={16} style={{ color: '#C89B3C' }} /> : <Square size={16} />}
-                {selected.size === results.length && results.length > 0 ? 'Deselect All' : 'Select All'}
-              </button>
-              <span style={{ fontSize: 13, color: '#888' }}>{selected.size} of {results.length} selected</span>
-            </div>
-            <button onClick={addToQueue} disabled={queuing || selected.size === 0} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '10px 22px', borderRadius: 8, background: queuing || selected.size === 0 ? '#ccc' : 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111', fontSize: 14, fontWeight: 700, border: 0, cursor: queuing || selected.size === 0 ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
-              {queuing ? <Loader2 size={16} className="animate-spin" /> : <ListChecks size={16} />}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
+            <button onClick={selectAll} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, background: '#fff', border: '1px solid #ddd', fontSize: 13, fontWeight: 700, cursor: 'pointer', color: '#333', fontFamily: 'inherit' }}>
+              {selected.size === results.length && results.length > 0 ? <CheckSquare size={16} style={{ color: '#C89B3C' }} /> : <Square size={16} />}
+              {selected.size === results.length && results.length > 0 ? 'Deselect All' : 'Select All'}
+            </button>
+            <span style={{ fontSize: 13, color: '#888' }}>{selected.size} of {results.length} selected</span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 14, flexWrap: 'wrap' }}>
+            <h2 style={{ fontSize: 18, fontWeight: 800, margin: 0 }}>Top {results.length} Websites{industry !== 'general' && ` in ${industry}`}</h2>
+            <button onClick={addToQueue} disabled={queuing || selected.size === 0} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 20px', borderRadius: 8, background: queuing || selected.size === 0 ? '#ccc' : '#0b0b0b', color: '#fff', fontSize: 13, fontWeight: 700, border: 0, cursor: queuing || selected.size === 0 ? 'not-allowed' : 'pointer', fontFamily: 'inherit' }}>
+              {queuing ? <Loader2 size={15} className="animate-spin" /> : <ListChecks size={15} />}
               Add to Clone Queue{selected.size > 0 && ` (${selected.size})`}
             </button>
           </div>
-
-          <h2 style={{ fontSize: 18, fontWeight: 800, marginBottom: 14 }}>Top {results.length} Websites{industry !== 'general' && ` in ${industry}`}</h2>
 
           {/* Results list */}
           <div style={{ display: 'grid', gap: 12 }}>
