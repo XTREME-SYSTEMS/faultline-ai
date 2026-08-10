@@ -34,26 +34,29 @@ export default async function(req) {
     //    lazy-loaded galleries that are missing from static HTML.
     let html = '';
     let fetchMethod = 'failed';
-    try {
-      const stealthResult = await scrapeWithStealth(target_url, {
-        deepRender: true,
-        timeout: 45000,
-        waitAfterLoad: 8000,
-        solveCaptchas: true,
-        proxies: true,
-      });
-      if (stealthResult.ok && stealthResult.html && stealthResult.html.length > 500) {
-        html = stealthResult.html;
-        fetchMethod = 'stealth';
-      }
-    } catch (e) { console.error('Stealth scrape failed:', e.message); }
-    // Fallback to basic fetch if stealth fails
+    // 1. Try basic fetch FIRST — fast (20s), works for most server-rendered sites.
+    //    Avoids Browserbase 524 gateway timeouts on sites that don't need JS rendering.
+    const basic = await fetchPageDeep(target_url, 20000);
+    if (basic.html && basic.html.length > 2000) {
+      html = basic.html;
+      fetchMethod = basic.stealth ? 'stealth' : basic.ok ? 'basic' : 'failed';
+    }
+    // 2. Fall back to stealth browser ONLY if basic fetch was thin (JS-heavy SPA)
     if (html.length < 2000) {
-      const basic = await fetchPageDeep(target_url, 20000);
-      if (basic.html && basic.html.length > html.length) {
-        html = basic.html;
-        fetchMethod = basic.stealth ? 'stealth' : basic.ok ? 'basic' : 'failed';
-      }
+      try {
+        const stealthResult = await scrapeWithStealth(target_url, {
+          deepRender: true,
+          timeout: 45000,
+          waitAfterLoad: 8000,
+          solveCaptchas: true,
+          proxies: true,
+        });
+        if (stealthResult.ok && stealthResult.html && stealthResult.html.length > 500) {
+          html = stealthResult.html;
+          fetchMethod = 'stealth';
+        }
+      } catch (e) { console.error('Stealth scrape failed:', e.message); }
+      // 3. Last resort: Browserbase Fetch API
       if (html.length < 2000) {
         const rendered = await fetchRenderedPage(target_url, { timeout: 30000 });
         if (rendered && rendered.html && rendered.html.length > html.length) {

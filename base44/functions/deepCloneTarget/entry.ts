@@ -96,25 +96,29 @@ export default async function(req) {
       return Response.json({ error: `Could not fetch any target HTML (tried ${tried.length} URLs)`, tried }, { status: 502 });
     }
 
-    // Capture a screenshot of the target for visual reference (vision LLM in generator)
+    // Capture a screenshot of the target for visual reference (vision LLM in generator).
+    // Skip for basic fetch — deterministic clone uses the actual HTML (not the screenshot),
+    // and the screenshot capture adds 30s+ latency that can cause gateway 524 timeouts.
     let targetScreenshotUrl = null;
-    try {
-      const ss = await fetchRenderedWithScreenshot(url, { timeout: 30000, waitAfterLoad: 3000 });
-      if (ss?.screenshot) {
-        const b64 = ss.screenshot;
-        if (typeof b64 === 'string' && b64.startsWith('http')) {
-          targetScreenshotUrl = b64;
-        } else {
-          const bytes = atob(b64);
-          const arr = new Uint8Array(bytes.length);
-          for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
-          const blob = new Blob([arr], { type: 'image/png' });
-          const file = new File([blob], `target-${Date.now()}.png`, { type: 'image/png' });
-          const upload = await base44.integrations.Core.UploadFile({ file });
-          targetScreenshotUrl = upload?.file_url || null;
+    if (fetchMethod !== 'basic' || html.length < 5000) {
+      try {
+        const ss = await fetchRenderedWithScreenshot(url, { timeout: 30000, waitAfterLoad: 3000 });
+        if (ss?.screenshot) {
+          const b64 = ss.screenshot;
+          if (typeof b64 === 'string' && b64.startsWith('http')) {
+            targetScreenshotUrl = b64;
+          } else {
+            const bytes = atob(b64);
+            const arr = new Uint8Array(bytes.length);
+            for (let i = 0; i < bytes.length; i++) arr[i] = bytes.charCodeAt(i);
+            const blob = new Blob([arr], { type: 'image/png' });
+            const file = new File([blob], `target-${Date.now()}.png`, { type: 'image/png' });
+            const upload = await base44.integrations.Core.UploadFile({ file });
+            targetScreenshotUrl = upload?.file_url || null;
+          }
         }
-      }
-    } catch (e) { console.error('Target screenshot capture failed:', e.message); }
+      } catch (e) { console.error('Target screenshot capture failed:', e.message); }
+    }
 
     // Structural DNA
     const extract = deepExtract(html, url);
