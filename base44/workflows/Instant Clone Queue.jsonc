@@ -1,0 +1,40 @@
+{
+  "name": "Instant Clone Queue",
+  "description": "Fires immediately when a new site is added to the Clone Queue, triggering the autonomous clone pipeline (clone \u2192 validate to 100/100 \u2192 audit \u2192 gallery) without waiting for the 30-minute scheduled cycle.",
+  "trigger": {
+    "condition": "${ .trigger.data.status == \"queued\" }",
+    "config": {
+      "trigger_type": "entity",
+      "entity_name": "CloneQueue",
+      "events": [
+        "create"
+      ]
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "instant_clone_queue",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "process_now": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "processCloneQueue",
+            "args": {
+              "max_items": 1
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Clone the new queue item now",
+            "description": "Skips the 30-min wait \u2014 starts cloning instantly"
+          }
+        }
+      }
+    ]
+  }
+}
