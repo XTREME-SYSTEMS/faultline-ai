@@ -83,7 +83,6 @@ export default function XtremeOS() {
   if (loading) return <div style={{ padding: 60, textAlign: 'center' }}>Loading Xtreme Clone System…</div>;
 
   const metricCards = [
-    { label: 'Marketplace Products', value: metrics.totalProducts, icon: Package, color: '#C89B3C', sub: `${metrics.byCategory.ai_tool || 0} tools · ${metrics.byCategory.web_pack || 0} web · ${metrics.byCategory.app_pack || 0} apps` },
     { label: 'Clone Health', value: `${metrics.healthPct}%`, icon: Shield, color: '#237A4B', sub: `${metrics.at100} at 100/100 of ${metrics.totalClones}` },
     { label: 'Active Builds', value: metrics.validating, icon: Cpu, color: '#B88214', sub: 'Currently generating/validating' },
     { label: 'Discovered Sites', value: metrics.discoveredPerformers, icon: Globe, color: '#2563eb', sub: 'Waiting to be cloned' },
