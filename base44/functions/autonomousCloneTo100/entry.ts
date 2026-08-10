@@ -93,6 +93,7 @@ async function runEngine(base44, orgId, p) {
       await base44.asServiceRole.entities.LaunchProject.update(p.tracker_id, {
         status: parityScore >= 100 ? 'passed' : 'validating',
         parity_score: parityScore, progress: extra.progress ?? progress, last_validation_summary: summary,
+        industry: p.industry || undefined,
         drive_folder_url: urls.drive || undefined,
         github_repo_url: urls.github || undefined,
         supabase_project_url: urls.supabase || undefined,

@@ -20,6 +20,13 @@ export default async function(req) {
     // Build a lookup map for heal-chain tracing
     const projectMap = new Map(projects.map(p => [p.id, p]));
 
+    // Fetch CloneQueue items to infer industry for projects that don't have one stored
+    const queueItems = await base44.asServiceRole.entities.CloneQueue.filter(
+      { organization_id: orgId }, '-created_date', 500
+    );
+    const queueByLaunchId = new Map(queueItems.filter(q => q.launch_project_id).map(q => [q.launch_project_id, q]));
+    const queueByTargetUrl = new Map(queueItems.filter(q => q.target_url).map(q => [q.target_url, q]));
+
     const cloned = projects.filter(p =>
       p.vercel_deployment_url || p.metadata?.vercel_deployment_url
     );
@@ -47,7 +54,9 @@ export default async function(req) {
         id: p.id,
         name,
         business_name: p.business_name || derivedName || '',
-        industry: p.industry || p.metadata?.target_dna?.industry || 'Uncategorized',
+        industry: p.industry || p.metadata?.target_dna?.industry ||
+          (originalUrl && queueByTargetUrl.get(originalUrl)?.industry) ||
+          queueByLaunchId.get(p.id)?.industry || 'Uncategorized',
         url: vercelUrl,
         target_url: originalUrl || '',
         thumbnail,
@@ -64,6 +73,16 @@ export default async function(req) {
       base44.asServiceRole.entities.LaunchProject.bulkUpdate(
         toRename.map(c => ({ id: c.id, project_name: c.name, business_name: c.name, benchmark_url: c.target_url || undefined }))
       ).catch(() => {});
+    }
+
+    // Backfill industry on projects that don't have one stored (non-blocking)
+    for (const c of withThumbs) {
+      if (c.industry !== 'Uncategorized') {
+        const proj = projectMap.get(c.id);
+        if (proj && !proj.industry) {
+          base44.asServiceRole.entities.LaunchProject.update(c.id, { industry: c.industry }).catch(() => {});
+        }
+      }
     }
 
     // Group by industry

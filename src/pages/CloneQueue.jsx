@@ -6,6 +6,7 @@ import {
   AlertCircle, Clock, RefreshCw, ListChecks, X,
 } from 'lucide-react';
 import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
+import { CLONE_INDUSTRIES, getIndustryGroups } from '@/lib/cloneIndustries';
 
 export default function CloneQueue() {
   const [items, setItems] = useState([]);
@@ -232,8 +233,14 @@ export default function CloneQueue() {
                 style={inputStyle} />
               <input value={newName} onChange={e => setNewName(e.target.value)} placeholder="Site name (optional)"
                 style={inputStyle} />
-              <input value={newIndustry} onChange={e => setNewIndustry(e.target.value)} placeholder="Industry"
-                style={inputStyle} />
+              <select value={newIndustry} onChange={e => setNewIndustry(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
+                <option value="">Select industry…</option>
+                {getIndustryGroups().map(group => (
+                  <optgroup key={group.group} label={group.group}>
+                    {group.industries.map(ind => <option key={ind.id} value={ind.label}>{ind.label}</option>)}
+                  </optgroup>
+                ))}
+              </select>
               <select value={newPriority} onChange={e => setNewPriority(e.target.value)} style={{ ...inputStyle, cursor: 'pointer' }}>
                 <option value="critical">Critical</option>
                 <option value="high">High</option>

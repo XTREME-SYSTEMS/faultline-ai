@@ -73,6 +73,13 @@ export default async function(req) {
         const vercelUrl = cloneData.vercel_url;
         const launchProjectId = cloneData.launch_project_id;
 
+        // Save the industry on the LaunchProject so the gallery can categorize it
+        if (item.industry && launchProjectId) {
+          try {
+            await base44.asServiceRole.entities.LaunchProject.update(launchProjectId, { industry: item.industry });
+          } catch (e) { /* non-critical */ }
+        }
+
         await base44.asServiceRole.entities.CloneQueue.update(item.id, {
           launch_project_id: launchProjectId,
           vercel_url: vercelUrl,
