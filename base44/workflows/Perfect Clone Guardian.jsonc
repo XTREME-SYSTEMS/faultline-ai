@@ -1,0 +1,48 @@
+{
+  "name": "Perfect Clone Guardian",
+  "description": "The autonomous recursive perfection engine. Every 2 hours, scans every gallery clone, uses AI self-reflection to identify root causes across all failing clones, generates targeted fix directives, then runs the full audit \u2192 analyze \u2192 fix \u2192 heal \u2192 harden loop on each one until every clone reaches 100/100. Ensures the gallery always contains perfect clone websites.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": 2,
+      "interval_unit": "hours",
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "perfect_clone_guardian",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "self_reflect_and_heal": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "selfReflectAndHeal",
+            "args": {
+              "heal_limit": 5,
+              "max_iterations": 3
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Self-reflect & heal all failing clones to 100/100",
+            "description": "AI self-reflection identifies root causes across all failing gallery clones, generates fix directives, then runs the autonomous recursive audit \u2192 analyze \u2192 fix \u2192 heal \u2192 harden loop on each one"
+          }
+        }
+      }
+    ]
+  }
+}

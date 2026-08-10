@@ -10,6 +10,7 @@ import {
 import PwaInstallButton from '@/components/PwaInstallButton';
 import CloneList from '@/components/fl/CloneList';
 import FailedClonesCard from '@/components/fl/FailedClonesCard';
+import CloneHealthCard from '@/components/fl/CloneHealthCard';
 import XtremeAIChat from '@/components/fl/XtremeAIChat';
 
 export default function XtremeOS() {
@@ -221,6 +222,11 @@ export default function XtremeOS() {
             <span style={{ fontSize: 11, color: '#999' }}>{m.sub}</span>
           </article>
         ))}
+      </div>
+
+      {/* Clone Health Guardian — 100/100 vs. errors with self-reflection heal */}
+      <div style={{ marginTop: 13 }}>
+        <CloneHealthCard />
       </div>
 
       {/* Failed clones — auto-retried 5× then moved here */}
