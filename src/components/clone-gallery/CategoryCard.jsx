@@ -1,4 +1,6 @@
-// CategoryCard — top-level industry group card with AI image.
+import { Image } from '@/components/ui/image';
+
+// CategoryCard — top-level industry group card with AI-generated image.
 // Clicking navigates to the sub-industries view for this group.
 export default function CategoryCard({ group, industryCount, cloneCount, image, onClick }) {
   return (
@@ -9,13 +11,12 @@ export default function CategoryCard({ group, industryCount, cloneCount, image, 
     }}>
       {/* Background image */}
       {image ? (
-        <img
+        <Image
           src={image}
           alt={group}
-          style={{
-            position: 'absolute', inset: 0, width: '100%', height: '100%',
-            objectFit: 'cover', opacity: 0.55,
-          }}
+          fittingType="fill"
+          className="absolute inset-0 w-full h-full"
+          style={{ opacity: 0.55 }}
         />
       ) : (
         <div style={{

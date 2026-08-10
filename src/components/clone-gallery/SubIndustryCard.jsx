@@ -1,17 +1,18 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
+import { Image } from '@/components/ui/image';
 import { Loader2 } from 'lucide-react';
 
-// SubIndustryCard — sub-industry card with AI image (generated on-demand).
-// Clicking navigates to the clones view for this sub-industry.
+// SubIndustryCard — sub-industry card with ultra-lifelike AI image (auto-generated on mount).
+// Images are cached in localStorage after first generation to avoid regenerating.
 export default function SubIndustryCard({ industry, cloneCount, onClick }) {
   const [imageUrl, setImageUrl] = useState(null);
   const [generating, setGenerating] = useState(false);
-  const [generated, setGenerated] = useState(false);
+  const generatedRef = useRef(false);
 
-  async function generateImage(e) {
-    e?.stopPropagation();
-    if (generated) return;
+  async function generateImage() {
+    if (generatedRef.current || generating) return;
+    generatedRef.current = true;
     setGenerating(true);
     try {
       const res = await base44.functions.invoke('generateIndustryImage', {
@@ -21,8 +22,6 @@ export default function SubIndustryCard({ industry, cloneCount, onClick }) {
       const d = res.data || res;
       if (d.image_url) {
         setImageUrl(d.image_url);
-        setGenerated(true);
-        // Cache in localStorage
         try {
           const cache = JSON.parse(localStorage.getItem('subindustry_images') || '{}');
           cache[industry.label] = d.image_url;
@@ -30,27 +29,28 @@ export default function SubIndustryCard({ industry, cloneCount, onClick }) {
         } catch {}
       }
     } catch (err) {
-      // Fallback — use gradient
+      generatedRef.current = false;
     } finally {
       setGenerating(false);
     }
   }
 
-  // Check localStorage cache on mount
+  // Auto-generate on mount if not cached; check localStorage cache first
   useEffect(() => {
     try {
       const cache = JSON.parse(localStorage.getItem('subindustry_images') || '{}');
       if (cache[industry.label]) {
         setImageUrl(cache[industry.label]);
-        setGenerated(true);
+        generatedRef.current = true;
+        return;
       }
     } catch {}
+    generateImage();
   }, [industry.label]);
 
   return (
     <button
       onClick={onClick}
-      onMouseEnter={generateImage}
       style={{
         position: 'relative', borderRadius: 10, overflow: 'hidden',
         border: '1px solid #ddd', cursor: 'pointer', textAlign: 'left',
@@ -59,13 +59,12 @@ export default function SubIndustryCard({ industry, cloneCount, onClick }) {
     >
       {/* Background image or gradient */}
       {imageUrl ? (
-        <img
+        <Image
           src={imageUrl}
           alt={industry.label}
-          style={{
-            position: 'absolute', inset: 0, width: '100%', height: '100%',
-            objectFit: 'cover', opacity: 0.6,
-          }}
+          fittingType="fill"
+          className="absolute inset-0 w-full h-full"
+          style={{ opacity: 0.6 }}
         />
       ) : (
         <div style={{
