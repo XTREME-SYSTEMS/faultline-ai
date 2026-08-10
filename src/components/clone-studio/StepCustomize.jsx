@@ -1,15 +1,19 @@
 import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Loader2, Palette, Image as ImageIcon, Type, Building, Check } from 'lucide-react';
+import { Loader2, Palette, Image as ImageIcon, Type, Building, Check, Globe } from 'lucide-react';
 import { Image } from '@/components/ui/image';
+import RebrandGallery from '@/components/clone-studio/RebrandGallery';
+import DomainPicker from '@/components/clone-studio/DomainPicker';
 
 export default function StepCustomize({ launchProjectId, onComplete }) {
+  const [mode, setMode] = useState('rebrand'); // rebrand | individual
   const [phase, setPhase] = useState('idle'); // idle | identifying | generating | ready
   const [parts, setParts] = useState(null);
   const [options, setOptions] = useState(null);
   const [error, setError] = useState('');
   const [bizName, setBizName] = useState('');
   const [sel, setSel] = useState({ logo: null, palette: null, image: null, trademark: null });
+  const [showDomainPicker, setShowDomainPicker] = useState(false);
 
   async function startIdentify() {
     setPhase('identifying');
@@ -47,12 +51,48 @@ export default function StepCustomize({ launchProjectId, onComplete }) {
     onComplete(selections);
   }
 
+  // When a rebrand package is picked, convert it to the selections format
+  function handlePickPackage(pkg) {
+    const selections = {
+      logo: pkg.logo,
+      palette: pkg.palette,
+      image_replacements: pkg.image?.image_url
+        ? [{ original_url: parts?.key_images?.[0]?.url || '', new_url: pkg.image.image_url }]
+        : [],
+      trademark: pkg.trademark,
+    };
+    onComplete(selections);
+  }
+
   if (phase === 'idle') {
+    // REBRAND MODE — 5 cohesive packages (default)
+    if (mode === 'rebrand') {
+      return (
+        <div>
+          <RebrandGallery
+            launchProjectId={launchProjectId}
+            businessName={bizName}
+            onPickPackage={handlePickPackage}
+            onUseIndividualMode={() => setMode('individual')}
+          />
+          <div style={{ marginTop: 24 }}>
+            <input
+              type="text" value={bizName} onChange={e => setBizName(e.target.value)}
+              placeholder="Your new business name (optional — used for rebrand generation)"
+              style={{ padding: '12px 16px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, width: '100%', maxWidth: 400, display: 'block', margin: '0 auto 10px' }}
+            />
+          </div>
+          {error && <p style={{ color: '#C63D34', fontSize: 13, marginTop: 16, textAlign: 'center' }}>{error}</p>}
+        </div>
+      );
+    }
+
+    // INDIVIDUAL MODE — pick each category separately (requires identify step first)
     return (
       <div style={{ textAlign: 'center', padding: '30px 0' }}>
         <Building size={48} style={{ color: '#C89B3C', margin: '0 auto 16px', display: 'block' }} />
         <h3 style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 26, margin: '0 0 8px' }}>Identify & Customize</h3>
-        <p style={{ color: '#666', fontSize: 14, margin: '0 0 20px', maxWidth: 500, margin: '0 auto 20px' }}>
+        <p style={{ color: '#666', fontSize: 14, margin: '0 0 20px', maxWidth: 500, marginLeft: 'auto', marginRight: 'auto' }}>
           We'll re-clone the site, identify the logo, colors, images, and trademark content that must change,
           then generate multiple options for each. You pick one from each category.
         </p>
@@ -61,12 +101,18 @@ export default function StepCustomize({ launchProjectId, onComplete }) {
           placeholder="Your new business name (optional)"
           style={{ padding: '12px 16px', border: '1px solid #ddd', borderRadius: 8, fontSize: 14, width: 300, maxWidth: '100%', marginBottom: 16 }}
         />
-        <div>
+        <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
           <button onClick={startIdentify} style={{
             padding: '14px 28px', background: 'linear-gradient(135deg, #E7C86E, #C89B3C)',
             color: '#111', border: 0, borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: 'pointer',
           }}>
             Identify Changeable Parts →
+          </button>
+          <button onClick={() => setMode('rebrand')} style={{
+            padding: '14px 20px', background: '#fff', color: '#666',
+            border: '1px solid #ddd', borderRadius: 8, fontWeight: 600, fontSize: 13, cursor: 'pointer',
+          }}>
+            ← Back to Rebrand Packages
           </button>
         </div>
         {error && <p style={{ color: '#C63D34', fontSize: 13, marginTop: 16 }}>{error}</p>}
@@ -163,6 +209,28 @@ export default function StepCustomize({ launchProjectId, onComplete }) {
         }}>
           Apply & Finalize for Production →
         </button>
+      </div>
+
+      {/* DOMAIN PICKER — optional custom domain assignment */}
+      <div style={{ marginTop: 20, borderTop: '1px solid #eee', paddingTop: 20 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <Globe size={18} style={{ color: '#C89B3C' }} />
+          <b style={{ fontSize: 15 }}>Custom Domain (Optional)</b>
+        </div>
+        {showDomainPicker ? (
+          <DomainPicker
+            launchProjectId={launchProjectId}
+            businessName={sel.trademark?.business_name || bizName}
+            industry={parts?.industry}
+          />
+        ) : (
+          <button onClick={() => setShowDomainPicker(true)} style={{
+            padding: '10px 20px', background: '#fff', border: '1px solid #ddd', borderRadius: 6,
+            fontSize: 13, fontWeight: 600, color: '#666', cursor: 'pointer',
+          }}>
+            Search & Assign a Custom Domain →
+          </button>
+        )}
       </div>
     </div>
   );
