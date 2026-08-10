@@ -1,0 +1,102 @@
+{
+  "name": "Autonomous Internet Scanner",
+  "description": "The master orchestrator \u2014 autonomously scans the entire internet across every industry and sub-industry in the 371-industry taxonomy, queues the top sites, clones them, validates to 100/100, pushes to the gallery, then self-reflects & heals any failures. Runs every 2 hours as a single chained pipeline: Discover \u2192 Wait \u2192 Clone \u2192 Wait \u2192 Heal. Processes 20 industries per run so the full taxonomy is covered in ~1.5 days.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": 2,
+      "interval_unit": "hours",
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "autonomous_internet_scanner",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "discover": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "autoDiscoverAndQueue",
+            "args": {
+              "max_industries": 20,
+              "sites_per_industry": 5,
+              "include_search": true
+            }
+          },
+          "then": "wait_for_queue",
+          "x-base44": {
+            "title": "1. Scan internet \u2014 discover top sites for 20 industries",
+            "description": "Iterates through the 371-industry taxonomy, finds the top 5 websites per industry via LLM + web search, deduplicates against existing queue/gallery, and adds new sites to the clone queue"
+          }
+        }
+      },
+      {
+        "wait_for_queue": {
+          "wait": "PT5M",
+          "then": "clone",
+          "x-base44": {
+            "title": "Wait 5 min for queue to settle",
+            "description": "Gives the queue time to be fully populated before cloning begins"
+          }
+        }
+      },
+      {
+        "clone": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "processCloneQueue",
+            "args": {
+              "max_items": 3
+            }
+          },
+          "then": "wait_for_clone",
+          "x-base44": {
+            "title": "2. Clone \u2014 process 3 queue items to 100/100",
+            "description": "Clones each queued site, runs the recursive validate \u2192 audit \u2192 analyze \u2192 fix \u2192 heal \u2192 harden loop, and pushes passed clones to the gallery"
+          }
+        }
+      },
+      {
+        "wait_for_clone": {
+          "wait": "PT10M",
+          "then": "heal",
+          "x-base44": {
+            "title": "Wait 10 min for clones to deploy",
+            "description": "Gives Vercel time to deploy the new clones before the healing pass runs"
+          }
+        }
+      },
+      {
+        "heal": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "selfReflectAndHeal",
+            "args": {
+              "heal_limit": 5,
+              "max_iterations": 3
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "3. Self-reflect & heal all failures to 100/100",
+            "description": "AI self-reflection identifies root causes across any failing gallery clones, generates targeted fix directives, then runs the autonomous recursive heal loop until every clone reaches 100/100"
+          }
+        }
+      }
+    ]
+  }
+}
