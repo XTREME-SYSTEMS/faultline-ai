@@ -72,7 +72,7 @@ export default function NicheWebsiteStudio() {
     } finally { setQueuing(false); }
   };
 
-  const thumb = (url) => `https://s.wordpress.com/mshots/v1/${encodeURIComponent(url)}?w=400&h=300`;
+  const thumb = (url) => `https://image.thum.io/get/width/400/crop/800/${url}`;
 
   return (
     <div className="portal-page" style={{ maxWidth: 1200, margin: '0 auto', background: '#fff', minHeight: 'calc(100vh - 60px)' }}>
@@ -156,18 +156,20 @@ export default function NicheWebsiteStudio() {
                   <button onClick={() => toggleSelect(w.url)} style={{ background: 'none', border: 0, cursor: 'pointer', padding: 0, marginTop: 4 }} aria-label={isSelected ? 'Deselect' : 'Select'}>
                     {isSelected ? <CheckSquare size={24} style={{ color: '#C89B3C' }} /> : <Square size={24} style={{ color: '#ccc' }} />}
                   </button>
-                  {/* Thumbnail */}
-                  <div style={{ width: 160, height: 100, borderRadius: 8, overflow: 'hidden', border: '1px solid #e5e1da', background: '#f8f7f4', flexShrink: 0 }}>
-                    <img src={thumb(w.url)} alt={w.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} onError={(e) => { e.target.style.opacity = 0.2; }} />
+                  {/* Thumbnail + Link */}
+                  <div style={{ width: 200, flexShrink: 0, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ width: '100%', height: 120, borderRadius: 8, overflow: 'hidden', border: '1px solid #e5e1da', background: '#f8f7f4' }}>
+                      <img src={thumb(w.url)} alt={w.name} style={{ width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top' }} onError={(e) => { e.target.style.opacity = 0.15; }} />
+                    </div>
+                    <a href={w.url} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5, padding: '7px 10px', borderRadius: 6, background: '#0b0b0b', color: '#fff', fontSize: 12, fontWeight: 700, textDecoration: 'none' }}>
+                      <ExternalLink size={12} /> Visit Site
+                    </a>
                   </div>
                   {/* Summary */}
                   <div style={{ minWidth: 0 }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
                       <span style={{ fontSize: 11, fontWeight: 700, color: '#C89B3C', background: '#f8f7f4', padding: '2px 8px', borderRadius: 4 }}>#{i + 1}</span>
                       <b style={{ fontSize: 15 }}>{w.name}</b>
-                      <a href={w.url} target="_blank" rel="noreferrer" style={{ display: 'flex', alignItems: 'center', gap: 3, fontSize: 12, color: '#2563eb', marginLeft: 'auto' }}>
-                        <ExternalLink size={12} /> Visit Site
-                      </a>
                     </div>
                     <p style={{ fontSize: 13, color: '#555', lineHeight: 1.5, margin: '0 0 8px' }}>{w.description}</p>
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, fontSize: 11 }}>
