@@ -112,6 +112,7 @@ const SocialMediaManager = lazy(() => import('@/pages/SocialMediaManager'));
 const AiBidWriter = lazy(() => import('@/pages/tools/AiBidWriter'));
 const CloneStudio = lazy(() => import('@/pages/CloneStudio'));
 const CloneGallery = lazy(() => import('@/pages/CloneGallery'));
+const CloneQueue = lazy(() => import('@/pages/CloneQueue'));
 const XtremeOS = lazy(() => import('@/pages/XtremeOS'));
 
 const PageLoader = () => (
@@ -174,6 +175,7 @@ const AuthenticatedApp = () => {
         <Route element={<PortalLayout />}>
         <Route path="/app" element={<XtremeOS />} />
         <Route path="/app/clone-studio" element={<CloneStudio />} />
+        <Route path="/app/clone-queue" element={<CloneQueue />} />
         <Route path="/app/clone-gallery" element={<CloneGallery />} />
         <Route path="/app/setup" element={<SetupWizard />} />
         <Route path="/app/client-setup" element={<ClientSetupWizard />} />

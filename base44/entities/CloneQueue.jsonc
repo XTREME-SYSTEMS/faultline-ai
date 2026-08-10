@@ -1,0 +1,117 @@
+{
+  "name": "CloneQueue",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "target_url": {
+      "type": "string",
+      "description": "URL of the site to clone"
+    },
+    "site_name": {
+      "type": "string",
+      "description": "Derived or manual name of the target site"
+    },
+    "industry": {
+      "type": "string",
+      "description": "Industry the site serves"
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "critical",
+        "high",
+        "medium",
+        "low"
+      ],
+      "default": "medium"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "cloning",
+        "validating",
+        "auditing",
+        "passed",
+        "failed",
+        "cancelled"
+      ],
+      "default": "queued"
+    },
+    "notes": {
+      "type": "string",
+      "description": "User notes about why this site should be cloned"
+    },
+    "launch_project_id": {
+      "type": "string",
+      "description": "LaunchProject created once cloning starts"
+    },
+    "vercel_url": {
+      "type": "string",
+      "description": "Final Vercel deployment URL once passed"
+    },
+    "final_score": {
+      "type": "number",
+      "description": "Final parity score (0-100)"
+    },
+    "audit_passed": {
+      "type": "boolean",
+      "description": "Whether the forensic audit passed"
+    },
+    "audit_summary": {
+      "type": "string",
+      "description": "Summary of the forensic audit"
+    },
+    "benchmark_report": {
+      "type": "object",
+      "description": "Full benchmark discovery report on the target site"
+    },
+    "error": {
+      "type": "string",
+      "description": "Error message if cloning failed"
+    },
+    "attempts": {
+      "type": "number",
+      "default": 0
+    },
+    "max_attempts": {
+      "type": "number",
+      "default": 3
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "manual",
+        "cleanup",
+        "discovery"
+      ],
+      "default": "manual"
+    },
+    "original_clone_id": {
+      "type": "string",
+      "description": "If from cleanup, the original LaunchProject ID that was deleted"
+    }
+  },
+  "required": [
+    "organization_id",
+    "target_url"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

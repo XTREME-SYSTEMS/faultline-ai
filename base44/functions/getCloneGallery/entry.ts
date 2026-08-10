@@ -1,52 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-
-// Derive a readable site name from any URL (e.g. https://gong.io → "Gong.io", https://revolut.com → "Revolut")
-function deriveNameFromUrl(url) {
-  if (!url) return null;
-  try {
-    const host = new URL(url).hostname.replace(/^www\./, '');
-    // Use the full domain (e.g. "gong.io", "revolut.com") but strip the TLD
-    const parts = host.split('.');
-    if (parts.length >= 2) {
-      const domain = parts[0];
-      // For two-letter domains like "io", keep the second part (e.g. "gong.io" → keep "gong.io")
-      if (parts.length === 2 && parts[1].length <= 3) {
-        return domain.charAt(0).toUpperCase() + domain.slice(1) + '.' + parts[1];
-      }
-      return domain.charAt(0).toUpperCase() + domain.slice(1);
-    }
-    return host.charAt(0).toUpperCase() + host.slice(1);
-  } catch { return null; }
-}
-
-// Decode common HTML entities in names
-function decodeHtmlEntities(str) {
-  if (!str) return str;
-  return str.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'");
-}
-
-// Find the parent project ID from a heal tracker's logs
-function findParentId(p) {
-  const log = p.metadata?.log || [];
-  const healLog = log.find(l => l.includes('Heal mode: loading project'));
-  if (healLog) {
-    const match = healLog.match(/loading project ([a-f0-9]+)/);
-    return match ? match[1] : null;
-  }
-  return null;
-}
-
-// Trace the heal chain to find the original benchmark_url
-function traceBenchmarkUrl(p, projectMap, visited = new Set()) {
-  if (!p || visited.has(p.id)) return null;
-  visited.add(p.id);
-  if (p.benchmark_url) return p.benchmark_url;
-  const parentId = findParentId(p);
-  if (parentId && projectMap.has(parentId)) {
-    return traceBenchmarkUrl(projectMap.get(parentId), projectMap, visited);
-  }
-  return null;
-}
+import { deriveNameFromUrl, decodeHtmlEntities, findParentId, traceBenchmarkUrl, isGenericName } from '../../shared/cloneUtils.ts';
 
 // Clone Gallery — returns all cloned LaunchProjects that have a live Vercel URL,
 // with the original site name (traced via benchmark_url or heal chain),

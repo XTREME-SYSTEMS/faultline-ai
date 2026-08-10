@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { ChevronLeft, Loader2, Zap, Package } from 'lucide-react';
 import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
 import CloneCard from '@/components/clone-studio/CloneCard';
+import SiteSpecsModal from '@/components/clone-studio/SiteSpecsModal';
 
 export default function CloneGallery() {
   const [data, setData] = useState(null);
@@ -13,6 +14,7 @@ export default function CloneGallery() {
   const [search, setSearch] = useState('');
   const [industryFilter, setIndustryFilter] = useState('all');
   const [scoreFilter, setScoreFilter] = useState('all');
+  const [specsClone, setSpecsClone] = useState(null);
 
   async function loadGallery() {
     setLoading(true);
@@ -163,7 +165,7 @@ export default function CloneGallery() {
             <div style={{
               display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14,
             }}>
-              {group.clones.map(clone => <CloneCard key={clone.id} clone={clone} />)}
+              {group.clones.map(clone => <CloneCard key={clone.id} clone={clone} onShowSpecs={setSpecsClone} />)}
             </div>
           </div>
         ))}
@@ -174,6 +176,7 @@ export default function CloneGallery() {
           </div>
         )}
       </div>
+      {specsClone && <SiteSpecsModal clone={specsClone} onClose={() => setSpecsClone(null)} />}
     </>
   );
 }
