@@ -82,29 +82,6 @@ const ClientProjects = lazy(() => import('@/pages/ClientProjects'));
 const ClientPortal = lazy(() => import('@/pages/ClientPortal'));
 const ClientFunnel = lazy(() => import('@/pages/ClientFunnel'));
 const Projects = lazy(() => import('@/pages/Projects'));
-// Xtreme Visualizer
-const XVLayout = lazy(() => import('@/components/vq/Layout'));
-const XVHome = lazy(() => import('@/pages/xv/XVHome'));
-const XVVisualizer = lazy(() => import('@/pages/xv/Visualizer'));
-const XVGenerator = lazy(() => import('@/pages/xv/Generator'));
-const XVProducts = lazy(() => import('@/pages/xv/Products'));
-const XVColorCharts = lazy(() => import('@/pages/xv/ColorCharts'));
-const XVLeads = lazy(() => import('@/pages/xv/Leads'));
-const XVLeadDetail = lazy(() => import('@/pages/xv/LeadDetail'));
-const XVCRM = lazy(() => import('@/pages/xv/CRM'));
-const XVLeadGenerator = lazy(() => import('@/pages/xv/LeadGenerator'));
-const XVSystems = lazy(() => import('@/pages/xv/Systems'));
-const XVPricing = lazy(() => import('@/pages/xv/Pricing'));
-const XVCompetitivePricing = lazy(() => import('@/pages/xv/CompetitivePricing'));
-const XVIndustryReference = lazy(() => import('@/pages/xv/IndustryReference'));
-const XVClose = lazy(() => import('@/pages/xv/Close'));
-const XVEmailTemplates = lazy(() => import('@/pages/xv/EmailTemplates'));
-const XVBidGenerator = lazy(() => import('@/pages/xv/BidGenerator'));
-const XVAppointments = lazy(() => import('@/pages/xv/Appointments'));
-const XVInbox = lazy(() => import('@/pages/xv/Inbox'));
-const XVReceipts = lazy(() => import('@/pages/xv/Receipts'));
-const XVGuardrails = lazy(() => import('@/pages/xv/Guardrails'));
-const XVSettings = lazy(() => import('@/pages/xv/Settings'));
 const UniversalDatabase = lazy(() => import('@/pages/UniversalDatabase'));
 const NicheWebsiteStudio = lazy(() => import('@/pages/NicheWebsiteStudio'));
 const VideoStudio = lazy(() => import('@/pages/VideoStudio'));
@@ -225,29 +202,6 @@ const AuthenticatedApp = () => {
         <Route path="/app/tool-advisor" element={<ToolAdvisor />} />
         <Route path="/app/demo-portal/:companyId" element={<ClientDemoPortal />} />
         <Route path="/app/drive-sync" element={<DriveSync />} />
-        <Route path="/app/xv" element={<XVLayout />}>
-          <Route index element={<XVHome />} />
-          <Route path="visualizer" element={<XVVisualizer />} />
-          <Route path="generator" element={<XVGenerator />} />
-          <Route path="products" element={<XVProducts />} />
-          <Route path="colors" element={<XVColorCharts />} />
-          <Route path="leads" element={<XVLeads />} />
-          <Route path="leads/:id" element={<XVLeadDetail />} />
-          <Route path="crm" element={<XVCRM />} />
-          <Route path="lead-generator" element={<XVLeadGenerator />} />
-          <Route path="systems" element={<XVSystems />} />
-          <Route path="pricing" element={<XVPricing />} />
-          <Route path="competitive-pricing" element={<XVCompetitivePricing />} />
-          <Route path="industry" element={<XVIndustryReference />} />
-          <Route path="close" element={<XVClose />} />
-          <Route path="email-templates" element={<XVEmailTemplates />} />
-          <Route path="bid-generator" element={<XVBidGenerator />} />
-          <Route path="appointments" element={<XVAppointments />} />
-          <Route path="inbox" element={<XVInbox />} />
-          <Route path="receipts" element={<XVReceipts />} />
-          <Route path="guardrails" element={<XVGuardrails />} />
-          <Route path="settings" element={<XVSettings />} />
-        </Route>
         <Route path="/app/xtremeos" element={<XtremeOS />} />
         <Route path="/app/settings" element={<Settings />} />
         <Route path="/app/pcu-control" element={<PCUControlCenter />} />

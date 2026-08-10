@@ -51,7 +51,6 @@ const MODULES = [
       { to: '/app/video-studio', label: 'Video Studio', icon: Video },
       { to: '/app/social-media', label: 'Social Media', icon: Share2 },
       { to: '/app/ai-control', label: 'AI Control', icon: Cpu },
-      { to: '/app/xv', label: 'Xtreme Visualizer', icon: PenTool },
       { to: '/app/database', label: 'Database', icon: Database },
       { to: '/app/settings', label: 'Settings', icon: Settings },
     ]
