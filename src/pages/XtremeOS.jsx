@@ -6,7 +6,7 @@ import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
 import XtremeOSRightPanel from '@/components/fl/XtremeOSRightPanel';
 import {
   Activity, Package, Globe, Shield, TrendingUp, Zap, CheckCircle2,
-  AlertCircle, Clock, Cpu, DollarSign, Layers
+  AlertCircle, Clock, Cpu, DollarSign, Layers, Loader2, X
 } from 'lucide-react';
 
 export default function XtremeOS() {
@@ -15,6 +15,9 @@ export default function XtremeOS() {
   const [metrics, setMetrics] = useState(null);
   const [recentActions, setRecentActions] = useState([]);
   const [clones, setClones] = useState([]);
+  const [hardening, setHardening] = useState(false);
+  const [hardenResult, setHardenResult] = useState(null);
+  const [hardenError, setHardenError] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -56,6 +59,24 @@ export default function XtremeOS() {
     })();
   }, []);
 
+  async function runAutoHarden() {
+    setHardening(true);
+    setHardenError('');
+    setHardenResult(null);
+    try {
+      const res = await base44.functions.invoke('forensicAuditAndHarden', { max_iterations: 3 });
+      const d = res.data || res;
+      if (d.error) throw new Error(d.error);
+      setHardenResult(d);
+      // Reload metrics after hardening
+      setTimeout(() => window.location.reload(), 3000);
+    } catch (e) {
+      setHardenError(e.message || 'Auto-harden failed');
+    } finally {
+      setHardening(false);
+    }
+  }
+
   if (loading) return <div style={{ padding: 60, textAlign: 'center' }}>Loading Xtreme Clone System…</div>;
 
   const metricCards = [
@@ -88,8 +109,52 @@ export default function XtremeOS() {
             <span style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 36 }}>{metrics.healthPct}</span>
           </div>
           <small style={{ color: '#E7C86E', textTransform: 'uppercase', letterSpacing: '.12em', fontSize: 10 }}>System Health</small>
+          <button
+            onClick={runAutoHarden}
+            disabled={hardening}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, marginTop: 14, padding: '12px 22px',
+              background: hardening ? '#333' : 'linear-gradient(135deg, #E7C86E, #C89B3C)',
+              color: '#111', border: 0, borderRadius: 8, fontWeight: 700, fontSize: 13,
+              cursor: hardening ? 'wait' : 'pointer', whiteSpace: 'nowrap',
+            }}
+          >
+            {hardening ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
+            {hardening ? 'Auditing & Hardening...' : 'Auto Audit · Analyze · Fix · Heal · Harden'}
+          </button>
         </div>
       </div>
+
+      {/* Auto-Harden Results */}
+      {(hardenResult || hardenError) && (
+        <div style={{
+          marginBottom: 13, padding: 20, borderRadius: 8,
+          background: hardenError ? '#f5d8d5' : '#e8f5ec',
+          border: `1px solid ${hardenError ? '#C63D34' : '#237A4B'}`,
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <b style={{ fontSize: 15, color: hardenError ? '#a52d23' : '#237A4B' }}>
+              {hardenError ? 'Auto-Harden Failed' : 'Auto-Harden Complete'}
+            </b>
+            <button onClick={() => { setHardenResult(null); setHardenError(''); }} style={{ background: 'none', border: 0, cursor: 'pointer', color: '#999' }}>
+              <X size={16} />
+            </button>
+          </div>
+          {hardenError ? (
+            <p style={{ fontSize: 13, color: '#a52d23', margin: 0 }}>{hardenError}</p>
+          ) : (
+            <>
+              <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', fontSize: 13 }}>
+                <span><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{hardenResult.total_audited}</b> audited</span>
+                <span style={{ color: '#237A4B' }}><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{hardenResult.all_clear}</b> all clear</span>
+                <span style={{ color: '#237A4B' }}><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{hardenResult.hardened}</b> hardened</span>
+                <span style={{ color: '#B88214' }}><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{hardenResult.still_failing}</b> still failing</span>
+              </div>
+              <p style={{ fontSize: 11, color: '#888', marginTop: 10, marginBottom: 0 }}>Refreshing dashboard with updated scores...</p>
+            </>
+          )}
+        </div>
+      )}
 
       {/* Metric Cards */}
       <div className="metrics" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
