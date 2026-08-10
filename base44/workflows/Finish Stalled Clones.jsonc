@@ -1,0 +1,48 @@
+{
+  "name": "Finish Stalled Clones",
+  "description": "Deduplicates clone targets (keeps best clone per URL), then resumes stalled clones (score 1-99, marked failed) by re-triggering the heal engine in small batches. Runs every 30 min to ensure stalled clones actually finish.",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "finish_stalled_clones",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "enforce": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "finishStalledClones",
+            "args": {
+              "heal_batch": 3,
+              "max_iterations": 3
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Finish stalled clones",
+            "description": "Deduplicate targets + resume stalled heals in batches"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": 30,
+      "interval_unit": "minutes",
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  }
+}

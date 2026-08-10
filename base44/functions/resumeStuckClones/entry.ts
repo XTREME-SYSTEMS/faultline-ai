@@ -23,10 +23,10 @@ export default async function(req) {
   const failed = [];
 
   for (const p of stuck) {
-    // Mark the stuck project as failed — NO auto-restart. This prevents cascading
-    // recovery chains where each recovery also stalls and gets recovered again
-    // (the "(recovery) (recovery) (recovery)" explosion). The user can manually
-    // re-trigger from the Command Center if they want to retry a failed target.
+    // Mark the stuck project as failed so the finishStalledClones engine can
+    // pick it up and re-trigger healing. We do NOT auto-restart here (that
+    // caused cascading "(recovery) (recovery)" chains). The finishStalledClones
+    // workflow runs every 30 min and resumes these in controlled batches.
     try {
       await base44.asServiceRole.entities.LaunchProject.update(p.id, {
         status: 'failed',

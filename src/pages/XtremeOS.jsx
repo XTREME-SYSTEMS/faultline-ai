@@ -23,6 +23,9 @@ export default function XtremeOS() {
   const [forcing, setForcing] = useState(false);
   const [forceResult, setForceResult] = useState(null);
   const [forceError, setForceError] = useState('');
+  const [finishing, setFinishing] = useState(false);
+  const [finishResult, setFinishResult] = useState(null);
+  const [finishError, setFinishError] = useState('');
   const [chatExpanded, setChatExpanded] = useState(false);
 
   useEffect(() => {
@@ -89,6 +92,30 @@ export default function XtremeOS() {
       setHardenError(e.message || 'Auto-harden failed');
     } finally {
       setHardening(false);
+    }
+  }
+
+  async function runFinishStalled() {
+    setFinishing(true);
+    setFinishError('');
+    setFinishResult(null);
+    try {
+      const res = await base44.functions.invoke('finishStalledClones', { heal_batch: 3, max_iterations: 3 });
+      const d = res.data || res;
+      if (d.error) throw new Error(d.error);
+      setFinishResult(d);
+      setTimeout(() => {
+        (async () => {
+          const projects = await base44.entities.LaunchProject.list('-created_date', 200).catch(() => []);
+          const gallery = projects.filter(p => p.vercel_deployment_url || p.metadata?.vercel_deployment_url);
+          const at100 = gallery.filter(p => (p.parity_score || 0) >= 100).length;
+          setMetrics(m => ({ ...m, totalClones: gallery.length, at100, healthPct: gallery.length ? Math.round((at100 / gallery.length) * 100) : 0 }));
+        })();
+      }, 2000);
+    } catch (e) {
+      setFinishError(e.message || 'Finish-stalled failed');
+    } finally {
+      setFinishing(false);
     }
   }
 
@@ -177,8 +204,62 @@ export default function XtremeOS() {
             {forcing ? <Loader2 size={14} className="animate-spin" /> : <Zap size={14} />}
             {forcing ? 'Forcing to 100...' : 'Force All to 100'}
           </button>
+          <button
+            onClick={runFinishStalled}
+            disabled={finishing}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, padding: '10px 18px',
+              background: finishing ? '#333' : '#0a0a0a',
+              color: finishing ? '#888' : '#237A4B', border: '1px solid #237A4B', borderRadius: 8,
+              fontWeight: 700, fontSize: 12, cursor: finishing ? 'wait' : 'pointer', whiteSpace: 'nowrap',
+            }}
+          >
+            {finishing ? <Loader2 size={14} className="animate-spin" /> : <ListChecks size={14} />}
+            {finishing ? 'Finishing stalled...' : 'Finish Stalled'}
+          </button>
         </div>
       </div>
+
+      {/* Finish-Stalled Results */}
+      {(finishResult || finishError) && (
+        <div style={{
+          marginBottom: 13, padding: 20, borderRadius: 8,
+          background: finishError ? '#f5d8d5' : '#e8f5ec',
+          border: `1px solid ${finishError ? '#C63D34' : '#237A4B'}`,
+        }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <b style={{ fontSize: 15, color: finishError ? '#a52d23' : '#237A4B' }}>
+              {finishError ? 'Finish-Stalled Failed' : `Finish-Stalled: ${finishResult.health_pct}% Health`}
+            </b>
+            <button onClick={() => { setFinishResult(null); setFinishError(''); }} style={{ background: 'none', border: 0, cursor: 'pointer', color: '#999' }}>
+              <X size={16} />
+            </button>
+          </div>
+          {finishError ? (
+            <p style={{ fontSize: 13, color: '#a52d23', margin: 0 }}>{finishError}</p>
+          ) : (
+            <>
+              <div style={{ display: 'flex', gap: 18, flexWrap: 'wrap', fontSize: 13 }}>
+                <span style={{ color: '#C63D34' }}><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{finishResult.duplicates_removed}</b> duplicates removed</span>
+                <span><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{finishResult.stalled_found}</b> stalled found</span>
+                <span style={{ color: '#237A4B' }}><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{finishResult.healed}</b> finished</span>
+                {finishResult.still_failing > 0 && <span style={{ color: '#B88214' }}><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{finishResult.still_failing}</b> still failing</span>}
+                {finishResult.still_running > 0 && <span style={{ color: '#2563eb' }}><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{finishResult.still_running}</b> running</span>}
+              </div>
+              {finishResult.duplicates_removed > 0 && (
+                <p style={{ fontSize: 11, color: '#237A4B', marginTop: 10, marginBottom: 0 }}>
+                  {finishResult.duplicates_removed} duplicate clones removed — kept the best-scoring clone per target URL.
+                </p>
+              )}
+              {finishResult.stalled_found > finishResult.resumed && (
+                <p style={{ fontSize: 11, color: '#B88214', marginTop: 6, marginBottom: 0 }}>
+                  {finishResult.stalled_found - finishResult.resumed} clones waiting for the next batch — click again to resume more.
+                </p>
+              )}
+            </>
+          )}
+        </div>
+      )}
 
       {/* Force-to-100 Results */}
       {(forceResult || forceError) && (
