@@ -21,6 +21,8 @@ export default function CloneQueue() {
   const [processResult, setProcessResult] = useState(null);
   const [listening, setListening] = useState(false);
   const [voiceError, setVoiceError] = useState('');
+  const [discovering, setDiscovering] = useState(false);
+  const [discoverResult, setDiscoverResult] = useState(null);
   const recognitionRef = useRef(null);
 
   // Voice input using the Web Speech API (Chrome/Edge supported)
@@ -143,6 +145,27 @@ export default function CloneQueue() {
     passed: items.filter(i => i.status === 'passed').length,
     failed: items.filter(i => i.status === 'failed').length,
   };
+
+  async function handleAutoDiscover() {
+    setDiscovering(true);
+    setDiscoverResult(null);
+    setError('');
+    try {
+      const res = await base44.functions.invoke('autoDiscoverAndQueue', {
+        max_industries: 10,
+        sites_per_industry: 5,
+        include_search: true,
+      });
+      const d = res.data || res;
+      if (d.error) throw new Error(d.error);
+      setDiscoverResult(d);
+      setTimeout(loadQueue, 1500);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setDiscovering(false);
+    }
+  }
 
   return (
     <>
@@ -292,6 +315,15 @@ export default function CloneQueue() {
             }}>
               <Images size={16} /> View Gallery
             </Link>
+            <button onClick={handleAutoDiscover} disabled={discovering} title="Auto-discover top 5 sites for 10 random industries and add them to the queue" style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '12px 18px',
+              background: discovering ? '#333' : '#fff', border: '1px solid #C89B3C', borderRadius: 8,
+              fontWeight: 700, fontSize: 13, color: discovering ? '#999' : '#8A641C',
+              cursor: discovering ? 'wait' : 'pointer',
+            }}>
+              {discovering ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+              {discovering ? 'Discovering…' : 'Auto-Discover 10 Industries'}
+            </button>
             <button onClick={handleProcess} disabled={processing} style={{
               display: 'flex', alignItems: 'center', gap: 8, padding: '12px 24px',
               background: processing ? '#333' : 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111',
@@ -302,6 +334,36 @@ export default function CloneQueue() {
             </button>
           </div>
         </div>
+
+        {/* Auto-discovery result */}
+        {discoverResult && (
+          <div style={{
+            marginBottom: 20, padding: 16, background: '#f8f7f4', border: '1px solid #C89B3C',
+            borderRadius: 10,
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+              <b style={{ color: '#8A641C', fontSize: 14 }}>
+                <Sparkles size={16} style={{ display: 'inline', marginRight: 6 }} />
+                Auto-discovered {discoverResult.total_added} sites across {discoverResult.industries_processed} industries
+              </b>
+              <button onClick={() => setDiscoverResult(null)} style={{ background: 'none', border: 0, cursor: 'pointer' }}>
+                <X size={16} color="#999" />
+              </button>
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: 8 }}>
+              {discoverResult.results?.filter(r => r.added > 0).map((r, i) => (
+                <div key={i} style={{ padding: '8px 12px', background: '#fff', border: '1px solid #ddd', borderRadius: 6, fontSize: 12 }}>
+                  <b style={{ color: '#333' }}>{r.industry}</b>
+                  <span style={{ color: '#888', marginLeft: 6 }}>· {r.added} added</span>
+                  <div style={{ fontSize: 11, color: '#999', marginTop: 2 }}>{r.sites?.join(', ')}</div>
+                </div>
+              ))}
+            </div>
+            <p style={{ fontSize: 11, color: '#999', margin: '10px 0 0' }}>
+              {discoverResult.total_industries} total industries in taxonomy · next batch starts at index {discoverResult.next_index} · workflow runs every 2 hours automatically
+            </p>
+          </div>
+        )}
 
         {/* Process result */}
         {processResult && (

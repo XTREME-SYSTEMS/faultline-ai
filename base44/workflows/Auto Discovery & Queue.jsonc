@@ -1,0 +1,49 @@
+{
+  "name": "Auto Discovery & Queue",
+  "description": "Autonomously discovers the top 5 websites for every industry and sub-industry in the taxonomy, adds them to the clone queue, and deduplicates against existing queue/gallery entries. Runs every 2 hours with a rotating industry index so all 80+ industries are covered over multiple runs. The Clone Queue Processor workflow then clones, validates, and adds them to the gallery.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": 2,
+      "interval_unit": "hours",
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "auto_discovery_and_queue",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "discover_and_queue": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "autoDiscoverAndQueue",
+            "args": {
+              "max_industries": 10,
+              "sites_per_industry": 5,
+              "include_search": true
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Discover top sites & add to queue",
+            "description": "Finds top 5 websites for 10 industries per run, adds to clone queue"
+          }
+        }
+      }
+    ]
+  }
+}
