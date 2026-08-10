@@ -6,7 +6,7 @@ import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
 import XtremeOSRightPanel from '@/components/fl/XtremeOSRightPanel';
 import {
   Activity, Package, Globe, Shield, TrendingUp, Zap, CheckCircle2,
-  AlertCircle, Clock, Cpu, DollarSign, Layers, Loader2, X, Copy, ListChecks, Images, Building2
+  AlertCircle, Clock, Cpu, DollarSign, Layers, Loader2, X, Copy, ListChecks, Images, Building2, PenTool
 } from 'lucide-react';
 import PwaInstallButton from '@/components/PwaInstallButton';
 
@@ -174,27 +174,30 @@ export default function XtremeOS() {
       )}
 
       {/* Quick Links — primary navigation hubs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 13, marginBottom: 13 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10, marginBottom: 13 }}>
         {[
-          { label: 'Clone Studio', path: '/app/clone-studio', icon: Copy, desc: 'Build & customize clones', bg: '#C89B3C', iconBg: 'rgba(255,255,255,.2)' },
-          { label: 'Clone Queue', path: '/app/clone-queue', icon: ListChecks, desc: 'Manage clone pipeline', bg: '#2563eb', iconBg: 'rgba(255,255,255,.2)' },
-          { label: 'Clone Gallery', path: '/app/clone-gallery', icon: Images, desc: 'Browse all clones', bg: '#7c3aed', iconBg: 'rgba(255,255,255,.2)' },
-          { label: 'Business Hub', path: '/app/business', icon: Building2, desc: 'Form DBAs & LLCs', bg: '#0B0B0D', iconBg: 'rgba(255,255,255,.15)' },
+          { label: 'Clone Studio', path: '/app/clone-studio', icon: Copy, desc: 'Build & customize', bg: '#C89B3C' },
+          { label: 'Clone Queue', path: '/app/clone-queue', icon: ListChecks, desc: 'Clone pipeline', bg: '#2563eb' },
+          { label: 'Clone Gallery', path: '/app/clone-gallery', icon: Images, desc: 'Browse clones', bg: '#7c3aed' },
+          { label: 'Business Hub', path: '/app/business', icon: Building2, desc: 'Form DBAs & LLCs', bg: '#0B0B0D' },
+          { label: 'Website Gen', path: '/app/website-generator', icon: Globe, desc: 'Generate websites', bg: '#059669' },
+          { label: 'App Gen', path: '/app/app-generator', icon: Cpu, desc: 'Generate apps', bg: '#dc2626' },
+          { label: 'Brand Gen', path: '/app/brand-generator', icon: PenTool, desc: 'Generate brands', bg: '#7c3aed' },
         ].map(l => (
           <Link key={l.path} to={l.path} style={{
-            background: l.bg, border: 0, borderRadius: 8, padding: 18,
-            display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none', color: '#fff',
+            background: l.bg, border: 0, borderRadius: 7, padding: 11,
+            display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: '#fff',
             transition: 'transform .15s, box-shadow .15s',
           }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,.2)'; }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 5px 12px rgba(0,0,0,.2)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
           >
-            <span style={{ width: 42, height: 42, borderRadius: 8, background: l.iconBg, display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-              <l.icon size={22} style={{ color: '#fff' }} />
+            <span style={{ width: 32, height: 32, borderRadius: 6, background: 'rgba(255,255,255,.18)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+              <l.icon size={17} style={{ color: '#fff' }} />
             </span>
-            <div>
-              <b style={{ fontSize: 14, display: 'block', color: '#fff' }}>{l.label}</b>
-              <small style={{ fontSize: 11, color: 'rgba(255,255,255,.75)' }}>{l.desc}</small>
+            <div style={{ minWidth: 0 }}>
+              <b style={{ fontSize: 12.5, display: 'block', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.label}</b>
+              <small style={{ fontSize: 10, color: 'rgba(255,255,255,.72)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{l.desc}</small>
             </div>
           </Link>
         ))}

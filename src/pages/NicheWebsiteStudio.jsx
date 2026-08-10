@@ -51,19 +51,19 @@ export default function NicheWebsiteStudio() {
       <div style={{ background: '#fff', border: '1px solid #e5e1da', borderRadius: 12, padding: 24, marginBottom: 20 }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 16, marginBottom: 16 }}>
           <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700 }}>
-            Google Analytics ID (G-XXXXXXXXXX)
+            Google Analytics ID <span style={{ fontWeight: 400, color: '#999' }}>(optional)</span>
             <input value={gaId} onChange={e => setGaId(e.target.value)} placeholder="G-XXXXXXXXXX"
-              style={{ padding: '12px', border: '1px solid #ddd', borderRadius: 8, fontFamily: 'inherit', fontSize: 14 }} />
+              style={{ padding: '12px', border: '1px solid #ddd', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, background: '#fff', color: '#111', outline: 'none' }} />
           </label>
           <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700 }}>
             Niches to Generate (1-10)
             <input type="number" value={maxNiches} min={1} max={10} onChange={e => setMaxNiches(parseInt(e.target.value) || 5)}
-              style={{ padding: '12px', border: '1px solid #ddd', borderRadius: 8, fontFamily: 'inherit', fontSize: 14 }} />
+              style={{ padding: '12px', border: '1px solid #ddd', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, background: '#fff', color: '#111', outline: 'none' }} />
           </label>
           <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700 }}>
-            Industry Focus (optional)
+            Industry Focus <span style={{ fontWeight: 400, color: '#999' }}>(optional)</span>
             <input value={industry} onChange={e => setIndustry(e.target.value)} placeholder="general"
-              style={{ padding: '12px', border: '1px solid #ddd', borderRadius: 8, fontFamily: 'inherit', fontSize: 14 }} />
+              style={{ padding: '12px', border: '1px solid #ddd', borderRadius: 8, fontFamily: 'inherit', fontSize: 14, background: '#fff', color: '#111', outline: 'none' }} />
           </label>
         </div>
         <button onClick={generate} disabled={loading}
