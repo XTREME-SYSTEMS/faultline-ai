@@ -147,7 +147,7 @@ export default function StepBrand({ form, update, next, back }) {
         <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
           <ColorControl label="Background Color" presets={BG_COLOR_PRESETS} value={bgOverride} onChange={setBgOverride} />
           <ColorControl label="Font / Text Color" presets={FONT_COLOR_PRESETS} value={fontOverride} onChange={setFontOverride} />
-          <ColorControl label="Accent Color" presets={ACCENT_COLOR_PRESETS} value={accentOverride} onChange={setAccentOverride} />
+          <ColorControl label="Accent Color" presets={ACCENT_COLOR_PRESETS} value={accentOverride} onChange={setAccentOverride} showSpectrum />
         </div>
       </div>
 

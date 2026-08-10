@@ -1,4 +1,6 @@
-export default function ColorControl({ label, presets, value, onChange }) {
+import SpectrumPicker from './SpectrumPicker';
+
+export default function ColorControl({ label, presets, value, onChange, showSpectrum }) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, flex: 1, minWidth: 200 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -26,6 +28,7 @@ export default function ColorControl({ label, presets, value, onChange }) {
         </label>
         {value && <span style={{ fontSize: 10, color: '#999', fontFamily: 'monospace' }}>{value}</span>}
       </div>
+      {showSpectrum && <SpectrumPicker value={value} onChange={onChange} />}
     </div>
   );
 }
