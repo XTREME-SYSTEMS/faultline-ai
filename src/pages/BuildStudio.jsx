@@ -14,6 +14,7 @@ export default function BuildStudio() {
     business_name: '', industry: '', domain: '',
     description: '', target_audience: '',
     primary_color: '#C89B3C', secondary_color: '#0a0a0a', accent_color: '',
+    bg_color: '', font_color: '',
     font_style: 'modern', font_heading: '', font_body: '',
     tone: 'professional', logo_url: '', tagline: '',
     pages: [], features: [],

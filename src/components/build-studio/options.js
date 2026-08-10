@@ -38,3 +38,7 @@ export const FONT_OPTIONS = [
 export const TONE_OPTIONS = ['professional', 'friendly', 'luxury', 'playful', 'technical', 'persuasive'];
 
 export const STEPS = ['Choose Type', 'Name & Domain', 'Brand & Logo', 'Build'];
+
+export const BG_COLOR_PRESETS = ['#ffffff', '#f8f7f4', '#fdfcf8', '#f5f5f5', '#0a0a0a', '#171717', '#1a1a2e', '#0f0f1e'];
+export const FONT_COLOR_PRESETS = ['#0a0a0a', '#171717', '#333333', '#666666', '#ffffff', '#f8f7f4', '#e5e1da', '#cccccc'];
+export const ACCENT_COLOR_PRESETS = ['#C89B3C', '#2563eb', '#7c3aed', '#059669', '#dc2626', '#0891b2', '#db2777', '#ea580c', '#4f46e5', '#0d9488'];

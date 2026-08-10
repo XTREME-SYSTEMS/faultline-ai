@@ -38,7 +38,7 @@ export default async function(req) {
     if (!orgId) return Response.json({ error: 'No organization found' }, { status: 400 });
 
     const body = await req.json().catch(() => ({}));
-    const { type, prompt, business_name, industry, project_id, domain, brand_concept, accent_color } = body;
+    const { type, prompt, business_name, industry, project_id, domain, brand_concept, accent_color, background_color, font_color } = body;
 
     if (!type) return Response.json({ error: 'type is required (logo, brand, or image)' }, { status: 400 });
     if (!prompt && !business_name) return Response.json({ error: 'prompt or business_name is required' }, { status: 400 });
@@ -123,6 +123,8 @@ Make each concept visually and tonally distinct. Use real, specific color hex co
                   primary_color: { type: 'string' },
                   secondary_color: { type: 'string' },
                   accent_color: { type: 'string' },
+                  bg_color: { type: 'string' },
+                  font_color: { type: 'string' },
                   font_heading: { type: 'string' },
                   font_body: { type: 'string' },
                   voice: { type: 'string' },
@@ -169,7 +171,9 @@ Make each concept visually and tonally distinct. Use real, specific color hex co
       if (!brand_concept) return Response.json({ error: 'brand_concept is required' }, { status: 400 });
       const concept = brand_concept;
       const ac = accent_color || concept.accent_color;
-      const colors = `${concept.primary_color}, ${concept.secondary_color}, ${ac}`;
+      const bg = background_color || concept.bg_color || '#ffffff';
+      const fc = font_color || concept.font_color || concept.primary_color || '#0a0a0a';
+      const colors = `background ${bg}, text ${fc}, accent ${ac}, primary ${concept.primary_color}, secondary ${concept.secondary_color}`;
       const fonts = `Heading font: ${concept.font_heading}, Body font: ${concept.font_body}`;
       const tagline = concept.tagline || '';
 
@@ -187,6 +191,8 @@ Make each concept visually and tonally distinct. Use real, specific color hex co
         // ── Digital Touchpoints (8) ──
         { key: 'website', label: 'Website Homepage', category: 'Digital', prompt: `Website homepage design for "${bizName}", a ${ind} business. Domain: ${domain || 'N/A'}. Modern professional landing page with hero section, navigation, services grid, call-to-action, testimonials, and footer. Tagline: "${tagline}". Colors: ${colors}. ${fonts}. High quality UI design, no watermark.` },
         { key: 'app_design', label: 'App Design', category: 'Digital', prompt: `Mobile app home screen design for "${bizName}", a ${ind} business. Modern app UI with bottom navigation, content cards, search bar, and branding. Colors: ${colors}. ${fonts}. High quality UI design, no watermark.` },
+        { key: 'website_dark', label: 'Website (Dark Mode)', category: 'Digital', prompt: `Website homepage design for "${bizName}", a ${ind} business, in DARK MODE. Domain: ${domain || 'N/A'}. Dark background, light text, same layout and structure as the light version but with a dark theme. Tagline: "${tagline}". Accent color: ${ac}. ${fonts}. High quality UI design, no watermark.` },
+        { key: 'app_dark', label: 'App (Dark Mode)', category: 'Digital', prompt: `Mobile app home screen design for "${bizName}", a ${ind} business, in DARK MODE. Dark background, light text, modern app UI with bottom navigation, content cards, search bar, and branding. Accent color: ${ac}. ${fonts}. High quality UI design, no watermark.` },
         { key: 'social_profile', label: 'Social Profile Picture', category: 'Digital', prompt: `Social media profile picture for "${bizName}". Circular profile avatar with the logo icon. ${concept.logo_concept}. Colors: ${colors}. Clean, high quality, no watermark.` },
         { key: 'social_cover', label: 'Social Cover Banner', category: 'Digital', prompt: `Social media cover banner for "${bizName}", a ${ind} business. Domain: ${domain || 'N/A'}. Wide cover image with logo, tagline "${tagline}", and brand colors. Colors: ${colors}. ${fonts}. High quality, no watermark.` },
         { key: 'social_post', label: 'Social Post Template', category: 'Digital', prompt: `Social media post template for "${bizName}", a ${ind} business. Square post with logo, brand colors, and placeholder text area. Tagline: "${tagline}". Colors: ${colors}. ${fonts}. High quality, no watermark.` },

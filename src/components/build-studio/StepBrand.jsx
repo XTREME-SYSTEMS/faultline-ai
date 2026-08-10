@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Image } from '@/components/ui/image';
 import { Loader2, RefreshCw, Palette, Check } from 'lucide-react';
-
-const ACCENT_PRESETS = ['#C89B3C', '#2563eb', '#7c3aed', '#059669', '#dc2626', '#0891b2', '#db2777', '#ea580c', '#0a0a0a', '#4f46e5'];
+import ColorControl from './ColorControl';
+import { BG_COLOR_PRESETS, FONT_COLOR_PRESETS, ACCENT_COLOR_PRESETS } from './options';
 
 export default function StepBrand({ form, update, next, back }) {
   const [generating, setGenerating] = useState(false);
@@ -12,6 +12,8 @@ export default function StepBrand({ form, update, next, back }) {
   const [options, setOptions] = useState([]);
   const [kit, setKit] = useState(null);
   const [selectedIdx, setSelectedIdx] = useState(null);
+  const [bgOverride, setBgOverride] = useState('');
+  const [fontOverride, setFontOverride] = useState('');
   const [accentOverride, setAccentOverride] = useState('');
 
   const generate = async () => {
@@ -49,15 +51,18 @@ export default function StepBrand({ form, update, next, back }) {
         industry: form.industry,
         brand_concept: opt,
         accent_color: accentOverride || opt.accent_color,
+        background_color: bgOverride || opt.bg_color || '#ffffff',
+        font_color: fontOverride || opt.font_color || opt.primary_color || '#0a0a0a',
       });
       const data = res.data || res;
       if (data.error) { setError(data.error); setKitGenerating(false); return; }
       setKit(data.kit || []);
-      // Save brand details to form
       update('logo_url', opt.logo_url || '');
       update('primary_color', opt.primary_color || '');
       update('secondary_color', opt.secondary_color || '');
       update('accent_color', accentOverride || opt.accent_color || '');
+      update('bg_color', bgOverride || opt.bg_color || '#ffffff');
+      update('font_color', fontOverride || opt.font_color || opt.primary_color || '#0a0a0a');
       update('font_heading', opt.font_heading || '');
       update('font_body', opt.font_body || '');
       update('tagline', opt.tagline || '');
@@ -69,45 +74,22 @@ export default function StepBrand({ form, update, next, back }) {
     }
   };
 
-  const selectOption = (i) => {
-    setSelectedIdx(i);
-  };
-
-  const effectiveAccent = accentOverride || (selectedIdx != null && options[selectedIdx]?.accent_color) || form.accent_color || '';
+  const selectOption = (i) => setSelectedIdx(i);
 
   return (
     <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-      {/* Accent Color Changer */}
-      <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 16, marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      {/* Color Controls — Background, Font, Accent */}
+      <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 16, marginBottom: 16 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 14 }}>
           <Palette size={18} style={{ color: '#C89B3C' }} />
-          <b style={{ fontSize: 13 }}>Accent Color</b>
+          <b style={{ fontSize: 13 }}>Brand Colors</b>
+          <span style={{ fontSize: 11, color: '#999' }}>· Override any color — applies to the full kit & generated site (light/dark mode auto-derived)</span>
         </div>
-        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-          {ACCENT_PRESETS.map(c => (
-            <button key={c} onClick={() => setAccentOverride(c)} title={c} style={{
-              width: 32, height: 32, borderRadius: 6, background: c,
-              border: effectiveAccent.toLowerCase() === c.toLowerCase() ? '3px solid #111' : '1px solid #ddd',
-              cursor: 'pointer', padding: 0, transition: 'transform .15s',
-            }}
-              onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
-              onMouseLeave={e => e.currentTarget.style.transform = 'none'} />
-          ))}
-          <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-            <input type="color" value={effectiveAccent || '#C89B3C'} onChange={e => setAccentOverride(e.target.value)}
-              style={{ width: 32, height: 32, border: '1px solid #ddd', borderRadius: 6, cursor: 'pointer', padding: 0, background: 'none' }} />
-            <span style={{ fontSize: 11, color: '#888' }}>Custom</span>
-          </label>
+        <div style={{ display: 'flex', gap: 24, flexWrap: 'wrap' }}>
+          <ColorControl label="Background Color" presets={BG_COLOR_PRESETS} value={bgOverride} onChange={setBgOverride} />
+          <ColorControl label="Font / Text Color" presets={FONT_COLOR_PRESETS} value={fontOverride} onChange={setFontOverride} />
+          <ColorControl label="Accent Color" presets={ACCENT_COLOR_PRESETS} value={accentOverride} onChange={setAccentOverride} />
         </div>
-        {accentOverride && (
-          <button onClick={() => setAccentOverride('')} style={{
-            fontSize: 11, color: '#999', background: 'none', border: '1px solid #ddd',
-            borderRadius: 4, padding: '4px 10px', cursor: 'pointer', fontFamily: 'inherit',
-          }}>Reset</button>
-        )}
-        <span style={{ fontSize: 11, color: '#999', marginLeft: 'auto' }}>
-          {selectedIdx != null ? 'Override applies to the full kit when generated' : 'Pick a color to override on any brand option below'}
-        </span>
       </div>
 
       {/* Generate button + info */}
@@ -129,7 +111,7 @@ export default function StepBrand({ form, update, next, back }) {
           </button>
         </div>
         <p style={{ fontSize: 12, color: '#888', margin: '10px 0 0' }}>
-          Each option includes: logo, website design, t-shirt, brochure, app design, favicon, icon, hat, business card, brand guidelines & social pack.
+          30 production-ready assets across 5 categories: logo system (9), digital incl. dark mode (10), print (6), merchandise (5), and guidelines (2).
         </p>
         {error && <p style={{ color: '#a52d23', fontSize: 13, marginTop: 10 }}>{error}</p>}
       </div>
@@ -139,6 +121,8 @@ export default function StepBrand({ form, update, next, back }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 14, marginBottom: 16 }}>
           {options.map((opt, i) => {
             const isSelected = selectedIdx === i;
+            const showBg = isSelected && bgOverride;
+            const showFont = isSelected && fontOverride;
             const showAccent = isSelected && accentOverride;
             return (
               <div key={i} style={{
@@ -149,7 +133,7 @@ export default function StepBrand({ form, update, next, back }) {
                   width: '100%', border: 0, background: 'none', cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', padding: 0,
                 }}>
                   {opt.logo_url && (
-                    <div style={{ height: 130, background: '#f8f7f4', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
+                    <div style={{ height: 130, background: showBg ? bgOverride : (opt.bg_color || '#f8f7f4'), display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 14 }}>
                       <Image src={opt.logo_url} alt={opt.name} fittingType="fit" className="w-full h-full" />
                     </div>
                   )}
@@ -158,10 +142,10 @@ export default function StepBrand({ form, update, next, back }) {
                     <p style={{ fontSize: 12, color: '#C89B3C', fontWeight: 600, margin: '2px 0 6px' }}>"{opt.tagline}"</p>
                     <p style={{ fontSize: 12, color: '#666', margin: '0 0 8px', lineHeight: 1.4 }}>{opt.positioning}</p>
                     <div style={{ display: 'flex', gap: 6, marginBottom: 6, alignItems: 'center' }}>
-                      {[opt.primary_color, opt.secondary_color, showAccent ? accentOverride : opt.accent_color].map((c, j) => (
-                        <div key={j} title={c} style={{ width: 24, height: 24, borderRadius: 5, background: c, border: '1px solid #ddd' }} />
-                      ))}
-                      {showAccent && <span style={{ fontSize: 10, color: '#C89B3C', fontWeight: 700 }}>accent overridden</span>}
+                      <div title="Background" style={{ width: 24, height: 24, borderRadius: 5, background: showBg ? bgOverride : (opt.bg_color || '#ffffff'), border: '1px solid #ddd' }} />
+                      <div title="Font" style={{ width: 24, height: 24, borderRadius: 5, background: showFont ? fontOverride : (opt.font_color || opt.primary_color || '#0a0a0a'), border: '1px solid #ddd' }} />
+                      <div title="Accent" style={{ width: 24, height: 24, borderRadius: 5, background: showAccent ? accentOverride : opt.accent_color, border: '1px solid #ddd' }} />
+                      {(showBg || showFont || showAccent) && <span style={{ fontSize: 10, color: '#C89B3C', fontWeight: 700 }}>colors overridden</span>}
                     </div>
                     <p style={{ fontSize: 10, color: '#888', margin: 0 }}>{opt.font_heading} + {opt.font_body}</p>
                     {isSelected && <p style={{ fontSize: 11, color: '#C89B3C', fontWeight: 700, margin: '6px 0 0' }}>✓ Selected — click "Generate Full Kit" below</p>}
@@ -230,9 +214,9 @@ export default function StepBrand({ form, update, next, back }) {
             {form.tagline && <p style={{ fontSize: 11, color: '#888', margin: '2px 0 0' }}>"{form.tagline}"</p>}
           </div>
           <div style={{ display: 'flex', gap: 6, marginLeft: 'auto' }}>
-            <div style={{ width: 24, height: 24, borderRadius: 5, background: form.primary_color, border: '1px solid #ddd' }} />
-            <div style={{ width: 24, height: 24, borderRadius: 5, background: form.secondary_color, border: '1px solid #ddd' }} />
-            <div style={{ width: 24, height: 24, borderRadius: 5, background: form.accent_color, border: '1px solid #ddd' }} />
+            <div title="Background" style={{ width: 24, height: 24, borderRadius: 5, background: form.bg_color, border: '1px solid #ddd' }} />
+            <div title="Font" style={{ width: 24, height: 24, borderRadius: 5, background: form.font_color, border: '1px solid #ddd' }} />
+            <div title="Accent" style={{ width: 24, height: 24, borderRadius: 5, background: form.accent_color, border: '1px solid #ddd' }} />
           </div>
         </div>
       )}

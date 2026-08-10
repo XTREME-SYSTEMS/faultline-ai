@@ -3,6 +3,8 @@ import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { Loader2, Download, ExternalLink, Code, Eye } from 'lucide-react';
 import AiFieldGenerator from '@/components/fl/AiFieldGenerator';
+import BuildAssistant from './BuildAssistant';
+import { enhanceSite } from '@/lib/enhanceSite';
 import {
   WEBSITE_PAGES, WEBSITE_FEATURES, APP_PAGES, APP_FEATURES,
   FONT_OPTIONS, TONE_OPTIONS,
@@ -64,7 +66,8 @@ export default function StepBuild({ form, update, back }) {
             if (d.status === 'generated') {
               let html = '';
               if (d.file_url) { try { const r2 = await fetch(d.file_url); html = await r2.text(); } catch (e) { html = ''; } }
-              setResult({ html, deliverable_id: d.id });
+              const enhanced = enhanceSite(html, { bg_color: form.bg_color, font_color: form.font_color, accent_color: form.accent_color, primary_color: form.primary_color, business_name: form.business_name, logo_url: form.logo_url });
+              setResult({ html: enhanced, deliverable_id: d.id });
               setGenerating(false);
               return;
             }
@@ -75,7 +78,9 @@ export default function StepBuild({ form, update, back }) {
         setGenerating(false);
         return;
       }
-      setResult({ html: data.website_html || data.app_html, deliverable_id: data.deliverable_id });
+      const rawHtml = data.website_html || data.app_html;
+      const enhanced = enhanceSite(rawHtml, { bg_color: form.bg_color, font_color: form.font_color, accent_color: form.accent_color, primary_color: form.primary_color, business_name: form.business_name, logo_url: form.logo_url });
+      setResult({ html: enhanced, deliverable_id: data.deliverable_id });
     } catch (e) {
       setError(e.message || 'Generation failed');
     } finally {
@@ -239,6 +244,13 @@ export default function StepBuild({ form, update, back }) {
               <pre style={{ padding: 16, fontSize: 11, overflow: 'auto', maxHeight: 600, minHeight: 500, whiteSpace: 'pre-wrap', wordBreak: 'break-all', margin: 0 }}>{result.html}</pre>
             )}
           </div>
+        </div>
+      )}
+
+      {/* AI Edit Assistant — surgical edits to the generated site */}
+      {result && (
+        <div style={{ marginTop: 16 }}>
+          <BuildAssistant html={result.html} onHtmlChange={(newHtml) => setResult(r => ({ ...r, html: newHtml }))} />
         </div>
       )}
 
