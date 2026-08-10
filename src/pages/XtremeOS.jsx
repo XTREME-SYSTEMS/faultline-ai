@@ -6,7 +6,7 @@ import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
 import XtremeOSRightPanel from '@/components/fl/XtremeOSRightPanel';
 import {
   Activity, Package, Globe, Shield, TrendingUp, Zap, CheckCircle2,
-  AlertCircle, Clock, Cpu, DollarSign, Layers, Loader2, X, Copy, ListChecks, Images, Building2, PenTool
+  AlertCircle, Clock, Cpu, DollarSign, Layers, Loader2, X, Copy, ListChecks, Images, Building2, PenTool, Search
 } from 'lucide-react';
 import PwaInstallButton from '@/components/PwaInstallButton';
 
@@ -176,7 +176,8 @@ export default function XtremeOS() {
       {/* Quick Links — primary navigation hubs */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10, marginBottom: 13 }}>
         {[
-          { label: 'Clone Studio', path: '/app/clone-studio', icon: Copy, desc: 'Build & customize', bg: '#C89B3C' },
+          { label: 'Niche Search', path: '/app/niche-websites', icon: Search, desc: 'Search & queue sites', bg: '#C89B3C' },
+          { label: 'Clone Studio', path: '/app/clone-studio', icon: Copy, desc: 'Build & customize', bg: '#0B0B0D' },
           { label: 'Clone Queue', path: '/app/clone-queue', icon: ListChecks, desc: 'Clone pipeline', bg: '#2563eb' },
           { label: 'Clone Gallery', path: '/app/clone-gallery', icon: Images, desc: 'Browse clones', bg: '#7c3aed' },
           { label: 'Business Hub', path: '/app/business', icon: Building2, desc: 'Form DBAs & LLCs', bg: '#0B0B0D' },
