@@ -1,0 +1,45 @@
+{
+  "name": "Rigorous Gallery Guard",
+  "description": "Periodically re-runs the rigorous recursive gate (validate \u2192 audit \u2192 analyze \u2192 fix \u2192 heal \u2192 harden) on every clone in the gallery to ensure they all remain at 100/100. Any clone that drops below 100 is automatically healed back up. Runs every 2 hours.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": 2,
+      "interval_unit": "hours",
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "rigorous_gallery_guard",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "guard_gallery": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "rigorousGalleryGuard",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Re-audit & heal all gallery clones",
+            "description": "Recursive validate \u2192 audit \u2192 fix \u2192 heal \u2192 harden on every gallery clone"
+          }
+        }
+      }
+    ]
+  }
+}

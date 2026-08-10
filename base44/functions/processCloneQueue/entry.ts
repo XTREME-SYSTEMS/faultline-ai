@@ -91,59 +91,40 @@ export default async function(req) {
           final_score: score,
         });
 
-        if (score < 100) {
-          throw new Error(`Clone only reached ${score}/100 parity (needs 100)`);
-        }
-
-        // Phase 2: Deep forensic audit
+        // Phase 2: Rigorous recursive gate — validate → audit → analyze → fix → heal → harden
+        // Runs recursively until the clone reaches 100/100 AND passes forensic audit.
+        // Only clones that pass this gate are added to the gallery.
         await base44.asServiceRole.entities.CloneQueue.update(item.id, {
           status: 'auditing',
-          notes: `Running forensic audit on ${vercelUrl}…`,
+          notes: `Running rigorous recursive gate (validate → audit → heal → harden)…`,
         });
 
-        let auditPassed = true;
-        let auditSummary = 'Audit skipped (forensicAuditAndHarden unavailable)';
+        const gateRes = await withTimeout(
+          base44.functions.invoke('rigorousCloneGate', {
+            launch_project_id: launchProjectId,
+            target_url: item.target_url,
+            max_iterations: 3,
+          }),
+          600000, // 10 min budget for the full recursive gate
+          'rigorousCloneGate'
+        );
+        const gateData = gateRes?.data || gateRes;
+        const gatePassed = gateData.passed === true;
+        const finalScore = gateData.score ?? score;
 
-        try {
-          const auditRes = await withTimeout(
-            base44.functions.invoke('forensicAuditAndHarden', {
-              target_url: vercelUrl,
-              original_url: item.target_url,
-              organization_id: orgId,
-              clone_id: launchProjectId,
-            }),
-            120000,
-            'forensicAuditAndHarden'
-          );
+        await base44.asServiceRole.entities.CloneQueue.update(item.id, {
+          final_score: finalScore,
+          audit_passed: gatePassed,
+          audit_summary: gateData.summary || (gatePassed ? 'Rigorous gate passed' : 'Rigorous gate failed'),
+        });
 
-          const auditData = auditRes?.data || auditRes;
-          auditPassed = auditData.status === 'success' || auditData.passed !== false;
-          auditSummary = auditData.summary || auditData.message || 'Forensic audit completed';
-
-          // If audit found critical issues, fail the clone
-          if (auditData.critical_issues && auditData.critical_issues.length > 0) {
-            auditPassed = false;
-            auditSummary = `${auditData.critical_issues.length} critical issues found: ${auditData.critical_issues.slice(0, 3).join(', ')}`;
-          }
-        } catch (auditErr) {
-          console.error('Forensic audit failed:', auditErr.message);
-          auditSummary = `Audit error: ${auditErr.message}`;
-          // Don't fail the clone just because the audit function errored —
-          // but mark it as needing manual review
-          auditPassed = true;
-          auditSummary = `Audit error (manual review needed): ${auditErr.message}`;
-        }
-
-        // Phase 3: Finalize
-        if (auditPassed) {
+        if (gatePassed) {
           await base44.asServiceRole.entities.CloneQueue.update(item.id, {
             status: 'passed',
-            audit_passed: true,
-            audit_summary: auditSummary,
-            notes: `Clone passed: ${score}/100 parity, audit passed. Added to gallery.`,
+            notes: `Rigorous gate passed: ${finalScore}/100 + forensic audit clear. Added to gallery.`,
           });
 
-          // Fetch benchmark report and store on the queue item + launch project
+          // Fetch benchmark report (non-blocking)
           try {
             const benchRes = await withTimeout(
               base44.functions.invoke('discoverBenchmarkSite', {
@@ -167,20 +148,20 @@ export default async function(req) {
 
           results.push({
             id: item.id, site_name: item.site_name, status: 'passed',
-            score, vercel_url: vercelUrl, audit_passed: true,
+            score: finalScore, vercel_url: vercelUrl, audit_passed: true,
           });
         } else {
           await base44.asServiceRole.entities.CloneQueue.update(item.id, {
             status: 'failed',
             audit_passed: false,
-            audit_summary: auditSummary,
-            error: `Audit failed after reaching ${score}/100 parity`,
-            notes: `Clone reached ${score}/100 but failed forensic audit: ${auditSummary}`,
+            error: `Rigorous gate failed at ${finalScore}/100`,
+            notes: `Failed rigorous gate after recursive healing: ${(gateData.failures || []).slice(0, 3).join('; ')}`,
           });
 
           results.push({
             id: item.id, site_name: item.site_name, status: 'failed',
-            score, vercel_url: vercelUrl, audit_passed: false, error: auditSummary,
+            score: finalScore, vercel_url: vercelUrl, audit_passed: false,
+            error: (gateData.failures || []).join('; '),
           });
         }
 
