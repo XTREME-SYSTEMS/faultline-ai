@@ -185,28 +185,41 @@ export default function StepBrand({ form, update, next, back }) {
         </div>
       )}
 
-      {/* Full Kit Results */}
-      {kit && kit.length > 0 && (
-        <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 20, marginBottom: 16 }}>
-          <h4 style={{ fontSize: 15, margin: '0 0 14px' }}>Complete Brand Kit — {form.business_name}</h4>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14 }}>
-            {kit.map((item, i) => (
-              <div key={i} style={{ border: '1px solid #eee', borderRadius: 8, overflow: 'hidden' }}>
-                <div style={{ height: 160, background: '#f8f7f4', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 10 }}>
-                  {item.image_url ? (
-                    <Image src={item.image_url} alt={item.label} fittingType="fit" className="w-full h-full" />
-                  ) : (
-                    <span style={{ fontSize: 12, color: '#999' }}>Failed</span>
-                  )}
+      {/* Full Kit Results — organized by category */}
+      {kit && kit.length > 0 && (() => {
+        const categories = [...new Set(kit.map(k => k.category || 'Other'))];
+        return (
+          <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 20, marginBottom: 16 }}>
+            <h4 style={{ fontSize: 15, margin: '0 0 4px' }}>Complete Brand Kit — {form.business_name}</h4>
+            <p style={{ fontSize: 12, color: '#888', margin: '0 0 18px' }}>{kit.length} production-ready assets · {categories.length} categories</p>
+            {categories.map(cat => (
+              <div key={cat} style={{ marginBottom: 20 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                  <span style={{ width: 4, height: 18, borderRadius: 2, background: '#C89B3C' }} />
+                  <b style={{ fontSize: 13, textTransform: 'uppercase', letterSpacing: '.06em', color: '#555' }}>{cat}</b>
+                  <span style={{ fontSize: 11, color: '#bbb' }}>· {kit.filter(k => (k.category || 'Other') === cat).length} items</span>
                 </div>
-                <div style={{ padding: '10px 12px' }}>
-                  <b style={{ fontSize: 12 }}>{item.label}</b>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+                  {kit.filter(k => (k.category || 'Other') === cat).map((item, i) => (
+                    <div key={i} style={{ border: '1px solid #eee', borderRadius: 8, overflow: 'hidden' }}>
+                      <div style={{ height: 150, background: '#f8f7f4', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 10 }}>
+                        {item.image_url ? (
+                          <Image src={item.image_url} alt={item.label} fittingType="fit" className="w-full h-full" />
+                        ) : (
+                          <span style={{ fontSize: 12, color: '#999' }}>Failed</span>
+                        )}
+                      </div>
+                      <div style={{ padding: '8px 10px' }}>
+                        <b style={{ fontSize: 11 }}>{item.label}</b>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             ))}
           </div>
-        </div>
-      )}
+        );
+      })()}
 
       {/* Selected brand summary */}
       {form.logo_url && (
