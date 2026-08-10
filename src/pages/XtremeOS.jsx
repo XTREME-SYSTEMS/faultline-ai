@@ -56,7 +56,7 @@ export default function XtremeOS() {
     })();
   }, []);
 
-  if (loading) return <div style={{ padding: 60, textAlign: 'center' }}>Loading XtremeOS…</div>;
+  if (loading) return <div style={{ padding: 60, textAlign: 'center' }}>Loading Xtreme Clone System…</div>;
 
   const metricCards = [
     { label: 'Marketplace Products', value: metrics.totalProducts, icon: Package, color: '#C89B3C', sub: `${metrics.byCategory.ai_tool || 0} tools · ${metrics.byCategory.web_pack || 0} web · ${metrics.byCategory.app_pack || 0} apps` },
@@ -79,9 +79,9 @@ export default function XtremeOS() {
         display: 'flex', justifyContent: 'space-between', alignItems: 'center'
       }}>
         <div>
-          <p style={{ color: '#E7C86E', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.16em', margin: 0 }}>Owner Dashboard</p>
-          <h1 style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 42, margin: '8px 0 4px', letterSpacing: '-.03em' }}>Xtreme<span style={{ color: '#E7C86E' }}>OS</span></h1>
-          <p style={{ color: '#aaa', fontSize: 14, margin: 0 }}>The operating system for all AI systems — autonomous, self-healing, end-to-end</p>
+          <p style={{ color: '#E7C86E', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.16em', margin: 0 }}>xtremeclonesystems.com</p>
+          <h1 style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 42, margin: '8px 0 4px', letterSpacing: '-.03em' }}>Xtreme<span style={{ color: '#E7C86E' }}>Clone</span> System</h1>
+          <p style={{ color: '#aaa', fontSize: 14, margin: 0 }}>Autonomous site cloning, forensic auditing, and one-click business formation</p>
         </div>
         <div style={{ textAlign: 'center' }}>
           <div style={{ width: 110, height: 110, borderRadius: '50%', border: '8px solid #C89B3C', display: 'grid', placeItems: 'center', margin: '0 auto' }}>

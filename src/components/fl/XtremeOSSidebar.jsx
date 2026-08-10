@@ -3,101 +3,97 @@ import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard, Terminal, MessageSquare, Building2, Globe, Shield,
   Search, TrendingUp, Package, DollarSign, Users, FileText, PenTool,
-  Database, Video, Share2, Settings, Layers, Cpu, Zap, ChevronDown, Copy, Images, ListChecks
+  Database, Video, Share2, Settings, Layers, Cpu, Zap, ChevronDown,
+  Copy, Images, ListChecks, Archive, BarChart3
 } from 'lucide-react';
 
-const NAV_GROUPS = [
+// Three-module sidebar organization:
+// 1. Xtreme Clone System (main focus — cloning, building, business formation)
+// 2. Xtreme OS (core OS — command center, store, media, admin)
+// 3. FaultLine AI (archived — old diagnostic/audit/client system)
+const MODULES = [
   {
-    label: 'Overview',
+    id: 'clone-system',
+    label: 'Xtreme Clone System',
+    icon: Copy,
+    accent: '#C89B3C',
+    archived: false,
+    collapsed: false,
     items: [
-      { to: '/app', label: 'XtremeOS', icon: LayoutDashboard, end: true },
-      { to: '/app/command-center', label: 'Command Center', icon: Terminal },
-      { to: '/app/chat', label: 'Chat', icon: MessageSquare },
-    ]
-  },
-  {
-    label: 'Build',
-    items: [
-      { to: '/app/business', label: 'Business Hub', icon: Building2 },
-      { to: '/app/website-generator', label: 'Website Generator', icon: Globe },
-      { to: '/app/app-generator', label: 'App Generator', icon: Cpu },
-      { to: '/app/universal-builder', label: 'Universal Builder', icon: Layers },
-      { to: '/app/brand-generator', label: 'Brand Generator', icon: PenTool },
-      { to: '/app/niche-websites', label: 'Niche Websites', icon: Globe },
+      { to: '/app', label: 'Dashboard', icon: LayoutDashboard, end: true },
       { to: '/app/clone-studio', label: 'Clone Studio', icon: Copy },
       { to: '/app/clone-queue', label: 'Clone Queue', icon: ListChecks },
       { to: '/app/clone-gallery', label: 'Clone Gallery', icon: Images },
+      { to: '/app/business', label: 'Business Hub', icon: Building2 },
+      { to: '/app/website-generator', label: 'Website Generator', icon: Globe },
+      { to: '/app/app-generator', label: 'App Generator', icon: Cpu },
+      { to: '/app/brand-generator', label: 'Brand Generator', icon: PenTool },
+      { to: '/app/niche-websites', label: 'Niche Websites', icon: Globe },
+      { to: '/app/universal-builder', label: 'Universal Builder', icon: Layers },
     ]
   },
   {
-    label: 'Marketplace',
+    id: 'xtreme-os',
+    label: 'Xtreme OS',
+    icon: Terminal,
+    accent: '#2563eb',
+    archived: false,
+    collapsed: false,
     items: [
+      { to: '/app/command-center', label: 'Command Center', icon: Terminal },
+      { to: '/app/chat', label: 'Chat', icon: MessageSquare },
       { to: '/store', label: 'Store', icon: Package },
       { to: '/app/tool-advisor', label: 'Tool Advisor', icon: Zap },
       { to: '/app/xps-catalog', label: 'XPS Catalog', icon: Layers },
       { to: '/app/marketplace', label: 'Implementation Market', icon: DollarSign },
-    ]
-  },
-  {
-    label: 'Discovery',
-    items: [
-      { to: '/app/discovery-engine', label: 'Discovery Engine', icon: Search },
-      { to: '/app/industry-opportunities', label: 'Opportunities', icon: TrendingUp },
-      { to: '/app/competitive-intel', label: 'Competitive Intel', icon: TrendingUp },
-    ]
-  },
-  {
-    label: 'Security & QA',
-    items: [
-      { to: '/app/security-pipeline', label: 'Security Pipeline', icon: Shield },
-      { to: '/app/qa-center', label: 'QA Dashboard', icon: Shield },
-      { to: '/app/enhancement-engine', label: 'Enhancement Engine', icon: Zap },
-    ]
-  },
-  {
-    label: 'Operations',
-    items: [
       { to: '/app/books', label: 'Books', icon: DollarSign },
-      { to: '/app/financial-sync', label: 'Financial Sync', icon: DollarSign },
-      { to: '/app/drive-sync', label: 'Drive Sync', icon: Database },
-      { to: '/app/esign', label: 'E-Signature', icon: FileText },
-    ]
-  },
-  {
-    label: 'Clients',
-    items: [
-      { to: '/app/client-projects', label: 'Client Projects', icon: Users },
-      { to: '/app/client-portal', label: 'Client Portal', icon: Users },
-      { to: '/app/demo-portal', label: 'Demo Portal', icon: Globe },
-      { to: '/app/deliverable-studio', label: 'Deliverable Studio', icon: FileText },
-      { to: '/app/roi', label: 'Client ROI', icon: TrendingUp },
-    ]
-  },
-  {
-    label: 'Media & Tools',
-    items: [
       { to: '/app/visual-studio', label: 'Visual Studio', icon: PenTool },
       { to: '/app/video-studio', label: 'Video Studio', icon: Video },
       { to: '/app/social-media', label: 'Social Media', icon: Share2 },
       { to: '/app/ai-control', label: 'AI Control', icon: Cpu },
       { to: '/app/xv', label: 'Xtreme Visualizer', icon: PenTool },
+      { to: '/app/database', label: 'Database', icon: Database },
+      { to: '/app/settings', label: 'Settings', icon: Settings },
     ]
   },
   {
-    label: 'Admin',
+    id: 'faultline',
+    label: 'FaultLine AI',
+    icon: Archive,
+    accent: '#666',
+    archived: true,
+    collapsed: true, // collapsed by default
     items: [
+      { to: '/app/discovery-engine', label: 'Discovery Engine', icon: Search },
+      { to: '/app/industry-opportunities', label: 'Opportunities', icon: TrendingUp },
+      { to: '/app/competitive-intel', label: 'Competitive Intel', icon: TrendingUp },
+      { to: '/app/security-pipeline', label: 'Security Pipeline', icon: Shield },
+      { to: '/app/qa-center', label: 'QA Dashboard', icon: Shield },
+      { to: '/app/enhancement-engine', label: 'Enhancement Engine', icon: Zap },
+      { to: '/app/roi', label: 'Client ROI', icon: BarChart3 },
+      { to: '/app/financial-sync', label: 'Financial Sync', icon: DollarSign },
       { to: '/app/white-label', label: 'White Label', icon: Layers },
       { to: '/app/audit-templates', label: 'Audit Templates', icon: FileText },
       { to: '/app/partner-api', label: 'Partner API', icon: Zap },
       { to: '/app/pcu-control', label: 'PCU Control', icon: Cpu },
-      { to: '/app/database', label: 'Database', icon: Database },
-      { to: '/app/settings', label: 'Settings', icon: Settings },
+      { to: '/app/client-projects', label: 'Client Projects', icon: Users },
+      { to: '/app/client-portal', label: 'Client Portal', icon: Users },
+      { to: '/app/demo-portal', label: 'Demo Portal', icon: Globe },
+      { to: '/app/deliverable-studio', label: 'Deliverable Studio', icon: FileText },
+      { to: '/app/drive-sync', label: 'Drive Sync', icon: Database },
+      { to: '/app/esign', label: 'E-Signature', icon: FileText },
     ]
   },
 ];
 
 export default function XtremeOSSidebar() {
-  const [collapsed, setCollapsed] = useState(null);
+  const [collapsedModules, setCollapsedModules] = useState(
+    Object.fromEntries(MODULES.map(m => [m.id, m.collapsed]))
+  );
+
+  function toggleModule(id) {
+    setCollapsedModules(prev => ({ ...prev, [id]: !prev[id] }));
+  }
 
   return (
     <aside className="xtremeos-sidebar" style={{
@@ -114,49 +110,65 @@ export default function XtremeOSSidebar() {
             display: 'grid', placeItems: 'center', fontSize: 18, fontWeight: 700, color: '#111'
           }}>X</div>
           <div>
-            <b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 18, display: 'block' }}>Xtreme<span style={{ color: '#E7C86E' }}>OS</span></b>
-            <small style={{ color: '#777', fontSize: 9, textTransform: 'uppercase', letterSpacing: '.12em' }}>Operating System</small>
+            <b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 15, display: 'block', lineHeight: 1.1 }}>
+              Xtreme<span style={{ color: '#E7C86E' }}>Clone</span> System
+            </b>
+            <small style={{ color: '#666', fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em' }}>xtremeclonesystems.com</small>
           </div>
         </div>
       </div>
 
-      {/* Navigation */}
+      {/* Module Navigation */}
       <nav style={{ padding: '8px 8px 60px' }}>
-        {NAV_GROUPS.map((group, gi) => {
-          const isCollapsed = collapsed === gi;
+        {MODULES.map(mod => {
+          const isCollapsed = collapsedModules[mod.id];
           return (
-            <div key={gi} style={{ marginBottom: 4 }}>
+            <div key={mod.id} style={{ marginBottom: 6 }}>
+              {/* Module Header */}
               <button
-                onClick={() => setCollapsed(isCollapsed ? null : gi)}
+                onClick={() => toggleModule(mod.id)}
                 style={{
                   width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                  padding: '10px 12px', background: 'none', border: 0, color: '#888',
+                  padding: '12px 12px 8px', background: 'none', border: 0,
+                  color: mod.archived ? '#555' : mod.accent,
                   fontSize: 10, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em',
-                  cursor: 'pointer', textAlign: 'left'
+                  cursor: 'pointer', textAlign: 'left',
                 }}
               >
-                <span>{group.label}</span>
-                <ChevronDown size={12} style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'none', transition: '.2s' }} />
+                <span style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
+                  <mod.icon size={13} />
+                  {mod.label}
+                  {mod.archived && (
+                    <span style={{
+                      padding: '2px 5px', borderRadius: 3, background: '#1a1a1a', color: '#555',
+                      fontSize: 8, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.06em',
+                      border: '1px solid #333',
+                    }}>Archived</span>
+                  )}
+                </span>
+                <ChevronDown size={11} style={{ transform: isCollapsed ? 'rotate(-90deg)' : 'none', transition: '.2s', color: '#555' }} />
               </button>
+              {/* Module Items */}
               {!isCollapsed && (
-                <div style={{ display: 'grid', gap: 2, marginBottom: 8 }}>
-                  {group.items.map(item => (
+                <div style={{ display: 'grid', gap: 1, marginBottom: 6 }}>
+                  {mod.items.map(item => (
                     <NavLink
                       key={item.to}
                       to={item.to}
                       end={item.end}
                       style={({ isActive }) => ({
                         display: 'flex', alignItems: 'center', gap: 10,
-                        padding: '8px 12px', borderRadius: 5, fontSize: 13,
-                        color: isActive ? '#fff' : '#bbb',
+                        padding: '7px 12px', borderRadius: 5, fontSize: 13,
+                        color: mod.archived ? '#555' : (isActive ? '#fff' : '#bbb'),
                         background: isActive ? '#232323' : 'none',
-                        boxShadow: isActive ? 'inset 3px 0 #C89B3C' : 'none',
+                        boxShadow: isActive ? `inset 3px 0 ${mod.archived ? '#555' : '#C89B3C'}` : 'none',
                         textDecoration: 'none',
+                        opacity: mod.archived ? 0.6 : 1,
                       })}
                     >
                       {({ isActive }) => (
                         <>
-                          <item.icon size={15} style={{ flexShrink: 0, color: isActive ? '#E7C86E' : '#888' }} />
+                          <item.icon size={15} style={{ flexShrink: 0, color: mod.archived ? '#444' : (isActive ? '#E7C86E' : '#888') }} />
                           <span>{item.label}</span>
                         </>
                       )}
