@@ -8,6 +8,9 @@ export default function StepName({ form, update, next, back }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [suggestions, setSuggestions] = useState([]);
+  const [manualMode, setManualMode] = useState(false);
+  const [manualName, setManualName] = useState(form.business_name || '');
+  const [manualDomain, setManualDomain] = useState(form.domain || '');
 
   const generate = async () => {
     if (!keywords.trim()) { setError('Enter a keyword or description'); return; }
@@ -89,6 +92,35 @@ export default function StepName({ form, update, next, back }) {
           </div>
         </div>
       )}
+
+      {/* Manual entry toggle */}
+      <div style={{ marginBottom: 16 }}>
+        {!manualMode ? (
+          <button onClick={() => setManualMode(true)} style={{
+            background: 'none', border: '1px dashed #ccc', borderRadius: 8, padding: '12px 20px',
+            fontSize: 13, color: '#666', cursor: 'pointer', fontFamily: 'inherit', width: '100%',
+          }}>Already have a name? Enter it manually →</button>
+        ) : (
+          <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 20 }}>
+            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'flex-end' }}>
+              <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700, flex: 1, minWidth: 200 }}>
+                Business Name
+                <input value={manualName} onChange={e => setManualName(e.target.value)} placeholder="e.g. Acme Corp"
+                  style={{ padding: 11, border: '1px solid #ddd', borderRadius: 6, fontSize: 13, background: '#fff' }} />
+              </label>
+              <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700, flex: 1, minWidth: 200 }}>
+                Domain
+                <input value={manualDomain} onChange={e => setManualDomain(e.target.value)} placeholder="e.g. acme.com"
+                  style={{ padding: 11, border: '1px solid #ddd', borderRadius: 6, fontSize: 13, background: '#fff' }} />
+              </label>
+              <button onClick={() => { if (manualName.trim()) { update('business_name', manualName.trim()); update('domain', manualDomain.trim()); update('industry', industry || keywords); } }} style={{
+                background: '#0a0a0a', color: '#fff', border: 0, borderRadius: 6, padding: '11px 20px',
+                fontSize: 13, fontWeight: 700, cursor: 'pointer', fontFamily: 'inherit',
+              }}>Use This</button>
+            </div>
+          </div>
+        )}
+      </div>
 
       {form.business_name && (
         <div style={{ background: '#f0f9f3', border: '1px solid #c8e6d0', borderRadius: 8, padding: 14, marginBottom: 16, fontSize: 13 }}>

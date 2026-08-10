@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
+import { useAuth } from '@/lib/AuthContext';
 import { Link } from 'react-router-dom';
-import { Loader2, Download, ExternalLink, Code, Eye } from 'lucide-react';
+import { Loader2, Download, ExternalLink, Code, Eye, Rocket } from 'lucide-react';
 import AiFieldGenerator from '@/components/fl/AiFieldGenerator';
 import BuildAssistant from './BuildAssistant';
 import { enhanceSite } from '@/lib/enhanceSite';
@@ -11,10 +12,13 @@ import {
 } from './options';
 
 export default function StepBuild({ form, update, back }) {
+  const { user } = useAuth();
   const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState(null);
   const [error, setError] = useState('');
   const [showPreview, setShowPreview] = useState(true);
+  const [deploying, setDeploying] = useState(false);
+  const [deployResult, setDeployResult] = useState(null);
 
   const isApp = form.buildType === 'app';
   const pageOptions = isApp ? APP_PAGES : WEBSITE_PAGES;
@@ -85,6 +89,44 @@ export default function StepBuild({ form, update, back }) {
       setError(e.message || 'Generation failed');
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const deploy = async () => {
+    if (!result?.html) return;
+    setDeploying(true);
+    setDeployResult(null);
+    try {
+      const blob = new Blob([result.html], { type: 'text/html' });
+      const file = new File([blob], `${form.business_name.replace(/\s+/g, '-').toLowerCase()}.html`, { type: 'text/html' });
+      const uploadRes = await base44.integrations.Core.UploadFile({ file });
+
+      const deliverable = await base44.entities.Deliverable.create({
+        organization_id: user?.data?.organization_id || '',
+        deliverable_type: 'website',
+        title: `${form.business_name} — ${form.buildType}`,
+        content: result.html,
+        file_url: uploadRes?.file_url || '',
+        status: 'generated',
+      });
+
+      const project = await base44.entities.LaunchProject.create({
+        organization_id: user?.data?.organization_id || '',
+        project_name: form.business_name,
+        project_type: form.buildType === 'app' ? 'app' : 'website',
+        business_name: form.business_name,
+        industry: form.industry || '',
+        domain_name: form.domain || '',
+        description: form.description || '',
+        status: 'queued',
+        deliverable_id: deliverable.id,
+      });
+
+      setDeployResult({ project, deliverable, file_url: uploadRes?.file_url });
+    } catch (e) {
+      setError('Deploy failed: ' + (e.message || 'Unknown error'));
+    } finally {
+      setDeploying(false);
     }
   };
 
@@ -236,6 +278,21 @@ export default function StepBuild({ form, update, back }) {
               </div>
             </div>
             <p style={{ fontSize: 12, color: '#666', margin: '8px 0 0' }}>Saved to Deliverable Studio. <Link to="/app/deliverable-studio" style={{ color: '#C89B3C' }}>View in studio →</Link></p>
+            <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+              <button onClick={deploy} disabled={deploying} style={{
+                display: 'flex', alignItems: 'center', gap: 6, background: deploying ? '#666' : 'linear-gradient(135deg, #E7C86E, #C89B3C)',
+                color: '#111', border: 0, borderRadius: 6, padding: '8px 16px', fontSize: 12, fontWeight: 700,
+                cursor: deploying ? 'wait' : 'pointer', fontFamily: 'inherit',
+              }}>
+                {deploying ? <Loader2 size={14} className="animate-spin" /> : <Rocket size={14} />}
+                {deploying ? 'Deploying...' : 'Deploy to Launch Pipeline'}
+              </button>
+            </div>
+            {deployResult && (
+              <div style={{ marginTop: 10, padding: 12, background: '#f0f9f3', border: '1px solid #c8e6d0', borderRadius: 6, fontSize: 13 }}>
+                ✓ <b>Project created!</b> <Link to="/app/deliverable-studio" style={{ color: '#C89B3C' }}>Open in Deliverable Studio →</Link>
+              </div>
+            )}
           </div>
           <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' }}>
             {showPreview ? (

@@ -1,15 +1,17 @@
-import { Globe, Cpu } from 'lucide-react';
+import { Globe, Cpu, Layers, Wrench } from 'lucide-react';
 import { APP_TYPES } from './options';
 
 export default function StepType({ form, update, next }) {
   const types = [
     { id: 'website', label: 'Website', icon: Globe, desc: 'Marketing site, landing page, portfolio, blog' },
     { id: 'app', label: 'App', icon: Cpu, desc: 'Dashboard, CRM, booking, inventory, POS' },
+    { id: 'system', label: 'System', icon: Layers, desc: 'Multi-page system, portal, workflow tool' },
+    { id: 'tool', label: 'Tool', icon: Wrench, desc: 'Single-purpose utility, calculator, converter' },
   ];
 
   return (
     <div style={{ maxWidth: 820, margin: '0 auto' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 24 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 16, marginBottom: 24 }}>
         {types.map(t => (
           <button key={t.id} onClick={() => update('buildType', t.id)} style={{
             padding: 28, borderRadius: 12,

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
 import Stepper from '@/components/build-studio/Stepper';
 import StepType from '@/components/build-studio/StepType';
@@ -6,9 +6,7 @@ import StepName from '@/components/build-studio/StepName';
 import StepBrand from '@/components/build-studio/StepBrand';
 import StepBuild from '@/components/build-studio/StepBuild';
 
-export default function BuildStudio() {
-  const [step, setStep] = useState(0);
-  const [form, setForm] = useState({
+const defaultForm = {
     buildType: 'website',
     appType: 'dashboard',
     business_name: '', industry: '', domain: '',
@@ -18,7 +16,21 @@ export default function BuildStudio() {
     font_style: 'modern', font_heading: '', font_body: '',
     tone: 'professional', logo_url: '', tagline: '',
     pages: [], features: [],
+  };
+
+export default function BuildStudio() {
+  const [step, setStep] = useState(0);
+  const [form, setForm] = useState(() => {
+    try {
+      const saved = localStorage.getItem('buildStudioForm');
+      if (saved) return { ...defaultForm, ...JSON.parse(saved) };
+    } catch (e) {}
+    return defaultForm;
   });
+
+  useEffect(() => {
+    try { localStorage.setItem('buildStudioForm', JSON.stringify(form)); } catch (e) {}
+  }, [form]);
 
   const update = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
   const next = () => setStep(s => Math.min(3, s + 1));
