@@ -167,33 +167,42 @@ export default function XtremeOS() {
         </div>
       )}
 
-      {/* Quick Links — primary navigation hubs */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 10, marginBottom: 13 }}>
-        {[
-          { label: 'Niche Search', path: '/app/niche-websites', icon: Search, desc: 'Search & queue sites', bg: '#C89B3C' },
-          { label: 'Clone Queue', path: '/app/clone-queue', icon: ListChecks, desc: 'Clone pipeline', bg: '#2563eb' },
-          { label: 'Clone Studio', path: '/app/clone-studio', icon: Copy, desc: 'Build & customize', bg: '#0B0B0D' },
-          { label: 'Clone Gallery', path: '/app/clone-gallery', icon: Images, desc: 'Browse clones', bg: '#7c3aed' },
-          { label: 'Business Hub', path: '/app/business', icon: Building2, desc: 'Form DBAs & LLCs', bg: '#0B0B0D' },
-          { label: 'Build Studio', path: '/app/build-studio', icon: Layers, desc: 'Build apps & sites', bg: '#059669' },
-        ].map(l => (
-          <Link key={l.path} to={l.path} style={{
-            background: l.bg, border: 0, borderRadius: 7, padding: 11,
-            display: 'flex', alignItems: 'center', gap: 10, textDecoration: 'none', color: '#fff',
-            transition: 'transform .15s, box-shadow .15s',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 5px 12px rgba(0,0,0,.2)'; }}
-            onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
-          >
-            <span style={{ width: 32, height: 32, borderRadius: 6, background: 'rgba(255,255,255,.18)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-              <l.icon size={17} style={{ color: '#fff' }} />
-            </span>
-            <div style={{ minWidth: 0 }}>
-              <b style={{ fontSize: 12.5, display: 'block', color: '#fff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{l.label}</b>
-              <small style={{ fontSize: 10, color: 'rgba(255,255,255,.72)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', display: 'block' }}>{l.desc}</small>
-            </div>
-          </Link>
-        ))}
+      {/* Getting Started — step-by-step workflow */}
+      <div style={{ marginBottom: 13 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+          <span style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.12em', color: '#C89B3C' }}>Getting Started</span>
+          <span style={{ fontSize: 12, color: '#999' }}>— Follow these steps in order</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+          {[
+            { step: 1, label: 'Niche Search', path: '/app/niche-websites', icon: Search, desc: 'Find top-ranking sites in your industry and add them to the clone queue', bg: '#C89B3C' },
+            { step: 2, label: 'Clone Queue', path: '/app/clone-queue', icon: ListChecks, desc: 'Monitor your queued sites as they move through the cloning pipeline', bg: '#2563eb' },
+            { step: 3, label: 'Clone Studio', path: '/app/clone-studio', icon: Copy, desc: 'Customize and refine your cloned sites with branding and content', bg: '#0B0B0D' },
+            { step: 4, label: 'Clone Gallery', path: '/app/clone-gallery', icon: Images, desc: 'Browse all finished clones with live links and summaries', bg: '#7c3aed' },
+            { step: 5, label: 'Business Hub', path: '/app/business', icon: Building2, desc: 'Form a DBA or LLC to legitimize your new cloned business', bg: '#0B0B0D' },
+            { step: 6, label: 'Build Studio', path: '/app/build-studio', icon: Layers, desc: 'Build custom apps, websites, and tools to round out your operation', bg: '#059669' },
+          ].map(l => (
+            <Link key={l.path} to={l.path} style={{
+              background: l.bg, border: 0, borderRadius: 10, padding: '16px 14px',
+              display: 'flex', alignItems: 'flex-start', gap: 12, textDecoration: 'none', color: '#fff',
+              transition: 'transform .15s, box-shadow .15s', position: 'relative',
+            }}
+              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 16px rgba(0,0,0,.25)'; }}
+              onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
+            >
+              <span style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,.2)', display: 'grid', placeItems: 'center', flexShrink: 0, fontWeight: 700, fontSize: 13, color: '#fff' }}>
+                {l.step}
+              </span>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                  <l.icon size={14} style={{ color: 'rgba(255,255,255,.7)', flexShrink: 0 }} />
+                  <b style={{ fontSize: 13, color: '#fff' }}>{l.label}</b>
+                </div>
+                <small style={{ fontSize: 11, color: 'rgba(255,255,255,.68)', lineHeight: 1.45, display: 'block' }}>{l.desc}</small>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
 
       {/* Metric Cards */}
