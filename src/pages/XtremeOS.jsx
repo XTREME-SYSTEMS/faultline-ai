@@ -65,12 +65,19 @@ export default function XtremeOS() {
     setHardenError('');
     setHardenResult(null);
     try {
-      const res = await base44.functions.invoke('forensicAuditAndHarden', { max_iterations: 3 });
+      const res = await base44.functions.invoke('forensicAuditAndHarden', { max_iterations: 1, heal_limit: 3 });
       const d = res.data || res;
       if (d.error) throw new Error(d.error);
       setHardenResult(d);
-      // Reload metrics after hardening
-      setTimeout(() => window.location.reload(), 3000);
+      // Reload metrics in-place (no full page reload)
+      setTimeout(() => {
+        (async () => {
+          const projects = await base44.entities.LaunchProject.list('-created_date', 100).catch(() => []);
+          const at100 = projects.filter(p => (p.parity_score || 0) >= 100).length;
+          setMetrics(m => ({ ...m, totalClones: projects.length, at100, healthPct: projects.length ? Math.round((at100 / projects.length) * 100) : 0 }));
+          setClones(projects.filter(p => p.parity_score > 0).slice(0, 8));
+        })();
+      }, 2000);
     } catch (e) {
       setHardenError(e.message || 'Auto-harden failed');
     } finally {
@@ -154,11 +161,44 @@ export default function XtremeOS() {
                 <span style={{ color: '#237A4B' }}><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{hardenResult.hardened}</b> hardened</span>
                 <span style={{ color: '#B88214' }}><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{hardenResult.still_failing}</b> still failing</span>
               </div>
-              <p style={{ fontSize: 11, color: '#888', marginTop: 10, marginBottom: 0 }}>Refreshing dashboard with updated scores...</p>
+              {hardenResult.still_failing > 0 ? (
+                <p style={{ fontSize: 12, color: '#B88214', marginTop: 10, marginBottom: 0 }}>
+                  {hardenResult.still_failing} sites still need healing. Click the button again to heal the next batch.
+                </p>
+              ) : (
+                <p style={{ fontSize: 11, color: '#237A4B', marginTop: 10, marginBottom: 0 }}>All audited sites are at 100/100.</p>
+              )}
             </>
           )}
         </div>
       )}
+
+      {/* Quick Links — primary navigation hubs */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 13, marginBottom: 13 }}>
+        {[
+          { label: 'Clone Studio', path: '/app/clone-studio', icon: Copy, desc: 'Build & customize clones' },
+          { label: 'Clone Queue', path: '/app/clone-queue', icon: ListChecks, desc: 'Manage clone pipeline' },
+          { label: 'Clone Gallery', path: '/app/clone-gallery', icon: Images, desc: 'Browse all clones' },
+          { label: 'Business Hub', path: '/app/business', icon: Building2, desc: 'Form DBAs & LLCs' },
+        ].map(l => (
+          <Link key={l.path} to={l.path} style={{
+            background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 18,
+            display: 'flex', alignItems: 'center', gap: 14, textDecoration: 'none', color: 'inherit',
+            transition: 'box-shadow .15s, border-color .15s',
+          }}
+            onMouseEnter={e => { e.currentTarget.style.borderColor = '#C89B3C'; e.currentTarget.style.boxShadow = '0 4px 12px #C89B3C22'; }}
+            onMouseLeave={e => { e.currentTarget.style.borderColor = '#ddd'; e.currentTarget.style.boxShadow = 'none'; }}
+          >
+            <span style={{ width: 42, height: 42, borderRadius: 8, background: 'linear-gradient(135deg, #E7C86E22, #C89B3C22)', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
+              <l.icon size={22} style={{ color: '#C89B3C' }} />
+            </span>
+            <div>
+              <b style={{ fontSize: 14, display: 'block' }}>{l.label}</b>
+              <small style={{ fontSize: 11, color: '#999' }}>{l.desc}</small>
+            </div>
+          </Link>
+        ))}
+      </div>
 
       {/* Metric Cards */}
       <div className="metrics" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
@@ -241,20 +281,6 @@ export default function XtremeOS() {
         <Link to="/store" style={{ display: 'inline-block', marginTop: 14, fontSize: 12, color: '#C89B3C', fontWeight: 700 }}>Visit marketplace →</Link>
       </article>
 
-      {/* Quick Links */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 13, marginTop: 13 }}>
-        {[
-          { label: 'Clone Studio', path: '/app/clone-studio', icon: Copy },
-          { label: 'Clone Queue', path: '/app/clone-queue', icon: ListChecks },
-          { label: 'Clone Gallery', path: '/app/clone-gallery', icon: Images },
-          { label: 'Business Hub', path: '/app/business', icon: Building2 },
-        ].map(l => (
-          <Link key={l.path} to={l.path} style={{ background: '#fff', border: '1px solid #ddd', padding: 20, display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none', color: 'inherit' }}>
-            <l.icon size={22} style={{ color: '#C89B3C' }} />
-            <b style={{ fontSize: 14 }}>{l.label}</b>
-          </Link>
-        ))}
-      </div>
       </div>
     </>
   );

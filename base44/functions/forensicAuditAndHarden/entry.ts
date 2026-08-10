@@ -64,7 +64,8 @@ export default async function(req) {
     if (!orgId) return Response.json({ error: 'No organization found' }, { status: 400 });
 
     const body = await req.json().catch(() => ({}));
-    const maxIterations = body.max_iterations || 2;
+    const maxIterations = body.max_iterations || 1;
+    const healLimit = body.heal_limit || 3; // only heal N projects per call to avoid timeout
 
     // Get ALL launched clone projects with a live URL
     const allProjects = await base44.asServiceRole.entities.LaunchProject.filter(
@@ -75,32 +76,47 @@ export default async function(req) {
       p => p.vercel_deployment_url || p.metadata?.target_url
     );
 
-    console.log(`forensicAuditAndHarden: ${auditable.length} sites to audit`);
+    // Quick forensic audit pass on all sites (fast HTTP checks), then only
+    // heal the worst `healLimit` projects to stay within function timeout.
+    console.log(`forensicAuditAndHarden: auditing ${auditable.length} sites, healing top ${healLimit}`);
 
     const results = [];
     let hardened = 0;
     let stillFailing = 0;
     let allClear = 0;
 
+    // Phase 1: quick audit all sites (fast HTTP fetch only)
+    const auditScores = [];
     for (const project of auditable) {
       const liveUrl = project.vercel_deployment_url;
       const beforeScore = project.parity_score || 0;
-      console.log(`Forensic audit: ${project.project_name} (score ${beforeScore})`);
-
       let auditResult = null;
       try {
         if (liveUrl) {
           auditResult = await forensicAudit(liveUrl);
         } else {
-          // No live URL — needs a heal pass to deploy first
           auditResult = { score: 0, checks: { http_ok: false, missing_security_headers: SECURITY_HEADERS } };
         }
       } catch (e) {
         auditResult = { score: 0, checks: { http_ok: false, error: e.message, missing_security_headers: SECURITY_HEADERS } };
       }
+      auditScores.push({ project, auditResult, beforeScore });
+    }
 
-      const needsHeal = auditResult.score < 100 || beforeScore < 100;
+    // Phase 2: sort by worst score, heal only the top `healLimit`
+    const needsHealing = auditScores
+      .filter(a => a.auditResult.score < 100 || a.beforeScore < 100)
+      .sort((a, b) => a.auditResult.score - b.auditResult.score)
+      .slice(0, healLimit);
 
+    const clearCount = auditScores.length - needsHealing.length;
+    allClear = clearCount;
+
+    for (const { project, auditResult, beforeScore } of needsHealing) {
+      const liveUrl = project.vercel_deployment_url;
+      console.log(`Forensic heal: ${project.project_name} (score ${beforeScore}, forensic ${auditResult.score})`);
+
+      const needsHeal = true;
       if (needsHeal) {
         try {
           const healRes = await withTimeout(
@@ -138,15 +154,18 @@ export default async function(req) {
           });
           stillFailing++;
         }
-      } else {
-        // Already at 100 and passes forensic checks
+      }
+    }
+
+    // Add clear sites to results (summary only, not healed)
+    for (const a of auditScores) {
+      if (a.auditResult.score >= 100 && a.beforeScore >= 100) {
         results.push({
-          id: project.id, name: project.project_name,
-          before: beforeScore, after: beforeScore,
-          forensic_score: auditResult.score, status: 'clear',
-          missing_headers: auditResult.checks.missing_security_headers
+          id: a.project.id, name: a.project.project_name,
+          before: a.beforeScore, after: a.beforeScore,
+          forensic_score: a.auditResult.score, status: 'clear',
+          missing_headers: a.auditResult.checks.missing_security_headers
         });
-        allClear++;
       }
     }
 
