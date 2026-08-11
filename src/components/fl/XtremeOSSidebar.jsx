@@ -26,6 +26,7 @@ const MODULES = [
       { to: '/app/clone-studio', label: 'Clone Studio', icon: Copy },
       { to: '/app/clone-gallery', label: 'Clone Gallery', icon: Images },
       { to: '/app/business', label: 'Business Hub', icon: Building2 },
+      { to: '/app/template-library', label: 'Template Library', icon: Layers },
       { to: '/app/build-studio', label: 'Build Studio', icon: Layers },
     ]
   },
