@@ -134,22 +134,34 @@ export async function deployToVercel(token, teamId, projectName, projectId, html
   const fileData = new TextEncoder().encode(html);
   const sha = await sha1hex(fileData);
   const size = fileData.length;
+  // Retry on 429 (rate limit) with exponential backoff: 2s, 4s, 8s
+  const fetchWithRetry = async (url, opts, label) => {
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const res = await fetch(url, opts);
+      if (res.ok) return res;
+      if (res.status === 429 && attempt < 2) {
+        const wait = Math.pow(2, attempt + 1) * 1000;
+        console.warn(`${label} got 429, retrying in ${wait / 1000}s (attempt ${attempt + 1}/3)`);
+        await new Promise(r => setTimeout(r, wait));
+        continue;
+      }
+      throw new Error(`${label} failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
+    }
+  };
   const uploadUrl = `https://api.vercel.com/v2/files${teamId ? `?teamId=${teamId}` : ''}`;
-  const upRes = await fetch(uploadUrl, {
+  const upRes = await fetchWithRetry(uploadUrl, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/octet-stream', 'x-vercel-digest': sha },
     body: fileData
-  });
-  if (!upRes.ok) throw new Error(`Vercel file upload failed (${upRes.status}): ${(await upRes.text()).slice(0, 200)}`);
+  }, 'Vercel file upload');
   const depUrl = `https://api.vercel.com/v13/deployments${teamId ? `?teamId=${teamId}` : ''}`;
   const depBody = { name: projectName, files: [{ file: 'index.html', sha, size }], target: 'production', projectSettings: { framework: null } };
   if (projectId) depBody.project = projectId;
-  const depRes = await fetch(depUrl, {
+  const depRes = await fetchWithRetry(depUrl, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
     body: JSON.stringify(depBody)
-  });
-  if (!depRes.ok) throw new Error(`Vercel deploy failed (${depRes.status}): ${(await depRes.text()).slice(0, 200)}`);
+  }, 'Vercel deploy');
   const d = await depRes.json();
   return { id: d.id, url: d.url ? `https://${d.url}` : null, readyState: d.readyState, alias: d.alias || [] };
 }

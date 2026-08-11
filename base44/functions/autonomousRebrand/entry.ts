@@ -27,8 +27,8 @@ export default async function(req: Request) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { source_url, target_brand, accent_color, clone_id, clone_name, rebrand_project_id } = body;
-    if (!source_url && !rebrand_project_id) return Response.json({ error: 'source_url or rebrand_project_id required' }, { status: 400 });
+    const { source_url, target_brand, accent_color, clone_id, clone_name, rebrand_project_id, clone_html, return_html } = body;
+    if (!source_url && !rebrand_project_id && !clone_html) return Response.json({ error: 'source_url, rebrand_project_id, or clone_html required' }, { status: 400 });
 
     const BRAND = target_brand || 'Lead Gen Near You';
     const accent = accent_color || DEFAULT_ACCENT;
@@ -64,9 +64,12 @@ export default async function(req: Request) {
 
     await base44.entities.RebrandProject.update(pid, { status: 'auditing', accent_color: accent, mandatory_elements: elements, autonomous_log: log });
 
-    // 1. Fetch the clone HTML
-    const r = await fetch(source_url || project.source_url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AutonomousRebrand/1.0)' } });
-    let html = await r.text();
+    // 1. Use provided HTML or fetch the clone HTML
+    let html = clone_html || '';
+    if (!html) {
+      const r = await fetch(source_url || project.source_url, { headers: { 'User-Agent': 'Mozilla/5.0 (compatible; AutonomousRebrand/1.0)' } });
+      html = await r.text();
+    }
     const htmlSample = html.slice(0, 20000);
     const imgs = [...html.matchAll(/<img[^>]+src=["']([^"']+)["']/gi)].map(m => m[1]).slice(0, 40);
     const titleMatch = html.match(/<title[^>]*>([^<]*)<\/title>/i);
@@ -234,18 +237,22 @@ Return JSON:
       ...(detected.tagline_swaps || []).map(s => ({ find: s.find, replace: s.replace, reason: 'Proprietary tagline', type: 'tagline' })),
     ];
 
-    // Deploy to Vercel
+    // Deploy to Vercel (or return HTML in-memory if return_html is set)
     await base44.entities.RebrandProject.update(pid, { status: 'generating_assets', mandatory_elements: elements, autonomous_log: log });
-    const token = secrets.get('VERCEL_TOKEN');
-    if (!token) throw new Error('VERCEL_TOKEN secret not set');
-    const teamId = secrets.get('VERCEL_TEAM_ID') || null;
     const baseSlug = slugify(clone_name || project.source_clone_name || 'lead-gen-near-you') || 'lead-gen-near-you';
     const slug = `${baseSlug}-lgny`;
-    const vProject = await createVercelProject(token, teamId, slug);
-    try { await disableVercelSso(token, teamId, vProject.id); } catch (e) { /* non-fatal */ }
-    const deploy = await deployToVercel(token, teamId, slug, vProject.id, html);
+    let deployUrl = null;
+    if (!return_html) {
+      const token = secrets.get('VERCEL_TOKEN');
+      if (!token) throw new Error('VERCEL_TOKEN secret not set');
+      const teamId = secrets.get('VERCEL_TEAM_ID') || null;
+      const vProject = await createVercelProject(token, teamId, slug);
+      try { await disableVercelSso(token, teamId, vProject.id); } catch (e) { /* non-fatal */ }
+      const deploy = await deployToVercel(token, teamId, slug, vProject.id, html);
+      deployUrl = deploy.url;
+    }
 
-    log.push({ step: 'deploy', status: 'done', timestamp: nowIso(), detail: deploy.url });
+    log.push({ step: 'deploy', status: 'done', timestamp: nowIso(), detail: deployUrl || 'returned HTML (no deploy)' });
 
     await base44.entities.RebrandProject.update(pid, {
       status: 'completed',
@@ -259,17 +266,19 @@ Return JSON:
       brand_references: brandTerms.map(b => b.term),
       mandatory_elements: elements,
       autonomous_log: log,
-      provisioned: {
+      rebrand_html: return_html ? html : undefined,
+      provisioned: deployUrl ? {
         vercel_project_url: `https://${slug}.vercel.app`,
-        vercel_deployment_url: deploy.url,
+        vercel_deployment_url: deployUrl,
         domain_name: slug,
-      },
+      } : undefined,
     });
 
     const updated = await base44.entities.RebrandProject.get(pid);
     return Response.json({
       project: updated,
-      deploy_url: deploy.url,
+      deploy_url: deployUrl,
+      rebrand_html: return_html ? html : undefined,
       elements: elements,
       log,
     });

@@ -49,6 +49,7 @@ export default function ClonePipeline() {
   const [accent, setAccent] = useState('#C89B3C');
   const [rebranding, setRebranding] = useState(false);
   const [rebrand, setRebrand] = useState(null);
+  const [rebrandHtml, setRebrandHtml] = useState(null);
   const [rebrandError, setRebrandError] = useState('');
 
   // approve
@@ -207,31 +208,32 @@ export default function ClonePipeline() {
 
   // ---------- REWRITE (SEO-safe original content) ----------
   const runRewrite = useCallback(async () => {
-    if (!clone?.vercel_url) return;
+    if (!clone?.vercel_url && !rebrandHtml) return;
     setRewriting(true); setRewriteError(''); setRewriteResult(null); rewriteLog.reset();
     setStageStatus('rewrite', 'running');
     try {
-      rewriteLog.push(`Rewriting content on ${clone.vercel_url} to be original (SEO-safe)…`);
+      rewriteLog.push(`Rewriting rebranded content to be original (SEO-safe)…`);
       const r = await base44.functions.invoke('rewriteContentForSeo', {
         source_url: clone.vercel_url,
         clone_name: clone.name,
+        clone_html: rebrandHtml || undefined,
       });
       const d = r.data || r;
       if (d.error) throw new Error(d.error);
-      rewriteLog.push(`Rewrote ${d.blocks_rewritten} of ${d.blocks_found} text blocks and redeployed.`);
+      rewriteLog.push(`Rewrote ${d.blocks_rewritten} of ${d.blocks_found} text blocks (${d.coverage || 0}% coverage) and deployed final site.`);
       setRewriteResult(d);
-      if (d.rewritten_url && d.rewritten_url !== clone.vercel_url) {
+      if (d.rewritten_url) {
         setClone(prev => ({ ...prev, vercel_url: d.rewritten_url }));
       }
       setStageStatus('rewrite', 'done');
-      setStageStatus('audit', 'pending');
+      setStageStatus('approve', 'pending');
       return true;
     } catch (e) {
       setRewriteError(e.message || 'Rewrite failed');
       setStageStatus('rewrite', 'error');
       return false;
     } finally { setRewriting(false); }
-  }, [clone, rewriteLog]);
+  }, [clone, rebrandHtml, rewriteLog]);
 
   // ---------- AUDIT ----------
   const runAudit = useCallback(async () => {
@@ -256,18 +258,20 @@ export default function ClonePipeline() {
   // ---------- STYLE / REBRAND ----------
   const runRebrand = useCallback(async () => {
     if (!clone?.vercel_url) return;
-    setRebranding(true); setRebrandError(''); setRebrand(null);
+    setRebranding(true); setRebrandError(''); setRebrand(null); setRebrandHtml(null);
     setStageStatus('style', 'running');
     try {
       const r = await base44.functions.invoke('autonomousRebrand', {
         source_url: clone.vercel_url, accent_color: accent,
         clone_name: clone.name, rebrand_project_id: audit?.id,
+        return_html: true,
       });
       const d = r.data || r;
       if (d.error) throw new Error(d.error);
       setRebrand(d);
+      setRebrandHtml(d.rebrand_html);
       setStageStatus('style', 'done');
-      setStageStatus('approve', 'pending');
+      setStageStatus('rewrite', 'pending');
       return true;
     } catch (e) {
       setRebrandError(e.message);
@@ -304,14 +308,14 @@ export default function ClonePipeline() {
       const okHarden = await runHarden();
       if (!okHarden) return;
       await new Promise(r => setTimeout(r, 50));
-      const okRewrite = await runRewrite();
-      if (!okRewrite) return;
-      await new Promise(r => setTimeout(r, 50));
       const okAudit = await runAudit();
       if (!okAudit) return;
       await new Promise(r => setTimeout(r, 50));
       const okRebrand = await runRebrand();
       if (!okRebrand) return;
+      await new Promise(r => setTimeout(r, 50));
+      const okRewrite = await runRewrite();
+      if (!okRewrite) return;
       await new Promise(r => setTimeout(r, 50));
       await approve();
     } finally { setAutoRunning(false); }
@@ -362,9 +366,9 @@ export default function ClonePipeline() {
             { k: 'find', n: 1, label: 'Find', icon: Search },
             { k: 'clone', n: 2, label: 'Clone', icon: Copy },
             { k: 'harden', n: 3, label: 'Harden', icon: Wrench },
-            { k: 'rewrite', n: 4, label: 'Rewrite', icon: PenLine },
-            { k: 'audit', n: 5, label: 'Audit', icon: ShieldCheck },
-            { k: 'style', n: 6, label: 'Style', icon: Palette },
+            { k: 'audit', n: 4, label: 'Audit', icon: ShieldCheck },
+            { k: 'style', n: 5, label: 'Rebrand', icon: Palette },
+            { k: 'rewrite', n: 6, label: 'Rewrite', icon: PenLine },
             { k: 'approve', n: 7, label: 'Approve', icon: CheckCircle2 },
           ].map((s, i) => {
             const st = stage[s.k];
@@ -492,8 +496,8 @@ export default function ClonePipeline() {
           </>}
         </Card>
 
-        {/* STAGE 4: REWRITE */}
-        <Card step={4} label="Rewrite Content (SEO-Safe)" status={stage.rewrite}>
+        {/* STAGE 6: REWRITE (moved after Rebrand — rebrand detection must run on original text) */}
+        <Card step={6} label="Rewrite Content (SEO-Safe)" status={stage.rewrite}>
           {!clone ? <div style={{ padding: 20, textAlign: 'center', color: '#999', fontSize: 13 }}>Complete Stage 2 (Clone) first.</div> :
           <>
             <p style={{ fontSize: 13, color: '#666', margin: '0 0 12px' }}>
@@ -518,8 +522,8 @@ export default function ClonePipeline() {
           </>}
         </Card>
 
-        {/* STAGE 5: AUDIT */}
-        <Card step={5} label="Audit Mandatory Changes" status={stage.audit}>
+        {/* STAGE 4: AUDIT (moved before Rebrand — detect what to change first) */}
+        <Card step={4} label="Audit Mandatory Changes" status={stage.audit}>
           {!clone ? <div style={{ padding: 20, textAlign: 'center', color: '#999', fontSize: 13 }}>Complete Stage 2 (Clone) first.</div> :
           <>
             {audit ? (
@@ -547,8 +551,8 @@ export default function ClonePipeline() {
           </>}
         </Card>
 
-        {/* STAGE 6: STYLE */}
-        <Card step={6} label="Style & Rebrand Preview" status={stage.style}>
+        {/* STAGE 5: REBRAND (runs in-memory, no deploy — Rewrite stage deploys the final result) */}
+        <Card step={5} label="Style & Rebrand Preview" status={stage.style}>
           {!clone ? <div style={{ padding: 20, textAlign: 'center', color: '#999', fontSize: 13 }}>Complete Stage 2 (Clone) first.</div> :
           <>
             <div style={{ marginBottom: 16 }}>
@@ -575,16 +579,14 @@ export default function ClonePipeline() {
                     ))}
                   </div>
                 )}
-                {rebrand.deploy_url && (
-                  <div style={{ marginTop: 14 }}>
-                    <a href={rebrand.deploy_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', background: '#0a0a0a', color: '#E7C86E', borderRadius: 6, fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
-                      <Globe size={14} /> View Live Rebrand <ExternalLink size={11} style={{ display: 'inline' }} />
-                    </a>
+                {rebrandHtml && (
+                  <div style={{ marginTop: 14, padding: 10, background: '#f5f5f0', borderRadius: 6, fontSize: 12, color: '#666' }}>
+                    <b style={{ color: '#237A4B' }}>✓ Rebrand applied in-memory</b> — no orphaned Vercel project. The Rewrite stage (next) will deploy the final site.
                   </div>
                 )}
-                {rebrand.deploy_url && (
+                {rebrandHtml && (
                   <div style={{ marginTop: 12, border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden', height: 480, background: '#fff' }}>
-                    <iframe src={rebrand.deploy_url} title="Rebrand preview" style={{ width: '100%', height: '100%', border: 0 }} />
+                    <iframe srcDoc={rebrandHtml} title="Rebrand preview (in-memory)" style={{ width: '100%', height: '100%', border: 0 }} sandbox="allow-same-origin" />
                   </div>
                 )}
               </>
@@ -605,17 +607,17 @@ export default function ClonePipeline() {
                     <div><b>Approved & published!</b><div style={{ fontSize: 12, marginTop: 2 }}>This clone now appears in "Completed Clones" below.</div></div>
                   </div>
                 </SuccessBox>
-                {(rebrand.deploy_url || rebrand?.project?.provisioned?.vercel_deployment_url) && (
-                  <a href={rebrand.deploy_url || rebrand.project.provisioned.vercel_deployment_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 14, padding: '10px 16px', background: '#0a0a0a', color: '#E7C86E', borderRadius: 6, fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
+                {(rewriteResult?.rewritten_url || clone?.vercel_url) && (
+                  <a href={rewriteResult?.rewritten_url || clone.vercel_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 14, padding: '10px 16px', background: '#0a0a0a', color: '#E7C86E', borderRadius: 6, fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
                     <Eye size={14} /> View Live Site
                   </a>
                 )}
               </>
             ) : (
               <>
-                {rebrand.deploy_url && (
+                {(rewriteResult?.rewritten_url || clone?.vercel_url) && (
                   <div style={{ border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden', height: 420, background: '#fff', marginBottom: 16 }}>
-                    <iframe src={rebrand.deploy_url} title="Final preview" style={{ width: '100%', height: '100%', border: 0 }} />
+                    <iframe src={rewriteResult?.rewritten_url || clone.vercel_url} title="Final preview" style={{ width: '100%', height: '100%', border: 0 }} />
                   </div>
                 )}
                 <BtnGold disabled={approving} onClick={approve}>

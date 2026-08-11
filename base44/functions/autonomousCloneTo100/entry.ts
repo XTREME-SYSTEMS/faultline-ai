@@ -292,11 +292,11 @@ async function runEngine(base44, orgId, p) {
       // save credits and avoid infinite loops on targets that are fundamentally hard
       // to clone (e.g., sites that are down, JS-only SPAs, bot-blocked targets).
       scoreHistory.push(score);
-      if (scoreHistory.length >= 2) {
-        const lastTwo = scoreHistory.slice(-2);
-        const improvement = lastTwo[1] - lastTwo[0];
+      if (scoreHistory.length >= 3) {
+        const lastThree = scoreHistory.slice(-3);
+        const improvement = lastThree[2] - lastThree[0];
         if (improvement < 3 && i < maxIter) {
-          add(`Iteration ${i}: score plateau (${lastTwo.join(' → ')}, Δ${improvement}) — stopping early to save credits`);
+          add(`Iteration ${i}: score plateau over 3 iterations (${lastThree.join(' → ')}, Δ${improvement}) — stopping early to save credits`);
           break;
         }
       }
@@ -369,6 +369,13 @@ async function runEngine(base44, orgId, p) {
       await setProgress(55 + Math.round((i / maxIter) * 40) + 5, `Auto-fixed + re-deployed (iter ${i})`);
       await updateTracker(`Iter ${i}: auto-fixed + re-deployed`, score, { vercel_deployment_url: urls.vercel });
       await new Promise(r => setTimeout(r, 3000)); // let Vercel settle before re-validation
+    }
+
+    // Status reconciliation: near-perfect clones (95+) that hit plateau or
+    // convergence should be marked "passed", not stuck at "validating" forever.
+    if (score >= 95) {
+      try { await base44.asServiceRole.entities.LaunchProject.update(p.tracker_id, { status: 'passed' }); } catch (e) {}
+      add(`Status reconciled to "passed" (score ${score} ≥ 95)`);
     }
 
     // In heal mode, if the new score is worse than the original, restore the

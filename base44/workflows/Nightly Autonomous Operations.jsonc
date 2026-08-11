@@ -1,5 +1,5 @@
 {
-  "description": "Master nightly autonomous operations loop. Runs every 30 minutes from 6pm to noon (pauses during afternoon). Each cycle: (1) heal all clones to 100/100 parity, (2) forensic audit + harden security, (3) stock the marketplace with new concrete-industry products, (4) discover new top-performer sites to clone. The system self-heals, self-audits, self-stocks, and self-discovers autonomously overnight.",
+  "description": "Master nightly autonomous operations loop. Runs every 30 minutes from 6pm to noon (pauses during afternoon). Each cycle: (1) heal all clones to 100/100 parity, (2) forensic audit + harden security, (3) stock the marketplace with new concrete-industry products, (4) discover new top-performer sites to clone, (5) process the clone queue (drain queued sites), (6) cleanup orphaned Vercel projects from heal iterations. The system self-heals, self-audits, self-stocks, self-discovers, self-drains, and self-cleans autonomously overnight.",
   "name": "Nightly Autonomous Operations",
   "trigger": {
     "condition": null,
@@ -22,7 +22,7 @@
     "document": {
       "dsl": "1.0.0",
       "name": "nightly_autonomous_operations",
-      "version": "1.0",
+      "version": "1.1",
       "namespace": "base44"
     },
     "do": [
@@ -81,10 +81,38 @@
             "function_name": "discoverTopPerformers",
             "args": {}
           },
-          "then": "end",
+          "then": "process_queue",
           "x-base44": {
             "title": "Discover new top performers",
             "description": "Find new top-performing sites to clone for the marketplace"
+          }
+        }
+      },
+      {
+        "process_queue": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "processCloneQueue",
+            "args": {}
+          },
+          "then": "cleanup_vercel",
+          "x-base44": {
+            "title": "Process clone queue",
+            "description": "Drain the CloneQueue \u2014 clone queued sites, audit, and launch"
+          }
+        }
+      },
+      {
+        "cleanup_vercel": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "cleanupOrphanedVercelProjects",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Cleanup orphaned Vercel projects",
+            "description": "Delete Vercel projects from heal iterations no longer referenced by any LaunchProject"
           }
         }
       }

@@ -104,7 +104,26 @@ Return JSON: { "rewrites": [ { "index": 0, "text": "..." }, ... ] } — one entr
     working = working.replace(/\x00BLOCK(\d+)\x00/g, (_m, i) => blocks[+i] || '');
     html = working;
 
-    // 7. Deploy the rewritten clone to Vercel
+    const rewrittenCount = byIndex.size;
+    // Coverage check: warn if LLM returned less than 80% of blocks
+    const coverage = toRewrite.length > 0 ? Math.round((rewrittenCount / toRewrite.length) * 100) : 0;
+    if (coverage < 80 && toRewrite.length > 5) {
+      console.warn(`rewriteContentForSeo: low coverage (${rewrittenCount}/${toRewrite.length} = ${coverage}%) — some blocks kept original text`);
+    }
+
+    // 7. Return HTML in-memory (no deploy) or deploy to Vercel
+    if (return_html) {
+      return Response.json({
+        status: 'success',
+        source_url,
+        rewritten_html: html,
+        blocks_found: totalFound,
+        blocks_rewritten: rewrittenCount,
+        blocks_skipped: Math.max(0, totalFound - MAX_BLOCKS),
+        coverage,
+        summary: `Rewrote ${rewrittenCount} of ${totalFound} text blocks to original copy (${coverage}% coverage).`,
+      });
+    }
     const token = secrets.get('VERCEL_TOKEN');
     if (!token) throw new Error('VERCEL_TOKEN secret not set');
     const teamId = secrets.get('VERCEL_TEAM_ID') || null;
@@ -114,15 +133,16 @@ Return JSON: { "rewrites": [ { "index": 0, "text": "..." }, ... ] } — one entr
     try { await disableVercelSso(token, teamId, vProject.id); } catch (e) { /* non-fatal */ }
     const deploy = await deployToVercel(token, teamId, slug, vProject.id, html);
 
-    const rewrittenCount = byIndex.size;
     return Response.json({
       status: 'success',
       source_url,
       rewritten_url: deploy.url,
+      rewritten_html: html,
       blocks_found: totalFound,
       blocks_rewritten: rewrittenCount,
       blocks_skipped: Math.max(0, totalFound - MAX_BLOCKS),
-      summary: `Rewrote ${rewrittenCount} of ${totalFound} text blocks to original copy and redeployed.`,
+      coverage,
+      summary: `Rewrote ${rewrittenCount} of ${totalFound} text blocks to original copy and redeployed (${coverage}% coverage).`,
     });
   } catch (error) {
     console.error('rewriteContentForSeo error:', error);

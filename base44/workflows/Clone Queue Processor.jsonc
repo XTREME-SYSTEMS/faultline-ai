@@ -1,10 +1,10 @@
 {
-  "description": "Autonomously processes the clone queue: clones each queued site to 100/100 visual + operational parity, runs a deep forensic audit, and only adds passed clones to the gallery. Runs every 30 minutes.",
+  "description": "Autonomously processes the clone queue: clones each queued site to 100/100 visual + operational parity, runs a deep forensic audit, and only adds passed clones to the gallery. Runs every 30 minutes, processing up to 3 items per cycle (clones run in background after 524 gateway timeout, tracked via LaunchProject).",
   "definition": {
     "document": {
       "dsl": "1.0.0",
       "name": "clone_queue_processor",
-      "version": "1.0",
+      "version": "1.1",
       "namespace": "base44"
     },
     "do": [
@@ -14,13 +14,13 @@
           "with": {
             "function_name": "processCloneQueue",
             "args": {
-              "max_items": 1
+              "max_items": 3
             }
           },
           "then": "end",
           "x-base44": {
-            "title": "Process next clone queue item",
-            "description": "Clone, validate to 100/100, forensic audit"
+            "title": "Process clone queue (3 items per cycle)",
+            "description": "Clone, validate to 100/100, forensic audit \u2014 processes 3 items per 30-min cycle"
           }
         }
       }

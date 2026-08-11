@@ -15,6 +15,10 @@ export default async function(req) {
     const { live_url, target_url, target_dna, organization_id, clone_id } = body;
     if (!live_url) return Response.json({ error: 'live_url required' }, { status: 400 });
     const targetOrg = organization_id || orgId;
+    // Auto-detect rebranded clones: if the clone HTML contains our accent
+    // override CSS or pinwheel logo, it's been rebranded — don't penalize
+    // intentional brand changes (name, color, logo, contact info).
+    const isRebranded = /lgny-accent-override|pinwheel|leadgennearyou/i.test(html);
 
     // 1. Basic HTTP check on the live clone
     const r = await fetch(live_url, { signal: AbortSignal.timeout(15000) });
@@ -164,7 +168,9 @@ Below 70 = significantly different (sections missing, wrong layout, wrong colors
 
 Return a visual_score (0-100), a list of specific visual_failures (each with a description of what doesn't match and how to fix it), and a summary.
 
-Be EXTREMELY STRICT. Only award 100 when the clone is pixel-perfect. List EVERY visual difference — missing sections, wrong colors, wrong fonts, missing images, cookie banners, simplified layouts.`,
+${isRebranded ? `IMPORTANT: This clone has been INTENTIONALLY REBRANDED — brand name changes, accent color changes, logo swaps, and contact info changes are EXPECTED and should NOT be penalized. Score based on LAYOUT STRUCTURE fidelity (same sections, same grid, same spacing, same content presence), not on brand-text or color sameness. A rebranded clone with perfect layout structure but different brand text/colors/logo should score 95-100.` : ''}
+
+Be EXTREMELY STRICT about LAYOUT STRUCTURE. Only award 100 when the clone is structurally faithful. List EVERY structural difference — missing sections, wrong layouts, cookie banners, simplified content.${isRebranded ? ' Do NOT penalize intentional rebrand changes (brand name, accent color, logo, contact info).' : ''}`,
         model: 'gemini_3_flash',
         add_context_from_internet: false,
         file_urls: fileUrls,

@@ -82,9 +82,17 @@ export default async function(req) {
     const fixes = [];
     let changed = false;
     const failStr = (failures || []).join(' ');
-    const needsCtaFix = /broken cta/i.test(failStr) || /404/i.test(failStr) || !failures; // always check if no failures list
-    const needsFormHandler = /form-handler script not injected/i.test(failStr) || !failures;
-    const needsForm = /no <form>/i.test(failStr) || /No <form> element/i.test(failStr) || !failures;
+    // When failures are provided, only apply fixes that match the reported
+    // failures. When no failures list is provided (manual call), check everything.
+    const hasFailures = failures && failures.length > 0;
+    const needsCtaFix = !hasFailures || /broken cta/i.test(failStr) || /404/i.test(failStr);
+    const needsFormHandler = !hasFailures || /form-handler script not injected/i.test(failStr);
+    const needsForm = !hasFailures || /no <form>/i.test(failStr) || /No <form> element/i.test(failStr);
+    // Early return: if failures were provided but none match our fix patterns,
+    // the clone is operationally fine — no work to do, no redeploy needed.
+    if (hasFailures && !needsCtaFix && !needsFormHandler && !needsForm) {
+      return Response.json({ status: 'success', hardened_html: html, fixes_applied: [], redeploy: false, reason: 'No operational failures matched' });
+    }
 
     // 1. REWRITE BROKEN CTA LINKS — /app/*, /signup, /login, etc. → target_url
     //    These are the primary CTA buttons that 404 on a static single-page clone.

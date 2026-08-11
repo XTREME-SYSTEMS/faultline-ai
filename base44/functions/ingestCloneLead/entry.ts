@@ -17,6 +17,15 @@ export default async function(req) {
     const { organization_id, clone_id, name, email, phone, message, source_url } = body;
     if (!organization_id) return Response.json({ ok: false, error: 'organization_id required' }, { status: 400, headers: cors });
     if (!name && !email) return Response.json({ ok: false, error: 'name or email required' }, { status: 400, headers: cors });
+    // Origin validation: only accept submissions from Vercel deployments or
+    // the Base44 app itself. Reject requests from unknown origins to prevent
+    // lead spam to arbitrary organizations.
+    const origin = req.headers.get('origin') || req.headers.get('referer') || '';
+    const isAllowed = !origin || /vercel\.app|base44\.app|localhost/i.test(origin);
+    if (!isAllowed) {
+      console.warn(`ingestCloneLead rejected from origin: ${origin}`);
+      return Response.json({ ok: false, error: 'Origin not allowed' }, { status: 403, headers: cors });
+    }
     await base44.asServiceRole.entities.Lead.create({
       organization_id,
       customer_name: name || 'Clone Lead',
