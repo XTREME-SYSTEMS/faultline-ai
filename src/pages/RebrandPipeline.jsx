@@ -225,7 +225,7 @@ function StepFind({ mode, setMode, niche, setNiche, searching, onSearch, results
         <>
           <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
             <input value={niche} onChange={e => setNiche(e.target.value)} placeholder="e.g. epoxy flooring, roofing, HVAC, plumbing…"
-              style={{ flex: 1, padding: '13px 14px', border: '1px solid #d7d7d7', borderRadius: 8, fontSize: 14 }}
+              style={{ flex: 1, padding: '13px 14px', border: '1px solid #d7d7d7', borderRadius: 8, fontSize: 14, background: '#fff', color: '#111' }}
               onKeyDown={e => e.key === 'Enter' && onSearch()} />
             <button onClick={onSearch} disabled={searching} style={btnGold(searching)}>
               {searching ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />} {searching ? 'Searching…' : 'Find Top Sites'}
