@@ -40,6 +40,7 @@ const MODULES = [
       { to: '/app/business', label: 'Business Hub', icon: Building2 },
       { to: '/app/template-library', label: 'Template Library', icon: Layers },
       { to: '/app/clone-pipeline', label: 'Clone Pipeline', icon: ShieldCheck },
+      { to: '/app/multi-site', label: 'Multi-Site Manager', icon: Globe },
       { to: '/app/build-studio', label: 'Build Studio', icon: Layers },
     ]
   },

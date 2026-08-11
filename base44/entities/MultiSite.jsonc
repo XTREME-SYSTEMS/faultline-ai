@@ -1,0 +1,89 @@
+{
+  "name": "MultiSite",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "brand_name": {
+      "type": "string",
+      "description": "Display brand name for the site"
+    },
+    "domain": {
+      "type": "string",
+      "description": "Custom domain to connect (e.g. leadgenerationnearme.com)"
+    },
+    "accent_color": {
+      "type": "string",
+      "default": "#CCFF00",
+      "description": "Hex accent color"
+    },
+    "logo_url": {
+      "type": "string",
+      "description": "Logo image URL"
+    },
+    "tagline": {
+      "type": "string",
+      "description": "Hero subtitle / tagline",
+      "default": "All the tools you need to capture, nurture and close new leads into bookings, sales, reviews and repeat customers!"
+    },
+    "launch_project_id": {
+      "type": "string",
+      "description": "Linked LaunchProject record"
+    },
+    "vercel_url": {
+      "type": "string",
+      "description": "Deployed Vercel URL"
+    },
+    "vercel_project_name": {
+      "type": "string"
+    },
+    "domain_status": {
+      "type": "string",
+      "enum": [
+        "not_connected",
+        "pending_dns",
+        "connected",
+        "failed"
+      ],
+      "default": "not_connected"
+    },
+    "domain_verification": {
+      "type": "object",
+      "description": "DNS records needed to verify the custom domain"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "deploying",
+        "live",
+        "failed"
+      ],
+      "default": "queued"
+    },
+    "error": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id",
+    "brand_name"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
