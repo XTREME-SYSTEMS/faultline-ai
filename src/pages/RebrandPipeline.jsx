@@ -153,6 +153,7 @@ export default function RebrandPipeline() {
   function reset() {
     setStep(1); setPicked(null); setClone(null); setAudit(null); setRebrand(null);
     setApproved(false); setCloneLog([]); setCloneError(''); setResults([]); setUrlInput('');
+    setMode('search'); setNiche('');
   }
 
   return (
