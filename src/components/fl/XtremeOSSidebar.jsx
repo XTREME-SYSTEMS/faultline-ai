@@ -21,6 +21,7 @@ const MODULES = [
     collapsed: false,
     items: [
       { to: '/app/ghl-crm', label: 'CRM + Pipelines', icon: Users },
+      { to: '/app/ghl-funnels', label: 'Funnels & Sites', icon: Layers },
     ]
   },
   {

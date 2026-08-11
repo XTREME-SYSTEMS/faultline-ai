@@ -95,6 +95,7 @@ const BuildStudio = lazy(() => import('@/pages/BuildStudio'));
 const SEOConsole = lazy(() => import('@/pages/SEOConsole'));
 const TemplateLibrary = lazy(() => import('@/pages/TemplateLibrary'));
 const GhlCRM = lazy(() => import('@/pages/ghl/GhlCRM'));
+const Funnels = lazy(() => import('@/pages/ghl/Funnels'));
 
 const PageLoader = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -221,6 +222,8 @@ const AuthenticatedApp = () => {
       <Route path="/app/seo-console" element={<SEOConsole />} />
       <Route path="/app/template-library" element={<TemplateLibrary />} />
       <Route path="/app/ghl-crm" element={<GhlCRM />} />
+      <Route path="/app/ghl-funnels" element={<Funnels />} />
+      <Route path="/app/ghl-funnels/:id" element={<Funnels />} />
         <Route path="/app/:slug" element={<Module />} />
         <Route path="/admin" element={<Admin />} />
         </Route>
