@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { Image } from '@/components/ui/image';
-import { Loader2, Search, Layout, Filter, Star, ExternalLink } from 'lucide-react';
+import { Loader2, Search, Layout, Star, ExternalLink, ChevronDown } from 'lucide-react';
 
 const LAYOUT_LABELS = {
   hero_centric: 'Hero Centric',
@@ -17,22 +17,16 @@ const LAYOUT_LABELS = {
 
 export default function TemplateGallery({ templates, loading, onSelect, selectedId, onDerive, deriving }) {
   const [search, setSearch] = useState('');
-  const [layoutFilter, setLayoutFilter] = useState('all');
   const [industryFilter, setIndustryFilter] = useState('all');
+  const [collapsedCats, setCollapsedCats] = useState({});
 
   const industries = useMemo(() => {
     const set = new Set(templates.map(t => t.industry).filter(Boolean));
     return ['all', ...Array.from(set).sort()];
   }, [templates]);
 
-  const layouts = useMemo(() => {
-    const set = new Set(templates.map(t => t.layout_type).filter(Boolean));
-    return ['all', ...Array.from(set)];
-  }, [templates]);
-
   const filtered = useMemo(() => {
     return templates.filter(t => {
-      if (layoutFilter !== 'all' && t.layout_type !== layoutFilter) return false;
       if (industryFilter !== 'all' && t.industry !== industryFilter) return false;
       if (search) {
         const q = search.toLowerCase();
@@ -44,7 +38,21 @@ export default function TemplateGallery({ templates, loading, onSelect, selected
       }
       return true;
     });
-  }, [templates, search, layoutFilter, industryFilter]);
+  }, [templates, search, industryFilter]);
+
+  // Group by layout_type (category)
+  const categories = useMemo(() => {
+    const groups = {};
+    for (const t of filtered) {
+      const key = t.layout_type || 'other';
+      if (!groups[key]) groups[key] = [];
+      groups[key].push(t);
+    }
+    // Sort categories by size (most templates first)
+    return Object.entries(groups).sort((a, b) => b[1].length - a[1].length);
+  }, [filtered]);
+
+  const toggleCat = (key) => setCollapsedCats(prev => ({ ...prev, [key]: !prev[key] }));
 
   return (
     <div>
@@ -63,13 +71,6 @@ export default function TemplateGallery({ templates, loading, onSelect, selected
             }}
           />
         </div>
-        <select
-          value={layoutFilter}
-          onChange={e => setLayoutFilter(e.target.value)}
-          style={{ padding: '10px 12px', border: '1px solid #d7d7d7', borderRadius: 6, fontSize: 13, fontFamily: 'inherit', background: '#fff', color: '#111' }}
-        >
-          {layouts.map(l => <option key={l} value={l}>{l === 'all' ? 'All Layouts' : LAYOUT_LABELS[l] || l}</option>)}
-        </select>
         <select
           value={industryFilter}
           onChange={e => setIndustryFilter(e.target.value)}
@@ -95,10 +96,10 @@ export default function TemplateGallery({ templates, loading, onSelect, selected
 
       {/* Stats */}
       <div style={{ fontSize: 12, color: '#999', marginBottom: 14 }}>
-        {loading ? 'Loading templates…' : `${filtered.length} template${filtered.length !== 1 ? 's' : ''} available`}
+        {loading ? 'Loading templates…' : `${filtered.length} template${filtered.length !== 1 ? 's' : ''} in ${categories.length} categor${categories.length !== 1 ? 'ies' : 'y'}`}
       </div>
 
-      {/* Template Grid */}
+      {/* Category Sections */}
       {loading ? (
         <div style={{ padding: 80, textAlign: 'center' }}>
           <Loader2 size={28} className="animate-spin" style={{ margin: '0 auto 10px', display: 'block', color: '#C89B3C' }} />
@@ -111,8 +112,77 @@ export default function TemplateGallery({ templates, loading, onSelect, selected
           <p style={{ fontSize: 12, color: '#999', margin: 0 }}>Click "Derive New Templates" to auto-extract templates from your 100/100 clones.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-          {filtered.map(tpl => (
+        <div style={{ display: 'grid', gap: 24 }}>
+          {categories.map(([catKey, catTemplates]) => (
+            <CategorySection
+              key={catKey}
+              catKey={catKey}
+              templates={catTemplates}
+              selectedId={selectedId}
+              onSelect={onSelect}
+              collapsed={!!collapsedCats[catKey]}
+              onToggle={() => toggleCat(catKey)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function CategorySection({ catKey, templates, selectedId, onSelect, collapsed, onToggle }) {
+  // Pick the representative template — prefer one with a screenshot, else preview_url
+  const rep = templates.find(t => t.screenshot_url) || templates.find(t => t.preview_url) || templates[0];
+  const label = LAYOUT_LABELS[catKey] || catKey;
+
+  return (
+    <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 12, overflow: 'hidden' }}>
+      {/* Category Banner — homepage screenshot of representative template */}
+      <div
+        onClick={onToggle}
+        style={{ position: 'relative', height: 200, background: '#f0ede5', overflow: 'hidden', cursor: 'pointer' }}
+      >
+        {rep?.screenshot_url ? (
+          <Image src={rep.screenshot_url} alt={label} fittingType="fill" className="w-full h-full" />
+        ) : rep?.preview_url ? (
+          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            <iframe
+              src={rep.preview_url}
+              title={label}
+              style={{ width: '1280px', height: '800px', transform: 'scale(0.5)', transformOrigin: 'top left', border: 0, pointerEvents: 'none' }}
+              loading="lazy"
+            />
+          </div>
+        ) : (
+          <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#999', fontSize: 32 }}>
+            <Layout />
+          </div>
+        )}
+        {/* Dark overlay for text legibility */}
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,.72), rgba(0,0,0,.25) 60%, transparent)' }} />
+        {/* Category label */}
+        <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, padding: '0 24px', display: 'flex', flexDirection: 'column', justifyContent: 'center', color: '#fff' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 28, letterSpacing: '-.02em' }}>{label}</b>
+            <span style={{ fontSize: 11, fontWeight: 700, background: '#C89B3C', color: '#111', padding: '3px 9px', borderRadius: 4 }}>
+              {templates.length} template{templates.length !== 1 ? 's' : ''}
+            </span>
+          </div>
+          {rep?.layout_description && (
+            <p style={{ fontSize: 12, color: '#ddd', margin: '6px 0 0', maxWidth: 480, lineHeight: 1.4 }}>{rep.layout_description}</p>
+          )}
+        </div>
+        {/* Collapse chevron */}
+        <div style={{ position: 'absolute', right: 16, top: '50%', transform: 'translateY(-50%)', color: '#fff', display: 'flex', alignItems: 'center', gap: 6 }}>
+          <span style={{ fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '.08em' }}>{collapsed ? 'Expand' : 'Collapse'}</span>
+          <ChevronDown size={18} style={{ transform: collapsed ? 'rotate(-90deg)' : 'none', transition: '.2s' }} />
+        </div>
+      </div>
+
+      {/* Template cards in this category */}
+      {!collapsed && (
+        <div style={{ padding: 16, display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 14 }}>
+          {templates.map(tpl => (
             <TemplateCard key={tpl.id} template={tpl} isSelected={selectedId === tpl.id} onSelect={onSelect} />
           ))}
         </div>
@@ -132,9 +202,9 @@ function TemplateCard({ template, isSelected, onSelect }) {
       }}
       onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,.1)'; }}
       onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none'; }}
-    >
+      >
       {/* Screenshot */}
-      <div style={{ height: 160, background: '#f0ede5', overflow: 'hidden', position: 'relative' }}>
+      <div style={{ height: 140, background: '#f0ede5', overflow: 'hidden', position: 'relative' }}>
         {template.screenshot_url ? (
           <Image src={template.screenshot_url} alt={template.name} fittingType="fill" className="w-full h-full" />
         ) : template.preview_url ? (
@@ -142,7 +212,7 @@ function TemplateCard({ template, isSelected, onSelect }) {
             <iframe
               src={template.preview_url}
               title={template.name}
-              style={{ width: '1280px', height: '800px', transform: 'scale(0.22)', transformOrigin: 'top left', border: 0, pointerEvents: 'none' }}
+              style={{ width: '1280px', height: '800px', transform: 'scale(0.2)', transformOrigin: 'top left', border: 0, pointerEvents: 'none' }}
               loading="lazy"
             />
           </div>
@@ -159,29 +229,19 @@ function TemplateCard({ template, isSelected, onSelect }) {
       </div>
 
       {/* Info */}
-      <div style={{ padding: 14, flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ padding: 12, flex: 1, display: 'flex', flexDirection: 'column', gap: 5 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8 }}>
-          <b style={{ fontSize: 14, fontFamily: "'Libre Caslon Display', serif", lineHeight: 1.2 }}>{template.name}</b>
+          <b style={{ fontSize: 13, fontFamily: "'Libre Caslon Display', serif", lineHeight: 1.2 }}>{template.name}</b>
           {template.preview_url && (
             <a href={template.preview_url} target="_blank" rel="noopener" onClick={e => e.stopPropagation()} style={{ color: '#C89B3C', flexShrink: 0 }}>
-              <ExternalLink size={13} />
+              <ExternalLink size={12} />
             </a>
           )}
         </div>
-        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          {template.layout_type && (
-            <span style={{ fontSize: 9, fontWeight: 700, color: '#C89B3C', background: '#C89B3C15', padding: '2px 6px', borderRadius: 3, textTransform: 'uppercase', letterSpacing: '.04em' }}>
-              {LAYOUT_LABELS[template.layout_type] || template.layout_type}
-            </span>
-          )}
-          {template.industry && (
-            <span style={{ fontSize: 9, fontWeight: 600, color: '#666', background: '#f0ede5', padding: '2px 6px', borderRadius: 3 }}>
-              {template.industry}
-            </span>
-          )}
-        </div>
-        {template.layout_description && (
-          <p style={{ fontSize: 11, color: '#888', lineHeight: 1.4, margin: 0 }}>{template.layout_description}</p>
+        {template.industry && (
+          <span style={{ fontSize: 9, fontWeight: 600, color: '#666', background: '#f0ede5', padding: '2px 6px', borderRadius: 3, alignSelf: 'flex-start' }}>
+            {template.industry}
+          </span>
         )}
         {/* Color palette */}
         {template.color_palette && template.color_palette.accent && (
@@ -189,7 +249,7 @@ function TemplateCard({ template, isSelected, onSelect }) {
             {['primary', 'secondary', 'accent', 'background', 'text'].map(key => {
               const c = template.color_palette[key];
               if (!c) return null;
-              return <div key={key} title={key} style={{ width: 18, height: 18, borderRadius: 4, background: c, border: '1px solid #ddd' }} />;
+              return <div key={key} title={key} style={{ width: 16, height: 16, borderRadius: 4, background: c, border: '1px solid #ddd' }} />;
             })}
           </div>
         )}
