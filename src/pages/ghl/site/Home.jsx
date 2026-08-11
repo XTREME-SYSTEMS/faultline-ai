@@ -57,7 +57,7 @@ const PILLARS = [
 ];
 
 const MOVEMENT = [
-  { h: 'By Marketers, For Marketers', p: 'Lead Gen Near You was built and powered by marketers focused on the traditional issues marketing professionals face day to day. Once success was found, it was introduced to the market to help marketers face common challenges.' },
+  { h: 'By Marketers, For Marketers', p: 'Lead Generation Near You was built and powered by marketers focused on the traditional issues marketing professionals face day to day. Once success was found, it was introduced to the market to help marketers face common challenges.' },
   { h: 'Community Driven Development', p: 'We are committed to helping the Marketing world. We\'ve built a community-driven Ideas Board where you can share and vote on ideas to help lead the direction of development.' },
   { h: 'Network With Other Successful Marketers', p: 'Connect with other ambitious agency owners, entrepreneurs and marketing professionals who are scaling successful businesses with our platform.' },
 ];
@@ -118,7 +118,7 @@ export default function Home() {
       <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-5 text-center">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>We're in the business of helping you grow your business</h2>
-          <p className="mt-4 text-slate-600 text-lg">Lead Gen Near You is the AI-powered operating system powering the growth of businesses around the world.</p>
+          <p className="mt-4 text-slate-600 text-lg">Lead Generation Near You is the AI-powered operating system powering the growth of businesses around the world.</p>
           <div className="mt-8 flex flex-wrap justify-center items-center gap-6">
             {AWARDS.map((src, i) => <img key={i} src={src} alt="Award" className="h-12 w-auto opacity-80" />)}
           </div>
@@ -188,7 +188,7 @@ export default function Home() {
       {/* What's included */}
       <section className="py-20 bg-slate-50">
         <div className="max-w-5xl mx-auto px-5 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>What's included with Lead Gen Near You</h2>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>What's included with Lead Generation Near You</h2>
           <div className="mt-8 grid sm:grid-cols-2 gap-6">
             <img src="https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/5fb9e359e_clone-img-msnzvgcp-5yrpln.webp" alt="Pricing Plan" className="rounded-xl w-full" />
             <img src="https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/c8dcca339_clone-img-msnzvgcq-dwdf87.webp" alt="Pricing Plan" className="rounded-xl w-full" />

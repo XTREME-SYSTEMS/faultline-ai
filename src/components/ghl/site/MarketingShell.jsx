@@ -7,6 +7,7 @@ const NAV = [
   { to: '/lgny/features', label: 'Features' },
   { to: '/lgny/pricing', label: 'Pricing' },
   { to: '/lgny/solutions', label: 'Solutions' },
+  { to: '/store', label: 'Store' },
   { to: '/lgny/about', label: 'About' },
 ];
 
@@ -58,7 +59,7 @@ export default function MarketingShell({ children }) {
           ))}
         </div>
         <div className="max-w-7xl mx-auto px-5 mt-12 pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between gap-3 text-xs text-slate-500">
-          <span>© {new Date().getFullYear()} Lead Gen Near You · leadgennearyou.com</span>
+          <span>© {new Date().getFullYear()} Lead Generation Near You · leadgenerationnearyou.com</span>
           <span>Privacy · Terms · Security</span>
         </div>
       </footer>

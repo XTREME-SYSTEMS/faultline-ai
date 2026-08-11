@@ -16,7 +16,7 @@ export default function About() {
         <div className="max-w-4xl mx-auto px-5 text-center">
           <span className="text-emerald-400 text-xs font-bold uppercase tracking-widest">About Us</span>
           <h1 className="mt-3 text-4xl md:text-6xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>We help local businesses win</h1>
-          <p className="mt-5 text-lg text-slate-300">Lead Gen Near You was built to give every local service business the same growth engine the big franchises use — at a price that makes sense.</p>
+          <p className="mt-5 text-lg text-slate-300">Lead Generation Near You was built to give every local service business the same growth engine the big franchises use — at a price that makes sense.</p>
         </div>
       </section>
 
@@ -26,7 +26,7 @@ export default function About() {
           <div>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>Our story</h2>
             <p className="mt-4 text-slate-600 text-lg">We watched local businesses duct-tape a dozen tools together just to keep up. So we built one platform — CRM, funnels, marketing, bookings, and automations — that replaces all of them and actually gets the phone to ring.</p>
-            <p className="mt-3 text-slate-600 text-lg">Today, thousands of businesses across North America use Lead Gen Near You to capture more leads, book more jobs, and turn one-time customers into repeat referrals.</p>
+            <p className="mt-3 text-slate-600 text-lg">Today, thousands of businesses across North America use Lead Generation Near You to capture more leads, book more jobs, and turn one-time customers into repeat referrals.</p>
           </div>
         </div>
       </section>

@@ -20,7 +20,7 @@ export default function Solutions() {
         <div className="max-w-4xl mx-auto px-5 text-center">
           <span className="text-emerald-400 text-xs font-bold uppercase tracking-widest">Solutions</span>
           <h1 className="mt-3 text-4xl md:text-6xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>Built for local service businesses</h1>
-          <p className="mt-5 text-lg text-slate-300">From the first click to the fifth repeat sale, Lead Gen Near You is tuned to the way local service businesses win work.</p>
+          <p className="mt-5 text-lg text-slate-300">From the first click to the fifth repeat sale, Lead Generation Near You is tuned to the way local service businesses win work.</p>
         </div>
       </section>
 

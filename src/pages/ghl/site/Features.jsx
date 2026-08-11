@@ -18,7 +18,7 @@ export default function Features() {
         <div className="max-w-4xl mx-auto px-5 text-center">
           <span className="text-emerald-400 text-xs font-bold uppercase tracking-widest">Platform Features</span>
           <h1 className="mt-3 text-4xl md:text-6xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>One platform. Every tool you need.</h1>
-          <p className="mt-5 text-lg text-slate-300">Lead Gen Near You brings CRM, funnels, marketing, bookings, and automations together — so you can run your whole business from a single login.</p>
+          <p className="mt-5 text-lg text-slate-300">Lead Generation Near You brings CRM, funnels, marketing, bookings, and automations together — so you can run your whole business from a single login.</p>
           <Link to="/register" className="mt-7 inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-emerald-500 text-[#0B1120] font-bold hover:bg-emerald-400 transition">Start 14 Day Free Trial <ArrowRight size={18} /></Link>
         </div>
       </section>

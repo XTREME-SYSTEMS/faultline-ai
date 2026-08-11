@@ -5,6 +5,7 @@ import { base44 } from '@/api/base44Client';
 import { useCart } from '@/lib/useCart';
 import CartDrawer from '@/components/store/CartDrawer';
 import '@/components/store/store.css';
+import LgnyLogo from '@/components/ghl/site/LgnyLogo';
 
 // Cheap impulse-buy pricing
 const PRICE = {
@@ -110,7 +111,7 @@ export default function Store() {
     <div className="xas-store">
       <header className="store-header">
         <div className="wrap">
-          <Link to="/" className="store-logo">FaultLine <b>AI</b></Link>
+          <Link to="/lgny" className="store-logo"><LgnyLogo size={28} /></Link>
           <nav className="store-nav">
             <a href="#tools">AI Tools</a>
             <a href="#web-packs">Web Packs</a>
@@ -134,7 +135,7 @@ export default function Store() {
         {status === 'canceled' && <div className="status-banner canceled">Your checkout was canceled. Your cart is still saved.</div>}
 
         <section className="store-hero">
-          <p className="eyebrow">The FaultLine Store</p>
+          <p className="eyebrow">The Lead Generation Near You Store</p>
           <h1>AI Tools, Web Packs & App Packs<br />for <span>$29 to $99</span> — Instant Download.</h1>
           <p>Production-ready clones of the world's best SaaS tools, websites, and apps. Buy a tool, a web pack, or an app pack and deploy it as your own product. Cheap, fast, ready to launch.</p>
           <div className="hero-stats">
@@ -379,7 +380,7 @@ export default function Store() {
 
       <footer className="store-footer">
         <div className="wrap">
-          <span>© 2026 FaultLine AI — The AI Store</span>
+          <span>© 2026 Lead Generation Near You</span>
           <span>Secure checkout via Stripe · {totalProducts} products available</span>
         </div>
       </footer>
