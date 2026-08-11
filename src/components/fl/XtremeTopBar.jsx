@@ -38,7 +38,7 @@ export default function XtremeTopBar() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           {/* Back button — hidden on dashboard */}
           {!isDashboard && (
-            <button onClick={() => navigate(-1)} aria-label="Go back" style={{
+            <button onClick={() => { if (window.history.length > 1) navigate(-1); else navigate('/app'); }} aria-label="Go back" style={{
               display: 'flex', alignItems: 'center', gap: 4, background: '#fff',
               border: '1px solid #ddd', borderRadius: 8, padding: '8px 12px',
               cursor: 'pointer', color: '#111', fontSize: 13, fontWeight: 700,
