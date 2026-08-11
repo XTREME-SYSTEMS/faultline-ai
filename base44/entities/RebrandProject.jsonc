@@ -21,6 +21,11 @@
       "description": "The brand to rebrand into (default: Lead Gen Near You)",
       "default": "Lead Gen Near You"
     },
+    "accent_color": {
+      "type": "string",
+      "description": "Hex accent color applied across all rebranded assets (logo, buttons, links, CSS)",
+      "default": "#C89B3C"
+    },
     "audit_summary": {
       "type": "string",
       "description": "Single-page summary of legal audit + recommendations"
@@ -80,7 +85,8 @@
             "type": "string",
             "enum": [
               "text",
-              "tagline"
+              "tagline",
+              "brand_term"
             ]
           }
         }
@@ -147,7 +153,61 @@
     },
     "generated_content": {
       "type": "object",
-      "description": "Replacement copy keyed by section"
+      "description": "Replacement copy keyed by section (testimonials, legal pages, etc.)"
+    },
+    "mandatory_elements": {
+      "type": "array",
+      "description": "Per-element status tracker for the 12 mandatory rebrand elements",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "pending",
+              "in_progress",
+              "done",
+              "skipped",
+              "failed"
+            ],
+            "default": "pending"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "autonomous_log": {
+      "type": "array",
+      "description": "Step-by-step execution log from the autonomous rebrand engine",
+      "items": {
+        "type": "object",
+        "properties": {
+          "step": {
+            "type": "string"
+          },
+          "status": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
     },
     "rebrand_html": {
       "type": "string",
