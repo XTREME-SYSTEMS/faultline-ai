@@ -120,10 +120,10 @@ html { scroll-behavior: smooth; }
   <!-- Stats -->
   <section class="bg-black border-y border-white/10 text-white">
     <div class="max-w-7xl mx-auto px-5 py-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-      <div><div class="text-3xl md:text-4xl font-bold font-display" style="color:${accentLight}">7,000,000+</div><div class="mt-1 text-xs uppercase tracking-wider text-slate-400">AI VOICE CALLS</div></div>
-      <div><div class="text-3xl md:text-4xl font-bold font-display" style="color:${accentLight}">7.3B</div><div class="mt-1 text-xs uppercase tracking-wider text-slate-400">LEADS GENERATED</div></div>
-      <div><div class="text-3xl md:text-4xl font-bold font-display" style="color:${accentLight}">179M</div><div class="mt-1 text-xs uppercase tracking-wider text-slate-400">APPOINTMENTS BOOKED</div></div>
-      <div><div class="text-3xl md:text-4xl font-bold font-display" style="color:${accentLight}">$5.2B+</div><div class="mt-1 text-xs uppercase tracking-wider text-slate-400">SALES FACILITATED</div></div>
+      <div><div class="text-3xl md:text-4xl font-bold font-display" style="color:${accentLight}">All-in-one</div><div class="mt-1 text-xs uppercase tracking-wider text-slate-400">CRM · Funnels · Bookings</div></div>
+      <div><div class="text-3xl md:text-4xl font-bold font-display" style="color:${accentLight}">AI-first</div><div class="mt-1 text-xs uppercase tracking-wider text-slate-400">Voice · Chat · Workflows</div></div>
+      <div><div class="text-3xl md:text-4xl font-bold font-display" style="color:${accentLight}">14-day</div><div class="mt-1 text-xs uppercase tracking-wider text-slate-400">Free trial · No card</div></div>
+      <div><div class="text-3xl md:text-4xl font-bold font-display" style="color:${accentLight}">Unlimited</div><div class="mt-1 text-xs uppercase tracking-wider text-slate-400">Contacts & users</div></div>
     </div>
   </section>
 
@@ -248,9 +248,9 @@ html { scroll-behavior: smooth; }
   </section>
   <section class="py-16 bg-slate-50">
     <div class="max-w-5xl mx-auto px-5 grid md:grid-cols-3 gap-6 text-center">
-      <div class="p-8 rounded-2xl bg-white border border-slate-200"><div class="text-4xl font-bold font-display" style="color:${accent}">3x</div><div class="mt-2 text-sm text-slate-600">More booked jobs in 90 days</div></div>
-      <div class="p-8 rounded-2xl bg-white border border-slate-200"><div class="text-4xl font-bold font-display" style="color:${accent}">68%</div><div class="mt-2 text-sm text-slate-600">Less time spent chasing leads</div></div>
-      <div class="p-8 rounded-2xl bg-white border border-slate-200"><div class="text-4xl font-bold font-display" style="color:${accent}">4.9★</div><div class="mt-2 text-sm text-slate-600">Average customer rating</div></div>
+      <div class="p-8 rounded-2xl bg-white border border-slate-200"><div class="text-4xl font-bold font-display" style="color:${accent}">Capture</div><div class="mt-2 text-sm text-slate-600">Every lead logged, tagged, and followed up instantly</div></div>
+      <div class="p-8 rounded-2xl bg-white border border-slate-200"><div class="text-4xl font-bold font-display" style="color:${accent}">Nurture</div><div class="mt-2 text-sm text-slate-600">Automated texts and emails that keep the pipeline warm</div></div>
+      <div class="p-8 rounded-2xl bg-white border border-slate-200"><div class="text-4xl font-bold font-display" style="color:${accent}">Close</div><div class="mt-2 text-sm text-slate-600">Bookings, invoices, and payments in one place</div></div>
     </div>
   </section>
   <section class="py-16 bg-accent text-center text-black"><h2 class="text-3xl md:text-4xl font-bold font-display">See how it fits your business</h2><a href="#" onclick="showPage('pricing');return false;" class="mt-6 inline-flex items-center gap-2 px-7 py-4 rounded-lg bg-black text-white font-bold hover:opacity-80 transition">Start Free Trial →</a></section>
@@ -271,7 +271,7 @@ html { scroll-behavior: smooth; }
       <div>
         <h2 class="text-3xl md:text-4xl font-bold tracking-tight font-display">Our story</h2>
         <p class="mt-4 text-slate-600 text-lg">We watched local businesses duct-tape a dozen tools together just to keep up. So we built one platform — CRM, funnels, marketing, bookings, and automations — that replaces all of them and actually gets the phone to ring.</p>
-        <p class="mt-3 text-slate-600 text-lg">Today, thousands of businesses across North America use ${brand} to capture more leads, book more jobs, and turn one-time customers into repeat referrals.</p>
+        <p class="mt-3 text-slate-600 text-lg">${brand} is built for local service businesses that want to capture more leads, book more jobs, and turn one-time customers into repeat referrals — without juggling a dozen separate subscriptions.</p>
       </div>
     </div>
   </section>
@@ -285,10 +285,10 @@ html { scroll-behavior: smooth; }
   </section>
   <section class="py-16 bg-black text-white">
     <div class="max-w-5xl mx-auto px-5 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-      <div><div class="text-3xl md:text-4xl font-bold font-display" style="color:${accentLight}">7M+</div><div class="mt-1 text-xs uppercase tracking-wider text-slate-400">Businesses powered</div></div>
-      <div><div class="text-3xl md:text-4xl font-bold font-display" style="color:${accentLight}">7.3B</div><div class="mt-1 text-xs uppercase tracking-wider text-slate-400">Leads generated</div></div>
-      <div><div class="text-3xl md:text-4xl font-bold font-display" style="color:${accentLight}">179M</div><div class="mt-1 text-xs uppercase tracking-wider text-slate-400">Appointments booked</div></div>
-      <div><div class="text-3xl md:text-4xl font-bold font-display" style="color:${accentLight}">$5.2B+</div><div class="mt-1 text-xs uppercase tracking-wider text-slate-400">Sales facilitated</div></div>
+      <div><div class="text-3xl md:text-4xl font-bold font-display" style="color:${accentLight}">1</div><div class="mt-1 text-xs uppercase tracking-wider text-slate-400">Platform, not a dozen</div></div>
+      <div><div class="text-3xl md:text-4xl font-bold font-display" style="color:${accentLight}">24/7</div><div class="mt-1 text-xs uppercase tracking-wider text-slate-400">AI follow-up</div></div>
+      <div><div class="text-3xl md:text-4xl font-bold font-display" style="color:${accentLight}">14-day</div><div class="mt-1 text-xs uppercase tracking-wider text-slate-400">Free trial</div></div>
+      <div><div class="text-3xl md:text-4xl font-bold font-display" style="color:${accentLight}">Local</div><div class="mt-1 text-xs uppercase tracking-wider text-slate-400">Built for service pros</div></div>
     </div>
   </section>
   <section class="py-16 bg-accent text-center text-black"><h2 class="text-3xl md:text-4xl font-bold font-display">Come grow with us</h2><a href="#" onclick="showPage('pricing');return false;" class="mt-6 inline-flex items-center gap-2 px-7 py-4 rounded-lg bg-black text-white font-bold hover:opacity-80 transition">Start Free Trial →</a></section>

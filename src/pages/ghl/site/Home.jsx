@@ -4,22 +4,10 @@ import { ArrowRight, Check } from 'lucide-react';
 import MarketingShell from '@/components/ghl/site/MarketingShell';
 
 const STATS = [
-  { v: '7,000,000+', l: 'AI VOICE CALLS' },
-  { v: '7,300,000,000', l: 'LEADS GENERATED' },
-  { v: '179,000,000', l: 'APPOINTMENTS BOOKED' },
-  { v: '$5,200,000,000+', l: 'SALES FACILITATED IN 2025' },
-];
-
-const AWARDS = [
-  'https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/1bfce2c1b_clone-img-msnzvexg-rjn6ux.webp',
-  'https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/a295c9c23_clone-img-msnzvexg-nhau9p.webp',
-  'https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/21d8fe8c6_clone-img-msnzvexg-mzgqxv.webp',
-  'https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/673920949_clone-img-msnzvexf-xrttd3.webp',
-  'https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/1657223aa_clone-img-msnzvexg-wjp41q.webp',
-  'https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/1875786f1_clone-img-msnzvexg-rw3fs3.webp',
-  'https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/6402920c0_clone-img-msnzvexh-mkqdb6.webp',
-  'https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/89fe1c24d_clone-img-msnzvexh-xfiq2n.webp',
-  'https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/25dbf8ccd_clone-img-msnzvexh-liqi5b.webp',
+  { v: 'All-in-one', l: 'CRM · Funnels · Bookings' },
+  { v: 'AI-first', l: 'Voice · Chat · Workflows' },
+  { v: '14-day', l: 'Free trial · No card' },
+  { v: 'Unlimited', l: 'Contacts & users' },
 ];
 
 const TABS = [
@@ -114,14 +102,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Business + awards */}
+      {/* Business */}
       <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-5 text-center">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>We're in the business of helping you grow your business</h2>
-          <p className="mt-4 text-slate-600 text-lg">Lead Generation Near You is the AI-powered operating system powering the growth of businesses around the world.</p>
-          <div className="mt-8 flex flex-wrap justify-center items-center gap-6">
-            {AWARDS.map((src, i) => <img key={i} src={src} alt="Award" className="h-12 w-auto opacity-80" />)}
-          </div>
+          <p className="mt-4 text-slate-600 text-lg">Lead Generation Near You is the AI-powered operating system built to help local service businesses capture more leads, book more jobs, and turn one-time customers into repeat referrals.</p>
         </div>
       </section>
 
@@ -156,14 +141,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Testimonial */}
+      {/* Promise */}
       <section className="py-20 bg-[#000000] text-white">
         <div className="max-w-4xl mx-auto px-5 text-center">
-          <img src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/knES3eSWYIsc5YSZ3YLl/media/698c9c4c2b3ea6f583d00189.svg" alt="Highly" className="h-8 mx-auto mb-5" />
-          <img src="https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/5e338ba45_clone-img-msnzvgcp-w1tgvn.webp" alt="Debbie DuBois" className="w-16 h-16 rounded-full mx-auto mb-3" />
-          <b className="block">Debbie DuBois</b>
-          <span className="text-xs text-slate-400">Compass Marketing Creative</span>
-          <p className="mt-5 text-lg text-slate-200 max-w-2xl mx-auto">I felt completely supported as soon as I join the platform...These guys care about my business and have taken my business to the next level. The technology is continuing to shift and change while getting better and better. They are providing new services and things that I love.</p>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>One platform. No duct tape.</h2>
+          <p className="mt-5 text-lg text-slate-300 max-w-2xl mx-auto">Stop paying for and juggling a dozen separate tools. ${' '}Lead Generation Near You brings CRM, funnels, marketing, bookings, and automations together — so your whole business runs from one login.</p>
         </div>
       </section>
 
@@ -172,7 +154,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-5">
           <div className="text-center max-w-2xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>Join the movement</h2>
-            <p className="mt-3 text-slate-600">Our thriving community of the most successful and visionary digital marketers on the planet. Get all the training and resources you need to start or grow your business.</p>
+            <p className="mt-3 text-slate-600">Resources, training, and a community of local service business owners growing with the platform. Get what you need to start or grow your business.</p>
           </div>
           <div className="mt-12 grid md:grid-cols-3 gap-8">
             {MOVEMENT.map(m => (

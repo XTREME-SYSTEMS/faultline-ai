@@ -39,9 +39,9 @@ export default function Solutions() {
       <section className="py-16 bg-slate-50">
         <div className="max-w-5xl mx-auto px-5 grid md:grid-cols-3 gap-6 text-center">
           {[
-            { n: '3x', l: 'More booked jobs in 90 days' },
-            { n: '68%', l: 'Less time spent chasing leads' },
-            { n: '4.9★', l: 'Average customer rating' },
+            { n: 'Capture', l: 'Every lead logged, tagged, and followed up instantly' },
+            { n: 'Nurture', l: 'Automated texts and emails that keep the pipeline warm' },
+            { n: 'Close', l: 'Bookings, invoices, and payments in one place' },
           ].map(x => (
             <div key={x.l} className="p-8 rounded-2xl bg-white border border-slate-200">
               <div className="text-4xl font-bold text-[#CCFF00]" style={{ fontFamily: "'Libre Caslon Display', serif" }}>{x.n}</div>

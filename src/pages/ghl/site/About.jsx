@@ -26,7 +26,7 @@ export default function About() {
           <div>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>Our story</h2>
             <p className="mt-4 text-slate-600 text-lg">We watched local businesses duct-tape a dozen tools together just to keep up. So we built one platform — CRM, funnels, marketing, bookings, and automations — that replaces all of them and actually gets the phone to ring.</p>
-            <p className="mt-3 text-slate-600 text-lg">Today, thousands of businesses across North America use Lead Generation Near You to capture more leads, book more jobs, and turn one-time customers into repeat referrals.</p>
+            <p className="mt-3 text-slate-600 text-lg">Lead Generation Near You is built for local service businesses that want to capture more leads, book more jobs, and turn one-time customers into repeat referrals — without juggling a dozen separate subscriptions.</p>
           </div>
         </div>
       </section>
@@ -45,7 +45,7 @@ export default function About() {
 
       <section className="py-16 bg-[#000000] text-white">
         <div className="max-w-5xl mx-auto px-5 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
-          {[['7M+','Businesses powered'],['7.3B','Leads generated'],['179M','Appointments booked'],['$5.2B+','Sales facilitated']].map(([n,l]) => (
+          {[['1','Platform, not a dozen'],['24/7','AI follow-up'],['14-day','Free trial'],['Local','Built for service pros']].map(([n,l]) => (
             <div key={l}><div className="text-3xl md:text-4xl font-bold text-[#DFFF5C]" style={{ fontFamily: "'Libre Caslon Display', serif" }}>{n}</div><div className="mt-1 text-xs uppercase tracking-wider text-slate-400">{l}</div></div>
           ))}
         </div>
