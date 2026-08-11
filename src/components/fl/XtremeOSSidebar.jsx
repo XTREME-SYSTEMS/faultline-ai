@@ -13,6 +13,17 @@ import {
 // 3. FaultLine AI (archived — old diagnostic/audit/client system)
 const MODULES = [
   {
+    id: 'ghl-clone',
+    label: 'GoHighLevel Clone',
+    icon: Copy,
+    accent: '#059669',
+    archived: false,
+    collapsed: false,
+    items: [
+      { to: '/app/ghl-crm', label: 'CRM + Pipelines', icon: Users },
+    ]
+  },
+  {
     id: 'clone-system',
     label: 'Xtreme Clone System',
     icon: Copy,
