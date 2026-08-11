@@ -8,6 +8,30 @@ const screenshotOf = (url) => {
   return `https://image.thum.io/get/width/1280/crop/800/noanimate/${url}`;
 };
 
+// Image with graceful fallback: tries screenshot_url → live screenshot of
+// preview_url → Layout icon placeholder. Handles broken/expired screenshots.
+function TemplateImage({ screenshotUrl, previewUrl, alt, iconSize = 24 }) {
+  const [stage, setStage] = useState(screenshotUrl ? 'screenshot' : previewUrl ? 'live' : 'placeholder');
+  const src = stage === 'screenshot' ? screenshotUrl : stage === 'live' ? screenshotOf(previewUrl) : null;
+  return (
+    <>
+      {src ? (
+        <img
+          src={src}
+          alt={alt}
+          style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+          onError={() => setStage(s => (s === 'screenshot' && previewUrl ? 'live' : 'placeholder'))}
+        />
+      ) : null}
+      {stage === 'placeholder' && (
+        <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#999', fontSize: iconSize, position: 'absolute', inset: 0 }}>
+          <Layout />
+        </div>
+      )}
+    </>
+  );
+}
+
 const LAYOUT_LABELS = {
   hero_centric: 'Hero Centric',
   split_hero: 'Split Hero',
