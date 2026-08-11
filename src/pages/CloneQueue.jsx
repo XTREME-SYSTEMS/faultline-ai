@@ -10,6 +10,20 @@ import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
 import PwaInstallButton from '@/components/PwaInstallButton';
 import BulkUpload from '@/components/clone-queue/BulkUpload';
 
+// Relevance matcher — flags clones that have nothing to do with the build:
+// local service contractors (the customers) + lead-gen / marketing / CRM SaaS (the product).
+const RELEVANT_KEYWORDS = [
+  // trades / home services / contractors
+  'contractor','construction','roof','hvac','plumb','electric','landscap','lawn','tree','clean','pav','asphalt','solar','paint','remodel','renovat','floor','epoxy','concrete','garage','handyman','pest','fence','deck','siding','window','door','gutter','insulation','drywall','masonry','stucco','excavat','demolition','weld','metal','septic','restoration','mold','fire','home service','service business','trade','builder','property','inspection','appraisal','real estate','realtor','mortgage','insurance','legal','attorney','dental','dentist','medical','clinic','health','wellness','fitness','gym','auto','automotive','repair','tire','towing','transport','moving','storage','janitorial','facilities','maintenance','sealing','coating','polished','grind','leveling','foundation','driveway','patio','pool','drain','sewer','heating','cooling','mechanical','septic','water','well',
+  // lead-gen / marketing / CRM / SaaS / GHL
+  'lead gen','lead generation','leadgen','marketing','crm','saas','platform','funnel','agency','advertis','seo','ads','ghl','highlevel','near you','local service','software','automation','booking','appointment','scheduling','dispatch','estimat','quote','proposal','invoice','billing','field service','servicetitan','jobber','housecall','service fusion',
+];
+
+function isRelevantClone(item) {
+  const hay = `${item.industry || ''} ${item.site_name || ''} ${item.target_url || ''} ${item.notes || ''}`.toLowerCase();
+  return RELEVANT_KEYWORDS.some(k => hay.includes(k));
+}
+
 export default function CloneQueue() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -23,6 +37,8 @@ export default function CloneQueue() {
   const [voiceError, setVoiceError] = useState('');
   const [discovering, setDiscovering] = useState(false);
   const [discoverResult, setDiscoverResult] = useState(null);
+  const [dimOffTarget, setDimOffTarget] = useState(true);
+  const [hideOffTarget, setHideOffTarget] = useState(false);
   const recognitionRef = useRef(null);
 
   // Voice input using the Web Speech API (Chrome/Edge supported)
@@ -388,14 +404,23 @@ export default function CloneQueue() {
 
         {/* Queue list */}
         <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 12, overflow: 'hidden' }}>
-          <div style={{ padding: '16px 20px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ padding: '16px 20px', borderBottom: '1px solid #eee', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
             <ListChecks size={20} style={{ color: '#C89B3C' }} />
             <h3 style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 20, margin: 0 }}>
               Queue ({items.length})
             </h3>
-            <button onClick={loadQueue} style={{ marginLeft: 'auto', background: 'none', border: 0, cursor: 'pointer', color: '#999', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}>
-              <RefreshCw size={14} /> Refresh
-            </button>
+            <span style={{ fontSize: 11, color: '#999' }}>{items.filter(isRelevantClone).length} on-target · {items.filter(i => !isRelevantClone(i)).length} off-target</span>
+            <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 14 }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#666', cursor: 'pointer' }}>
+                <input type="checkbox" checked={hideOffTarget} onChange={e => setHideOffTarget(e.target.checked)} /> Hide off-target
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, color: '#666', cursor: 'pointer' }}>
+                <input type="checkbox" checked={dimOffTarget} onChange={e => setDimOffTarget(e.target.checked)} /> Grey out off-target
+              </label>
+              <button onClick={loadQueue} style={{ background: 'none', border: 0, cursor: 'pointer', color: '#999', display: 'flex', alignItems: 'center', gap: 4, fontSize: 12 }}>
+                <RefreshCw size={14} /> Refresh
+              </button>
+            </div>
           </div>
 
           {loading ? (
@@ -423,8 +448,11 @@ export default function CloneQueue() {
                   </tr>
                 </thead>
                 <tbody>
-                  {items.map(item => (
-                    <tr key={item.id} style={{ borderBottom: '1px solid #f0f0f0' }}>
+                  {items.filter(item => !hideOffTarget || isRelevantClone(item)).map(item => {
+                    const offTarget = !isRelevantClone(item);
+                    const dim = offTarget && dimOffTarget;
+                    return (
+                    <tr key={item.id} style={{ borderBottom: '1px solid #f0f0f0', opacity: dim ? 0.4 : 1, background: offTarget ? '#faf9f6' : 'transparent' }}>
                       <td style={{ padding: '12px 16px' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <Globe size={14} style={{ color: '#C89B3C', flexShrink: 0 }} />
@@ -434,6 +462,9 @@ export default function CloneQueue() {
                               {shortUrl(item.target_url)}
                             </a>
                           </div>
+                          {offTarget && (
+                            <span style={{ marginLeft: 6, padding: '2px 7px', borderRadius: 4, background: '#eee', color: '#888', fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.05em', border: '1px dashed #bbb' }}>Off-target</span>
+                          )}
                         </div>
                         {item.notes && (
                           <small style={{ display: 'block', color: '#999', fontSize: 10, marginTop: 4, marginLeft: 22, maxWidth: 250 }}>
@@ -476,7 +507,8 @@ export default function CloneQueue() {
                         </button>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
