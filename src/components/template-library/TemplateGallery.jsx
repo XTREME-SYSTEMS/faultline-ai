@@ -1,6 +1,12 @@
 import { useState, useMemo } from 'react';
-import { Image } from '@/components/ui/image';
 import { Loader2, Search, Layout, Star, ExternalLink, ChevronDown } from 'lucide-react';
+
+// Build a screenshot image URL from a live preview URL when no static
+// screenshot is stored. Uses thum.io's free website screenshot service.
+const screenshotOf = (url) => {
+  if (!url) return null;
+  return `https://image.thum.io/get/width/1280/crop/800/noanimate/${url}`;
+};
 
 const LAYOUT_LABELS = {
   hero_centric: 'Hero Centric',
@@ -142,22 +148,17 @@ function CategorySection({ catKey, templates, selectedId, onSelect, collapsed, o
         onClick={onToggle}
         style={{ position: 'relative', height: 200, background: '#f0ede5', overflow: 'hidden', cursor: 'pointer' }}
       >
-        {rep?.screenshot_url ? (
-          <Image src={rep.screenshot_url} alt={label} fittingType="fill" className="w-full h-full" />
-        ) : rep?.preview_url ? (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            <iframe
-              src={rep.preview_url}
-              title={label}
-              style={{ width: '1280px', height: '800px', transform: 'scale(0.5)', transformOrigin: 'top left', border: 0, pointerEvents: 'none' }}
-              loading="lazy"
-            />
-          </div>
-        ) : (
-          <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#999', fontSize: 32 }}>
-            <Layout />
-          </div>
-        )}
+        {(rep?.screenshot_url || rep?.preview_url) ? (
+          <img
+            src={rep.screenshot_url || screenshotOf(rep.preview_url)}
+            alt={label}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling.style.display = 'grid'; }}
+          />
+        ) : null}
+        <div style={{ display: 'none', placeItems: 'center', height: '100%', color: '#999', fontSize: 32, position: 'absolute', inset: 0 }}>
+          <Layout />
+        </div>
         {/* Dark overlay for text legibility */}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,.72), rgba(0,0,0,.25) 60%, transparent)' }} />
         {/* Category label */}
@@ -205,22 +206,17 @@ function TemplateCard({ template, isSelected, onSelect }) {
       >
       {/* Screenshot */}
       <div style={{ height: 140, background: '#f0ede5', overflow: 'hidden', position: 'relative' }}>
-        {template.screenshot_url ? (
-          <Image src={template.screenshot_url} alt={template.name} fittingType="fill" className="w-full h-full" />
-        ) : template.preview_url ? (
-          <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <iframe
-              src={template.preview_url}
-              title={template.name}
-              style={{ width: '1280px', height: '800px', transform: 'scale(0.2)', transformOrigin: 'top left', border: 0, pointerEvents: 'none' }}
-              loading="lazy"
-            />
-          </div>
-        ) : (
-          <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#999', fontSize: 24 }}>
-            <Layout />
-          </div>
-        )}
+        {(template.screenshot_url || template.preview_url) ? (
+          <img
+            src={template.screenshot_url || screenshotOf(template.preview_url)}
+            alt={template.name}
+            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling.style.display = 'grid'; }}
+          />
+        ) : null}
+        <div style={{ display: 'none', placeItems: 'center', height: '100%', color: '#999', fontSize: 24, position: 'absolute', inset: 0 }}>
+          <Layout />
+        </div>
         {template.featured && (
           <span style={{ position: 'absolute', top: 8, left: 8, background: '#C89B3C', color: '#111', fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: '.06em' }}>
             ★ Featured
