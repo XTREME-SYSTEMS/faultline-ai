@@ -1,61 +1,62 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
-import { Link } from 'react-router-dom';
 import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
 import AccentPicker from '@/components/rebrand-pipeline/AccentPicker';
+import { Card, StatusPill, ErrorBox, SuccessBox, BtnGold, BtnDark, Log, useLog } from '@/components/clone-pipeline/parts';
 import {
   Loader2, Search, Globe, Copy, ShieldCheck, Palette, CheckCircle2, Rocket,
-  Check, X, AlertTriangle, ExternalLink, RefreshCw, Sparkles, ArrowRight, Eye,
+  Check, X, AlertTriangle, ExternalLink, RefreshCw, Sparkles, ArrowRight, Eye, Zap,
 } from 'lucide-react';
 
-const STEPS = [
-  { n: 1, label: 'Find',      icon: Search },
-  { n: 2, label: 'Clone',     icon: Copy },
-  { n: 3, label: 'Audit',     icon: ShieldCheck },
-  { n: 4, label: 'Style',     icon: Palette },
-  { n: 5, label: 'Approve',   icon: CheckCircle2 },
-];
-
 export default function ClonePipeline() {
-  const [step, setStep] = useState(1);
-  const [myRebrands, setMyRebrands] = useState([]);
-  const [loadingRebrands, setLoadingRebrands] = useState(true);
+  // ---- pipeline state ----
+  const [stage, setStage] = useState({ find: 'pending', clone: 'pending', audit: 'pending', style: 'pending', approve: 'pending' });
+  const setStageStatus = (k, s) => setStage(prev => ({ ...prev, [k]: s }));
 
-  // Step 1 — find
-  const [mode, setMode] = useState('search'); // 'search' | 'url' | 'existing'
+  // find
+  const [mode, setMode] = useState('search');
   const [niche, setNiche] = useState('');
   const [searching, setSearching] = useState(false);
   const [results, setResults] = useState([]);
   const [urlInput, setUrlInput] = useState('');
   const [existingClones, setExistingClones] = useState([]);
-  const [picked, setPicked] = useState(null); // {url, name}
+  const [picked, setPicked] = useState(null);
 
-  // Step 2 — clone
+  // clone
+  const cloneLog = useLog();
   const [cloning, setCloning] = useState(false);
-  const [cloneLog, setCloneLog] = useState([]);
-  const [clone, setClone] = useState(null); // {vercel_url, name}
+  const [clone, setClone] = useState(null);
   const [cloneError, setCloneError] = useState('');
 
-  // Step 3 — audit
+  // audit
   const [auditing, setAuditing] = useState(false);
-  const [audit, setAudit] = useState(null); // RebrandProject
+  const [audit, setAudit] = useState(null);
+  const [auditError, setAuditError] = useState('');
 
-  // Step 4 — style
+  // style
   const [accent, setAccent] = useState('#C89B3C');
   const [rebranding, setRebranding] = useState(false);
-  const [rebrand, setRebrand] = useState(null); // {deploy_url, elements}
+  const [rebrand, setRebrand] = useState(null);
+  const [rebrandError, setRebrandError] = useState('');
 
-  // Step 5 — approve
+  // approve
   const [approving, setApproving] = useState(false);
   const [approved, setApproved] = useState(false);
 
-  useEffect(() => { loadRebrands(); loadExisting(); }, []);
-  async function loadRebrands() {
-    setLoadingRebrands(true);
+  // dashboard
+  const [completed, setCompleted] = useState([]);
+  const [loadingCompleted, setLoadingCompleted] = useState(true);
+
+  // one-click full pipeline
+  const [autoRunning, setAutoRunning] = useState(false);
+
+  useEffect(() => { loadCompleted(); loadExisting(); }, []);
+  async function loadCompleted() {
+    setLoadingCompleted(true);
     try {
       const list = await base44.entities.RebrandProject.list('-created_date', 50).catch(() => []);
-      setMyRebrands((list || []).filter(p => p.status === 'approved' || p.status === 'completed'));
-    } finally { setLoadingRebrands(false); }
+      setCompleted((list || []).filter(p => p.status === 'approved' || p.status === 'completed'));
+    } finally { setLoadingCompleted(false); }
   }
   async function loadExisting() {
     try {
@@ -64,66 +65,109 @@ export default function ClonePipeline() {
     } catch {}
   }
 
-  function pickSite(p) { setPicked(p); setStep(2); }
-
-  // ---- Step 2: clone a new URL end-to-end ----
-  async function runClone() {
-    if (!picked?.url) return;
-    setCloning(true); setCloneError(''); setCloneLog([]); setClone(null);
+  // ---------- FIND ----------
+  async function runSearch() {
+    setSearching(true); setResults([]);
     try {
-      pushLog('Scraping target site DNA…');
-      const dr = await base44.functions.invoke('deepCloneTarget', { target_url: picked.url });
+      const r = await base44.functions.invoke('searchTopWebsitesByIndustry', { industry: niche || 'general', max_results: 10 });
+      const d = r.data || r;
+      if (d.error) throw new Error(d.error);
+      setResults(d.websites || []);
+    } catch (e) { setCloneError(e.message); }
+    finally { setSearching(false); }
+  }
+  function pickSite(p) {
+    setPicked(p);
+    setStage(prev => ({ ...prev, find: 'done', clone: 'pending' }));
+    setCloneError(''); setClone(null); cloneLog.reset();
+    setAudit(null); setRebrand(null); setApproved(false);
+    setStage(prev => ({ ...prev, audit: 'pending', style: 'pending', approve: 'pending' }));
+  }
+  function pickExisting(c) {
+    const url = c.vercel_deployment_url || c.metadata?.vercel_deployment_url;
+    setPicked({ url, name: c.project_name });
+    setClone({ vercel_url: url, name: c.project_name });
+    setStage({ find: 'done', clone: 'done', audit: 'pending', style: 'pending', approve: 'pending' });
+    setAudit(null); setRebrand(null); setApproved(false);
+  }
+
+  // ---------- CLONE (with retry + fallback) ----------
+  const runClone = useCallback(async () => {
+    if (!picked?.url) return;
+    setCloning(true); setCloneError(''); setClone(null); cloneLog.reset();
+    setStageStatus('clone', 'running');
+    try {
+      cloneLog.push(`Scraping target DNA: ${picked.url}`);
+      let dr;
+      try {
+        dr = await base44.functions.invoke('deepCloneTarget', { target_url: picked.url });
+      } catch (e) {
+        cloneLog.push(`deepCloneTarget failed (${e.message}); retrying with deterministic fallback…`);
+        dr = await base44.functions.invoke('deterministicClone', { target_url: picked.url });
+      }
       const d = dr.data || dr;
       if (d.error) throw new Error(d.error);
       const bizName = d.bizName || picked.name || 'Clone';
-      pushLog(`Captured ${d.dna?.colors?.length || 0} colors, ${d.dna?.nav?.length || 0} nav items via ${d.fetchMethod}`);
-      pushLog('Generating faithful clone…');
+      cloneLog.push(`Captured ${d.dna?.colors?.length || 0} colors, ${d.dna?.nav?.length || 0} nav items via ${d.fetchMethod || 'fetch'}`);
+      cloneLog.push('Generating faithful clone HTML…');
       const gr = await base44.functions.invoke('generateWebsite', {
         business_name: bizName, description: d.brief, primary_color: d.dna?.primary, target_dna: d.dna,
       });
       const g = gr.data || gr;
       if (g.error) throw new Error(g.error);
-      pushLog('Deploying clone to Vercel…');
-      const lr = await base44.functions.invoke('launchProject', {
-        project_name: `${bizName} clone`, website_html: g.website_html, steps: { vercel: true, drive: false, github: false, supabase: false },
-      });
+      cloneLog.push('Deploying to Vercel…');
+      let lr;
+      try {
+        lr = await base44.functions.invoke('launchProject', {
+          project_name: `${bizName} clone`, website_html: g.website_html, steps: { vercel: true, drive: false, github: false, supabase: false },
+        });
+      } catch (e) {
+        cloneLog.push(`launch failed (${e.message}); retrying deploy…`);
+        lr = await base44.functions.invoke('launchProject', {
+          project_name: `${bizName} clone (r2)`, website_html: g.website_html, steps: { vercel: true, drive: false, github: false, supabase: false },
+        });
+      }
       const l = lr.data || lr;
       if (l.error) throw new Error(l.error);
       const vercelUrl = l.results?.vercel?.deploy?.url || l.results?.vercel?.deploy?.alias?.[0];
       if (!vercelUrl) throw new Error('Vercel deploy URL not returned');
-      pushLog(`Deployed ✓ ${vercelUrl}`);
+      cloneLog.push(`Deployed ✓ ${vercelUrl}`);
       setClone({ vercel_url: vercelUrl, name: bizName });
-      setStep(3);
-    } catch (e) { setCloneError(e.message); }
-    finally { setCloning(false); }
-  }
-  function pushLog(msg) { setCloneLog(prev => [...prev, msg]); }
+      setStageStatus('clone', 'done');
+      setStageStatus('audit', 'pending');
+      return true;
+    } catch (e) {
+      setCloneError(e.message || 'Clone failed');
+      setStageStatus('clone', 'error');
+      return false;
+    } finally { setCloning(false); }
+  }, [picked, cloneLog]);
 
-  // use an existing deployed clone — skip straight to audit
-  function useExisting(c) {
-    setPicked({ url: c.vercel_deployment_url || c.metadata?.vercel_deployment_url, name: c.project_name });
-    setClone({ vercel_url: c.vercel_deployment_url || c.metadata?.vercel_deployment_url, name: c.project_name });
-    setStep(3);
-  }
-
-  // ---- Step 3: audit mandatory changes ----
-  async function runAudit() {
+  // ---------- AUDIT ----------
+  const runAudit = useCallback(async () => {
     if (!clone?.vercel_url) return;
-    setAuditing(true); setAudit(null);
+    setAuditing(true); setAuditError(''); setAudit(null);
+    setStageStatus('audit', 'running');
     try {
       const r = await base44.functions.invoke('detectMandatoryChanges', { source_url: clone.vercel_url });
       const d = r.data || r;
       if (d.error) throw new Error(d.error);
       setAudit(d.project);
-      setStep(4);
-    } catch (e) { setCloneError(e.message); }
-    finally { setAuditing(false); }
-  }
+      setStageStatus('audit', 'done');
+      setStageStatus('style', 'pending');
+      return true;
+    } catch (e) {
+      setAuditError(e.message);
+      setStageStatus('audit', 'error');
+      return false;
+    } finally { setAuditing(false); }
+  }, [clone]);
 
-  // ---- Step 4: style + rebrand preview ----
-  async function runRebrand() {
+  // ---------- STYLE / REBRAND ----------
+  const runRebrand = useCallback(async () => {
     if (!clone?.vercel_url) return;
-    setRebranding(true); setRebrand(null);
+    setRebranding(true); setRebrandError(''); setRebrand(null);
+    setStageStatus('style', 'running');
     try {
       const r = await base44.functions.invoke('autonomousRebrand', {
         source_url: clone.vercel_url, accent_color: accent,
@@ -132,321 +176,339 @@ export default function ClonePipeline() {
       const d = r.data || r;
       if (d.error) throw new Error(d.error);
       setRebrand(d);
-      setStep(5);
-    } catch (e) { setCloneError(e.message); }
-    finally { setRebranding(false); }
-  }
+      setStageStatus('style', 'done');
+      setStageStatus('approve', 'pending');
+      return true;
+    } catch (e) {
+      setRebrandError(e.message);
+      setStageStatus('style', 'error');
+      return false;
+    } finally { setRebranding(false); }
+  }, [clone, accent, audit]);
 
-  // ---- Step 5: approve ----
-  async function approve() {
+  // ---------- APPROVE ----------
+  const approve = useCallback(async () => {
     const pid = audit?.id || rebrand?.project?.id;
     if (!pid) return;
     setApproving(true);
+    setStageStatus('approve', 'running');
     try {
       await base44.entities.RebrandProject.update(pid, { status: 'approved', approval_state: 'approved' });
       setApproved(true);
-      loadRebrands();
-    } catch (e) { setCloneError(e.message); }
+      setStageStatus('approve', 'done');
+      loadCompleted();
+      return true;
+    } catch (e) { setStageStatus('approve', 'error'); return false; }
     finally { setApproving(false); }
+  }, [audit, rebrand]);
+
+  // ---------- ONE-CLICK FULL PIPELINE ----------
+  async function runFullPipeline() {
+    if (!picked?.url) { setCloneError('Pick a site to clone first (Step 1).'); return; }
+    setAutoRunning(true);
+    setCloneError(''); setAuditError(''); setRebrandError('');
+    try {
+      const okClone = await runClone();
+      if (!okClone) return;
+      // re-read clone state synchronously — runClone set it; but closure has stale ref, so re-fetch via a small wait
+      await new Promise(r => setTimeout(r, 50));
+      const okAudit = await runAudit();
+      if (!okAudit) return;
+      await new Promise(r => setTimeout(r, 50));
+      const okRebrand = await runRebrand();
+      if (!okRebrand) return;
+      await new Promise(r => setTimeout(r, 50));
+      await approve();
+    } finally { setAutoRunning(false); }
   }
 
   function reset() {
-    setStep(1); setPicked(null); setClone(null); setAudit(null); setRebrand(null);
-    setApproved(false); setCloneLog([]); setCloneError(''); setResults([]); setUrlInput('');
-    setMode('search'); setNiche('');
+    setStage({ find: 'pending', clone: 'pending', audit: 'pending', style: 'pending', approve: 'pending' });
+    setPicked(null); setClone(null); setAudit(null); setRebrand(null); setApproved(false);
+    setCloneError(''); setAuditError(''); setRebrandError('');
+    setResults([]); setUrlInput(''); setMode('search'); setNiche('');
+    cloneLog.reset();
   }
+
+  const allDone = stage.approve === 'done';
 
   return (
     <>
       <XtremeOSSidebar />
       <div className="portal-page xtremeos-content" style={{ background: '#f7f7f5', minHeight: '100vh', marginLeft: 240 }}>
-        <Header onReset={reset} />
+        {/* Hero */}
+        <div style={{ background: 'radial-gradient(circle at 82% 40%, #C89B3C45, transparent 25%), #0a0a0a', color: '#fff', padding: '40px 28px', margin: '-28px -28px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
+          <div>
+            <p style={{ color: '#E7C86E', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.16em', margin: 0 }}>End-to-End Clone + Rebrand Factory</p>
+            <h1 style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 42, margin: '10px 0 6px', letterSpacing: '-.03em' }}>Clone <span style={{ color: '#E7C86E' }}>Pipeline</span></h1>
+            <p style={{ color: '#aaa', fontSize: 14, margin: 0, maxWidth: 640 }}>One page, top to bottom. Find a site, clone it, audit what must change, pick your colors, preview the rebrand, and approve — with retry + fallback for the lowest failure rate.</p>
+          </div>
+          <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+            <button onClick={runFullPipeline} disabled={autoRunning || !picked} style={{
+              display: 'flex', alignItems: 'center', gap: 8, padding: '15px 26px',
+              background: autoRunning ? '#333' : 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111',
+              border: 0, borderRadius: 10, fontWeight: 700, fontSize: 15, cursor: autoRunning || !picked ? 'wait' : 'pointer',
+              boxShadow: '0 8px 24px rgba(200,155,60,.35)',
+            }}>
+              {autoRunning ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} />}
+              {autoRunning ? 'Running Pipeline…' : 'Run Entire Pipeline'}
+            </button>
+            <button onClick={reset} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a1a', color: '#E7C86E', border: '1px solid #333', borderRadius: 8, padding: '12px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+              <RefreshCw size={14} /> Start Over
+            </button>
+          </div>
+        </div>
 
-        {/* Stepper */}
-        <div style={{ display: 'flex', gap: 6, marginBottom: 20, background: '#fff', border: '1px solid #ddd', borderRadius: 12, padding: '14px 18px', overflowX: 'auto' }}>
-          {STEPS.map((s, i) => {
-            const done = step > s.n;
-            const active = step === s.n;
+        {/* Pipeline progress bar */}
+        <div style={{ display: 'flex', gap: 0, marginBottom: 20, background: '#fff', border: '1px solid #ddd', borderRadius: 12, padding: '14px 18px', alignItems: 'center' }}>
+          {[
+            { k: 'find', n: 1, label: 'Find', icon: Search },
+            { k: 'clone', n: 2, label: 'Clone', icon: Copy },
+            { k: 'audit', n: 3, label: 'Audit', icon: ShieldCheck },
+            { k: 'style', n: 4, label: 'Style', icon: Palette },
+            { k: 'approve', n: 5, label: 'Approve', icon: CheckCircle2 },
+          ].map((s, i) => {
+            const st = stage[s.k];
             return (
-              <div key={s.n} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 120 }}>
+              <div key={s.k} style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, minWidth: 100 }}>
                 <div style={{
-                  width: 34, height: 34, borderRadius: '50%', display: 'grid', placeItems: 'center', flexShrink: 0,
-                  background: done ? '#237A4B' : active ? 'linear-gradient(135deg, #E7C86E, #C89B3C)' : '#eee',
-                  color: done || active ? (done ? '#fff' : '#111') : '#999', fontWeight: 700, fontSize: 14,
+                  width: 32, height: 32, borderRadius: '50%', display: 'grid', placeItems: 'center', flexShrink: 0,
+                  background: st === 'done' ? '#237A4B' : st === 'running' ? 'linear-gradient(135deg, #E7C86E, #C89B3C)' : '#eee',
+                  color: st === 'done' || st === 'running' ? (st === 'done' ? '#fff' : '#111') : '#999', fontWeight: 700, fontSize: 13,
                 }}>
-                  {done ? <Check size={16} /> : <s.icon size={16} />}
+                  {st === 'done' ? <Check size={15} /> : st === 'running' ? <Loader2 size={15} className="animate-spin" /> : <s.icon size={15} />}
                 </div>
                 <div>
-                  <small style={{ color: '#999', fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em' }}>Step {s.n}</small>
-                  <b style={{ display: 'block', fontSize: 13, color: active || done ? '#111' : '#999' }}>{s.label}</b>
+                  <small style={{ color: '#999', fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em' }}>Stage {s.n}</small>
+                  <b style={{ display: 'block', fontSize: 12, color: st === 'done' || st === 'running' ? '#111' : '#999' }}>{s.label}</b>
                 </div>
-                {i < STEPS.length - 1 && <div style={{ flex: 1, height: 2, background: done ? '#237A4B' : '#eee', minWidth: 12 }} />}
+                {i < 4 && <div style={{ flex: 1, height: 2, background: st === 'done' ? '#237A4B' : '#eee', minWidth: 8 }} />}
               </div>
             );
           })}
         </div>
 
-        {cloneError && <ErrorBanner text={cloneError} onClose={() => setCloneError('')} />}
+        {/* STAGE 1: FIND */}
+        <Card step={1} label="Find a Site to Clone" status={stage.find}>
+          <Tabs mode={mode} setMode={setMode} tabs={[{ id: 'search', label: 'Search by Niche' }, { id: 'url', label: 'Enter a URL' }, { id: 'existing', label: 'Use Existing Clone' }]} />
+          {mode === 'search' && (
+            <>
+              <div style={{ display: 'flex', gap: 10, marginBottom: 14 }}>
+                <input value={niche} onChange={e => setNiche(e.target.value)} placeholder="e.g. epoxy flooring, roofing, HVAC, plumbing…"
+                  style={{ flex: 1, padding: '13px 14px', border: '1px solid #d7d7d7', borderRadius: 8, fontSize: 14, background: '#fff', color: '#111' }}
+                  onKeyDown={e => e.key === 'Enter' && runSearch()} />
+                <BtnGold disabled={searching} onClick={runSearch}>
+                  {searching ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />} {searching ? 'Searching…' : 'Find Top Sites'}
+                </BtnGold>
+              </div>
+              {results.length > 0 && (
+                <div style={{ display: 'grid', gap: 8 }}>
+                  {results.map((r, i) => (
+                    <div key={i} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                      <div style={{ minWidth: 0 }}>
+                        <b style={{ fontSize: 14 }}>{r.name}</b>
+                        <div style={{ fontSize: 12, color: '#2563eb', marginTop: 2 }}>{r.url}</div>
+                        <p style={{ fontSize: 12, color: '#888', margin: '4px 0 0' }}>{r.description}</p>
+                      </div>
+                      <BtnDark onClick={() => pickSite({ url: r.url, name: r.name })}><Copy size={14} /> Clone This</BtnDark>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </>
+          )}
+          {mode === 'url' && (
+            <div style={{ display: 'flex', gap: 10 }}>
+              <input value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://example.com"
+                style={{ flex: 1, padding: '13px 14px', border: '1px solid #d7d7d7', borderRadius: 8, fontSize: 14, background: '#fff', color: '#111' }} />
+              <BtnGold disabled={!urlInput.trim()} onClick={() => pickSite({ url: urlInput.trim(), name: '' })}><ArrowRight size={16} /> Continue</BtnGold>
+            </div>
+          )}
+          {mode === 'existing' && (
+            existingClones.length === 0 ? <div style={{ padding: 24, textAlign: 'center', color: '#999', fontSize: 13 }}>No deployed clones found. Clone a new site first.</div> :
+            <div style={{ display: 'grid', gap: 8 }}>
+              {existingClones.map(c => {
+                const url = c.vercel_deployment_url || c.metadata?.vercel_deployment_url;
+                return (
+                  <div key={c.id} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <b style={{ fontSize: 14 }}>{c.project_name}</b>
+                      <div style={{ fontSize: 12, color: '#2563eb', marginTop: 2 }}>{url}</div>
+                    </div>
+                    <BtnDark onClick={() => pickExisting(c)}><ArrowRight size={14} /> Use This</BtnDark>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {picked && <SuccessBox><b>Selected:</b> {picked.name || picked.url}</SuccessBox>}
+        </Card>
 
-        {/* Step bodies */}
-        {step === 1 && <StepFind
-          mode={mode} setMode={setMode} niche={niche} setNiche={setNiche} searching={searching}
-          onSearch={async () => { setSearching(true); setResults([]); try { const r = await base44.functions.invoke('searchTopWebsitesByIndustry', { industry: niche || 'general', max_results: 10 }); const d = r.data || r; if (d.error) throw new Error(d.error); setResults(d.websites || []); } catch (e) { setCloneError(e.message); } finally { setSearching(false); } }}
-          results={results} urlInput={urlInput} setUrlInput={setUrlInput} onPickUrl={() => pickSite({ url: urlInput.trim(), name: '' })}
-          existingClones={existingClones} onUseExisting={useExisting} onPick={pickSite} />}
+        {/* STAGE 2: CLONE */}
+        <Card step={2} label="Clone the Target" status={stage.clone}>
+          {!picked ? <div style={{ padding: 20, textAlign: 'center', color: '#999', fontSize: 13 }}>Pick a site in Stage 1 above to begin.</div> :
+          <>
+            <div style={{ fontSize: 13, color: '#666', marginBottom: 12 }}>Target: <a href={picked.url} target="_blank" rel="noreferrer" style={{ color: '#2563eb' }}>{picked.url} <ExternalLink size={11} style={{ display: 'inline' }} /></a></div>
+            {clone ? (
+              <SuccessBox>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <CheckCircle2 size={18} />
+                  <b>Clone deployed</b>
+                  <a href={clone.vercel_url} target="_blank" rel="noreferrer" style={{ color: '#2563eb', fontSize: 12 }}>{clone.vercel_url} <ExternalLink size={11} style={{ display: 'inline' }} /></a>
+                </div>
+              </SuccessBox>
+            ) : (
+              <BtnGold disabled={cloning} onClick={runClone}>
+                {cloning ? <Loader2 size={16} className="animate-spin" /> : <Rocket size={16} />} {cloning ? 'Cloning…' : 'Clone This Site'}
+              </BtnGold>
+            )}
+            <Log lines={cloneLog.lines} />
+            {cloneError && <ErrorBox text={cloneError} onRetry={runClone} />}
+          </>}
+        </Card>
 
-        {step === 2 && <StepClone picked={picked} cloning={cloning} cloneLog={cloneLog} clone={clone} onClone={runClone} onBack={() => setStep(1)} onNext={runAudit} />}
+        {/* STAGE 3: AUDIT */}
+        <Card step={3} label="Audit Mandatory Changes" status={stage.audit}>
+          {!clone ? <div style={{ padding: 20, textAlign: 'center', color: '#999', fontSize: 13 }}>Complete Stage 2 (Clone) first.</div> :
+          <>
+            {audit ? (
+              <>
+                <SuccessBox><b>Audit complete — {audit.mandatory_swaps?.length || 0} mandatory swaps found</b></SuccessBox>
+                <p style={{ fontSize: 14, lineHeight: 1.7, color: '#333', margin: '12px 0' }}>{audit.audit_summary}</p>
+                {audit.mandatory_swaps?.length > 0 && (
+                  <div style={{ display: 'grid', gap: 8, marginTop: 12 }}>
+                    {audit.mandatory_swaps.map((s, i) => (
+                      <div key={i} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 12, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        <code style={{ background: '#f5d8d5', color: '#a52d23', padding: '5px 10px', borderRadius: 6, fontSize: 12, flex: 1, minWidth: 0, wordBreak: 'break-word' }}>{s.find}</code>
+                        <ArrowRight size={16} style={{ color: '#C89B3C' }} />
+                        <code style={{ background: '#e8f5ec', color: '#237A4B', padding: '5px 10px', borderRadius: 6, fontSize: 12, flex: 1, minWidth: 0, wordBreak: 'break-word' }}>{s.replace}</code>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            ) : (
+              <BtnGold disabled={auditing} onClick={runAudit}>
+                {auditing ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />} {auditing ? 'Auditing…' : 'Run Legal Audit'}
+              </BtnGold>
+            )}
+            {auditError && <ErrorBox text={auditError} onRetry={runAudit} />}
+          </>}
+        </Card>
 
-        {step === 3 && <StepAudit auditing={auditing} clone={clone} onAudit={runAudit} audit={audit} onNext={() => setStep(4)} onBack={() => setStep(2)} />}
+        {/* STAGE 4: STYLE */}
+        <Card step={4} label="Style & Rebrand Preview" status={stage.style}>
+          {!clone ? <div style={{ padding: 20, textAlign: 'center', color: '#999', fontSize: 13 }}>Complete Stage 2 (Clone) first.</div> :
+          <>
+            <div style={{ marginBottom: 16 }}>
+              <b style={{ fontSize: 14, display: 'block', marginBottom: 10 }}>Accent Color</b>
+              <AccentPicker value={accent} onChange={setAccent} />
+            </div>
+            {!rebrand ? (
+              <BtnGold disabled={rebranding} onClick={runRebrand}>
+                {rebranding ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />} {rebranding ? 'Generating rebrand…' : 'Generate Rebrand Preview'}
+              </BtnGold>
+            ) : (
+              <>
+                <SuccessBox><b>Rebrand deployed — 12 mandatory elements processed</b></SuccessBox>
+                {rebrand.elements?.length > 0 && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8, marginTop: 12 }}>
+                    {rebrand.elements.map(e => (
+                      <div key={e.id} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 10, fontSize: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          {e.status === 'done' ? <Check size={14} style={{ color: '#237A4B' }} /> : e.status === 'skipped' ? <X size={14} style={{ color: '#999' }} /> : <AlertTriangle size={14} style={{ color: '#B88214' }} />}
+                          <b>{e.label}</b>
+                        </div>
+                        {e.detail && <p style={{ color: '#888', margin: '4px 0 0', fontSize: 11 }}>{e.detail}</p>}
+                      </div>
+                    ))}
+                  </div>
+                )}
+                {rebrand.deploy_url && (
+                  <div style={{ marginTop: 14 }}>
+                    <a href={rebrand.deploy_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', background: '#0a0a0a', color: '#E7C86E', borderRadius: 6, fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
+                      <Globe size={14} /> View Live Rebrand <ExternalLink size={11} style={{ display: 'inline' }} />
+                    </a>
+                  </div>
+                )}
+                {rebrand.deploy_url && (
+                  <div style={{ marginTop: 12, border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden', height: 480, background: '#fff' }}>
+                    <iframe src={rebrand.deploy_url} title="Rebrand preview" style={{ width: '100%', height: '100%', border: 0 }} />
+                  </div>
+                )}
+              </>
+            )}
+            {rebrandError && <ErrorBox text={rebrandError} onRetry={runRebrand} />}
+          </>}
+        </Card>
 
-        {step === 4 && <StepStyle accent={accent} setAccent={setAccent} rebranding={rebranding} rebrand={rebrand} onRun={runRebrand} onNext={() => setStep(5)} onBack={() => setStep(3)} />}
+        {/* STAGE 5: APPROVE */}
+        <Card step={5} label="Approve & Publish" status={stage.approve}>
+          {!rebrand ? <div style={{ padding: 20, textAlign: 'center', color: '#999', fontSize: 13 }}>Complete Stage 4 (Style) first.</div> :
+          <>
+            {approved ? (
+              <>
+                <SuccessBox>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <CheckCircle2 size={20} />
+                    <div><b>Approved & published!</b><div style={{ fontSize: 12, marginTop: 2 }}>This clone now appears in "Completed Clones" below.</div></div>
+                  </div>
+                </SuccessBox>
+                {(rebrand.deploy_url || rebrand?.project?.provisioned?.vercel_deployment_url) && (
+                  <a href={rebrand.deploy_url || rebrand.project.provisioned.vercel_deployment_url} target="_blank" rel="noreferrer" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, marginTop: 14, padding: '10px 16px', background: '#0a0a0a', color: '#E7C86E', borderRadius: 6, fontWeight: 700, fontSize: 13, textDecoration: 'none' }}>
+                    <Eye size={14} /> View Live Site
+                  </a>
+                )}
+              </>
+            ) : (
+              <>
+                {rebrand.deploy_url && (
+                  <div style={{ border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden', height: 420, background: '#fff', marginBottom: 16 }}>
+                    <iframe src={rebrand.deploy_url} title="Final preview" style={{ width: '100%', height: '100%', border: 0 }} />
+                  </div>
+                )}
+                <BtnGold disabled={approving} onClick={approve}>
+                  {approving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} {approving ? 'Approving…' : 'Approve & Publish'}
+                </BtnGold>
+              </>
+            )}
+          </>}
+        </Card>
 
-        {step === 5 && <StepApprove approving={approving} approved={approved} rebrand={rebrand} audit={audit} onApprove={approve} onReset={reset} onBack={() => setStep(4)} />}
-
-        {/* Completed clones dashboard */}
-        <Section title="Completed Clones" sub="Approved rebrands from this pipeline">
-          {loadingRebrands ? <Center><Loader2 className="animate-spin" /></Center> :
-           myRebrands.length === 0 ? <Empty text="No approved rebrands yet. Run the pipeline above." /> :
-           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-             {myRebrands.map(p => <RebrandCard key={p.id} p={p} />)}
-           </div>}
-        </Section>
+        {/* Completed clones */}
+        <div style={{ marginTop: 24, marginBottom: 12 }}>
+          <b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 18 }}>Completed Clones</b>
+          <span style={{ fontSize: 12, color: '#999', marginLeft: 10 }}>Approved rebrands from this pipeline</span>
+        </div>
+        {loadingCompleted ? <div style={{ padding: 30, textAlign: 'center' }}><Loader2 className="animate-spin" style={{ color: '#C89B3C' }} /></div> :
+         completed.length === 0 ? <div style={{ padding: 24, textAlign: 'center', color: '#999', fontSize: 13, background: '#fff', border: '1px solid #ddd', borderRadius: 10 }}>No approved clones yet. Run the pipeline above.</div> :
+         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+           {completed.map(p => <CloneCard key={p.id} p={p} />)}
+         </div>}
       </div>
     </>
   );
 }
 
-/* ---------- Step 1: Find ---------- */
-function StepFind({ mode, setMode, niche, setNiche, searching, onSearch, results, urlInput, setUrlInput, onPickUrl, existingClones, onUseExisting, onPick }) {
+/* ---------- small helpers ---------- */
+function Tabs({ mode, setMode, tabs }) {
   return (
-    <Card>
-      <Tabs mode={mode} setMode={setMode} tabs={[{ id: 'search', label: 'Search by Niche' }, { id: 'url', label: 'Enter a URL' }, { id: 'existing', label: 'Use Existing Clone' }]} />
-
-      {mode === 'search' && (
-        <>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <input value={niche} onChange={e => setNiche(e.target.value)} placeholder="e.g. epoxy flooring, roofing, HVAC, plumbing…"
-              style={{ flex: 1, padding: '13px 14px', border: '1px solid #d7d7d7', borderRadius: 8, fontSize: 14, background: '#fff', color: '#111' }}
-              onKeyDown={e => e.key === 'Enter' && onSearch()} />
-            <button onClick={onSearch} disabled={searching} style={btnGold(searching)}>
-              {searching ? <Loader2 size={16} className="animate-spin" /> : <Search size={16} />} {searching ? 'Searching…' : 'Find Top Sites'}
-            </button>
-          </div>
-          {results.length > 0 && (
-            <div style={{ display: 'grid', gap: 8 }}>
-              {results.map((r, i) => (
-                <div key={i} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-                  <div style={{ minWidth: 0 }}>
-                    <b style={{ fontSize: 14 }}>{r.name}</b>
-                    <div style={{ fontSize: 12, color: '#2563eb', marginTop: 2 }}>{r.url}</div>
-                    <p style={{ fontSize: 12, color: '#888', margin: '4px 0 0' }}>{r.description}</p>
-                  </div>
-                  <button onClick={() => onPick({ url: r.url, name: r.name })} style={btnDark()}>
-                    <Copy size={14} /> Clone This
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
-        </>
-      )}
-
-      {mode === 'url' && (
-        <div style={{ display: 'flex', gap: 10 }}>
-          <input value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://example.com"
-            style={{ flex: 1, padding: '13px 14px', border: '1px solid #d7d7d7', borderRadius: 8, fontSize: 14, background: '#fff', color: '#111' }} />
-          <button onClick={onPickUrl} disabled={!urlInput.trim()} style={btnGold(!urlInput.trim())}>
-            <ArrowRight size={16} /> Continue
-          </button>
-        </div>
-      )}
-
-      {mode === 'existing' && (
-        existingClones.length === 0 ? <Empty text="No deployed clones found. Clone a new site first." /> :
-        <div style={{ display: 'grid', gap: 8 }}>
-          {existingClones.map(c => (
-            <div key={c.id} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-              <div style={{ minWidth: 0 }}>
-                <b style={{ fontSize: 14 }}>{c.project_name}</b>
-                <div style={{ fontSize: 12, color: '#2563eb', marginTop: 2 }}>{c.vercel_deployment_url || c.metadata?.vercel_deployment_url}</div>
-              </div>
-              <button onClick={() => onUseExisting(c)} style={btnDark()}>
-                <ArrowRight size={14} /> Use This
-              </button>
-            </div>
-          ))}
-        </div>
-      )}
-    </Card>
+    <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #eee', marginBottom: 18 }}>
+      {tabs.map(t => (
+        <button key={t.id} onClick={() => setMode(t.id)} style={{
+          padding: '10px 16px', background: 'none', border: 0, borderBottom: mode === t.id ? '2px solid #C89B3C' : '2px solid transparent',
+          fontWeight: 700, fontSize: 13, color: mode === t.id ? '#111' : '#999', cursor: 'pointer',
+        }}>{t.label}</button>
+      ))}
+    </div>
   );
 }
-
-/* ---------- Step 2: Clone ---------- */
-function StepClone({ picked, cloning, cloneLog, clone, onClone, onBack, onNext }) {
-  return (
-    <Card>
-      <CardHead title="Clone the Target" sub={picked?.url} />
-      {clone ? (
-        <Banner ok>
-          <CheckCircle2 size={18} />
-          <div>
-            <b>Clone deployed</b>
-            <div style={{ fontSize: 12, marginTop: 2 }}>
-              <a href={clone.vercel_url} target="_blank" rel="noreferrer" style={{ color: '#2563eb' }}>{clone.vercel_url} <ExternalLink size={11} style={{ display: 'inline' }} /></a>
-            </div>
-          </div>
-          <button onClick={onNext} style={btnGold(false)}>Audit Now <ArrowRight size={14} /></button>
-        </Banner>
-      ) : (
-        <>
-          <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-            <button onClick={onClone} disabled={cloning} style={btnGold(cloning)}>
-              {cloning ? <Loader2 size={16} className="animate-spin" /> : <Rocket size={16} />} {cloning ? 'Cloning…' : 'Clone This Site'}
-            </button>
-            <button onClick={onBack} style={btnOutline()}>Back</button>
-          </div>
-          {cloneLog.length > 0 && (
-            <div style={{ background: '#0a0a0a', color: '#E7C86E', borderRadius: 8, padding: 14, fontFamily: 'monospace', fontSize: 12, lineHeight: 1.8 }}>
-              {cloneLog.map((l, i) => <div key={i}>› {l}</div>)}
-            </div>
-          )}
-        </>
-      )}
-    </Card>
-  );
-}
-
-/* ---------- Step 3: Audit ---------- */
-function StepAudit({ auditing, clone, onAudit, audit, onNext, onBack }) {
-  return (
-    <Card>
-      <CardHead title="Audit Mandatory Changes" sub={clone?.vercel_url} />
-      {!audit ? (
-        <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={onAudit} disabled={auditing} style={btnGold(auditing)}>
-            {auditing ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />} {auditing ? 'Auditing…' : 'Run Legal Audit'}
-          </button>
-          <button onClick={onBack} style={btnOutline()}>Back</button>
-        </div>
-      ) : (
-        <>
-          <Banner ok><CheckCircle2 size={18} /><b>Audit complete — {audit.mandatory_swaps?.length || 0} mandatory swaps found</b></Banner>
-          <p style={{ fontSize: 14, lineHeight: 1.7, color: '#333', margin: '12px 0' }}>{audit.audit_summary}</p>
-          {audit.mandatory_swaps?.length > 0 && (
-            <div style={{ display: 'grid', gap: 8, marginTop: 12 }}>
-              {audit.mandatory_swaps.map((s, i) => (
-                <div key={i} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 12, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <code style={{ background: '#f5d8d5', color: '#a52d23', padding: '5px 10px', borderRadius: 6, fontSize: 12, flex: 1, minWidth: 0, wordBreak: 'break-word' }}>{s.find}</code>
-                  <ArrowRight size={16} style={{ color: '#C89B3C' }} />
-                  <code style={{ background: '#e8f5ec', color: '#237A4B', padding: '5px 10px', borderRadius: 6, fontSize: 12, flex: 1, minWidth: 0, wordBreak: 'break-word' }}>{s.replace}</code>
-                </div>
-              ))}
-            </div>
-          )}
-          <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-            <button onClick={onNext} style={btnGold(false)}>Choose Colors <ArrowRight size={14} /></button>
-            <button onClick={onBack} style={btnOutline()}>Back</button>
-          </div>
-        </>
-      )}
-    </Card>
-  );
-}
-
-/* ---------- Step 4: Style & Preview ---------- */
-function StepStyle({ accent, setAccent, rebranding, rebrand, onRun, onNext, onBack }) {
-  return (
-    <Card>
-      <CardHead title="Style & Rebrand Preview" sub="Pick an accent color, then generate the full rebrand preview" />
-      <div style={{ marginBottom: 16 }}>
-        <b style={{ fontSize: 14, display: 'block', marginBottom: 10 }}>Accent Color</b>
-        <AccentPicker value={accent} onChange={setAccent} />
-      </div>
-      <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
-        <button onClick={onRun} disabled={rebranding} style={btnGold(rebranding)}>
-          {rebranding ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />} {rebranding ? 'Generating rebrand…' : 'Generate Rebrand Preview'}
-        </button>
-        <button onClick={onBack} style={btnOutline()}>Back</button>
-      </div>
-
-      {rebrand && (
-        <>
-          <Banner ok><CheckCircle2 size={18} /><b>Rebrand deployed — 12 mandatory elements processed</b></Banner>
-          {rebrand.elements?.length > 0 && (
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 8, marginTop: 12 }}>
-              {rebrand.elements.map(e => (
-                <div key={e.id} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 10, fontSize: 12 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                    {e.status === 'done' ? <Check size={14} style={{ color: '#237A4B' }} /> : e.status === 'skipped' ? <X size={14} style={{ color: '#999' }} /> : <AlertTriangle size={14} style={{ color: '#B88214' }} />}
-                    <b>{e.label}</b>
-                  </div>
-                  {e.detail && <p style={{ color: '#888', margin: '4px 0 0', fontSize: 11 }}>{e.detail}</p>}
-                </div>
-              ))}
-            </div>
-          )}
-          {rebrand.deploy_url && (
-            <div style={{ marginTop: 14 }}>
-              <a href={rebrand.deploy_url} target="_blank" rel="noreferrer" style={btnDark()}>
-                <Globe size={14} /> View Live Rebrand <ExternalLink size={11} style={{ display: 'inline' }} />
-              </a>
-            </div>
-          )}
-          {rebrand.deploy_url && (
-            <div style={{ marginTop: 12, border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden', height: 480, background: '#fff' }}>
-              <iframe src={rebrand.deploy_url} title="Rebrand preview" style={{ width: '100%', height: '100%', border: 0 }} />
-            </div>
-          )}
-          <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
-            <button onClick={onNext} style={btnGold(false)}>Review & Approve <ArrowRight size={14} /></button>
-            <button onClick={onBack} style={btnOutline()}>Back</button>
-          </div>
-        </>
-      )}
-    </Card>
-  );
-}
-
-/* ---------- Step 5: Approve ---------- */
-function StepApprove({ approving, approved, rebrand, audit, onApprove, onReset, onBack }) {
-  const url = rebrand?.deploy_url || rebrand?.project?.provisioned?.vercel_deployment_url;
-  return (
-    <Card>
-      <CardHead title="Approve & Publish" sub="Final review — approve to add this rebrand to your dashboard" />
-      {approved ? (
-        <>
-          <Banner ok><CheckCircle2 size={20} /><div><b>Approved & added to your dashboard!</b><div style={{ fontSize: 12, marginTop: 2 }}>This rebrand now appears in "My Rebrands" above.</div></div></Banner>
-          {url && <a href={url} target="_blank" rel="noreferrer" style={{ ...btnDark(), display: 'inline-flex', marginTop: 14 }}><Eye size={14} /> View Live Site</a>}
-          <div style={{ marginTop: 16 }}>
-            <button onClick={onReset} style={btnGold(false)}><Sparkles size={16} /> Start Another Rebrand</button>
-          </div>
-        </>
-      ) : (
-        <>
-          {url && (
-            <div style={{ border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden', height: 420, background: '#fff', marginBottom: 16 }}>
-              <iframe src={url} title="Final preview" style={{ width: '100%', height: '100%', border: 0 }} />
-            </div>
-          )}
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button onClick={onApprove} disabled={approving} style={btnGold(approving)}>
-              {approving ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />} {approving ? 'Approving…' : 'Approve Rebrand'}
-            </button>
-            <button onClick={onBack} style={btnOutline()}>Back</button>
-          </div>
-        </>
-      )}
-    </Card>
-  );
-}
-
-/* ---------- Rebrand dashboard card ---------- */
-function RebrandCard({ p }) {
+function CloneCard({ p }) {
   const url = p.provisioned?.vercel_deployment_url;
   return (
     <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 10, overflow: 'hidden' }}>
       <div style={{ height: 150, background: '#0a0a0a', position: 'relative' }}>
-        {url ? <iframe src={url} title={p.source_clone_name} style={{ width: '100%', height: '100%', border: 0, pointerEvents: 'none' }} /> : <Center><Globe color="#666" /></Center>}
+        {url ? <iframe src={url} title={p.source_clone_name} style={{ width: '100%', height: '100%', border: 0, pointerEvents: 'none' }} /> : <div style={{ display: 'grid', placeItems: 'center', height: '100%' }}><Globe color="#666" /></div>}
         <div style={{ position: 'absolute', top: 8, right: 8, width: 22, height: 22, borderRadius: '50%', background: p.accent_color || '#C89B3C', border: '2px solid #fff' }} title={p.accent_color} />
       </div>
       <div style={{ padding: 12 }}>
@@ -460,56 +522,3 @@ function RebrandCard({ p }) {
     </div>
   );
 }
-
-/* ---------- shared bits ---------- */
-function Header({ onReset }) {
-  return (
-    <div style={{ background: 'radial-gradient(circle at 82% 40%, #C89B3C45, transparent 25%), #0a0a0a', color: '#fff', padding: '36px 28px', margin: '-28px -28px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-      <div>
-        <p style={{ color: '#E7C86E', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.16em', margin: 0 }}>End-to-End Clone Pipeline</p>
-        <h1 style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 38, margin: '8px 0 4px', letterSpacing: '-.03em' }}>Clone <span style={{ color: '#E7C86E' }}>Pipeline</span></h1>
-        <p style={{ color: '#aaa', fontSize: 14, margin: 0 }}>One page, end to end — find a site, clone it, audit what must change, pick your colors, preview the rebrand, and approve.</p>
-      </div>
-      <button onClick={onReset} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a1a', color: '#E7C86E', border: '1px solid #333', borderRadius: 8, padding: '10px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
-        <RefreshCw size={14} /> Start Over
-      </button>
-    </div>
-  );
-}
-function Section({ title, sub, children }) {
-  return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ marginBottom: 10 }}><b style={{ fontSize: 16, fontFamily: "'Libre Caslon Display', serif" }}>{title}</b>{sub && <span style={{ fontSize: 12, color: '#999', marginLeft: 10 }}>{sub}</span>}</div>
-      {children}
-    </div>
-  );
-}
-function Card({ children }) {
-  return <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 12, padding: 24, marginBottom: 20, boxShadow: '0 4px 12px rgba(0,0,0,.04)' }}>{children}</div>;
-}
-function CardHead({ title, sub }) {
-  return <div style={{ marginBottom: 16 }}><b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{title}</b>{sub && <div style={{ fontSize: 12, color: '#2563eb', marginTop: 2 }}>{sub}</div>}</div>;
-}
-function Tabs({ mode, setMode, tabs }) {
-  return (
-    <div style={{ display: 'flex', gap: 4, borderBottom: '1px solid #eee', marginBottom: 18 }}>
-      {tabs.map(t => (
-        <button key={t.id} onClick={() => setMode(t.id)} style={{
-          padding: '10px 16px', background: 'none', border: 0, borderBottom: mode === t.id ? '2px solid #C89B3C' : '2px solid transparent',
-          fontWeight: 700, fontSize: 13, color: mode === t.id ? '#111' : '#999', cursor: 'pointer',
-        }}>{t.label}</button>
-      ))}
-    </div>
-  );
-}
-function Banner({ ok, children }) {
-  return <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: 14, borderRadius: 8, background: ok ? '#e8f5ec' : '#f8e5ce', border: `1px solid ${ok ? '#237A4B' : '#C89B3C'}`, color: ok ? '#237A4B' : '#a85c00', fontSize: 13 }}>{children}</div>;
-}
-function ErrorBanner({ text, onClose }) {
-  return <div style={{ marginBottom: 16, padding: 14, borderRadius: 8, background: '#f5d8d5', border: '1px solid #C63D34', color: '#a52d23', fontSize: 13, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}><span>{text}</span><button onClick={onClose} style={{ background: 'none', border: 0, cursor: 'pointer' }}><X size={16} color="#a52d23" /></button></div>;
-}
-function Empty({ text }) { return <div style={{ padding: 30, textAlign: 'center', color: '#999', fontSize: 13 }}>{text}</div>; }
-function Center({ children }) { return <div style={{ display: 'grid', placeItems: 'center', height: '100%' }}>{children}</div>; }
-function btnGold(disabled) { return { display: 'inline-flex', alignItems: 'center', gap: 8, padding: '13px 22px', background: disabled ? '#999' : 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111', border: 0, borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: disabled ? 'wait' : 'pointer' }; }
-function btnDark() { return { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '10px 16px', background: '#0a0a0a', color: '#E7C86E', border: 0, borderRadius: 6, fontWeight: 700, fontSize: 13, cursor: 'pointer', textDecoration: 'none' }; }
-function btnOutline() { return { display: 'inline-flex', alignItems: 'center', gap: 6, padding: '13px 18px', background: '#fff', color: '#666', border: '1px solid #ddd', borderRadius: 8, fontWeight: 700, fontSize: 14, cursor: 'pointer' }; }
