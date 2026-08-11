@@ -96,7 +96,7 @@ const SEOConsole = lazy(() => import('@/pages/SEOConsole'));
 const TemplateLibrary = lazy(() => import('@/pages/TemplateLibrary'));
 const RebrandStudio = lazy(() => import('@/pages/RebrandStudio'));
 const RebrandTimeline = lazy(() => import('@/pages/RebrandTimeline'));
-const RebrandPipeline = lazy(() => import('@/pages/RebrandPipeline'));
+const ClonePipeline = lazy(() => import('@/pages/RebrandPipeline'));
 const GhlCRM = lazy(() => import('@/pages/ghl/GhlCRM'));
 const Funnels = lazy(() => import('@/pages/ghl/Funnels'));
 const LgnyHome = lazy(() => import('@/pages/ghl/site/Home'));
@@ -236,7 +236,7 @@ const AuthenticatedApp = () => {
       <Route path="/app/template-library" element={<TemplateLibrary />} />
       <Route path="/app/rebrand-studio" element={<RebrandStudio />} />
       <Route path="/app/rebrand-timeline" element={<RebrandTimeline />} />
-      <Route path="/app/rebrand-pipeline" element={<RebrandPipeline />} />
+      <Route path="/app/clone-pipeline" element={<ClonePipeline />} />
       <Route path="/app/ghl-crm" element={<GhlCRM />} />
       <Route path="/app/ghl-funnels" element={<Funnels />} />
       <Route path="/app/ghl-funnels/:id" element={<Funnels />} />

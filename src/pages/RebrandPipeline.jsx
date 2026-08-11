@@ -16,7 +16,7 @@ const STEPS = [
   { n: 5, label: 'Approve',   icon: CheckCircle2 },
 ];
 
-export default function RebrandPipeline() {
+export default function ClonePipeline() {
   const [step, setStep] = useState(1);
   const [myRebrands, setMyRebrands] = useState([]);
   const [loadingRebrands, setLoadingRebrands] = useState(true);
@@ -203,8 +203,8 @@ export default function RebrandPipeline() {
 
         {step === 5 && <StepApprove approving={approving} approved={approved} rebrand={rebrand} audit={audit} onApprove={approve} onReset={reset} onBack={() => setStep(4)} />}
 
-        {/* My Rebrands dashboard */}
-        <Section title="My Rebrands" sub="Approved rebrands from this pipeline">
+        {/* Completed clones dashboard */}
+        <Section title="Completed Clones" sub="Approved rebrands from this pipeline">
           {loadingRebrands ? <Center><Loader2 className="animate-spin" /></Center> :
            myRebrands.length === 0 ? <Empty text="No approved rebrands yet. Run the pipeline above." /> :
            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
@@ -466,9 +466,9 @@ function Header({ onReset }) {
   return (
     <div style={{ background: 'radial-gradient(circle at 82% 40%, #C89B3C45, transparent 25%), #0a0a0a', color: '#fff', padding: '36px 28px', margin: '-28px -28px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
       <div>
-        <p style={{ color: '#E7C86E', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.16em', margin: 0 }}>End-to-End Rebrand Pipeline</p>
-        <h1 style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 38, margin: '8px 0 4px', letterSpacing: '-.03em' }}>Search → Clone → <span style={{ color: '#E7C86E' }}>Rebrand</span> → Approve</h1>
-        <p style={{ color: '#aaa', fontSize: 14, margin: 0 }}>Find a site you like, clone it, audit what must change, pick your colors, preview the rebrand, and approve — all in one place.</p>
+        <p style={{ color: '#E7C86E', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.16em', margin: 0 }}>End-to-End Clone Pipeline</p>
+        <h1 style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 38, margin: '8px 0 4px', letterSpacing: '-.03em' }}>Clone <span style={{ color: '#E7C86E' }}>Pipeline</span></h1>
+        <p style={{ color: '#aaa', fontSize: 14, margin: 0 }}>One page, end to end — find a site, clone it, audit what must change, pick your colors, preview the rebrand, and approve.</p>
       </div>
       <button onClick={onReset} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1a1a1a', color: '#E7C86E', border: '1px solid #333', borderRadius: 8, padding: '10px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
         <RefreshCw size={14} /> Start Over

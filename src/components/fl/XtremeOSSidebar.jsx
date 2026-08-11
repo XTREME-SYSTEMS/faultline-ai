@@ -39,9 +39,7 @@ const MODULES = [
       { to: '/app/clone-gallery', label: 'Clone Gallery', icon: Images },
       { to: '/app/business', label: 'Business Hub', icon: Building2 },
       { to: '/app/template-library', label: 'Template Library', icon: Layers },
-      { to: '/app/rebrand-pipeline', label: 'Rebrand Pipeline', icon: ShieldCheck },
-      { to: '/app/rebrand-studio', label: 'Rebrand Studio', icon: ShieldCheck },
-      { to: '/app/rebrand-timeline', label: 'Rebrand Timeline', icon: ShieldCheck },
+      { to: '/app/clone-pipeline', label: 'Clone Pipeline', icon: ShieldCheck },
       { to: '/app/build-studio', label: 'Build Studio', icon: Layers },
     ]
   },
