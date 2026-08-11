@@ -162,15 +162,6 @@ export default function RebrandPipeline() {
       <div className="portal-page xtremeos-content" style={{ background: '#f7f7f5', minHeight: '100vh', marginLeft: 240 }}>
         <Header onReset={reset} />
 
-        {/* My Rebrands dashboard */}
-        <Section title="My Rebrands" sub="Approved rebrands from this pipeline">
-          {loadingRebrands ? <Center><Loader2 className="animate-spin" /></Center> :
-           myRebrands.length === 0 ? <Empty text="No approved rebrands yet. Run the pipeline below." /> :
-           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
-             {myRebrands.map(p => <RebrandCard key={p.id} p={p} />)}
-           </div>}
-        </Section>
-
         {/* Stepper */}
         <div style={{ display: 'flex', gap: 6, marginBottom: 20, background: '#fff', border: '1px solid #ddd', borderRadius: 12, padding: '14px 18px', overflowX: 'auto' }}>
           {STEPS.map((s, i) => {
@@ -211,6 +202,15 @@ export default function RebrandPipeline() {
         {step === 4 && <StepStyle accent={accent} setAccent={setAccent} rebranding={rebranding} rebrand={rebrand} onRun={runRebrand} onNext={() => setStep(5)} onBack={() => setStep(3)} />}
 
         {step === 5 && <StepApprove approving={approving} approved={approved} rebrand={rebrand} audit={audit} onApprove={approve} onReset={reset} onBack={() => setStep(4)} />}
+
+        {/* My Rebrands dashboard */}
+        <Section title="My Rebrands" sub="Approved rebrands from this pipeline">
+          {loadingRebrands ? <Center><Loader2 className="animate-spin" /></Center> :
+           myRebrands.length === 0 ? <Empty text="No approved rebrands yet. Run the pipeline above." /> :
+           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
+             {myRebrands.map(p => <RebrandCard key={p.id} p={p} />)}
+           </div>}
+        </Section>
       </div>
     </>
   );
