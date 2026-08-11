@@ -172,17 +172,7 @@ function CategorySection({ catKey, templates, selectedId, onSelect, collapsed, o
         onClick={onToggle}
         style={{ position: 'relative', height: 200, background: '#f0ede5', overflow: 'hidden', cursor: 'pointer' }}
       >
-        {(rep?.screenshot_url || rep?.preview_url) ? (
-          <img
-            src={rep.screenshot_url || screenshotOf(rep.preview_url)}
-            alt={label}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling.style.display = 'grid'; }}
-          />
-        ) : null}
-        <div style={{ display: 'none', placeItems: 'center', height: '100%', color: '#999', fontSize: 32, position: 'absolute', inset: 0 }}>
-          <Layout />
-        </div>
+        <TemplateImage screenshotUrl={rep?.screenshot_url} previewUrl={rep?.preview_url} alt={label} iconSize={32} />
         {/* Dark overlay for text legibility */}
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(0,0,0,.72), rgba(0,0,0,.25) 60%, transparent)' }} />
         {/* Category label */}
@@ -230,17 +220,7 @@ function TemplateCard({ template, isSelected, onSelect }) {
       >
       {/* Screenshot */}
       <div style={{ height: 140, background: '#f0ede5', overflow: 'hidden', position: 'relative' }}>
-        {(template.screenshot_url || template.preview_url) ? (
-          <img
-            src={template.screenshot_url || screenshotOf(template.preview_url)}
-            alt={template.name}
-            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-            onError={(e) => { e.currentTarget.style.display = 'none'; e.currentTarget.nextElementSibling.style.display = 'grid'; }}
-          />
-        ) : null}
-        <div style={{ display: 'none', placeItems: 'center', height: '100%', color: '#999', fontSize: 24, position: 'absolute', inset: 0 }}>
-          <Layout />
-        </div>
+        <TemplateImage screenshotUrl={template.screenshot_url} previewUrl={template.preview_url} alt={template.name} iconSize={24} />
         {template.featured && (
           <span style={{ position: 'absolute', top: 8, left: 8, background: '#C89B3C', color: '#111', fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: '.06em' }}>
             ★ Featured
