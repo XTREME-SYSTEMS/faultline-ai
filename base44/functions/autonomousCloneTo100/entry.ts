@@ -301,38 +301,71 @@ async function runEngine(base44, orgId, p) {
         }
       }
 
-      // AUTO-FIX: re-run deterministic clone (re-hosts any failed images, re-swaps branding)
-      // or fall back to LLM generation with fix guidance.
+      // AUTO-FIX: SURGICAL HEAL FIRST — fetch the current deployed clone and apply
+      // targeted patches for the specific failures the validator reported. This
+      // breaks the plateau deadlock: each iteration makes a *different* change
+      // (operational harden, CTA rewrite, form injection) instead of re-running
+      // deterministicClone with the same input → same output → same score.
+      // Falls back to full re-clone only when surgical fixes aren't possible.
       add(`Iteration ${i}: auto-fixing — ${failures.slice(0, 3).join('; ')}…`);
       const fixHint = failures.join('. ');
-      let healHtml;
+      let healHtml = null;
+      let healMethod = 'none';
+
+      // A. SURGICAL: fetch current clone HTML + operational harden
       try {
-        const hcr = await withTimeout(base44.functions.invoke('deterministicClone', {
-          target_url: p.target_url, business_name: bizName, organization_id: orgId
-        }), 200000, 'heal deterministicClone');
-        const hc = hcr?.data || hcr;
-        if (hc.status === 'success' && hc.website_html?.length > 1000) {
-          healHtml = hc.website_html;
-          add(`Iteration ${i}: deterministic re-clone — ${hc.images_rehosted} images re-hosted`);
-        } else throw new Error('deterministic clone returned empty');
-      } catch (dcErr) {
-        add(`Iteration ${i}: deterministic failed (${dcErr.message}) — LLM fallback…`);
-        const directives = (i === 1 && p.fix_directives) ? `${p.fix_directives}\n\nAdditional validation failures: ${fixHint}` : fixHint;
-        const ws = { business_name: bizName || 'Clone', industry: p.industry, description: p.brief || `Premium ${p.industry || ''} business website.`, primary_color: targetDna?.primary, secondary_color: targetDna?.secondary, target_dna: targetDna, fix_directives: directives };
-        const [f1r, f2r] = await Promise.all([
-          withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' }), 120000, 'heal generateWebsite first_half'),
-          withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' }), 120000, 'heal generateWebsite second_half')
-        ]);
-        const f1 = f1r.data || f1r, f2 = f2r.data || f2r;
-        const f3 = await withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'third_half', first_html: f1.html, second_html: f2.html }), 120000, 'heal generateWebsite third_half');
-        const fc = f3.data || f3;
-        const br = await withTimeout(base44.functions.invoke('buildInferredBackend', { clone_html: fc.website_html, organization_id: orgId, clone_id: p.tracker_id }), 60000, 'heal buildInferredBackend');
-        healHtml = (br?.data || br).operational_html || fc.website_html;
+        const cloneResp = await fetch(urls.vercel, { signal: AbortSignal.timeout(15000) });
+        if (cloneResp.ok) {
+          const currentHtml = await cloneResp.text();
+          const hardenResp = await withTimeout(base44.functions.invoke('operationalHarden', {
+            clone_html: currentHtml, target_url: p.target_url,
+            organization_id: orgId, failures,
+          }), 30000, 'operationalHarden');
+          const hardened = hardenResp?.data || hardenResp;
+          if (hardened.status === 'success' && hardened.redeploy && hardened.hardened_html?.length > 1000) {
+            healHtml = hardened.hardened_html;
+            healMethod = 'surgical';
+            add(`Iteration ${i}: surgical heal — ${hardened.fixes_applied.join('; ')}`);
+          }
+        }
+      } catch (surgErr) {
+        add(`Iteration ${i}: surgical heal failed (${surgErr.message}) — falling back to re-clone`);
       }
+
+      // B. FALLBACK: full deterministic re-clone (re-hosts any failed images, re-swaps branding)
+      // or LLM generation with fix guidance — only if surgical didn't produce changes.
+      if (!healHtml) {
+        try {
+          const hcr = await withTimeout(base44.functions.invoke('deterministicClone', {
+            target_url: p.target_url, business_name: bizName, organization_id: orgId
+          }), 200000, 'heal deterministicClone');
+          const hc = hcr?.data || hcr;
+          if (hc.status === 'success' && hc.website_html?.length > 1000) {
+            healHtml = hc.website_html;
+            healMethod = 'deterministic';
+            add(`Iteration ${i}: deterministic re-clone — ${hc.images_rehosted} images re-hosted`);
+          } else throw new Error('deterministic clone returned empty');
+        } catch (dcErr) {
+          add(`Iteration ${i}: deterministic failed (${dcErr.message}) — LLM fallback…`);
+          const directives = (i === 1 && p.fix_directives) ? `${p.fix_directives}\n\nAdditional validation failures: ${fixHint}` : fixHint;
+          const ws = { business_name: bizName || 'Clone', industry: p.industry, description: p.brief || `Premium ${p.industry || ''} business website.`, primary_color: targetDna?.primary, secondary_color: targetDna?.secondary, target_dna: targetDna, fix_directives: directives };
+          const [f1r, f2r] = await Promise.all([
+            withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'first_half' }), 120000, 'heal generateWebsite first_half'),
+            withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'second_half' }), 120000, 'heal generateWebsite second_half')
+          ]);
+          const f1 = f1r.data || f1r, f2 = f2r.data || f2r;
+          const f3 = await withTimeout(base44.functions.invoke('generateWebsite', { ...ws, part: 'third_half', first_html: f1.html, second_html: f2.html }), 120000, 'heal generateWebsite third_half');
+          const fc = f3.data || f3;
+          const br = await withTimeout(base44.functions.invoke('buildInferredBackend', { clone_html: fc.website_html, organization_id: orgId, clone_id: p.tracker_id }), 60000, 'heal buildInferredBackend');
+          healHtml = (br?.data || br).operational_html || fc.website_html;
+          healMethod = 'llm';
+        }
+      }
+
       const lp = await withTimeout(base44.functions.invoke('launchProject', { project_name: `${bizName || 'Clone'}-heal${i}-${Date.now().toString(36).slice(-4)}`, website_html: healHtml }), 120000, 'heal launchProject');
       const ld = lp?.data || lp;
       if (ld.status === 'success') urls.vercel = ld.results?.vercel?.deploy?.url || ld.results?.vercel?.deploy?.alias?.[0];
-      add(`Iteration ${i}: re-deployed to ${urls.vercel}`);
+      add(`Iteration ${i}: re-deployed to ${urls.vercel} (${healMethod})`);
       await setProgress(55 + Math.round((i / maxIter) * 40) + 5, `Auto-fixed + re-deployed (iter ${i})`);
       await updateTracker(`Iter ${i}: auto-fixed + re-deployed`, score, { vercel_deployment_url: urls.vercel });
       await new Promise(r => setTimeout(r, 3000)); // let Vercel settle before re-validation
