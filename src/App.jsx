@@ -96,6 +96,11 @@ const SEOConsole = lazy(() => import('@/pages/SEOConsole'));
 const TemplateLibrary = lazy(() => import('@/pages/TemplateLibrary'));
 const GhlCRM = lazy(() => import('@/pages/ghl/GhlCRM'));
 const Funnels = lazy(() => import('@/pages/ghl/Funnels'));
+const LgnyHome = lazy(() => import('@/pages/ghl/site/Home'));
+const LgnyFeatures = lazy(() => import('@/pages/ghl/site/Features'));
+const LgnyPricing = lazy(() => import('@/pages/ghl/site/Pricing'));
+const LgnySolutions = lazy(() => import('@/pages/ghl/site/Solutions'));
+const LgnyAbout = lazy(() => import('@/pages/ghl/site/About'));
 
 const PageLoader = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -145,6 +150,11 @@ const AuthenticatedApp = () => {
       <Route path="/portal/:companyId" element={<CustomerPortal />} />
       <Route path="/funnel" element={<ClientFunnel />} />
       <Route path="/sign/:token" element={<SignDocument />} />
+      <Route path="/lgny" element={<LgnyHome />} />
+      <Route path="/lgny/features" element={<LgnyFeatures />} />
+      <Route path="/lgny/pricing" element={<LgnyPricing />} />
+      <Route path="/lgny/solutions" element={<LgnySolutions />} />
+      <Route path="/lgny/about" element={<LgnyAbout />} />
 
       {/* Auth */}
       <Route path="/login" element={<Login />} />
