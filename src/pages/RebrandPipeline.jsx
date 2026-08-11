@@ -254,7 +254,7 @@ function StepFind({ mode, setMode, niche, setNiche, searching, onSearch, results
       {mode === 'url' && (
         <div style={{ display: 'flex', gap: 10 }}>
           <input value={urlInput} onChange={e => setUrlInput(e.target.value)} placeholder="https://example.com"
-            style={{ flex: 1, padding: '13px 14px', border: '1px solid #d7d7d7', borderRadius: 8, fontSize: 14 }} />
+            style={{ flex: 1, padding: '13px 14px', border: '1px solid #d7d7d7', borderRadius: 8, fontSize: 14, background: '#fff', color: '#111' }} />
           <button onClick={onPickUrl} disabled={!urlInput.trim()} style={btnGold(!urlInput.trim())}>
             <ArrowRight size={16} /> Continue
           </button>
