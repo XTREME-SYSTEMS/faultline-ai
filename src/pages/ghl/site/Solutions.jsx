@@ -16,9 +16,9 @@ const SOLUTIONS = [
 export default function Solutions() {
   return (
     <MarketingShell>
-      <section className="bg-[#0B1120] text-white py-20">
+      <section className="bg-[#000000] text-white py-20">
         <div className="max-w-4xl mx-auto px-5 text-center">
-          <span className="text-emerald-400 text-xs font-bold uppercase tracking-widest">Solutions</span>
+          <span className="text-[#DFFF5C] text-xs font-bold uppercase tracking-widest">Solutions</span>
           <h1 className="mt-3 text-4xl md:text-6xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>Built for local service businesses</h1>
           <p className="mt-5 text-lg text-slate-300">From the first click to the fifth repeat sale, Lead Generation Near You is tuned to the way local service businesses win work.</p>
         </div>
@@ -28,7 +28,7 @@ export default function Solutions() {
         <div className="max-w-7xl mx-auto px-5 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {SOLUTIONS.map(s => (
             <div key={s.t} className="p-6 rounded-2xl border border-slate-200 hover:shadow-lg transition">
-              <div className="w-11 h-11 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center"><s.icon size={22} /></div>
+              <div className="w-11 h-11 rounded-xl bg-[#CCFF00]/10 text-emerald-600 flex items-center justify-center"><s.icon size={22} /></div>
               <h3 className="mt-4 font-bold text-lg">{s.t}</h3>
               <p className="mt-1.5 text-sm text-slate-600">{s.d}</p>
             </div>
@@ -44,16 +44,16 @@ export default function Solutions() {
             { n: '4.9★', l: 'Average customer rating' },
           ].map(x => (
             <div key={x.l} className="p-8 rounded-2xl bg-white border border-slate-200">
-              <div className="text-4xl font-bold text-emerald-500" style={{ fontFamily: "'Libre Caslon Display', serif" }}>{x.n}</div>
+              <div className="text-4xl font-bold text-[#CCFF00]" style={{ fontFamily: "'Libre Caslon Display', serif" }}>{x.n}</div>
               <div className="mt-2 text-sm text-slate-600">{x.l}</div>
             </div>
           ))}
         </div>
       </section>
 
-      <section className="py-16 bg-emerald-500 text-center text-[#0B1120]">
+      <section className="py-16 bg-[#CCFF00] text-center text-[#000000]">
         <h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: "'Libre Caslon Display', serif" }}>See how it fits your business</h2>
-        <Link to="/register" className="mt-6 inline-flex items-center gap-2 px-7 py-4 rounded-lg bg-[#0B1120] text-white font-bold hover:bg-black transition">Start Free Trial <ArrowRight size={18} /></Link>
+        <Link to="/register" className="mt-6 inline-flex items-center gap-2 px-7 py-4 rounded-lg bg-[#000000] text-white font-bold hover:bg-black transition">Start Free Trial <ArrowRight size={18} /></Link>
       </section>
     </MarketingShell>
   );

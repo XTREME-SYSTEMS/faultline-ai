@@ -16,7 +16,7 @@ export default function LgnyLogo({ size = 36, withText = true, light = false }) 
       {withText && (
         <div className="flex flex-col leading-none">
           <b className="font-display text-[15px] tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif", color: light ? '#fff' : '#0B1120' }}>
-            Lead Generation <span style={{ color: '#10B981' }}>Near You</span>
+            Lead Generation <span style={{ color: '#CCFF00' }}>Near You</span>
           </b>
           <small className="text-[8px] uppercase tracking-[.14em] text-slate-400">leadgenerationnearyou.com</small>
         </div>

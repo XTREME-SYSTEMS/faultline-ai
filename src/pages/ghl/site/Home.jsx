@@ -73,10 +73,10 @@ function TabBlock({ tab }) {
         <h3 className="text-2xl md:text-3xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>{tab.h}</h3>
         <p className="mt-2 text-slate-600">{tab.p}</p>
         <div className="mt-5 grid sm:grid-cols-2 gap-x-8 gap-y-2">
-          <ul>{left.map(x => <li key={x} className="flex items-start gap-2 text-sm text-slate-700 py-1"><Check className="text-emerald-500 mt-0.5 shrink-0" size={16} /> {x}</li>)}</ul>
-          <ul>{right.map(x => <li key={x} className="flex items-start gap-2 text-sm text-slate-700 py-1"><Check className="text-emerald-500 mt-0.5 shrink-0" size={16} /> {x}</li>)}</ul>
+          <ul>{left.map(x => <li key={x} className="flex items-start gap-2 text-sm text-slate-700 py-1"><Check className="text-[#CCFF00] mt-0.5 shrink-0" size={16} /> {x}</li>)}</ul>
+          <ul>{right.map(x => <li key={x} className="flex items-start gap-2 text-sm text-slate-700 py-1"><Check className="text-[#CCFF00] mt-0.5 shrink-0" size={16} /> {x}</li>)}</ul>
         </div>
-        <Link to="/register" className="mt-6 inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-emerald-500 text-[#0B1120] font-bold text-sm hover:bg-emerald-400 transition">Start 14 Day Free Trial <ArrowRight size={16} /></Link>
+        <Link to="/register" className="mt-6 inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#CCFF00] text-[#000000] font-bold text-sm hover:bg-[#DFFF5C] transition">Start 14 Day Free Trial <ArrowRight size={16} /></Link>
       </div>
     </div>
   );
@@ -87,14 +87,14 @@ export default function Home() {
   return (
     <MarketingShell>
       {/* Hero */}
-      <section className="relative overflow-hidden bg-[#0B1120] text-white">
+      <section className="relative overflow-hidden bg-[#000000] text-white">
         <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 75% 25%, rgba(16,185,129,.18), transparent 45%), radial-gradient(circle at 15% 80%, rgba(37,99,235,.15), transparent 40%)' }} />
         <div className="relative max-w-7xl mx-auto px-5 pt-20 pb-24 grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/15 text-emerald-300 text-xs font-bold uppercase tracking-wider">⚡ Power up your business with AI</span>
-            <h1 className="mt-5 text-4xl md:text-6xl font-bold leading-[1.05] tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>The AI-powered business <span className="text-emerald-400">operating system</span></h1>
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#CCFF00]/15 text-[#CCFF00] text-xs font-bold uppercase tracking-wider">⚡ Power up your business with AI</span>
+            <h1 className="mt-5 text-4xl md:text-6xl font-bold leading-[1.05] tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>The AI-powered business <span className="text-[#DFFF5C]">operating system</span></h1>
             <p className="mt-5 text-lg text-slate-300 max-w-xl">All the tools you need to capture, nurture and close new leads into bookings, sales, reviews and repeat customers!</p>
-            <Link to="/register" className="mt-7 inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-emerald-500 text-[#0B1120] font-bold hover:bg-emerald-400 transition">Start 14 Day Free Trial <ArrowRight size={18} /></Link>
+            <Link to="/register" className="mt-7 inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-[#CCFF00] text-[#000000] font-bold hover:bg-[#DFFF5C] transition">Start 14 Day Free Trial <ArrowRight size={18} /></Link>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-2 shadow-2xl">
             <img src="https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/0f2268e74_clone-img-msnzvexg-36ogmj.webp" alt="The AI-powered business operating system" className="rounded-xl w-full" />
@@ -103,11 +103,11 @@ export default function Home() {
       </section>
 
       {/* Stats */}
-      <section className="bg-[#0B1120] border-y border-white/10 text-white">
+      <section className="bg-[#000000] border-y border-white/10 text-white">
         <div className="max-w-7xl mx-auto px-5 py-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {STATS.map(s => (
             <div key={s.l}>
-              <div className="text-3xl md:text-4xl font-bold text-emerald-400" style={{ fontFamily: "'Libre Caslon Display', serif" }}>{s.v}</div>
+              <div className="text-3xl md:text-4xl font-bold text-[#DFFF5C]" style={{ fontFamily: "'Libre Caslon Display', serif" }}>{s.v}</div>
               <div className="mt-1 text-xs uppercase tracking-wider text-slate-400">{s.l}</div>
             </div>
           ))}
@@ -134,7 +134,7 @@ export default function Home() {
           </div>
           <div className="mt-8 flex flex-wrap justify-center gap-2 border-b border-slate-200">
             {TABS.map((t, i) => (
-              <button key={t.id} onClick={() => setTab(i)} className={`px-5 py-3 text-sm font-bold transition ${tab === i ? 'text-emerald-600 border-b-2 border-emerald-500' : 'text-slate-500 hover:text-slate-800'}`}>{t.label}</button>
+              <button key={t.id} onClick={() => setTab(i)} className={`px-5 py-3 text-sm font-bold transition ${tab === i ? 'text-[#A3CC00] border-b-2 border-[#CCFF00]' : 'text-slate-500 hover:text-slate-800'}`}>{t.label}</button>
             ))}
           </div>
           <div className="mt-10"><TabBlock tab={TABS[tab]} /></div>
@@ -157,7 +157,7 @@ export default function Home() {
       </section>
 
       {/* Testimonial */}
-      <section className="py-20 bg-[#0B1120] text-white">
+      <section className="py-20 bg-[#000000] text-white">
         <div className="max-w-4xl mx-auto px-5 text-center">
           <img src="https://images.leadconnectorhq.com/image/f_webp/q_80/r_1200/u_https://assets.cdn.filesafe.space/knES3eSWYIsc5YSZ3YLl/media/698c9c4c2b3ea6f583d00189.svg" alt="Highly" className="h-8 mx-auto mb-5" />
           <img src="https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/5e338ba45_clone-img-msnzvgcp-w1tgvn.webp" alt="Debbie DuBois" className="w-16 h-16 rounded-full mx-auto mb-3" />
@@ -193,15 +193,15 @@ export default function Home() {
             <img src="https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/5fb9e359e_clone-img-msnzvgcp-5yrpln.webp" alt="Pricing Plan" className="rounded-xl w-full" />
             <img src="https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/c8dcca339_clone-img-msnzvgcq-dwdf87.webp" alt="Pricing Plan" className="rounded-xl w-full" />
           </div>
-          <Link to="/register" className="mt-8 inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-emerald-500 text-[#0B1120] font-bold hover:bg-emerald-400 transition">Start 14 Day Free Trial <ArrowRight size={18} /></Link>
+          <Link to="/register" className="mt-8 inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-[#CCFF00] text-[#000000] font-bold hover:bg-[#DFFF5C] transition">Start 14 Day Free Trial <ArrowRight size={18} /></Link>
         </div>
       </section>
 
       {/* On the go */}
-      <section className="py-20 bg-[#0B1120] text-white">
+      <section className="py-20 bg-[#000000] text-white">
         <div className="max-w-4xl mx-auto px-5 text-center">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>Everything you need to grow your business; even on the go!</h2>
-          <Link to="/register" className="mt-7 inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-emerald-500 text-[#0B1120] font-bold hover:bg-emerald-400 transition">Start 14 Day Free Trial <ArrowRight size={18} /></Link>
+          <Link to="/register" className="mt-7 inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-[#CCFF00] text-[#000000] font-bold hover:bg-[#DFFF5C] transition">Start 14 Day Free Trial <ArrowRight size={18} /></Link>
         </div>
       </section>
     </MarketingShell>
