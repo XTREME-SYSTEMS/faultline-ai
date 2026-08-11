@@ -65,7 +65,7 @@ export default async function(req) {
 
     const body = await req.json().catch(() => ({}));
     const maxIterations = body.max_iterations || 1;
-    const healLimit = body.heal_limit || 3; // only heal N projects per call to avoid timeout
+    const healLimit = body.heal_limit || 2; // only heal N projects per call to avoid timeout
 
     // Get ALL launched clone projects with a live URL
     const allProjects = await base44.asServiceRole.entities.LaunchProject.filter(

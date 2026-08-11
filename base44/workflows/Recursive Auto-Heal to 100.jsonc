@@ -32,7 +32,8 @@
           "with": {
             "function_name": "healAllClonesTo100",
             "args": {
-              "max_iterations": 3
+              "max_iterations": 3,
+              "batch_limit": 2
             }
           },
           "then": "forensic_audit",
@@ -48,7 +49,8 @@
           "with": {
             "function_name": "forensicAuditAndHarden",
             "args": {
-              "max_iterations": 2
+              "max_iterations": 2,
+              "heal_limit": 2
             }
           },
           "then": "end",

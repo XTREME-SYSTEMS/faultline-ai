@@ -15,7 +15,7 @@
           "with": {
             "function_name": "finishStalledClones",
             "args": {
-              "heal_batch": 3,
+              "heal_batch": 1,
               "max_iterations": 3
             }
           },

@@ -15,9 +15,9 @@
           "with": {
             "function_name": "forceClonesTo100",
             "args": {
-              "rebuild_limit": 2,
-              "heal_limit": 5,
-              "quarantine_limit": 20
+              "rebuild_limit": 1,
+              "heal_limit": 1,
+              "quarantine_limit": 10
             }
           },
           "then": "end",
