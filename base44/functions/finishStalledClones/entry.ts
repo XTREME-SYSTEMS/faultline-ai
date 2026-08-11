@@ -51,7 +51,10 @@ export default async function(req) {
     if (!orgId) return Response.json({ error: 'No organization found' }, { status: 400 });
 
     const body = await req.json().catch(() => ({}));
-    const healBatch = body.heal_batch || 3; // clones to resume per invocation
+    // Reduced to 2 per run to stay within the ~300s platform function timeout
+    // (2 × 120s per heal + dedup overhead). The 30-min workflow cycle picks
+    // up the remaining stalled clones on subsequent runs.
+    const healBatch = body.heal_batch || 2; // clones to resume per invocation
     const maxIterations = body.max_iterations || 3;
 
     // 1. Gather all gallery clones
@@ -112,7 +115,7 @@ export default async function(req) {
             launch_project_id: clone.id,
             max_iterations: maxIterations,
           }),
-          600000, `resume heal ${clone.project_name}`
+          120000, `resume heal ${clone.project_name}`
         );
         const hd = healRes?.data || healRes;
         const afterScore = hd.score ?? 0;

@@ -25,6 +25,10 @@ export default async function(req) {
 
     const body = await req.json().catch(() => ({}));
     const maxIterationsPerProject = body.max_iterations || 3;
+    // Process only N projects per invocation — the 30-min workflow cycle
+    // picks up the rest. Without this limit the function blows the ~300s
+    // platform timeout and returns 504, healing nothing.
+    const batchLimit = body.batch_limit || 2;
 
     // Get ALL launched clone projects below 100/100
     const allProjects = await base44.asServiceRole.entities.LaunchProject.filter(
@@ -54,9 +58,11 @@ export default async function(req) {
     let healed = 0;
     let stillBelow = 0;
 
-    console.log(`healAllClonesTo100: ${queue.length} projects to heal (${needsHeal.length} below 100, ${notStarted.length} not started)`);
+    // Slice to batch limit — only process N per run to stay within platform timeout
+    const batch = queue.slice(0, batchLimit);
+    console.log(`healAllClonesTo100: ${queue.length} eligible, processing ${batch.length} this run (batch_limit=${batchLimit})`);
 
-    for (const project of queue) {
+    for (const project of batch) {
       const startScore = project.parity_score || 0;
       console.log(`Healing: ${project.project_name} (current score: ${startScore})`);
 

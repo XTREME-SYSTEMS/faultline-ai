@@ -82,9 +82,12 @@ export default async function(req) {
     if (!orgId) return Response.json({ error: 'No organization found' }, { status: 400 });
 
     const body = await req.json().catch(() => ({}));
-    const rebuildLimit = body.rebuild_limit || 2;   // max full rebuilds per run
-    const healLimit = body.heal_limit || 5;          // max heals per run
-    const quarantineLimit = body.quarantine_limit || 20; // max liveness checks per run
+    // Reduced limits to stay within the ~300s platform function timeout.
+    // Each rebuild/heal can take up to 120s; liveness checks 15s each.
+    // The workflow runs every 2h, so items overflow to the next run.
+    const rebuildLimit = body.rebuild_limit || 1;   // max full rebuilds per run
+    const healLimit = body.heal_limit || 2;          // max heals per run
+    const quarantineLimit = body.quarantine_limit || 10; // max liveness checks per run
     const cleanupGhosts = body.cleanup_ghosts !== false; // default true
 
     // 1. Gather all projects
@@ -188,9 +191,9 @@ export default async function(req) {
           base44.functions.invoke('autonomousCloneTo100', {
             target_url: targetUrl,
             launch_project_id: clone.id,
-            max_iterations: 5,
+            max_iterations: 3,
           }),
-          600000, `rebuild ${clone.project_name}`
+          120000, `rebuild ${clone.project_name}`
         );
         const d = res?.data || res;
         const passed = (d.score || 0) >= 100;
@@ -220,9 +223,9 @@ export default async function(req) {
         const res = await withTimeout(
           base44.functions.invoke('autonomousCloneTo100', {
             launch_project_id: clone.id,
-            max_iterations: 5,
+            max_iterations: 3,
           }),
-          600000, `heal ${clone.project_name}`
+          120000, `heal ${clone.project_name}`
         );
         const d = res?.data || res;
         const passed = (d.score || 0) >= 100;
