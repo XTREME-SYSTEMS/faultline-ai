@@ -2,17 +2,17 @@ import { useEffect, useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useAuth } from '@/lib/AuthContext';
 import XtremeOSSidebar from '@/components/fl/XtremeOSSidebar';
-import { Loader2, ShieldCheck, Sparkles, Rocket, Check, X, AlertTriangle, Image as ImageIcon, FileText, Globe, Database, GitBranch, Cloud, Search } from 'lucide-react';
+import { Loader2, ShieldCheck, Sparkles, Rocket, Check, X, AlertTriangle, Image as ImageIcon, Globe, ArrowRight } from 'lucide-react';
 
 export default function RebrandStudio() {
   const { user } = useAuth();
   const [clones, setClones] = useState([]);
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [active, setActive] = useState(null); // active RebrandProject
-  const [auditing, setAuditing] = useState(null); // clone id being audited
-  const [generating, setGenerating] = useState(false);
-  const [executing, setExecuting] = useState(false);
+  const [active, setActive] = useState(null);
+  const [auditing, setAuditing] = useState(null);
+  const [applying, setApplying] = useState(false);
+  const [applyResult, setApplyResult] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => { load(); }, []);
@@ -32,7 +32,7 @@ export default function RebrandStudio() {
     setAuditing(clone.id);
     setError('');
     try {
-      const res = await base44.functions.invoke('legalAuditClone', { clone_id: clone.id });
+      const res = await base44.functions.invoke('detectMandatoryChanges', { clone_id: clone.id });
       const d = res.data || res;
       if (d.error) throw new Error(d.error);
       await load();
@@ -41,28 +41,17 @@ export default function RebrandStudio() {
     finally { setAuditing(null); }
   }
 
-  async function generateAssets() {
-    setGenerating(true); setError('');
+  async function applyMinimal() {
+    setApplying(true); setError(''); setApplyResult(null);
     try {
-      const res = await base44.functions.invoke('generateRebrandAssets', { rebrand_project_id: active.id });
+      const res = await base44.functions.invoke('applyMinimalRebrand', { rebrand_project_id: active.id });
       const d = res.data || res;
       if (d.error) throw new Error(d.error);
-      setActive(d.project);
-    } catch (e) { setError(e.message); }
-    finally { setGenerating(false); }
-  }
-
-  async function approveAndProvision() {
-    setExecuting(true); setError('');
-    try {
-      await base44.entities.RebrandProject.update(active.id, { approval_state: 'approved' });
-      const res = await base44.functions.invoke('executeRebrand', { rebrand_project_id: active.id });
-      const d = res.data || res;
-      if (d.error) throw new Error(d.error);
+      setApplyResult(d);
       setActive(d.project);
       await load();
     } catch (e) { setError(e.message); }
-    finally { setExecuting(false); }
+    finally { setApplying(false); }
   }
 
   if (loading) return <div style={{ padding: 60, textAlign: 'center' }}><Loader2 className="animate-spin" /></div>;
@@ -72,9 +61,9 @@ export default function RebrandStudio() {
       <XtremeOSSidebar />
       <div className="portal-page xtremeos-content" style={{ background: '#f7f7f5', minHeight: '100vh', marginLeft: 240 }}>
         <div style={{ background: 'radial-gradient(circle at 82% 40%, #C89B3C45, transparent 25%), #0a0a0a', color: '#fff', padding: '36px 28px', margin: '-28px -28px 24px' }}>
-          <p style={{ color: '#E7C86E', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.16em', margin: 0 }}>Legal-Safe Rebrand Engine</p>
+          <p style={{ color: '#E7C86E', fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '.16em', margin: 0 }}>Minimal-Change Rebrand Engine</p>
           <h1 style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 42, margin: '8px 0 4px', letterSpacing: '-.03em' }}>Rebrand <span style={{ color: '#E7C86E' }}>Studio</span></h1>
-          <p style={{ color: '#aaa', fontSize: 14, margin: 0 }}>Scan a clone for legally-must-change items → generate safe replacements → approve → auto-provision Drive, GitHub, Vercel, Supabase, domain & SEO/AEO.</p>
+          <p style={{ color: '#aaa', fontSize: 14, margin: 0 }}>Keep the clone faithful to the original. Detect only what legally must change. Apply the bare minimum of swaps. Deploy.</p>
         </div>
 
         {error && <div style={{ marginBottom: 13, padding: 14, borderRadius: 8, background: '#f5d8d5', border: '1px solid #C63D34', color: '#a52d23', fontSize: 13 }}>{error}</div>}
@@ -92,7 +81,7 @@ export default function RebrandStudio() {
                       </div>
                       <button onClick={() => runAudit(c)} disabled={auditing === c.id} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#0a0a0a', color: '#E7C86E', border: 0, borderRadius: 6, padding: '9px 16px', fontSize: 13, fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}>
                         {auditing === c.id ? <Loader2 size={14} className="animate-spin" /> : <ShieldCheck size={14} />}
-                        {auditing === c.id ? 'Auditing…' : 'Run Legal Audit'}
+                        {auditing === c.id ? 'Detecting…' : 'Detect Mandatory Changes'}
                       </button>
                     </div>
                   ))}
@@ -101,15 +90,15 @@ export default function RebrandStudio() {
             </Section>
 
             {projects.length > 0 && (
-              <Section title="Existing rebrand projects" sub="Resume or review a previous audit.">
+              <Section title="Existing rebrand projects" sub="Resume or review a previous detection.">
                 <div style={{ display: 'grid', gap: 8 }}>
                   {projects.map(p => (
                     <div key={p.id} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 14, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
                       <div>
-                        <b style={{ fontSize: 14 }}>{p.recommended_business_name || p.source_clone_name || 'Untitled'}</b>
+                        <b style={{ fontSize: 14 }}>{p.target_brand || p.recommended_business_name || p.source_clone_name || 'Untitled'}</b>
                         <div style={{ fontSize: 12, color: '#888', marginTop: 2 }}>{p.source_url} · <StatusBadge status={p.status} /></div>
                       </div>
-                      <button onClick={() => setActive(p)} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 6, padding: '8px 14px', fontSize: 13, cursor: 'pointer' }}>Open</button>
+                      <button onClick={() => { setActive(p); setApplyResult(null); }} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 6, padding: '8px 14px', fontSize: 13, cursor: 'pointer' }}>Open</button>
                     </div>
                   ))}
                 </div>
@@ -119,11 +108,10 @@ export default function RebrandStudio() {
         ) : (
           <ProjectView
             project={active}
-            generating={generating}
-            executing={executing}
-            onGenerate={generateAssets}
-            onApprove={approveAndProvision}
-            onBack={() => { setActive(null); }}
+            applying={applying}
+            applyResult={applyResult}
+            onApply={applyMinimal}
+            onBack={() => { setActive(null); setApplyResult(null); }}
           />
         )}
       </div>
@@ -131,67 +119,66 @@ export default function RebrandStudio() {
   );
 }
 
-function ProjectView({ project, generating, executing, onGenerate, onApprove, onBack }) {
+function ProjectView({ project, applying, applyResult, onApply, onBack }) {
   const p = project;
+  const swaps = p.mandatory_swaps || [];
+  const imgSwaps = (p.images_to_replace || []).filter(i => !i.is_logo);
+  const logoSwap = (p.images_to_replace || []).find(i => i.is_logo);
   return (
     <>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
         <button onClick={onBack} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 6, padding: '8px 14px', fontSize: 13, cursor: 'pointer' }}>← Back</button>
-        <b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{p.recommended_business_name || p.source_clone_name}</b>
+        <b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 22 }}>{p.source_clone_name || 'Clone'}</b>
         <StatusBadge status={p.status} />
+        <span style={{ fontSize: 12, color: '#888' }}>→ <b style={{ color: '#237A4B' }}>{p.target_brand || 'Lead Gen Near You'}</b></span>
       </div>
 
       {/* Summary */}
-      <Section title="Audit Summary" sub="Single-page legal audit + rebrand recommendation">
+      <Section title="Detection Summary" sub="Only legally-must-change items — everything else stays faithful to the original">
         <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 18 }}>
           <p style={{ fontSize: 14, lineHeight: 1.7, color: '#333', margin: 0 }}>{p.audit_summary}</p>
         </div>
       </Section>
 
-      {/* Legal issues */}
-      {p.legal_issues?.length > 0 && (
-        <Section title={`Legal Issues (${p.legal_issues.length})`} sub="Only items that absolutely must change">
+      {/* Mandatory swaps diff */}
+      {swaps.length > 0 && (
+        <Section title={`Mandatory Text Swaps (${swaps.length})`} sub="Exact find → replace. Applied verbatim to the clone HTML.">
           <div style={{ display: 'grid', gap: 8 }}>
-            {p.legal_issues.map((li, i) => (
-              <div key={i} style={{ background: '#fff', border: '1px solid #ddd', borderLeft: `4px solid ${sevColor(li.severity)}`, borderRadius: 8, padding: 14 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-                  <b style={{ fontSize: 13 }}>{li.type}</b>
-                  <span style={{ fontSize: 10, textTransform: 'uppercase', fontWeight: 700, color: sevColor(li.severity) }}>{li.severity}</span>
+            {swaps.map((s, i) => (
+              <div key={i} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <code style={{ background: '#f5d8d5', color: '#a52d23', padding: '5px 10px', borderRadius: 6, fontSize: 12, flex: 1, minWidth: 0, wordBreak: 'break-word' }}>{s.find}</code>
+                  <ArrowRight size={16} style={{ color: '#C89B3C', flexShrink: 0 }} />
+                  <code style={{ background: '#e8f5ec', color: '#237A4B', padding: '5px 10px', borderRadius: 6, fontSize: 12, flex: 1, minWidth: 0, wordBreak: 'break-word' }}>{s.replace}</code>
                 </div>
-                <p style={{ fontSize: 13, color: '#555', margin: '0 0 6px' }}>{li.description}</p>
-                {li.location && <p style={{ fontSize: 11, color: '#999', margin: '0 0 6px' }}>📍 {li.location}</p>}
-                <p style={{ fontSize: 13, color: '#237A4B', margin: 0 }}>→ {li.recommendation}</p>
+                <p style={{ fontSize: 11, color: '#999', margin: '6px 0 0' }}>{s.reason}</p>
               </div>
             ))}
           </div>
         </Section>
       )}
 
-      {/* Recommendations */}
-      <Section title="Brand Recommendations" sub="New legally-safe identity">
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10 }}>
-          <RecCard label="Business Name" value={p.recommended_business_name} />
-          <RecCard label="URL Slug" value={p.recommended_url} />
-          <RecCard label="Domain" value={p.recommended_domain} />
-        </div>
-        {p.brand_references?.length > 0 && (
-          <div style={{ marginTop: 10, padding: 12, background: '#fff7ed', border: '1px solid #fed7aa', borderRadius: 8 }}>
-            <b style={{ fontSize: 12, color: '#9a3412' }}><AlertTriangle size={12} style={{ display: 'inline', marginRight: 4 }} />Brand references that must NOT appear:</b>
-            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 6 }}>{p.brand_references.map((b, i) => <span key={i} style={{ fontSize: 11, background: '#fff', border: '1px solid #fed7aa', padding: '3px 8px', borderRadius: 12 }}>{b}</span>)}</div>
-          </div>
-        )}
-      </Section>
-
-      {/* Images to replace */}
+      {/* Image swaps */}
       {p.images_to_replace?.length > 0 && (
-        <Section title={`Images to Replace (${p.images_to_replace.length})`} sub="Copyrighted/branded images flagged for replacement">
+        <Section title={`Image Swaps (${p.images_to_replace.length})`} sub="Only branded/copyrighted images — generic stock photos are left alone">
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 10 }}>
-            {p.images_to_replace.map((img, i) => (
+            {logoSwap && (
+              <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' }}>
+                <div style={{ height: 120, display: 'grid', placeItems: 'center', background: '#0B1120' }}>
+                  <svg width="40" height="48" viewBox="0 0 40 48" xmlns="http://www.w3.org/2000/svg"><path d="M20 0C9 0 0 9 0 20c0 14 20 28 20 28s20-14 20-28C40 9 31 0 20 0z" fill="#0B1120"/><g transform="translate(20 20)"><path d="M0 0 L0 -10 A10 10 0 0 1 10 0 Z" fill="#E7C86E"/><path d="M0 0 L10 0 A10 10 0 0 1 0 10 Z" fill="#059669"/><path d="M0 0 L0 10 A10 10 0 0 1 -10 0 Z" fill="#2563EB"/><path d="M0 0 L-10 0 A10 10 0 0 1 0 -10 Z" fill="#DC2626"/><circle cx="0" cy="0" r="2.2" fill="#fff"/></g></svg>
+                </div>
+                <div style={{ padding: 10 }}>
+                  <b style={{ fontSize: 12, color: '#237A4B' }}>Logo → LGNY pinwheel</b>
+                  <p style={{ fontSize: 11, color: '#999', margin: '4px 0 0' }}>{logoSwap.reason}</p>
+                </div>
+              </div>
+            )}
+            {imgSwaps.map((img, i) => (
               <div key={i} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden' }}>
                 {img.url && <img src={img.url} alt="" style={{ width: '100%', height: 120, objectFit: 'cover', background: '#f0f0f0' }} onError={e => e.target.style.display = 'none'} />}
                 <div style={{ padding: 10 }}>
                   <p style={{ fontSize: 12, color: '#555', margin: '0 0 4px' }}>{img.reason}</p>
-                  {img.replacement_url && <p style={{ fontSize: 11, color: '#237A4B', margin: 0 }}>✓ Replacement generated</p>}
+                  <p style={{ fontSize: 11, color: '#999', margin: 0 }}>{img.replacement_prompt}</p>
                 </div>
               </div>
             ))}
@@ -199,90 +186,36 @@ function ProjectView({ project, generating, executing, onGenerate, onApprove, on
         </Section>
       )}
 
-      {/* Content to replace */}
-      {p.content_to_replace?.length > 0 && (
-        <Section title={`Content to Replace (${p.content_to_replace.length})`} sub="Proprietary copy that must be rewritten">
-          <div style={{ display: 'grid', gap: 8 }}>
-            {p.content_to_replace.map((c, i) => (
-              <div key={i} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 12 }}>
-                <p style={{ fontSize: 12, color: '#a52d23', margin: '0 0 4px' }}><s>{c.text}</s></p>
-                <p style={{ fontSize: 11, color: '#999', margin: '0 0 6px' }}>{c.reason}</p>
-                <p style={{ fontSize: 13, color: '#237A4B', margin: 0 }}>→ {c.suggested_replacement}</p>
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {/* Generate replacements */}
+      {/* Apply & Deploy */}
       {p.status === 'audited' && (
-        <Section title="2 · Generate Replacements" sub="Logo, images & copy generated by AI">
-          <button onClick={onGenerate} disabled={generating} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111', border: 0, borderRadius: 8, padding: '13px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-            {generating ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-            {generating ? 'Generating assets…' : 'Generate Logo, Images & Copy'}
+        <Section title="2 · Apply Minimal Changes & Deploy" sub="Applies only the swaps above to the original clone HTML, then deploys to Vercel">
+          <button onClick={onApply} disabled={applying} style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'linear-gradient(135deg, #E7C86E, #C89B3C)', color: '#111', border: 0, borderRadius: 8, padding: '13px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+            {applying ? <Loader2 size={16} className="animate-spin" /> : <Rocket size={16} />}
+            {applying ? 'Applying minimal changes & deploying…' : 'Apply Bare-Minimum Swaps & Deploy'}
           </button>
         </Section>
       )}
 
-      {/* Generated assets */}
-      {p.status !== 'audited' && p.generated_logo_url && (
-        <Section title="Generated Replacements" sub="AI-generated safe replacements">
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 10, marginBottom: 12 }}>
-            <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 12, textAlign: 'center' }}>
-              <small style={{ fontSize: 10, textTransform: 'uppercase', color: '#999' }}>Logo</small>
-              <img src={p.generated_logo_url} alt="logo" style={{ width: '100%', maxHeight: 100, objectFit: 'contain', marginTop: 6 }} />
+      {/* Result */}
+      {applyResult && (
+        <Section title="3 · Deployed" sub="Faithful to the original — only mandatory swaps applied">
+          <div style={{ background: '#e8f5ec', border: '1px solid #237A4B', borderRadius: 8, padding: 16, marginBottom: 12 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <Check size={18} style={{ color: '#237A4B' }} />
+              <b style={{ fontSize: 14, color: '#237A4B' }}>{applyResult.applied_swaps} text swaps applied · {applyResult.image_swaps} image swaps</b>
             </div>
-            {p.generated_images?.map((u, i) => (
-              <div key={i} style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 12, textAlign: 'center' }}>
-                <small style={{ fontSize: 10, textTransform: 'uppercase', color: '#999' }}>Image {i + 1}</small>
-                <img src={u} alt="" style={{ width: '100%', maxHeight: 100, objectFit: 'cover', marginTop: 6, borderRadius: 4 }} />
-              </div>
-            ))}
+            {applyResult.missed_swaps?.length > 0 && (
+              <p style={{ fontSize: 11, color: '#B88214', margin: '0 0 6px' }}>{applyResult.missed_swaps.length} swaps skipped (exact string not found in HTML): {applyResult.missed_swaps.join(' · ')}</p>
+            )}
+            {applyResult.deploy_url && (
+              <a href={applyResult.deploy_url} target="_blank" rel="noopener" style={{ display: 'inline-block', marginTop: 4, padding: '10px 20px', background: '#0a0a0a', color: '#E7C86E', borderRadius: 6, fontSize: 13, fontWeight: 700, textDecoration: 'none' }}>
+                <Globe size={14} style={{ display: 'inline', marginRight: 6 }} />View Live Rebranded Site ↗
+              </a>
+            )}
           </div>
-          {p.generated_content && (
-            <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 14 }}>
-              <b style={{ fontSize: 13 }}>Generated Copy</b>
-              {Object.entries(p.generated_content).map(([k, v]) => (
-                <div key={k} style={{ marginTop: 8 }}>
-                  <small style={{ fontSize: 10, textTransform: 'uppercase', color: '#C89B3C', fontWeight: 700 }}>{k.replace(/_/g, ' ')}</small>
-                  <p style={{ fontSize: 13, color: '#333', margin: '2px 0 0' }}>{v}</p>
-                </div>
-              ))}
-            </div>
-          )}
-          {p.rebrand_html && (
-            <div style={{ marginTop: 12, border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden', height: 400, background: '#fff' }}>
-              <iframe srcDoc={p.rebrand_html} title="Rebrand preview" style={{ width: '100%', height: '100%', border: 0 }} />
-            </div>
-          )}
-        </Section>
-      )}
-
-      {/* Approve & provision */}
-      {p.status === 'ready' && (
-        <Section title="3 · Approve & Provision" sub="Auto-creates Drive, GitHub, Vercel, Supabase, domain & SEO/AEO">
-          <button onClick={onApprove} disabled={executing} style={{ display: 'flex', alignItems: 'center', gap: 8, background: '#0a0a0a', color: '#E7C86E', border: '1px solid #C89B3C', borderRadius: 8, padding: '13px 24px', fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
-            {executing ? <Loader2 size={16} className="animate-spin" /> : <Rocket size={16} />}
-            {executing ? 'Provisioning… (this takes a minute)' : 'Approve & Auto-Provision Everything'}
-          </button>
-        </Section>
-      )}
-
-      {/* Provisioned resources */}
-      {p.status === 'completed' && p.provisioned && (
-        <Section title="Provisioned Resources" sub="Everything is live">
-          <div style={{ display: 'grid', gap: 8 }}>
-            <ProvRow icon={Cloud} label="Drive Folder" url={p.provisioned.drive_folder_url} />
-            <ProvRow icon={GitBranch} label="GitHub Repo" url={p.provisioned.github_repo_url} />
-            <ProvRow icon={Globe} label="Vercel Deploy" url={p.provisioned.vercel_deployment_url} />
-            <ProvRow icon={Database} label="Supabase" url={p.provisioned.supabase_project_url} />
-            <ProvRow icon={Globe} label="Domain" url={p.provisioned.domain_purchased ? `https://${p.provisioned.domain_name}` : null} value={p.provisioned.domain_name} note={p.provisioned.domain_purchased ? 'Assigned' : 'Purchase/verify DNS in Vercel dashboard to complete'} />
-          </div>
-          {p.seo_aeo_report?.generated_tags && (
-            <div style={{ marginTop: 12, background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 14 }}>
-              <b style={{ fontSize: 13 }}><Search size={14} style={{ display: 'inline', marginRight: 4, color: '#C89B3C' }} />SEO / AEO Optimization</b>
-              <p style={{ fontSize: 12, color: '#666', marginTop: 6 }}>{p.seo_aeo_report.aeo_note}</p>
-              <pre style={{ fontSize: 10, background: '#f7f7f5', padding: 10, borderRadius: 6, marginTop: 8, overflow: 'auto', maxHeight: 200 }}>{JSON.stringify(p.seo_aeo_report.generated_tags, null, 2)}</pre>
+          {applyResult.deploy_url && (
+            <div style={{ border: '1px solid #ddd', borderRadius: 8, overflow: 'hidden', height: 500, background: '#fff' }}>
+              <iframe src={applyResult.deploy_url} title="Rebranded clone preview" style={{ width: '100%', height: '100%', border: 0 }} />
             </div>
           )}
         </Section>
@@ -302,31 +235,8 @@ function Section({ title, sub, children }) {
     </div>
   );
 }
-function RecCard({ label, value }) {
-  return (
-    <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 12 }}>
-      <small style={{ fontSize: 10, textTransform: 'uppercase', color: '#999', fontWeight: 700 }}>{label}</small>
-      <b style={{ fontSize: 14, display: 'block', marginTop: 4 }}>{value || '—'}</b>
-    </div>
-  );
-}
-function ProvRow({ icon: Icon, label, url, value, note }) {
-  return (
-    <div style={{ background: '#fff', border: '1px solid #ddd', borderRadius: 8, padding: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-      <Icon size={18} style={{ color: '#C89B3C' }} />
-      <div style={{ flex: 1 }}>
-        <b style={{ fontSize: 13 }}>{label}</b>
-        {url ? <a href={url} target="_blank" rel="noopener" style={{ fontSize: 12, color: '#C89B3C', display: 'block' }}>{url} ↗</a>
-          : value ? <span style={{ fontSize: 12, color: '#666' }}>{value}</span>
-          : <span style={{ fontSize: 12, color: '#999' }}>Skipped</span>}
-        {note && <small style={{ fontSize: 11, color: '#B88214', display: 'block' }}>{note}</small>}
-      </div>
-    </div>
-  );
-}
 function StatusBadge({ status }) {
   const colors = { audited: '#2563eb', generating_assets: '#B88214', ready: '#7c3aed', approved: '#059669', provisioning: '#B88214', completed: '#237A4B', failed: '#C63D34', draft: '#999' };
   return <span style={{ fontSize: 10, textTransform: 'uppercase', fontWeight: 700, color: colors[status] || '#999', background: (colors[status] || '#999') + '22', padding: '2px 8px', borderRadius: 12 }}>{status}</span>;
 }
 function Empty({ text }) { return <div style={{ padding: 30, textAlign: 'center', color: '#999', fontSize: 13 }}>{text}</div>; }
-function sevColor(s) { return { critical: '#C63D34', high: '#B88214', medium: '#7e6b00', low: '#237A4B' }[s] || '#999'; }

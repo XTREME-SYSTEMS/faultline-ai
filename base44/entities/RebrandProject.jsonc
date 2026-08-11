@@ -16,6 +16,11 @@
       "type": "string",
       "description": "Deployed clone URL to audit"
     },
+    "target_brand": {
+      "type": "string",
+      "description": "The brand to rebrand into (default: Lead Gen Near You)",
+      "default": "Lead Gen Near You"
+    },
     "audit_summary": {
       "type": "string",
       "description": "Single-page summary of legal audit + recommendations"
@@ -56,6 +61,31 @@
       },
       "description": "Trademarked/proprietary names found that must change"
     },
+    "mandatory_swaps": {
+      "type": "array",
+      "description": "Minimal find\u2192replace pairs \u2014 only legally-must-change items. Applied verbatim to the clone HTML.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "find": {
+            "type": "string"
+          },
+          "replace": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "text",
+              "tagline"
+            ]
+          }
+        }
+      }
+    },
     "recommended_business_name": {
       "type": "string"
     },
@@ -81,6 +111,10 @@
           },
           "replacement_prompt": {
             "type": "string"
+          },
+          "is_logo": {
+            "type": "boolean",
+            "default": false
           }
         }
       }
