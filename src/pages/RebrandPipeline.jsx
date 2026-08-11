@@ -5,12 +5,12 @@ import AccentPicker from '@/components/rebrand-pipeline/AccentPicker';
 import { Card, StatusPill, ErrorBox, SuccessBox, BtnGold, BtnDark, Log, useLog } from '@/components/clone-pipeline/parts';
 import {
   Loader2, Search, Globe, Copy, ShieldCheck, Palette, CheckCircle2, Rocket,
-  Check, X, AlertTriangle, ExternalLink, RefreshCw, Sparkles, ArrowRight, Eye, Zap,
+  Check, X, AlertTriangle, ExternalLink, RefreshCw, Sparkles, ArrowRight, Eye, Zap, Wrench,
 } from 'lucide-react';
 
 export default function ClonePipeline() {
   // ---- pipeline state ----
-  const [stage, setStage] = useState({ find: 'pending', clone: 'pending', audit: 'pending', style: 'pending', approve: 'pending' });
+  const [stage, setStage] = useState({ find: 'pending', clone: 'pending', harden: 'pending', audit: 'pending', style: 'pending', approve: 'pending' });
   const setStageStatus = (k, s) => setStage(prev => ({ ...prev, [k]: s }));
 
   // find
@@ -27,6 +27,12 @@ export default function ClonePipeline() {
   const [cloning, setCloning] = useState(false);
   const [clone, setClone] = useState(null);
   const [cloneError, setCloneError] = useState('');
+
+  // harden (audit + analyze + fix + heal + harden + optimize)
+  const hardenLog = useLog();
+  const [hardening, setHardening] = useState(false);
+  const [hardenResult, setHardenResult] = useState(null);
+  const [hardenError, setHardenError] = useState('');
 
   // audit
   const [auditing, setAuditing] = useState(false);
@@ -78,16 +84,17 @@ export default function ClonePipeline() {
   }
   function pickSite(p) {
     setPicked(p);
-    setStage(prev => ({ ...prev, find: 'done', clone: 'pending' }));
+    setStage(prev => ({ ...prev, find: 'done', clone: 'pending', harden: 'pending', audit: 'pending', style: 'pending', approve: 'pending' }));
     setCloneError(''); setClone(null); cloneLog.reset();
+    setHardenResult(null); setHardenError(''); hardenLog.reset();
     setAudit(null); setRebrand(null); setApproved(false);
-    setStage(prev => ({ ...prev, audit: 'pending', style: 'pending', approve: 'pending' }));
   }
   function pickExisting(c) {
     const url = c.vercel_deployment_url || c.metadata?.vercel_deployment_url;
     setPicked({ url, name: c.project_name });
     setClone({ vercel_url: url, name: c.project_name });
-    setStage({ find: 'done', clone: 'done', audit: 'pending', style: 'pending', approve: 'pending' });
+    setStage({ find: 'done', clone: 'done', harden: 'pending', audit: 'pending', style: 'pending', approve: 'pending' });
+    setHardenResult(null); setHardenError(''); hardenLog.reset();
     setAudit(null); setRebrand(null); setApproved(false);
   }
 
@@ -134,7 +141,7 @@ export default function ClonePipeline() {
       cloneLog.push(`Deployed ✓ ${vercelUrl}`);
       setClone({ vercel_url: vercelUrl, name: bizName });
       setStageStatus('clone', 'done');
-      setStageStatus('audit', 'pending');
+      setStageStatus('harden', 'pending');
       return true;
     } catch (e) {
       setCloneError(e.message || 'Clone failed');
@@ -142,6 +149,53 @@ export default function ClonePipeline() {
       return false;
     } finally { setCloning(false); }
   }, [picked, cloneLog]);
+
+  // ---------- HARDEN (audit + analyze + fix + heal + harden + optimize) ----------
+  const runHarden = useCallback(async () => {
+    if (!clone?.vercel_url || !picked?.url) return;
+    setHardening(true); setHardenError(''); setHardenResult(null); hardenLog.reset();
+    setStageStatus('harden', 'running');
+    try {
+      // Create a tracker LaunchProject so the autonomous heal engine can
+      // validate, auto-fix, re-deploy, and re-validate this specific clone.
+      const me = await base44.auth.me();
+      const orgId = me?.data?.organization_id || me?.organization_id;
+      if (!orgId) throw new Error('Could not determine your organization');
+      hardenLog.push(`Creating tracker for ${clone.name || 'clone'}…`);
+      const tracker = await base44.entities.LaunchProject.create({
+        organization_id: orgId,
+        project_name: `${clone.name || 'Clone'} (harden)`,
+        project_type: 'website',
+        status: 'validating',
+        parity_score: 0,
+        vercel_deployment_url: clone.vercel_url,
+        benchmark_url: picked.url,
+        metadata: { target_url: picked.url, autonomous: true },
+      });
+      hardenLog.push(`Auditing + healing to 100/100 (may re-clone & re-deploy)…`);
+      const r = await base44.functions.invoke('autonomousCloneTo100', {
+        launch_project_id: tracker.id,
+        max_iterations: 3,
+      });
+      const d = r.data || r;
+      if (d.error) throw new Error(d.error);
+      const finalScore = d.score ?? 0;
+      const finalUrl = d.vercel_url || clone.vercel_url;
+      hardenLog.push(`Heal complete: ${finalScore}/100${finalUrl ? ' · ' + finalUrl : ''}`);
+      setHardenResult({ score: finalScore, vercel_url: finalUrl, summary: d.summary });
+      // If the heal engine re-deployed, point subsequent steps at the hardened URL.
+      if (finalUrl && finalUrl !== clone.vercel_url) {
+        setClone(prev => ({ ...prev, vercel_url: finalUrl }));
+      }
+      setStageStatus('harden', 'done');
+      setStageStatus('audit', 'pending');
+      return true;
+    } catch (e) {
+      setHardenError(e.message || 'Harden failed');
+      setStageStatus('harden', 'error');
+      return false;
+    } finally { setHardening(false); }
+  }, [clone, picked, hardenLog]);
 
   // ---------- AUDIT ----------
   const runAudit = useCallback(async () => {
@@ -210,7 +264,9 @@ export default function ClonePipeline() {
     try {
       const okClone = await runClone();
       if (!okClone) return;
-      // re-read clone state synchronously — runClone set it; but closure has stale ref, so re-fetch via a small wait
+      await new Promise(r => setTimeout(r, 50));
+      const okHarden = await runHarden();
+      if (!okHarden) return;
       await new Promise(r => setTimeout(r, 50));
       const okAudit = await runAudit();
       if (!okAudit) return;
@@ -223,11 +279,12 @@ export default function ClonePipeline() {
   }
 
   function reset() {
-    setStage({ find: 'pending', clone: 'pending', audit: 'pending', style: 'pending', approve: 'pending' });
+    setStage({ find: 'pending', clone: 'pending', harden: 'pending', audit: 'pending', style: 'pending', approve: 'pending' });
     setPicked(null); setClone(null); setAudit(null); setRebrand(null); setApproved(false);
+    setHardenResult(null); setHardenError('');
     setCloneError(''); setAuditError(''); setRebrandError('');
     setResults([]); setUrlInput(''); setMode('search'); setNiche('');
-    cloneLog.reset();
+    cloneLog.reset(); hardenLog.reset();
   }
 
   const allDone = stage.approve === 'done';
@@ -264,9 +321,10 @@ export default function ClonePipeline() {
           {[
             { k: 'find', n: 1, label: 'Find', icon: Search },
             { k: 'clone', n: 2, label: 'Clone', icon: Copy },
-            { k: 'audit', n: 3, label: 'Audit', icon: ShieldCheck },
-            { k: 'style', n: 4, label: 'Style', icon: Palette },
-            { k: 'approve', n: 5, label: 'Approve', icon: CheckCircle2 },
+            { k: 'harden', n: 3, label: 'Harden', icon: Wrench },
+            { k: 'audit', n: 4, label: 'Audit', icon: ShieldCheck },
+            { k: 'style', n: 5, label: 'Style', icon: Palette },
+            { k: 'approve', n: 6, label: 'Approve', icon: CheckCircle2 },
           ].map((s, i) => {
             const st = stage[s.k];
             return (
@@ -282,7 +340,7 @@ export default function ClonePipeline() {
                   <small style={{ color: '#999', fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em' }}>Stage {s.n}</small>
                   <b style={{ display: 'block', fontSize: 12, color: st === 'done' || st === 'running' ? '#111' : '#999' }}>{s.label}</b>
                 </div>
-                {i < 4 && <div style={{ flex: 1, height: 2, background: st === 'done' ? '#237A4B' : '#eee', minWidth: 8 }} />}
+                {i < 5 && <div style={{ flex: 1, height: 2, background: st === 'done' ? '#237A4B' : '#eee', minWidth: 8 }} />}
               </div>
             );
           })}
@@ -367,8 +425,34 @@ export default function ClonePipeline() {
           </>}
         </Card>
 
-        {/* STAGE 3: AUDIT */}
-        <Card step={3} label="Audit Mandatory Changes" status={stage.audit}>
+        {/* STAGE 3: HARDEN */}
+        <Card step={3} label="Harden & Optimize" status={stage.harden}>
+          {!clone ? <div style={{ padding: 20, textAlign: 'center', color: '#999', fontSize: 13 }}>Complete Stage 2 (Clone) first.</div> :
+          <>
+            <p style={{ fontSize: 13, color: '#666', margin: '0 0 12px' }}>
+              Audits the fresh clone, analyzes imperfections, then autonomously fixes, heals, hardens, and optimizes it to 100/100 — re-deploying if needed — before the legal audit. Optional: you can skip straight to Stage 4.
+            </p>
+            {hardenResult ? (
+              <SuccessBox>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <CheckCircle2 size={18} />
+                  <b>Harden complete — {hardenResult.score}/100</b>
+                  {hardenResult.vercel_url && <a href={hardenResult.vercel_url} target="_blank" rel="noreferrer" style={{ color: '#2563eb', fontSize: 12 }}>{hardenResult.vercel_url} <ExternalLink size={11} style={{ display: 'inline' }} /></a>}
+                </div>
+                {hardenResult.summary && <div style={{ fontSize: 12, color: '#666', marginTop: 6 }}>{hardenResult.summary}</div>}
+              </SuccessBox>
+            ) : (
+              <BtnGold disabled={hardening} onClick={runHarden}>
+                {hardening ? <Loader2 size={16} className="animate-spin" /> : <Wrench size={16} />} {hardening ? 'Hardening…' : 'Audit, Heal & Harden to 100'}
+              </BtnGold>
+            )}
+            <Log lines={hardenLog.lines} />
+            {hardenError && <ErrorBox text={hardenError} onRetry={runHarden} />}
+          </>}
+        </Card>
+
+        {/* STAGE 4: AUDIT */}
+        <Card step={4} label="Audit Mandatory Changes" status={stage.audit}>
           {!clone ? <div style={{ padding: 20, textAlign: 'center', color: '#999', fontSize: 13 }}>Complete Stage 2 (Clone) first.</div> :
           <>
             {audit ? (
@@ -396,8 +480,8 @@ export default function ClonePipeline() {
           </>}
         </Card>
 
-        {/* STAGE 4: STYLE */}
-        <Card step={4} label="Style & Rebrand Preview" status={stage.style}>
+        {/* STAGE 5: STYLE */}
+        <Card step={5} label="Style & Rebrand Preview" status={stage.style}>
           {!clone ? <div style={{ padding: 20, textAlign: 'center', color: '#999', fontSize: 13 }}>Complete Stage 2 (Clone) first.</div> :
           <>
             <div style={{ marginBottom: 16 }}>
@@ -442,9 +526,9 @@ export default function ClonePipeline() {
           </>}
         </Card>
 
-        {/* STAGE 5: APPROVE */}
-        <Card step={5} label="Approve & Publish" status={stage.approve}>
-          {!rebrand ? <div style={{ padding: 20, textAlign: 'center', color: '#999', fontSize: 13 }}>Complete Stage 4 (Style) first.</div> :
+        {/* STAGE 6: APPROVE */}
+        <Card step={6} label="Approve & Publish" status={stage.approve}>
+          {!rebrand ? <div style={{ padding: 20, textAlign: 'center', color: '#999', fontSize: 13 }}>Complete Stage 5 (Style) first.</div> :
           <>
             {approved ? (
               <>
