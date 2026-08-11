@@ -1,0 +1,200 @@
+{
+  "name": "RebrandProject",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "source_clone_id": {
+      "type": "string",
+      "description": "LaunchProject id of the clone being rebranded"
+    },
+    "source_clone_name": {
+      "type": "string"
+    },
+    "source_url": {
+      "type": "string",
+      "description": "Deployed clone URL to audit"
+    },
+    "audit_summary": {
+      "type": "string",
+      "description": "Single-page summary of legal audit + recommendations"
+    },
+    "legal_issues": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "severity": {
+            "type": "string",
+            "enum": [
+              "critical",
+              "high",
+              "medium",
+              "low"
+            ]
+          },
+          "description": {
+            "type": "string"
+          },
+          "location": {
+            "type": "string"
+          },
+          "recommendation": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "brand_references": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Trademarked/proprietary names found that must change"
+    },
+    "recommended_business_name": {
+      "type": "string"
+    },
+    "recommended_url": {
+      "type": "string"
+    },
+    "recommended_domain": {
+      "type": "string"
+    },
+    "images_to_replace": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "replacement_url": {
+            "type": "string"
+          },
+          "replacement_prompt": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "content_to_replace": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "text": {
+            "type": "string"
+          },
+          "reason": {
+            "type": "string"
+          },
+          "suggested_replacement": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "generated_logo_url": {
+      "type": "string"
+    },
+    "generated_images": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "generated_content": {
+      "type": "object",
+      "description": "Replacement copy keyed by section"
+    },
+    "rebrand_html": {
+      "type": "string",
+      "description": "Final rebranded HTML with all replacements applied"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "draft",
+        "auditing",
+        "audited",
+        "generating_assets",
+        "ready",
+        "approved",
+        "provisioning",
+        "completed",
+        "failed"
+      ],
+      "default": "draft"
+    },
+    "approval_state": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected"
+      ],
+      "default": "pending"
+    },
+    "provisioned": {
+      "type": "object",
+      "properties": {
+        "drive_folder_url": {
+          "type": "string"
+        },
+        "github_repo_url": {
+          "type": "string"
+        },
+        "vercel_project_url": {
+          "type": "string"
+        },
+        "vercel_deployment_url": {
+          "type": "string"
+        },
+        "supabase_project_url": {
+          "type": "string"
+        },
+        "domain_name": {
+          "type": "string"
+        },
+        "domain_purchased": {
+          "type": "boolean"
+        }
+      }
+    },
+    "seo_aeo_report": {
+      "type": "object",
+      "description": "SEO + AEO optimization report and generated tags"
+    },
+    "error": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id",
+    "source_url"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

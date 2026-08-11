@@ -94,6 +94,7 @@ const XtremeOS = lazy(() => import('@/pages/XtremeOS'));
 const BuildStudio = lazy(() => import('@/pages/BuildStudio'));
 const SEOConsole = lazy(() => import('@/pages/SEOConsole'));
 const TemplateLibrary = lazy(() => import('@/pages/TemplateLibrary'));
+const RebrandStudio = lazy(() => import('@/pages/RebrandStudio'));
 const GhlCRM = lazy(() => import('@/pages/ghl/GhlCRM'));
 const Funnels = lazy(() => import('@/pages/ghl/Funnels'));
 const LgnyHome = lazy(() => import('@/pages/ghl/site/Home'));
@@ -231,6 +232,7 @@ const AuthenticatedApp = () => {
         <Route path="/app/social-media" element={<SocialMediaManager />} />
       <Route path="/app/seo-console" element={<SEOConsole />} />
       <Route path="/app/template-library" element={<TemplateLibrary />} />
+      <Route path="/app/rebrand-studio" element={<RebrandStudio />} />
       <Route path="/app/ghl-crm" element={<GhlCRM />} />
       <Route path="/app/ghl-funnels" element={<Funnels />} />
       <Route path="/app/ghl-funnels/:id" element={<Funnels />} />

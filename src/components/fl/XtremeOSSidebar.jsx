@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
-  LayoutDashboard, Terminal, MessageSquare, Building2, Globe, Shield,
+  LayoutDashboard, Terminal, MessageSquare, Building2, Globe, Shield, ShieldCheck,
   Search, TrendingUp, Package, DollarSign, Users, FileText, PenTool,
   Database, Video, Share2, Settings, Layers, Cpu, Zap, ChevronDown,
   Copy, Images, ListChecks, Archive, BarChart3, Gauge
@@ -39,6 +39,7 @@ const MODULES = [
       { to: '/app/clone-gallery', label: 'Clone Gallery', icon: Images },
       { to: '/app/business', label: 'Business Hub', icon: Building2 },
       { to: '/app/template-library', label: 'Template Library', icon: Layers },
+      { to: '/app/rebrand-studio', label: 'Rebrand Studio', icon: ShieldCheck },
       { to: '/app/build-studio', label: 'Build Studio', icon: Layers },
     ]
   },
