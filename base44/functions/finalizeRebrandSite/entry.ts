@@ -51,7 +51,7 @@ export default async function(req: Request) {
     if (original_source_url) {
       const scrub = scrubSourceDomain(html, {
         sourceUrl: original_source_url,
-        replacementAppUrl: `${LGNY_REGISTER}`,
+        replacementAppUrl: `${APP_URL}/login`,
       });
       html = scrub.html;
       fixes.push(`${scrub.count} source-domain URLs scrubbed (login, nav, meta)`);
