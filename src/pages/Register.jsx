@@ -9,7 +9,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import AuthLayout from "@/components/AuthLayout";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
-import { safeReturnTo } from "@/lib/authReturnTo";
+import { safeReturnTo, sanitizeReturnToInUrl } from "@/lib/authReturnTo";
 
 export default function Register() {
   const [email, setEmail] = useState("");
@@ -42,11 +42,12 @@ export default function Register() {
     setError("");
     setLoading(true);
     try {
+      const safeTo = sanitizeReturnToInUrl();
       const result = await base44.auth.verifyOtp({ email, otpCode });
       if (result?.access_token) {
         base44.auth.setToken(result.access_token);
       }
-      window.location.href = safeReturnTo();
+      window.location.href = safeTo;
     } catch (err) {
       setError(err.message || "Invalid verification code");
     } finally {
@@ -68,6 +69,7 @@ export default function Register() {
   };
 
   const handleGoogle = () => {
+    sanitizeReturnToInUrl();
     base44.auth.loginWithProvider("google", safeReturnTo());
   };
 

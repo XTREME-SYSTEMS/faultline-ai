@@ -31,3 +31,22 @@ export function safeReturnTo() {
     return "/app";
   }
 }
+
+// Sanitize the ?returnTo= in the actual URL bar before calling SDK auth
+// functions (loginViaEmailPassword, verifyOtp, loginWithProvider). The SDK
+// does its own internal hard redirect by reading ?returnTo= from the URL —
+// if a returnTo pointing to an external site (e.g. a rebranded clone) is
+// sitting in the URL, the SDK could redirect there before our own
+// window.location.href line runs. This replaces it with the safe same-origin
+// destination so both the SDK's redirect and our fallback agree.
+export function sanitizeReturnToInUrl() {
+  const safe = safeReturnTo();
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set("returnTo", safe);
+    window.history.replaceState({}, "", url);
+  } catch {
+    // non-fatal — the safe value is still returned
+  }
+  return safe;
+}
