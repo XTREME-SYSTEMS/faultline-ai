@@ -31,21 +31,21 @@ function darken(hex: string, amount = 40): string {
 }
 
 export function generateLgnySiteHtml(cfg: LgnySiteConfig): string {
-  const brand = cfg.brandName || 'Lead Generation Near You';
-  const domain = cfg.domain || 'leadgenerationnearyou.com';
-  const accent = cfg.accentColor || '#CCFF00';
+  const brand = cfg.brandName || 'AUTO LEADS';
+  const domain = cfg.domain || 'autoleads.ai';
+  const accent = cfg.accentColor || '#FFD700';
   const accentLight = lighten(accent, 10);
   const accentDark = darken(accent, 30);
-  const logo = cfg.logoUrl || 'https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/20de672b0_ChatGPTImageAug9202611_49_11PM.png';
-  const tagline = cfg.tagline || 'All the tools you need to capture, nurture and close new leads into bookings, sales, reviews and repeat customers!';
+  const logo = cfg.logoUrl || 'https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/9a0697861_autoleads-logo-dark-master.png';
+  const tagline = cfg.tagline || 'CONSTRUCTION INTELLIGENCE — All the tools you need to capture, nurture and close new leads into bookings, sales, reviews and repeat customers!';
 
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>${brand} — AI-Powered Business Operating System</title>
-<meta name="description" content="${brand} is the AI-powered operating system for local service businesses. Capture, nurture, and close leads — all in one platform.">
+<title>${brand} — Construction Intelligence Platform</title>
+<meta name="description" content="${brand} is the AI-powered construction intelligence platform. Capture, nurture, and close leads — all in one platform.">
 <link rel="icon" href="${logo}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Libre+Caslon+Display&display=swap" rel="stylesheet">

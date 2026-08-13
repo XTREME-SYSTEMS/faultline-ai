@@ -7,6 +7,8 @@ import { slugify, createVercelProject, disableVercelSso, deployToVercel } from '
 // source-brand references (emails, meta tags, og:url, addresses), replaces
 // the dead contact form with a CTA to the actual LGNY platform, and redeploys.
 
+import { DEFAULT_BRAND, DEFAULT_DOMAIN, DEFAULT_LOGO_URL } from '../../shared/mandatoryRebrandElements.ts';
+
 const APP_URL = 'https://fault-line.base44.app';
 const LGNY_REGISTER = `${APP_URL}/register`;
 const LGNY_APP = `${APP_URL}/lgny`;
@@ -30,13 +32,13 @@ export default async function(req: Request) {
 
     // 2. Scrub residual source-brand emails
     const emailRe = /[a-z._-]+@[a-z0-9.-]*duda[a-z0-9.-]*\.[a-z]{2,}/gi;
-    if (emailRe.test(html)) { html = html.replace(emailRe, 'hello@leadgennearyou.com'); fixes.push('emails → hello@leadgennearyou.com'); }
+    if (emailRe.test(html)) { html = html.replace(emailRe, `hello@${DEFAULT_DOMAIN}`); fixes.push(`emails → hello@${DEFAULT_DOMAIN}`); }
 
     // 3. Scrub residual duda.co / www.duda.co URLs (og:url, canonical, etc.)
-    if (/duda\.co/i.test(html)) { html = html.replace(/duda\.co/gi, 'leadgennearyou.com'); fixes.push('duda.co URLs → leadgennearyou.com'); }
+    if (/duda\.co/i.test(html)) { html = html.replace(/duda\.co/gi, DEFAULT_DOMAIN); fixes.push(`duda.co URLs → ${DEFAULT_DOMAIN}`); }
 
     // 4. Scrub any remaining "Duda" word references in text/meta (case-insensitive, whole word)
-    if (/\bDuda\b/g.test(html)) { html = html.replace(/\bDuda\b/g, 'Lead Gen Near You'); fixes.push('residual "Duda" → "Lead Gen Near You"'); }
+    if (/\bDuda\b/g.test(html)) { html = html.replace(/\bDuda\b/g, DEFAULT_BRAND); fixes.push(`residual "Duda" → "${DEFAULT_BRAND}"`); }
 
     // 5. Fix address
     if (html.includes('Palo Alto, CA')) { html = html.split('Palo Alto, CA').join('Local Service Area, USA'); fixes.push('address → Local Service Area, USA'); }
@@ -51,14 +53,14 @@ export default async function(req: Request) {
     const ctaSection = `<section class="section-padding" id="contact" style="background: #080a11; color: #fff;">
         <div class="container">
             <div style="text-align: center; max-width: 640px; margin: 0 auto;">
-                <span class="section-tag" style="color: #CCFF00;">Get Started</span>
+                <span class="section-tag" style="color: #FFD700;">Get Started</span>
                 <h2 style="color: #fff; margin-top: 16px;">Ready to capture more leads and book more jobs?</h2>
-                <p style="color: #a0a8b8; margin-top: 20px; font-size: 18px; line-height: 1.7;">Stop filling out forms. Start using the platform. Lead Gen Near You gives you CRM, funnels, automations, and booking tools — all in one place. Try it free for 14 days, no credit card required.</p>
+                <p style="color: #a0a8b8; margin-top: 20px; font-size: 18px; line-height: 1.7;">Stop filling out forms. Start using the platform. ${DEFAULT_BRAND} gives you CRM, funnels, automations, and booking tools — all in one place. Try it free for 14 days, no credit card required.</p>
                 <div style="display: flex; gap: 16px; justify-content: center; margin-top: 36px; flex-wrap: wrap;">
-                    <a href="${LGNY_REGISTER}" target="_blank" rel="noopener" class="btn btn-primary" style="background: #CCFF00; color: #000; font-weight: 700; padding: 16px 32px; border-radius: 8px; text-decoration: none; display: inline-block;">Start 14-Day Free Trial</a>
-                    <a href="${LGNY_APP}" target="_blank" rel="noopener" class="btn btn-outline" style="border: 1px solid #CCFF00; color: #CCFF00; font-weight: 700; padding: 16px 32px; border-radius: 8px; text-decoration: none; display: inline-block;">Explore the Platform</a>
+                    <a href="${LGNY_REGISTER}" target="_blank" rel="noopener" class="btn btn-primary" style="background: #FFD700; color: #000; font-weight: 700; padding: 16px 32px; border-radius: 8px; text-decoration: none; display: inline-block;">Start 14-Day Free Trial</a>
+                    <a href="${LGNY_APP}" target="_blank" rel="noopener" class="btn btn-outline" style="border: 1px solid #FFD700; color: #FFD700; font-weight: 700; padding: 16px 32px; border-radius: 8px; text-decoration: none; display: inline-block;">Explore the Platform</a>
                 </div>
-                <p style="color: #666; margin-top: 24px; font-size: 13px;">Questions? Email hello@leadgennearyou.com</p>
+                <p style="color: #666; margin-top: 24px; font-size: 13px;">Questions? Email hello@${DEFAULT_DOMAIN}</p>
             </div>
         </div>
     </section>`;
@@ -69,7 +71,7 @@ export default async function(req: Request) {
       // Fallback: replace just the form element
       const formRe = /<form[^>]*id="contactForm"[\s\S]*?<\/form>/i;
       if (formRe.test(html)) {
-        html = html.replace(formRe, `<div style="text-align:center; padding: 30px;"><a href="${LGNY_REGISTER}" target="_blank" rel="noopener" style="display:inline-block; background:#CCFF00; color:#000; font-weight:700; padding:16px 32px; border-radius:8px; text-decoration:none;">Start 14-Day Free Trial</a></div>`);
+        html = html.replace(formRe, `<div style="text-align:center; padding: 30px;"><a href="${LGNY_REGISTER}" target="_blank" rel="noopener" style="display:inline-block; background:#FFD700; color:#000; font-weight:700; padding:16px 32px; border-radius:8px; text-decoration:none;">Start 14-Day Free Trial</a></div>`);
         fixes.push('contact form replaced with trial CTA (fallback)');
       }
     }
@@ -81,7 +83,7 @@ export default async function(req: Request) {
     const token = secrets.get('VERCEL_TOKEN');
     if (!token) throw new Error('VERCEL_TOKEN secret not set');
     const teamId = secrets.get('VERCEL_TEAM_ID') || null;
-    const baseSlug = slugify(clone_name || 'lead-gen-near-you') || 'lead-gen-near-you';
+    const baseSlug = slugify(clone_name || 'auto-leads') || 'auto-leads';
     const slug = `${baseSlug}-final`;
     const vProject = await createVercelProject(token, teamId, slug);
     try { await disableVercelSso(token, teamId, vProject.id); } catch (e) { /* non-fatal */ }

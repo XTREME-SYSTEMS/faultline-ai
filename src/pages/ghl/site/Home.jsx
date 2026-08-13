@@ -45,7 +45,7 @@ const PILLARS = [
 ];
 
 const MOVEMENT = [
-  { h: 'By Marketers, For Marketers', p: 'Lead Generation Near You was built and powered by marketers focused on the traditional issues marketing professionals face day to day. Once success was found, it was introduced to the market to help marketers face common challenges.' },
+  { h: 'By Operators, For Operators', p: 'AUTO LEADS was built and powered by construction industry operators focused on the traditional issues contractors face day to day. Once success was found, it was introduced to the market to help construction pros face common challenges.' },
   { h: 'Community Driven Development', p: 'We are committed to helping the Marketing world. We\'ve built a community-driven Ideas Board where you can share and vote on ideas to help lead the direction of development.' },
   { h: 'Network With Other Successful Marketers', p: 'Connect with other ambitious agency owners, entrepreneurs and marketing professionals who are scaling successful businesses with our platform.' },
 ];
@@ -61,10 +61,10 @@ function TabBlock({ tab }) {
         <h3 className="text-2xl md:text-3xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>{tab.h}</h3>
         <p className="mt-2 text-slate-600">{tab.p}</p>
         <div className="mt-5 grid sm:grid-cols-2 gap-x-8 gap-y-2">
-          <ul>{left.map(x => <li key={x} className="flex items-start gap-2 text-sm text-slate-700 py-1"><Check className="text-[#CCFF00] mt-0.5 shrink-0" size={16} /> {x}</li>)}</ul>
-          <ul>{right.map(x => <li key={x} className="flex items-start gap-2 text-sm text-slate-700 py-1"><Check className="text-[#CCFF00] mt-0.5 shrink-0" size={16} /> {x}</li>)}</ul>
+          <ul>{left.map(x => <li key={x} className="flex items-start gap-2 text-sm text-slate-700 py-1"><Check className="text-[#FFD700] mt-0.5 shrink-0" size={16} /> {x}</li>)}</ul>
+          <ul>{right.map(x => <li key={x} className="flex items-start gap-2 text-sm text-slate-700 py-1"><Check className="text-[#FFD700] mt-0.5 shrink-0" size={16} /> {x}</li>)}</ul>
         </div>
-        <Link to="/register" className="mt-6 inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#CCFF00] text-[#000000] font-bold text-sm hover:bg-[#DFFF5C] transition">Start 14 Day Free Trial <ArrowRight size={16} /></Link>
+        <Link to="/register" className="mt-6 inline-flex items-center gap-2 px-5 py-3 rounded-lg bg-[#FFD700] text-[#000000] font-bold text-sm hover:bg-[#FFE566] transition">Start 14 Day Free Trial <ArrowRight size={16} /></Link>
       </div>
     </div>
   );
@@ -79,10 +79,10 @@ export default function Home() {
         <div className="absolute inset-0" style={{ background: 'radial-gradient(circle at 75% 25%, rgba(16,185,129,.18), transparent 45%), radial-gradient(circle at 15% 80%, rgba(37,99,235,.15), transparent 40%)' }} />
         <div className="relative max-w-7xl mx-auto px-5 pt-20 pb-24 grid lg:grid-cols-2 gap-12 items-center">
           <div>
-            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#CCFF00]/15 text-[#CCFF00] text-xs font-bold uppercase tracking-wider">⚡ Power up your business with AI</span>
-            <h1 className="mt-5 text-4xl md:text-6xl font-bold leading-[1.05] tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>The AI-powered business <span className="text-[#DFFF5C]">operating system</span></h1>
+            <span className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#FFD700]/15 text-[#FFD700] text-xs font-bold uppercase tracking-wider">⚡ CONSTRUCTION INTELLIGENCE</span>
+            <h1 className="mt-5 text-4xl md:text-6xl font-bold leading-[1.05] tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>The AI-powered <span className="text-[#FFE566]">construction intelligence</span> platform</h1>
             <p className="mt-5 text-lg text-slate-300 max-w-xl">All the tools you need to capture, nurture and close new leads into bookings, sales, reviews and repeat customers!</p>
-            <Link to="/register" className="mt-7 inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-[#CCFF00] text-[#000000] font-bold hover:bg-[#DFFF5C] transition">Start 14 Day Free Trial <ArrowRight size={18} /></Link>
+            <Link to="/register" className="mt-7 inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-[#FFD700] text-[#000000] font-bold hover:bg-[#FFE566] transition">Start 14 Day Free Trial <ArrowRight size={18} /></Link>
           </div>
           <div className="rounded-2xl border border-white/10 bg-white/5 p-2 shadow-2xl">
             <img src="https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/0f2268e74_clone-img-msnzvexg-36ogmj.webp" alt="The AI-powered business operating system" className="rounded-xl w-full" />
@@ -95,7 +95,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-5 py-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           {STATS.map(s => (
             <div key={s.l}>
-              <div className="text-3xl md:text-4xl font-bold text-[#DFFF5C]" style={{ fontFamily: "'Libre Caslon Display', serif" }}>{s.v}</div>
+              <div className="text-3xl md:text-4xl font-bold text-[#FFE566]" style={{ fontFamily: "'Libre Caslon Display', serif" }}>{s.v}</div>
               <div className="mt-1 text-xs uppercase tracking-wider text-slate-400">{s.l}</div>
             </div>
           ))}
@@ -106,7 +106,7 @@ export default function Home() {
       <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-5 text-center">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>We're in the business of helping you grow your business</h2>
-          <p className="mt-4 text-slate-600 text-lg">Lead Generation Near You is the AI-powered operating system built to help local service businesses capture more leads, book more jobs, and turn one-time customers into repeat referrals.</p>
+          <p className="mt-4 text-slate-600 text-lg">AUTO LEADS is the AI-powered construction intelligence platform built to help construction businesses capture more leads, book more jobs, and turn one-time customers into repeat referrals.</p>
         </div>
       </section>
 
@@ -119,7 +119,7 @@ export default function Home() {
           </div>
           <div className="mt-8 flex flex-wrap justify-center gap-2 border-b border-slate-200">
             {TABS.map((t, i) => (
-              <button key={t.id} onClick={() => setTab(i)} className={`px-5 py-3 text-sm font-bold transition ${tab === i ? 'text-[#A3CC00] border-b-2 border-[#CCFF00]' : 'text-slate-500 hover:text-slate-800'}`}>{t.label}</button>
+              <button key={t.id} onClick={() => setTab(i)} className={`px-5 py-3 text-sm font-bold transition ${tab === i ? 'text-[#FFD700] border-b-2 border-[#FFD700]' : 'text-slate-500 hover:text-slate-800'}`}>{t.label}</button>
             ))}
           </div>
           <div className="mt-10"><TabBlock tab={TABS[tab]} /></div>
@@ -145,7 +145,7 @@ export default function Home() {
       <section className="py-20 bg-[#000000] text-white">
         <div className="max-w-4xl mx-auto px-5 text-center">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>One platform. No duct tape.</h2>
-          <p className="mt-5 text-lg text-slate-300 max-w-2xl mx-auto">Stop paying for and juggling a dozen separate tools. ${' '}Lead Generation Near You brings CRM, funnels, marketing, bookings, and automations together — so your whole business runs from one login.</p>
+          <p className="mt-5 text-lg text-slate-300 max-w-2xl mx-auto">Stop paying for and juggling a dozen separate tools. ${' '}AUTO LEADS brings CRM, funnels, marketing, bookings, and automations together — so your whole business runs from one login.</p>
         </div>
       </section>
 
@@ -170,12 +170,12 @@ export default function Home() {
       {/* What's included */}
       <section className="py-20 bg-slate-50">
         <div className="max-w-5xl mx-auto px-5 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>What's included with Lead Generation Near You</h2>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>What's included with AUTO LEADS</h2>
           <div className="mt-8 grid sm:grid-cols-2 gap-6">
             <img src="https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/5fb9e359e_clone-img-msnzvgcp-5yrpln.webp" alt="Pricing Plan" className="rounded-xl w-full" />
             <img src="https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/c8dcca339_clone-img-msnzvgcq-dwdf87.webp" alt="Pricing Plan" className="rounded-xl w-full" />
           </div>
-          <Link to="/register" className="mt-8 inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-[#CCFF00] text-[#000000] font-bold hover:bg-[#DFFF5C] transition">Start 14 Day Free Trial <ArrowRight size={18} /></Link>
+          <Link to="/register" className="mt-8 inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-[#FFD700] text-[#000000] font-bold hover:bg-[#FFE566] transition">Start 14 Day Free Trial <ArrowRight size={18} /></Link>
         </div>
       </section>
 
@@ -183,7 +183,7 @@ export default function Home() {
       <section className="py-20 bg-[#000000] text-white">
         <div className="max-w-4xl mx-auto px-5 text-center">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>Everything you need to grow your business; even on the go!</h2>
-          <Link to="/register" className="mt-7 inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-[#CCFF00] text-[#000000] font-bold hover:bg-[#DFFF5C] transition">Start 14 Day Free Trial <ArrowRight size={18} /></Link>
+          <Link to="/register" className="mt-7 inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-[#FFD700] text-[#000000] font-bold hover:bg-[#FFE566] transition">Start 14 Day Free Trial <ArrowRight size={18} /></Link>
         </div>
       </section>
     </MarketingShell>

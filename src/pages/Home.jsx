@@ -10,8 +10,9 @@ import {
 } from 'lucide-react';
 import '@/components/fl/approved-homepage.css';
 
-const LOGO_LIGHT = 'https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/ed45981bc_logo-light.png';
-const LOGO_DARK = 'https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/a12021ad5_logo-dark.png';
+import { BRAND } from '@/lib/brandIdentity';
+const LOGO_LIGHT = BRAND.logoLight;
+const LOGO_DARK = BRAND.logoDark;
 
 const IMG = {
   showroom: 'https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/74f654c52_generated_image.png',
@@ -121,7 +122,7 @@ export default function Home() {
       <a className="skip-link" href="#main">Skip to main content</a>
       <header className="site-header" style={{ background: '#0B0B0D', borderBottom: '1px solid #2b2b2b', height: 72 }}>
         <div className="page-wrap header-inner">
-          <a className="brand" href="#top" aria-label="Xtreme AI Systems home"><div style={{ height: 52, overflow: 'hidden', display: 'flex', alignItems: 'center' }}><img src={LOGO_LIGHT} alt="Xtreme AI Systems" style={{ height: 170, width: 'auto', marginTop: 12 }} /></div></a>
+          <a className="brand" href="#top" aria-label="AUTO LEADS home"><div style={{ height: 52, overflow: 'hidden', display: 'flex', alignItems: 'center' }}><img src={LOGO_LIGHT} alt="AUTO LEADS" style={{ height: 52, width: 'auto' }} /></div></a>
           <button className="menu-button" type="button" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(v => !v)}><span style={{ background: '#fff' }} /><span style={{ background: '#fff' }} /><span style={{ background: '#fff' }} /></button>
           <nav className={`primary-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Primary navigation" style={{ color: '#fff', background: menuOpen ? '#0B0B0D' : 'transparent' }}>
             <a href="#tools" style={{ color: '#fff' }}>AI Tools</a>
@@ -139,9 +140,9 @@ export default function Home() {
         <section id="top" style={{ background: 'linear-gradient(115deg, #0B0B0D 0%, #0B0B0D 48%, #1A1A1D 48%, #1A1A1D 100%)', padding: '72px 0', borderBottom: '1px solid #2b2b2b' }}>
           <div className="page-wrap" style={{ display: 'grid', gridTemplateColumns: '1fr 1.05fr', gap: 56, alignItems: 'center' }}>
             <div style={{ color: '#fff' }}>
-              <p className="eyebrow" style={{ color: '#FFD60A', margin: '0 0 14px' }}>AI Tools & Websites for Floor Pros</p>
-              <h1 style={{ font: "400 clamp(40px, 5vw, 70px)/1 'Libre Caslon Display', serif", letterSpacing: '-.035em', margin: '0 0 18px' }}>Win More Jobs.<br /><span style={{ color: '#FFD60A' }}>Scale Your Floor Business.</span></h1>
-              <p style={{ fontSize: 18, lineHeight: 1.7, color: '#c9c9cc', maxWidth: 540, margin: 0 }}>Xtreme AI Systems is the client portal for students of Xtreme Polishing Systems &amp; Polished Concrete University. Buy AI tools, generate photoreal floor visualizations, and get a custom website built for your business.</p>
+              <p className="eyebrow" style={{ color: '#FFD700', margin: '0 0 14px' }}>CONSTRUCTION INTELLIGENCE</p>
+              <h1 style={{ font: "400 clamp(40px, 5vw, 70px)/1 'Libre Caslon Display', serif", letterSpacing: '-.035em', margin: '0 0 18px' }}>Win More Jobs.<br /><span style={{ color: '#FFD700' }}>Scale Your Construction Business.</span></h1>
+              <p style={{ fontSize: 18, lineHeight: 1.7, color: '#c9c9cc', maxWidth: 540, margin: 0 }}>AUTO LEADS is the AI-powered construction intelligence platform. Buy AI tools, generate photoreal project visualizations, and get a custom website built for your business.</p>
               <div className="button-row" style={{ marginTop: 28 }}>
                 <Link to="/app" className="button button--gold">Explore AI Tools <Icon name="arrow-right" /></Link>
                 <button type="button" className="button button--dark-outline" onClick={() => navigate('/consultation')}>Get a Website <Icon name="arrow-right" /></button>
@@ -155,7 +156,7 @@ export default function Home() {
             <div style={{ position: 'relative', borderRadius: 18, overflow: 'hidden', boxShadow: '0 30px 80px #00000080' }}>
               <Image src={IMG.showroom} alt="Ultra-realistic metallic epoxy showroom floor" fittingType="fill" className="block w-full" style={{ height: 460 }} />
               <div style={{ position: 'absolute', left: 18, bottom: 18, background: 'rgba(11,11,13,.82)', color: '#fff', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 700, backdropFilter: 'blur(6px)' }}>
-                <span style={{ color: '#FFD60A' }}>●</span> Metallic epoxy showroom floor
+                <span style={{ color: '#FFD700' }}>●</span> Metallic epoxy showroom floor
               </div>
             </div>
           </div>
@@ -192,7 +193,7 @@ export default function Home() {
               <div style={{ position: 'absolute', right: 16, top: 16, background: '#237A4B', color: '#fff', padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>AFTER</div>
             </div>
             <div>
-              <p className="eyebrow" style={{ color: '#FFD60A' }}>Before &amp; after</p>
+              <p className="eyebrow" style={{ color: '#FFD700' }}>Before &amp; after</p>
               <h2 style={{ font: "400 clamp(34px, 3.5vw, 52px)/1.05 'Libre Caslon Display', serif", margin: '0 0 16px' }}>Show Clients the Transformation.</h2>
               <p style={{ fontSize: 17, lineHeight: 1.7, color: '#bbb' }}>Use the Xtreme Visualizer to turn a drab, cracked slab into a flawless flake-epoxy showpiece — then drop the before/after straight into your bid or website. Clients buy the outcome when they can see it.</p>
               <div style={{ marginTop: 26 }}>
@@ -215,7 +216,7 @@ export default function Home() {
                 const I = t.icon;
                 return (
                   <article key={t.name} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 14, padding: '24px 22px' }}>
-                    <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg, #FFD60A, #FFB800)', display: 'grid', placeItems: 'center', marginBottom: 16 }}>
+                    <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg, #FFD700, #FFB800)', display: 'grid', placeItems: 'center', marginBottom: 16 }}>
                       <I size={24} color="#0B0B0D" />
                     </div>
                     <h3 style={{ margin: '0 0 6px', fontSize: 16 }}>{t.name}</h3>
@@ -235,7 +236,7 @@ export default function Home() {
           <div className="page-wrap" style={{ display: 'grid', gridTemplateColumns: '.95fr 1.05fr', gap: 56, alignItems: 'center' }}>
             <div>
               <p className="eyebrow">Custom websites</p>
-              <h2 style={{ font: "400 clamp(34px, 3.5vw, 52px)/1.05 'Libre Caslon Display', serif", margin: '0 0 16px' }}>Get a Website Built by Xtreme AI Systems.</h2>
+              <h2 style={{ font: "400 clamp(34px, 3.5vw, 52px)/1.05 'Libre Caslon Display', serif", margin: '0 0 16px' }}>Get a Website Built by AUTO LEADS.</h2>
               <p style={{ fontSize: 17, lineHeight: 1.7, color: '#666', margin: '0 0 22px' }}>We design and build high-converting websites for floor contractors — loaded with your floor gallery, before/after visualizer, and AI-powered lead capture. Launch-ready, mobile-first, and built to sell.</p>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', display: 'grid', gap: 12 }}>
                 {['Floor-gallery & before/after showcase', 'Integrated Floor Visualizer', 'AI lead capture & CRM', 'Mobile-first, launch-ready'].map(b => (
@@ -267,7 +268,7 @@ export default function Home() {
                 return (
                   <article key={s.title} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 14, padding: '26px 24px' }}>
                     <div style={{ width: 44, height: 44, borderRadius: 10, background: '#0B0B0D', display: 'grid', placeItems: 'center', marginBottom: 16 }}>
-                      <I size={22} color="#FFD60A" />
+                      <I size={22} color="#FFD700" />
                     </div>
                     <h3 style={{ margin: '0 0 6px', fontSize: 17 }}>{s.title}</h3>
                     <p style={{ margin: 0, fontSize: 14, color: '#777', lineHeight: 1.6 }}>{s.desc}</p>
@@ -304,8 +305,8 @@ export default function Home() {
         <section className="closing-cta" style={{ background: 'linear-gradient(135deg, #0B0B0D, #1A1A1D)', color: '#fff' }}>
           <div className="page-wrap closing-grid">
             <div>
-              <h2>Stop Guessing.<br /><span style={{ color: '#FFD60A' }}>Start Winning Floor Jobs.</span></h2>
-              <p style={{ color: '#bbb' }}>Get AI tools and a custom website built for your floor business — built by Xtreme AI Systems.</p>
+              <h2>Stop Guessing.<br /><span style={{ color: '#FFD700' }}>Start Winning Construction Jobs.</span></h2>
+              <p style={{ color: '#bbb' }}>Get AI tools and a custom website built for your construction business — built by AUTO LEADS.</p>
             </div>
             <div>
               <div className="button-row">
@@ -325,8 +326,8 @@ export default function Home() {
       <footer className="site-footer" id="footer">
         <div className="page-wrap footer-grid">
           <div className="footer-brand">
-            <img src={LOGO_LIGHT} alt="Xtreme AI Systems" style={{ height: 200, width: 'auto' }} />
-            <p>AI tools &amp; websites for floor pros.</p>
+            <img src={LOGO_LIGHT} alt="AUTO LEADS" style={{ height: 60, width: 'auto' }} />
+            <p>Construction Intelligence — AI tools &amp; websites for construction pros.</p>
             <div className="socials"><a href="#" aria-label="LinkedIn">in</a><a href="#" aria-label="Instagram">◎</a><a href="#" aria-label="YouTube">▶</a></div>
           </div>
           <FooterColumn title="AI Tools" links={['Floor Visualizer', 'Bid Generator', 'Lead Generator', 'CRM', 'Pricing Calculator']} />
@@ -345,9 +346,9 @@ export default function Home() {
           </div>
         </div>
         <div className="page-wrap footer-bottom">
-          <span>© 2026 Xtreme AI Systems. All rights reserved.</span>
+          <span>© 2026 AUTO LEADS. All rights reserved.</span>
           <nav><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Cookie Policy</a><a href="#">Acceptable Use</a></nav>
-          <span className="compliance"><Icon name="shield" />Built for<br />Floor Contractors</span>
+          <span className="compliance"><Icon name="shield" />Built for<br />Construction Pros</span>
         </div>
       </footer>
 

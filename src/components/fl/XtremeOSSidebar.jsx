@@ -117,15 +117,12 @@ export default function XtremeOSSidebar() {
       {/* Brand */}
       <div style={{ padding: '20px 18px', borderBottom: '1px solid #2b2b2b' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            width: 36, height: 36, borderRadius: 8, background: 'linear-gradient(135deg, #E7C86E, #C89B3C)',
-            display: 'grid', placeItems: 'center', fontSize: 18, fontWeight: 700, color: '#111'
-          }}>X</div>
+          <img src="https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/9a0697861_autoleads-logo-dark-master.png" alt="AUTO LEADS" style={{ height: 36, width: 'auto', borderRadius: 4 }} />
           <div>
-            <b style={{ fontFamily: "'Libre Caslon Display', serif", fontSize: 15, display: 'block', lineHeight: 1.1 }}>
-              Xtreme<span style={{ color: '#E7C86E' }}>Clone</span> System
+            <b style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 15, fontWeight: 800, display: 'block', lineHeight: 1.1, color: '#fff' }}>
+              AUTO <span style={{ color: '#FFD700' }}>LEADS</span>
             </b>
-            <small style={{ color: '#666', fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em' }}>xtremeclonesystems.com</small>
+            <small style={{ color: '#666', fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em' }}>CONSTRUCTION INTELLIGENCE</small>
           </div>
         </div>
       </div>
@@ -173,14 +170,14 @@ export default function XtremeOSSidebar() {
                         padding: '7px 12px', borderRadius: 5, fontSize: 13,
                         color: mod.archived ? '#555' : (isActive ? '#fff' : '#bbb'),
                         background: isActive ? '#232323' : 'none',
-                        boxShadow: isActive ? `inset 3px 0 ${mod.archived ? '#555' : '#C89B3C'}` : 'none',
+                        boxShadow: isActive ? `inset 3px 0 ${mod.archived ? '#555' : '#FFD700'}` : 'none',
                         textDecoration: 'none',
                         opacity: mod.archived ? 0.6 : 1,
                       })}
                     >
                       {({ isActive }) => (
                         <>
-                          <item.icon size={15} style={{ flexShrink: 0, color: mod.archived ? '#444' : (isActive ? '#E7C86E' : '#888') }} />
+                          <item.icon size={15} style={{ flexShrink: 0, color: mod.archived ? '#444' : (isActive ? '#FFD700' : '#888') }} />
                           <span>{item.label}</span>
                         </>
                       )}

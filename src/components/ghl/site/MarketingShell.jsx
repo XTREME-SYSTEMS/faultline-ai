@@ -26,14 +26,14 @@ export default function MarketingShell({ children }) {
           </nav>
           <div className="hidden md:flex items-center gap-3">
             <Link to="/login" className="text-sm font-medium text-slate-300 hover:text-white">Login</Link>
-            <Link to="/register" className="px-4 py-2 rounded-lg text-sm font-bold bg-[#CCFF00] text-[#000000] hover:bg-[#DFFF5C] transition">Start 14-day trial</Link>
+            <Link to="/register" className="px-4 py-2 rounded-lg text-sm font-bold bg-[#FFD700] text-[#000000] hover:bg-[#FFE566] transition">Start 14-day trial</Link>
           </div>
           <button className="md:hidden text-white" onClick={() => setOpen(!open)}>{open ? <X size={22} /> : <Menu size={22} />}</button>
         </div>
         {open && (
           <div className="md:hidden border-t border-white/10 px-5 py-4 flex flex-col gap-3">
             {NAV.map(n => <Link key={n.to} to={n.to} onClick={() => setOpen(false)} className="text-sm font-medium text-slate-300">{n.label}</Link>)}
-            <Link to="/register" className="mt-2 px-4 py-2 rounded-lg text-sm font-bold bg-[#CCFF00] text-[#000000] text-center">Start 14-day trial</Link>
+            <Link to="/register" className="mt-2 px-4 py-2 rounded-lg text-sm font-bold bg-[#FFD700] text-[#000000] text-center">Start 14-day trial</Link>
           </div>
         )}
       </header>
@@ -45,7 +45,7 @@ export default function MarketingShell({ children }) {
         <div className="max-w-7xl mx-auto px-5 grid grid-cols-2 md:grid-cols-5 gap-10">
           <div className="col-span-2">
             <LgnyLogo size={34} light />
-            <p className="mt-4 text-sm text-slate-400 max-w-xs">The AI-powered business operating system for local service businesses. Capture, nurture, and close leads — all in one platform.</p>
+            <p className="mt-4 text-sm text-slate-400 max-w-xs">The AI-powered construction intelligence platform. Capture, nurture, and close leads — all in one platform.</p>
           </div>
           {[
             { h: 'Product', links: ['Features', 'Pricing', 'Integrations', 'Mobile App'] },
@@ -59,7 +59,7 @@ export default function MarketingShell({ children }) {
           ))}
         </div>
         <div className="max-w-7xl mx-auto px-5 mt-12 pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between gap-3 text-xs text-slate-500">
-          <span>© {new Date().getFullYear()} Lead Generation Near You · leadgenerationnearyou.com</span>
+          <span>© {new Date().getFullYear()} AUTO LEADS · autoleads.ai</span>
           <span>Privacy · Terms · Security</span>
         </div>
       </footer>

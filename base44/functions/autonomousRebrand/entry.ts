@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
 import { slugify, createVercelProject, disableVercelSso, deployToVercel } from '../../shared/launchInfra.ts';
-import { MANDATORY_REBRAND_ELEMENTS, DEFAULT_ACCENT } from '../../shared/mandatoryRebrandElements.ts';
+import { MANDATORY_REBRAND_ELEMENTS, DEFAULT_ACCENT, DEFAULT_BRAND, DEFAULT_TAGLINE, DEFAULT_DOMAIN, DEFAULT_LOGO_URL } from '../../shared/mandatoryRebrandElements.ts';
 
 // FULLY AUTONOMOUS REBRAND ENGINE
 // Takes a deployed clone + target brand + accent color, then systematically
@@ -9,13 +9,12 @@ import { MANDATORY_REBRAND_ELEMENTS, DEFAULT_ACCENT } from '../../shared/mandato
 // (logo, images, copy, testimonials, legal pages) + exact swaps + accent restyle,
 // and deploys the result to Vercel. Returns a per-element status report.
 
-function pinwheelLogoUri(accent: string): string {
-  const svg = `<svg width="40" height="48" viewBox="0 0 40 48" xmlns="http://www.w3.org/2000/svg"><path d="M20 0C9 0 0 9 0 20c0 14 20 28 20 28s20-14 20-28C40 9 31 0 20 0z" fill="#0B1120"/><g transform="translate(20 20)"><path d="M0 0 L0 -10 A10 10 0 0 1 10 0 Z" fill="${accent}"/><path d="M0 0 L10 0 A10 10 0 0 1 0 10 Z" fill="#059669"/><path d="M0 0 L0 10 A10 10 0 0 1 -10 0 Z" fill="#2563EB"/><path d="M0 0 L-10 0 A10 10 0 0 1 0 -10 Z" fill="#DC2626"/><circle cx="0" cy="0" r="2.2" fill="#fff"/></g></svg>`;
-  return 'data:image/svg+xml,' + encodeURIComponent(svg);
+function brandLogoUrl(): string {
+  return DEFAULT_LOGO_URL;
 }
 
 function accentCssOverride(accent: string): string {
-  return `<style id="lgny-accent-override">:root{--lgny-accent:${accent};--brand:${accent};--primary:${accent};--primary-color:${accent};--accent:${accent};}a:not([class*="btn"]):not([class*="button"]){color:${accent};}a.btn-primary,button[class*="primary"],.cta,.button-primary,[class*="cta"]:not(a),.btn.btn-primary{background:${accent}!important;border-color:${accent}!important;color:#fff!important;}[class*="btn"][class*="primary"]{background:${accent}!important;border-color:${accent}!important;}.text-primary,.text-brand,.has-text-color[class*="primary"]{color:${accent}!important;}.bg-primary,.bg-brand,.has-background[class*="primary"]{background:${accent}!important;}</style>`;
+  return `<style id="autoleads-accent-override">:root{--autoleads-accent:${accent};--brand:${accent};--primary:${accent};--primary-color:${accent};--accent:${accent};}a:not([class*="btn"]):not([class*="button"]){color:${accent};}a.btn-primary,button[class*="primary"],.cta,.button-primary,[class*="cta"]:not(a),.btn.btn-primary{background:${accent}!important;border-color:${accent}!important;color:#0B0B0D!important;}[class*="btn"][class*="primary"]{background:${accent}!important;border-color:${accent}!important;}.text-primary,.text-brand,.has-text-color[class*="primary"]{color:${accent}!important;}.bg-primary,.bg-brand,.has-background[class*="primary"]{background:${accent}!important;}</style>`;
 }
 
 function nowIso() { return new Date().toISOString(); }
@@ -30,7 +29,7 @@ export default async function(req: Request) {
     const { source_url, target_brand, accent_color, clone_id, clone_name, rebrand_project_id, clone_html, return_html } = body;
     if (!source_url && !rebrand_project_id && !clone_html) return Response.json({ error: 'source_url, rebrand_project_id, or clone_html required' }, { status: 400 });
 
-    const BRAND = target_brand || 'Lead Gen Near You';
+    const BRAND = target_brand || DEFAULT_BRAND;
     const accent = accent_color || DEFAULT_ACCENT;
     const orgId = user.data?.organization_id || 'default';
 
@@ -76,7 +75,7 @@ export default async function(req: Request) {
     const pageTitle = titleMatch ? titleMatch[1].trim() : '';
 
     // 2. ONE detection LLM call — brand terms, taglines, images, contact info, testimonials, distinctive copy
-    const detectPrompt = `You are an autonomous rebrand detector. A cloned website is being rebranded to "${BRAND}" (domain: leadgennearyou.com). Identify everything that legally MUST change.
+    const detectPrompt = `You are an autonomous rebrand detector. A cloned website is being rebranded to "${BRAND}" (domain: ${DEFAULT_DOMAIN}, tagline: "${DEFAULT_TAGLINE}"). Identify everything that legally MUST change.
 
 Source URL: ${source_url || project.source_url}
 Page title: ${pageTitle}
@@ -126,11 +125,11 @@ Return JSON with:
     // --- ELEMENT 3: Logo + branded icons ---
     const imgSwaps = detected.image_swaps || [];
     const logoSwap = imgSwaps.find(i => i.is_logo);
-    const logoUri = pinwheelLogoUri(accent);
+    const logoUri = brandLogoUrl();
     if (logoSwap?.src && html.includes(logoSwap.src)) {
       html = html.split(logoSwap.src).join(logoUri);
     }
-    mark('logo', logoSwap ? 'done' : 'skipped', logoSwap ? 'Logo replaced with accent-tinted pinwheel' : 'No branded logo detected');
+    mark('logo', logoSwap ? 'done' : 'skipped', logoSwap ? 'Logo replaced with AUTO LEADS brand logo' : 'No branded logo detected');
 
     // --- ELEMENT 4: Tagline ---
     let taglineCount = 0;
@@ -162,7 +161,7 @@ Return JSON with:
     mark('source_code', 'skipped', 'Clone HTML retained; proprietary source not introduced');
 
     // --- ELEMENT 8 & 5: Generation LLM — new testimonials, rewritten distinctive copy, legal pages ---
-    const genPrompt = `You are an autonomous rebrand copywriter. The brand is "${BRAND}" (domain: leadgennearyou.com), a local-service lead-generation platform. Generate brand-safe, original replacement content.
+    const genPrompt = `You are an autonomous rebrand copywriter. The brand is "${BRAND}" (domain: ${DEFAULT_DOMAIN}, tagline: "${DEFAULT_TAGLINE}"), a construction-intelligence lead-generation platform. Generate brand-safe, original replacement content.
 
 Testimonials to replace (provide a fresh, original replacement of similar length for EACH):
 ${JSON.stringify((detected.testimonials_to_replace || []).map(t => t.find), null, 2)}
@@ -214,7 +213,7 @@ Return JSON:
     // --- ELEMENT 10: Contact info ---
     const ci = detected.contact_info || {};
     let contactCount = 0;
-    for (const e of (ci.emails || [])) { if (e && html.includes(e)) { html = html.split(e).join('hello@leadgennearyou.com'); contactCount++; } }
+    for (const e of (ci.emails || [])) { if (e && html.includes(e)) { html = html.split(e).join('hello@autoleads.ai'); contactCount++; } }
     for (const p of (ci.phones || [])) { if (p && html.includes(p)) { html = html.split(p).join('(555) 010-2025'); contactCount++; } }
     for (const a of (ci.addresses || []).slice(0, 3)) { if (a && html.includes(a)) { html = html.split(a).join('Local Service Area, USA'); contactCount++; } }
     mark('contact_info', contactCount > 0 ? 'done' : 'skipped', `${contactCount} contact details replaced`);
@@ -239,8 +238,8 @@ Return JSON:
 
     // Deploy to Vercel (or return HTML in-memory if return_html is set)
     await base44.entities.RebrandProject.update(pid, { status: 'generating_assets', mandatory_elements: elements, autonomous_log: log });
-    const baseSlug = slugify(clone_name || project.source_clone_name || 'lead-gen-near-you') || 'lead-gen-near-you';
-    const slug = `${baseSlug}-lgny`;
+    const baseSlug = slugify(clone_name || project.source_clone_name || 'auto-leads') || 'auto-leads';
+    const slug = `${baseSlug}-autoleads`;
     let deployUrl = null;
     if (!return_html) {
       const token = secrets.get('VERCEL_TOKEN');

@@ -77,4 +77,8 @@ export const MANDATORY_REBRAND_ELEMENTS = [
   },
 ];
 
-export const DEFAULT_ACCENT = '#C89B3C';
+export const DEFAULT_ACCENT = '#FFD700';
+export const DEFAULT_BRAND = 'AUTO LEADS';
+export const DEFAULT_TAGLINE = 'CONSTRUCTION INTELLIGENCE';
+export const DEFAULT_DOMAIN = 'autoleads.ai';
+export const DEFAULT_LOGO_URL = 'https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/9a0697861_autoleads-logo-dark-master.png';

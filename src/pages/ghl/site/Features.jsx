@@ -16,10 +16,10 @@ export default function Features() {
     <MarketingShell>
       <section className="bg-[#000000] text-white py-20">
         <div className="max-w-4xl mx-auto px-5 text-center">
-          <span className="text-[#DFFF5C] text-xs font-bold uppercase tracking-widest">Platform Features</span>
+          <span className="text-[#FFE566] text-xs font-bold uppercase tracking-widest">Platform Features</span>
           <h1 className="mt-3 text-4xl md:text-6xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>One platform. Every tool you need.</h1>
-          <p className="mt-5 text-lg text-slate-300">Lead Generation Near You brings CRM, funnels, marketing, bookings, and automations together — so you can run your whole business from a single login.</p>
-          <Link to="/register" className="mt-7 inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-[#CCFF00] text-[#000000] font-bold hover:bg-[#DFFF5C] transition">Start 14 Day Free Trial <ArrowRight size={18} /></Link>
+          <p className="mt-5 text-lg text-slate-300">AUTO LEADS brings CRM, funnels, marketing, bookings, and automations together — so you can run your whole business from a single login.</p>
+          <Link to="/register" className="mt-7 inline-flex items-center gap-2 px-6 py-3.5 rounded-lg bg-[#FFD700] text-[#000000] font-bold hover:bg-[#FFE566] transition">Start 14 Day Free Trial <ArrowRight size={18} /></Link>
         </div>
       </section>
 
@@ -28,7 +28,7 @@ export default function Features() {
           <section key={s.t} className={`py-16 ${i % 2 ? 'bg-slate-50' : 'bg-white'}`}>
             <div className={`max-w-7xl mx-auto px-5 grid lg:grid-cols-2 gap-12 items-center ${i % 2 ? 'lg:flex-row-reverse' : ''}`}>
               <div className={i % 2 ? 'lg:order-2' : ''}>
-                <span className="text-[#A3CC00] text-xs font-bold uppercase tracking-widest">{s.tag}</span>
+                <span className="text-[#FFD700] text-xs font-bold uppercase tracking-widest">{s.tag}</span>
                 <h2 className="mt-2 text-3xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>{s.t}</h2>
                 <p className="mt-3 text-slate-600 text-lg">{s.d}</p>
               </div>
@@ -38,7 +38,7 @@ export default function Features() {
         ))}
       </div>
 
-      <section className="py-16 bg-[#CCFF00] text-center text-[#000000]">
+      <section className="py-16 bg-[#FFD700] text-center text-[#000000]">
         <h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: "'Libre Caslon Display', serif" }}>Ready to see it in action?</h2>
         <Link to="/register" className="mt-6 inline-flex items-center gap-2 px-7 py-4 rounded-lg bg-[#000000] text-white font-bold hover:bg-black transition">Start Free Trial <ArrowRight size={18} /></Link>
       </section>

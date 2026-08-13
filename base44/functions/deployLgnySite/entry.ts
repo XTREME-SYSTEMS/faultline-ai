@@ -27,8 +27,8 @@ export default async function(req) {
     if (!brand_name) return Response.json({ error: 'brand_name required' }, { status: 400 });
 
     const cleanDomain = (domain || '').replace(/^https?:\/\//, '').replace(/\/$/, '').toLowerCase();
-    const accent = accent_color || '#CCFF00';
-    const logo = logo_url || 'https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/20de672b0_ChatGPTImageAug9202611_49_11PM.png';
+    const accent = accent_color || '#FFD700';
+    const logo = logo_url || 'https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/9a0697861_autoleads-logo-dark-master.png';
 
     // 1. Create MultiSite record (status: deploying)
     const site = await base44.entities.MultiSite.create({

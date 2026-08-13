@@ -1,24 +1,23 @@
 import { Image } from '@/components/ui/image';
+import { BRAND } from '@/lib/brandIdentity';
 
-// 4-color Google-style location-pin logo for "Lead Generation Near You"
-const LOGO_URL = 'https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/20de672b0_ChatGPTImageAug9202611_49_11PM.png';
-
+// AUTO LEADS brand logo — "CONSTRUCTION INTELLIGENCE" tagline
 export default function LgnyLogo({ size = 36, withText = true, light = false }) {
   return (
     <div className="flex items-center gap-2.5">
       <Image
-        src={LOGO_URL}
-        alt="Lead Generation Near You logo"
+        src={light ? BRAND.logoLight : BRAND.logoDark}
+        alt={`${BRAND.name} logo`}
         fittingType="fill"
         className="shrink-0"
-        style={{ width: size, height: size * 1.2, borderRadius: 6 }}
+        style={{ width: size * 1.6, height: size, borderRadius: 4 }}
       />
       {withText && (
         <div className="flex flex-col leading-none">
-          <b className="font-display text-[15px] tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif", color: light ? '#fff' : '#0B1120' }}>
-            Lead Generation <span style={{ color: '#CCFF00' }}>Near You</span>
+          <b className="font-display text-[15px] tracking-tight" style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontWeight: 800, color: light ? '#fff' : '#0B0B0D' }}>
+            AUTO <span style={{ color: BRAND.accent }}>LEADS</span>
           </b>
-          <small className="text-[8px] uppercase tracking-[.14em] text-slate-400">leadgenerationnearyou.com</small>
+          <small className="text-[8px] uppercase tracking-[.14em]" style={{ color: light ? '#9a9a9e' : '#666' }}>{BRAND.tagline}</small>
         </div>
       )}
     </div>
