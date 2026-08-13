@@ -8,6 +8,7 @@ import { slugify, createVercelProject, disableVercelSso, deployToVercel } from '
 // the dead contact form with a CTA to the actual LGNY platform, and redeploys.
 
 import { DEFAULT_BRAND, DEFAULT_DOMAIN, DEFAULT_LOGO_URL } from '../../shared/mandatoryRebrandElements.ts';
+import { scrubSourceDomain } from '../../shared/sourceDomainScrub.ts';
 
 const APP_URL = 'https://fault-line.base44.app';
 const LGNY_REGISTER = `${APP_URL}/register`;
@@ -20,7 +21,7 @@ export default async function(req: Request) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { source_url, clone_name, rebrand_project_id } = body;
+    const { source_url, clone_name, rebrand_project_id, original_source_url } = body;
     if (!source_url) return Response.json({ error: 'source_url required' }, { status: 400 });
 
     // 1. Fetch the current HTML
@@ -43,7 +44,20 @@ export default async function(req: Request) {
     // 5. Fix address
     if (html.includes('Palo Alto, CA')) { html = html.split('Palo Alto, CA').join('Local Service Area, USA'); fixes.push('address → Local Service Area, USA'); }
 
-    // 6. Fix internal anchor links that got the full vercel URL prefix
+    // 6. Scrub ALL source-domain URLs (login, nav, meta, subdomains) — not just
+    //    duda-specific ones. This is the critical step: without it, every link on
+    //    the rebranded clone (including login) sends visitors back to the original
+    //    source site (e.g. ibeam.ai).
+    if (original_source_url) {
+      const scrub = scrubSourceDomain(html, {
+        sourceUrl: original_source_url,
+        replacementAppUrl: `${LGNY_REGISTER}`,
+      });
+      html = scrub.html;
+      fixes.push(`${scrub.count} source-domain URLs scrubbed (login, nav, meta)`);
+    }
+
+    // 7. Fix internal anchor links that got the full vercel URL prefix
     //    e.g. href="https://duda-lgny-xxx.vercel.app/#services" → href="#services"
     html = html.replace(/href="https:\/\/[^"]*vercel\.app\/#([a-z]+)"/gi, 'href="#$1"');
     fixes.push('internal anchor links normalized');

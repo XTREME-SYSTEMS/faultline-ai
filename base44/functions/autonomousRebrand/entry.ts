@@ -2,6 +2,7 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
 import { slugify, createVercelProject, disableVercelSso, deployToVercel } from '../../shared/launchInfra.ts';
 import { MANDATORY_REBRAND_ELEMENTS, DEFAULT_ACCENT, DEFAULT_BRAND, DEFAULT_TAGLINE, DEFAULT_DOMAIN, DEFAULT_LOGO_URL } from '../../shared/mandatoryRebrandElements.ts';
+import { scrubSourceDomain } from '../../shared/sourceDomainScrub.ts';
 
 // FULLY AUTONOMOUS REBRAND ENGINE
 // Takes a deployed clone + target brand + accent color, then systematically
@@ -18,6 +19,8 @@ function accentCssOverride(accent: string): string {
 }
 
 function nowIso() { return new Date().toISOString(); }
+
+const APP_URL = 'https://fault-line.base44.app';
 
 export default async function(req: Request) {
   try {
@@ -221,6 +224,18 @@ Return JSON:
     // --- ELEMENT 11: Legal pages (generated, stored for review) ---
     const legal = generated.legal || {};
     mark('legal_pages', legal.privacy_policy ? 'done' : 'skipped', 'Privacy, Terms, Cookie notices generated (review before publish)');
+
+    // --- SOURCE DOMAIN SCRUB: replace all source-site URLs (login, nav, meta) ---
+    // Brand-term swaps above only changed TEXT; the clone's href/src URLs still
+    // point to the original source domain (e.g. https://app.ibeam.ai/login).
+    // Without this, every link on the rebranded site sends visitors back to the
+    // original source.
+    const scrub = scrubSourceDomain(html, {
+      sourceUrl: source_url || project.source_url,
+      replacementAppUrl: `${APP_URL}/login`,
+    });
+    html = scrub.html;
+    mark('source_domain', scrub.count > 0 ? 'done' : 'skipped', `${scrub.count} source-domain URLs scrubbed (login, nav, meta)`);
 
     // --- ELEMENT 12: Overall branding — inject accent color CSS override ---
     if (html.includes('</head>')) {
