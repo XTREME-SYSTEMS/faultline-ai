@@ -202,9 +202,21 @@ export default async function(req) {
     }
 
     // ── PROCESS QUEUED ITEMS ───────────────────────────────────────────
-    const queued = await base44.asServiceRole.entities.CloneQueue.filter(
-      { organization_id: orgId, status: 'queued' }, 'created_date', maxItems
-    );
+    // Fetch a larger window sorted by created_date, then re-sort in-memory by
+    // priority (critical > high > medium > low) so urgent batches jump ahead
+    // of the general backlog.
+    const PRIORITY_RANK = { critical: 0, high: 1, medium: 2, low: 3 };
+    const queuedWindow = await base44.asServiceRole.entities.CloneQueue.filter(
+      { organization_id: orgId, status: 'queued' }, 'created_date', 100
+    ).catch(() => []);
+    const queued = queuedWindow
+      .sort((a, b) => {
+        const pa = PRIORITY_RANK[a.priority] ?? 2;
+        const pb = PRIORITY_RANK[b.priority] ?? 2;
+        if (pa !== pb) return pa - pb;
+        return new Date(a.created_date) - new Date(b.created_date);
+      })
+      .slice(0, maxItems);
 
     if (queued.length === 0 && results.length === 0) {
       return Response.json({ status: 'idle', message: 'No items in clone queue' });
