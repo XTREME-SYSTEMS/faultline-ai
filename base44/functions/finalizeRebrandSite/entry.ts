@@ -74,8 +74,8 @@ export default async function(req: Request) {
       }
     }
 
-    // 8. Remove the contactForm submit script (if any) to prevent broken JS
-    html = html.replace(/document\.getElementById\(['"]contactForm['"]\)[\s\S]*?\}\s*\)?\s*;?/gi, '');
+    // 8. (Do NOT strip contactForm JS — orphaned handler is harmless and
+    //    stripping it risks corrupting the page's other scripts.)
 
     // 9. Deploy
     const token = secrets.get('VERCEL_TOKEN');
