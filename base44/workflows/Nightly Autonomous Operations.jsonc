@@ -1,5 +1,5 @@
 {
-  "description": "Master nightly autonomous operations loop. Runs every 30 minutes from 6pm to noon (pauses during afternoon). Each cycle: (1) heal all clones to 100/100 parity, (2) forensic audit + harden security, (3) stock the marketplace with new concrete-industry products, (4) discover new top-performer sites to clone, (5) process the clone queue (drain queued sites), (6) cleanup orphaned Vercel projects from heal iterations. The system self-heals, self-audits, self-stocks, self-discovers, self-drains, and self-cleans autonomously overnight.",
+  "description": "Master nightly autonomous operations loop. Runs every 30 minutes. Each cycle: (1) heal all clones to 100/100 parity, (2) forensic audit + harden security, (3) stock the marketplace with new products, (4) discover new top-performer sites to clone, (5) process the clone queue (drain queued sites), (6) process the epoxy contractor batch, (7) derive reusable templates from finished 100/100 clones, (8) cleanup orphaned Vercel projects. The system self-heals, self-audits, self-stocks, self-discovers, self-drains, self-templates, and self-cleans autonomously overnight.",
   "name": "Nightly Autonomous Operations",
   "trigger": {
     "condition": null,
@@ -22,7 +22,7 @@
     "document": {
       "dsl": "1.0.0",
       "name": "nightly_autonomous_operations",
-      "version": "1.1",
+      "version": "1.2",
       "namespace": "base44"
     },
     "do": [
@@ -97,10 +97,42 @@
             "function_name": "processCloneQueue",
             "args": {}
           },
-          "then": "cleanup_vercel",
+          "then": "process_epoxy_batch",
           "x-base44": {
             "title": "Process clone queue",
             "description": "Drain the CloneQueue \u2014 clone queued sites, audit, and launch"
+          }
+        }
+      },
+      {
+        "process_epoxy_batch": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "processEpoxyBatch",
+            "args": {
+              "max_items": 2
+            }
+          },
+          "then": "derive_templates",
+          "x-base44": {
+            "title": "Process epoxy contractor batch",
+            "description": "Dedicated processor for the top-20 epoxy contractor clone batch \u2014 bypasses the general backlog"
+          }
+        }
+      },
+      {
+        "derive_templates": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "deriveTemplatesFromClones",
+            "args": {
+              "limit": 5
+            }
+          },
+          "then": "cleanup_vercel",
+          "x-base44": {
+            "title": "Derive templates from clones",
+            "description": "Auto-derive reusable WebsiteTemplate records from 100/100 parity clones (including finished epoxy clones)"
           }
         }
       },

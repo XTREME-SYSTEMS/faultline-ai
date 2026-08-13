@@ -21,30 +21,6 @@ import { classifyByBusinessRef } from '../../shared/industryBusinesses.ts';
 // On subsequent invocations, the in-progress check picks up results from the
 // tracker and advances the queue item to the auditing gate or marks it failed.
 
-const withTimeout = (promise, ms, label) =>
-  Promise.race([
-    promise,
-    new Promise((_, reject) =>
-      setTimeout(() => reject(new Error(`${label} timed out after ${Math.round(ms / 1000)}s`)), ms)
-    )
-  ]);
-
-const isGatewayTimeout = (err) => {
-  const msg = (err?.message || '').toLowerCase();
-  return msg.includes('524') || msg.includes('gateway') || msg.includes('timed out') || msg.includes('timeout');
-};
-
-// Find the tracker LaunchProject for a target URL (created by autonomousCloneTo100
-// at the start of the pipeline with benchmark_url = target_url).
-async function findTracker(base44, orgId, targetUrl) {
-  try {
-    const candidates = await base44.asServiceRole.entities.LaunchProject.filter(
-      { organization_id: orgId, benchmark_url: targetUrl }, '-created_date', 3
-    );
-    return candidates[0] || null;
-  } catch { return null; }
-}
-
 // Run the rigorous recursive gate on a finished clone and update the queue item.
 async function runGate(base44, orgId, item, launchProjectId, targetUrl) {
   await base44.asServiceRole.entities.CloneQueue.update(item.id, {
