@@ -18,7 +18,7 @@ export default async function(req: Request) {
     if (!user) return Response.json({ error: 'Unauthorized' }, { status: 401 });
 
     const body = await req.json();
-    const { source_url, clone_name } = body;
+    const { source_url, clone_name, return_html } = body;
     if (!source_url) return Response.json({ error: 'source_url required' }, { status: 400 });
 
     // 1. Fetch the clone HTML
