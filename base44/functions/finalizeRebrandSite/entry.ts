@@ -11,7 +11,7 @@ import { DEFAULT_BRAND, DEFAULT_DOMAIN, DEFAULT_LOGO_URL } from '../../shared/ma
 import { scrubSourceDomain } from '../../shared/sourceDomainScrub.ts';
 
 const APP_URL = 'https://fault-line.base44.app';
-const LGNY_REGISTER = `${APP_URL}/register`;
+const LGNY_REGISTER = `${APP_URL}/autoleads/register`;
 const LGNY_APP = `${APP_URL}/lgny`;
 
 export default async function(req: Request) {
@@ -51,11 +51,18 @@ export default async function(req: Request) {
     if (original_source_url) {
       const scrub = scrubSourceDomain(html, {
         sourceUrl: original_source_url,
-        replacementAppUrl: `${APP_URL}/login`,
+        replacementAppUrl: `${APP_URL}/autoleads/login`,
       });
       html = scrub.html;
       fixes.push(`${scrub.count} source-domain URLs scrubbed (login, nav, meta)`);
     }
+
+    // 6b. Repoint previously-injected app login/register links to the branded
+    //     AUTO LEADS auth pages (handles re-deploys of clones that were scrubbed
+    //     before the branded /autoleads/login route existed).
+    html = html.replace(/fault-line\.base44\.app\/login/g, `${APP_URL.replace('https://','')}/autoleads/login`);
+    html = html.replace(/fault-line\.base44\.app\/register/g, `${APP_URL.replace('https://','')}/autoleads/register`);
+    fixes.push('app login/register links repointed to branded AUTO LEADS pages');
 
     // 7. Fix internal anchor links that got the full vercel URL prefix
     //    e.g. href="https://duda-lgny-xxx.vercel.app/#services" → href="#services"

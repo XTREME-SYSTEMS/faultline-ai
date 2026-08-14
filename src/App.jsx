@@ -105,6 +105,8 @@ const LgnyFeatures = lazy(() => import('@/pages/ghl/site/Features'));
 const LgnyPricing = lazy(() => import('@/pages/ghl/site/Pricing'));
 const LgnySolutions = lazy(() => import('@/pages/ghl/site/Solutions'));
 const LgnyAbout = lazy(() => import('@/pages/ghl/site/About'));
+const AutoLeadsLogin = lazy(() => import('@/pages/autoleads/AutoLeadsLogin'));
+const AutoLeadsRegister = lazy(() => import('@/pages/autoleads/AutoLeadsRegister'));
 
 const PageLoader = () => (
   <div className="fixed inset-0 flex items-center justify-center">
@@ -159,6 +161,8 @@ const AuthenticatedApp = () => {
       <Route path="/lgny/pricing" element={<LgnyPricing />} />
       <Route path="/lgny/solutions" element={<LgnySolutions />} />
       <Route path="/lgny/about" element={<LgnyAbout />} />
+      <Route path="/autoleads/login" element={<AutoLeadsLogin />} />
+      <Route path="/autoleads/register" element={<AutoLeadsRegister />} />
 
       {/* Auth */}
       <Route path="/login" element={<Login />} />

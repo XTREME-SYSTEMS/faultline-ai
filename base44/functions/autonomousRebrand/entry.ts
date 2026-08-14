@@ -232,7 +232,7 @@ Return JSON:
     // original source.
     const scrub = scrubSourceDomain(html, {
       sourceUrl: source_url || project.source_url,
-      replacementAppUrl: `${APP_URL}/login`,
+      replacementAppUrl: `${APP_URL}/autoleads/login`,
     });
     html = scrub.html;
     mark('source_domain', scrub.count > 0 ? 'done' : 'skipped', `${scrub.count} source-domain URLs scrubbed (login, nav, meta)`);
