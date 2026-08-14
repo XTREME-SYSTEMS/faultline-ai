@@ -148,14 +148,38 @@ export async function deployToVercel(token, teamId, projectName, projectId, html
       throw new Error(`${label} failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
     }
   };
+  // Security headers — injected via vercel.json so every clone deployment gets
+  // CSP, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy.
+  // Fixes the systemic compliance gap flagged by forensicAuditAndHarden.
+  const vercelJson = JSON.stringify({
+    headers: [{
+      source: "/(.*)",
+      headers: [
+        { key: "Content-Security-Policy", value: "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: ; img-src * data: ; font-src * ; media-src * ;" },
+        { key: "X-Frame-Options", value: "SAMEORIGIN" },
+        { key: "X-Content-Type-Options", value: "nosniff" },
+        { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+        { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" }
+      ]
+    }]
+  });
+  const vjData = new TextEncoder().encode(vercelJson);
+  const vjSha = await sha1hex(vjData);
+  const vjSize = vjData.length;
+
   const uploadUrl = `https://api.vercel.com/v2/files${teamId ? `?teamId=${teamId}` : ''}`;
-  const upRes = await fetchWithRetry(uploadUrl, {
+  await fetchWithRetry(uploadUrl, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/octet-stream', 'x-vercel-digest': sha },
     body: fileData
   }, 'Vercel file upload');
+  await fetchWithRetry(uploadUrl, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/octet-stream', 'x-vercel-digest': vjSha },
+    body: vjData
+  }, 'Vercel vercel.json upload');
   const depUrl = `https://api.vercel.com/v13/deployments${teamId ? `?teamId=${teamId}` : ''}`;
-  const depBody = { name: projectName, files: [{ file: 'index.html', sha, size }], target: 'production', projectSettings: { framework: null } };
+  const depBody = { name: projectName, files: [{ file: 'index.html', sha, size }, { file: 'vercel.json', sha: vjSha, size: vjSize }], target: 'production', projectSettings: { framework: null } };
   if (projectId) depBody.project = projectId;
   const depRes = await fetchWithRetry(depUrl, {
     method: 'POST',
