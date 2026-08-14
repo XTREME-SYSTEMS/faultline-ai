@@ -131,7 +131,7 @@ export default function Home() {
             <a href="#services" style={{ color: '#fff' }}>Services</a>
             <Link to="/pricing" style={{ color: '#fff' }}>Pricing</Link>
           </nav>
-          <div className="header-actions" style={{ color: '#fff' }}>{user ? <><Link to="/app" className="button button--gold button--small">Client Portal <Icon name="arrow-right" /></Link></> : <><Link to="/login" style={{ color: '#fff' }}>Sign In</Link><button className="button button--gold button--small" type="button" onClick={() => navigate('/consultation')}>Get a Website <Icon name="arrow-right" /></button></>}</div>
+          <div className="header-actions" style={{ color: '#fff' }}>{user ? <><Link to="/lgny" className="button button--gold button--small">Client Portal <Icon name="arrow-right" /></Link></> : <><Link to="/autoleads/login" style={{ color: '#fff' }}>Sign In</Link><button className="button button--gold button--small" type="button" onClick={() => navigate('/consultation')}>Get a Website <Icon name="arrow-right" /></button></>}</div>
         </div>
       </header>
 
