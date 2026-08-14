@@ -32,6 +32,39 @@ export function safeReturnTo() {
   }
 }
 
+// Branded variant: defaults to a consumer destination (e.g. /lgny) and never
+// sends a visitor into the builder admin (/app). Used by the AUTO LEADS
+// branded auth pages so rebranded-clone visitors don't land in XtremeOS.
+export function brandedSafeReturnTo(defaultPath = "/lgny") {
+  const raw = new URLSearchParams(window.location.search).get("returnTo");
+  if (!raw) return defaultPath;
+  try {
+    const url = new URL(raw, window.location.origin);
+    if (url.origin !== window.location.origin) return defaultPath;
+    for (const p of ["access_token", "clear_access_token", "app_id", "app_base_url", "functions_version", "from_url"]) {
+      url.searchParams.delete(p);
+    }
+    const path = url.pathname + url.search;
+    if (!path.startsWith("/") || path.startsWith("//") || path.includes("\\")) return defaultPath;
+    if (path === "/app" || path.startsWith("/app/")) return defaultPath;
+    return path;
+  } catch {
+    return defaultPath;
+  }
+}
+
+export function sanitizeBrandedReturnToInUrl(defaultPath = "/lgny") {
+  const safe = brandedSafeReturnTo(defaultPath);
+  try {
+    const url = new URL(window.location.href);
+    url.searchParams.set("returnTo", safe);
+    window.history.replaceState({}, "", url);
+  } catch {
+    // non-fatal
+  }
+  return safe;
+}
+
 // Sanitize the ?returnTo= in the actual URL bar before calling SDK auth
 // functions (loginViaEmailPassword, verifyOtp, loginWithProvider). The SDK
 // does its own internal hard redirect by reading ?returnTo= from the URL —

@@ -6,7 +6,7 @@ import { InputOTP, InputOTPGroup, InputOTPSlot } from "@/components/ui/input-otp
 import AlAuthShell from "@/components/autoleads/AlAuthShell";
 import GoogleIcon from "@/components/GoogleIcon";
 import { toast } from "@/components/ui/use-toast";
-import { safeReturnTo, sanitizeReturnToInUrl } from "@/lib/authReturnTo";
+import { brandedSafeReturnTo, sanitizeBrandedReturnToInUrl } from "@/lib/authReturnTo";
 
 // AUTO LEADS-branded register. Mirrors the OTP flow from the builder Register
 // page but on the AUTO LEADS brand surface.
@@ -41,7 +41,7 @@ export default function AutoLeadsRegister() {
     setError("");
     setLoading(true);
     try {
-      const safeTo = sanitizeReturnToInUrl();
+      const safeTo = sanitizeBrandedReturnToInUrl();
       const result = await base44.auth.verifyOtp({ email, otpCode });
       if (result?.access_token) base44.auth.setToken(result.access_token);
       window.location.href = safeTo;
@@ -63,13 +63,13 @@ export default function AutoLeadsRegister() {
   };
 
   const handleGoogle = () => {
-    sanitizeReturnToInUrl();
-    base44.auth.loginWithProvider("google", safeReturnTo());
+    sanitizeBrandedReturnToInUrl();
+    base44.auth.loginWithProvider("google", brandedSafeReturnTo());
   };
 
   const loginTo =
     "/autoleads/login" +
-    (safeReturnTo() !== "/app" ? "?returnTo=" + encodeURIComponent(safeReturnTo()) : "");
+    (brandedSafeReturnTo() !== "/lgny" ? "?returnTo=" + encodeURIComponent(brandedSafeReturnTo()) : "");
 
   if (showOtp) {
     return (

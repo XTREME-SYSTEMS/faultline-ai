@@ -4,7 +4,7 @@ import { base44 } from "@/api/base44Client";
 import { Mail, Lock, Loader2, ArrowRight } from "lucide-react";
 import AlAuthShell from "@/components/autoleads/AlAuthShell";
 import GoogleIcon from "@/components/GoogleIcon";
-import { safeReturnTo, sanitizeReturnToInUrl } from "@/lib/authReturnTo";
+import { brandedSafeReturnTo, sanitizeBrandedReturnToInUrl } from "@/lib/authReturnTo";
 
 // AUTO LEADS-branded login. Distinct route from the FaultLine builder login
 // (/login) so rebranded clones send visitors here instead of the admin app.
@@ -13,14 +13,14 @@ export default function AutoLeadsLogin() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
-  const returnTo = safeReturnTo();
+  const returnTo = brandedSafeReturnTo();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setLoading(true);
     try {
-      const safeTo = sanitizeReturnToInUrl();
+      const safeTo = sanitizeBrandedReturnToInUrl();
       await base44.auth.loginViaEmailPassword(email, password);
       window.location.href = safeTo;
     } catch (err) {
@@ -31,13 +31,13 @@ export default function AutoLeadsLogin() {
   };
 
   const handleGoogle = () => {
-    sanitizeReturnToInUrl();
-    base44.auth.loginWithProvider("google", returnTo);
+    sanitizeBrandedReturnToInUrl();
+    base44.auth.loginWithProvider("google", brandedSafeReturnTo());
   };
 
   const registerTo =
     "/autoleads/register" +
-    (returnTo !== "/app" ? "?returnTo=" + encodeURIComponent(returnTo) : "");
+    (returnTo !== "/lgny" ? "?returnTo=" + encodeURIComponent(returnTo) : "");
 
   return (
     <AlAuthShell
