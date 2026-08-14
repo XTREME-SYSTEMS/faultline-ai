@@ -35,7 +35,7 @@ async function runGate(base44, orgId, item, launchProjectId, targetUrl) {
       target_url: targetUrl,
       max_iterations: 3,
     }),
-    600000, // 10 min budget for the full recursive gate
+    90000, // 90s budget — must return within the platform ~300s function timeout
     'rigorousCloneGate'
   );
   const gateData = gateRes?.data || gateRes;
@@ -129,7 +129,7 @@ export default async function(req) {
         const trackerStatus = tracker.status;
 
         // Clone finished successfully → run the gate
-        if ((trackerStatus === 'passed' || score >= 100) && item.status !== 'auditing') {
+        if ((trackerStatus === 'passed' || score >= 100) && !['passed','failed'].includes(item.status)) {
           console.log(`In-progress clone finished: ${item.site_name} (${score}/100) — running gate`);
           // Save the industry on the LaunchProject
           if (item.industry) {
@@ -222,7 +222,7 @@ export default async function(req) {
             project_name: item.site_name,
             max_iterations: 5,
           }),
-          300000, // 5 min budget per clone
+          200000, // 200s budget — must return within the platform ~300s function timeout
           'autonomousCloneTo100'
         );
 

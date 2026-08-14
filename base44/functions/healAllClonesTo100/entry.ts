@@ -28,7 +28,7 @@ export default async function(req) {
     // Process only N projects per invocation — the 30-min workflow cycle
     // picks up the rest. Without this limit the function blows the ~300s
     // platform timeout and returns 504, healing nothing.
-    const batchLimit = body.batch_limit || 2;
+    const batchLimit = body.batch_limit || 1; // 1 per run = safe under the ~300s platform timeout
 
     // Get ALL launched clone projects below 100/100
     const allProjects = await base44.asServiceRole.entities.LaunchProject.filter(

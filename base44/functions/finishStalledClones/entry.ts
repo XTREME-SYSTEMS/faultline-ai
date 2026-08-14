@@ -54,7 +54,7 @@ export default async function(req) {
     // Reduced to 2 per run to stay within the ~300s platform function timeout
     // (2 × 120s per heal + dedup overhead). The 30-min workflow cycle picks
     // up the remaining stalled clones on subsequent runs.
-    const healBatch = body.heal_batch || 2; // clones to resume per invocation
+    const healBatch = body.heal_batch || 1; // clones to resume per invocation (1 = safe under ~300s timeout)
     const maxIterations = body.max_iterations || 3;
 
     // 1. Gather all gallery clones
@@ -80,7 +80,7 @@ export default async function(req) {
       clones.sort((a, b) => (b.parity_score || 0) - (a.parity_score || 0));
       const keep = clones[0];
       const toDelete = clones.slice(1);
-      for (const d of toDelete) {
+      for (const d of toDelete.slice(0, 10)) {
         try {
           await base44.asServiceRole.entities.LaunchProject.delete(d.id);
           duplicatesRemoved.push({ id: d.id, name: d.project_name, score: d.parity_score || 0, target });

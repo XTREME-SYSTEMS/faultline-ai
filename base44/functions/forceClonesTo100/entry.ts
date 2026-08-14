@@ -86,8 +86,8 @@ export default async function(req) {
     // Each rebuild/heal can take up to 120s; liveness checks 15s each.
     // The workflow runs every 2h, so items overflow to the next run.
     const rebuildLimit = body.rebuild_limit || 1;   // max full rebuilds per run
-    const healLimit = body.heal_limit || 2;          // max heals per run
-    const quarantineLimit = body.quarantine_limit || 10; // max liveness checks per run
+    const healLimit = body.heal_limit || 1;          // max heals per run (1 = safe under ~300s timeout)
+    const quarantineLimit = body.quarantine_limit || 3; // max liveness checks per run (3×15s = 45s)
     const cleanupGhosts = body.cleanup_ghosts !== false; // default true
 
     // 1. Gather all projects
