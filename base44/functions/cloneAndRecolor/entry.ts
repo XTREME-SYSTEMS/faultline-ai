@@ -91,23 +91,35 @@ export default async function(req: Request) {
     // Remove inline module scripts that reference base44
     html = html.replace(/<script[^>]*type="module"[^>]*>[\s\S]*?<\/script>/gi, '');
 
-    // 4. Add Tailwind CDN + fonts + visibility fixes
+    // 4. Add Tailwind CDN (site uses utility classes everywhere) + 3D background + fixes
     const headInject = `
 <script src="https://cdn.tailwindcss.com"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-  body { font-family: 'Inter', system-ui, sans-serif; margin: 0; }
+  /* ===== 3D Touch-Sensitive Background (canvas replaces WebGL shader) ===== */
+  .fl-3d-bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ===== Layout & visibility fixes ===== */
   * { box-sizing: border-box; }
   html { scroll-behavior: smooth; }
-  /* Hide shader canvas (requires WebGL JS we stripped) */
-  .shader, [data-shader], canvas[data-renderer="shaders"] { display: none !important; }
-  /* Ensure content is visible without JS animations */
-  [data-hero-extra], [data-line] { opacity: 1 !important; visibility: visible !important; transform: none !important; }
+  body { margin: 0; min-height: 100vh; }
+  /* Ensure all sections are visible (JS animation libs may hide them) */
+  section, [data-section], [data-hero], [data-hero-extra] {
+    opacity: 1 !important;
+    visibility: visible !important;
+  }
+  [data-line] { opacity: 1 !important; transform: none !important; }
   [data-marquee-star] { display: inline-flex !important; }
-  /* Show all sections */
-  section { opacity: 1 !important; }
+  /* Replace broken WebGL shader canvas with 3D CSS background */
+  .shader, [data-shader], canvas[data-renderer="shaders"], canvas[id*="shader"] {
+    display: none !important;
+  }
+  /* Put #root and all content above the 3D background */
+  #root { position: relative; z-index: 1; }
 </style>
 `;
 
@@ -117,6 +129,119 @@ export default async function(req: Request) {
       html = html.replace(/<head[^>]*>/i, m => m + headInject);
     } else {
       html = headInject + html;
+    }
+
+    // 4b. Inject canvas directly into the hero section + animation script at end of body
+    //     Insert the canvas right after the opening <section id="hero" ...> tag
+    if (/<section id="hero"/i.test(html)) {
+      html = html.replace(/<section id="hero"([^>]*)>/i,
+        '<section id="hero"$1>\n<canvas id="fl-shader-bg" style="position:absolute;inset:0;width:100%;height:100%;display:block;z-index:10;pointer-events:none;"></canvas>');
+      // Make hero bg transparent so canvas is visible
+      html = html.replace(/<section id="hero"([^>]*)>/i,
+        (match) => match.replace(/bg-\[#EFEFEF\]/i, ''));
+    }
+
+    const bodyInject = `
+<script>
+(function() {
+  var canvas = document.getElementById('fl-shader-bg');
+  if (!canvas) { console.log('fl-shader-bg canvas not found'); return; }
+  console.log('fl-shader-bg canvas found, starting animation');
+  var hero = canvas.parentElement;
+  hero.style.background = 'transparent';
+  var ctx = canvas.getContext('2d');
+  var w, h, dpr;
+  var mouse = { x: 0.5, y: 0.4, tx: 0.5, ty: 0.4 };
+  var t = 0;
+
+  function resize() {
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    w = hero.offsetWidth || window.innerWidth;
+    h = hero.offsetHeight || window.innerHeight;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.width = w + 'px';
+    canvas.style.height = h + 'px';
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.scale(dpr, dpr);
+  }
+  resize();
+  window.addEventListener('resize', resize);
+
+  function setTarget(x, y) { mouse.tx = x / w; mouse.ty = y / h; }
+  document.addEventListener('mousemove', function(e) { setTarget(e.clientX, e.clientY); });
+  document.addEventListener('touchmove', function(e) {
+    if (e.touches[0]) setTarget(e.touches[0].clientX, e.touches[0].clientY);
+  }, { passive: true });
+
+  var blobs = [];
+  for (var i = 0; i < 7; i++) {
+    blobs.push({
+      ox: 0.15 + Math.random() * 0.7, oy: 0.15 + Math.random() * 0.7,
+      rx: 0.12 + Math.random() * 0.12, ry: 0.10 + Math.random() * 0.10,
+      speed: 0.2 + Math.random() * 0.5, phase: Math.random() * Math.PI * 2,
+      radius: 160 + Math.random() * 180,
+    });
+  }
+
+  function draw() {
+    t += 0.005;
+    mouse.x += (mouse.tx - mouse.x) * 0.05;
+    mouse.y += (mouse.ty - mouse.y) * 0.05;
+
+    var grad = ctx.createLinearGradient(0, 0, w, h);
+    grad.addColorStop(0, '#efefef');
+    grad.addColorStop(0.5, '#e8e8e8');
+    grad.addColorStop(1, '#f2f2f2');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, w, h);
+
+    for (var i = 0; i < blobs.length; i++) {
+      var b = blobs[i];
+      var cx = (b.ox + Math.sin(t * b.speed + b.phase) * b.rx + (mouse.x - 0.5) * 0.2) * w;
+      var cy = (b.oy + Math.cos(t * b.speed * 0.8 + b.phase) * b.ry + (mouse.y - 0.5) * 0.2) * h;
+      var r = b.radius * (1 + Math.sin(t * 0.7 + i) * 0.2);
+      var bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
+      bg.addColorStop(0, 'rgba(26,26,26,0.22)');
+      bg.addColorStop(0.4, 'rgba(26,26,26,0.12)');
+      bg.addColorStop(0.7, 'rgba(26,26,26,0.05)');
+      bg.addColorStop(1, 'rgba(26,26,26,0)');
+      ctx.fillStyle = bg;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    ctx.fillStyle = 'rgba(0,0,0,0.05)';
+    var spacing = 28;
+    var offset = (t * 8) % spacing;
+    for (var x = -offset; x < w; x += spacing) {
+      for (var y = -offset; y < h; y += spacing) {
+        ctx.beginPath();
+        ctx.arc(x, y, 0.8, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    var mg = ctx.createRadialGradient(mouse.x * w, mouse.y * h, 0, mouse.x * w, mouse.y * h, 300);
+    mg.addColorStop(0, 'rgba(26,26,26,0.18)');
+    mg.addColorStop(0.5, 'rgba(26,26,26,0.08)');
+    mg.addColorStop(1, 'rgba(26,26,26,0)');
+    ctx.fillStyle = mg;
+    ctx.beginPath();
+    ctx.arc(mouse.x * w, mouse.y * h, 300, 0, Math.PI * 2);
+    ctx.fill();
+
+    requestAnimationFrame(draw);
+  }
+  draw();
+})();
+</script>
+`;
+    if (/<body[^>]*>/i.test(html)) {
+      html = html.replace(/<body([^>]*)>/i, '<body$1>\n' + bodyInject);
+    } else {
+      html = bodyInject + html;
     }
 
     // 5. Deploy to Vercel
