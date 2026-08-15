@@ -114,9 +114,16 @@ export default async function(req: Request) {
   }
   [data-line] { opacity: 1 !important; transform: none !important; }
   [data-marquee-star] { display: inline-flex !important; }
-  /* Replace broken WebGL shader canvas with 3D CSS background */
-  .shader, [data-shader], canvas[data-renderer="shaders"] {
+  /* Hide the dead WebGL canvas (JS stripped), but keep [data-shader] div —
+     it carries the captured shader PNG as a CSS background-image from the
+     stealth deep-render, preserving the original shader's exact look */
+  canvas[data-renderer="shaders"] {
     display: none !important;
+  }
+  /* Ensure the captured shader image shows through */
+  [data-shader] .shader {
+    background-size: cover !important;
+    background-position: center !important;
   }
   /* Put #root and all content above the 3D background */
   #root { position: relative; z-index: 1; }
@@ -131,101 +138,10 @@ export default async function(req: Request) {
       html = headInject + html;
     }
 
-    // 4b. Inject canvas directly into the hero section + animation script at end of body
-    //     Insert the canvas right after the opening <section id="hero" ...> tag
-    if (/<section id="hero"/i.test(html)) {
-      html = html.replace(/<section id="hero"([^>]*)>/i,
-        '<section id="hero"$1>\n<canvas id="fl-bg-canvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;z-index:10;pointer-events:none;"></canvas>');
-      // Make hero bg transparent so canvas is visible
-      html = html.replace(/<section id="hero"([^>]*)>/i,
-        (match) => match.replace(/bg-\[#EFEFEF\]/i, ''));
-    }
-
-    const bodyInject = `
-<script>
-(function() {
-  var canvas = document.getElementById('fl-bg-canvas');
-  if (!canvas) { console.log('fl-bg-canvas not found'); return; }
-  console.log('fl-bg-canvas found, starting animation');
-  var hero = canvas.parentElement;
-  hero.style.background = 'transparent';
-  var ctx = canvas.getContext('2d');
-  var w, h, dpr;
-  var mouse = { x: 0.5, y: 0.4, tx: 0.5, ty: 0.4 };
-  var t = 0;
-
-  function resize() {
-    dpr = Math.min(window.devicePixelRatio || 1, 2);
-    w = hero.offsetWidth || window.innerWidth;
-    h = hero.offsetHeight || window.innerHeight;
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    canvas.style.width = w + 'px';
-    canvas.style.height = h + 'px';
-    ctx.setTransform(1, 0, 0, 1, 0, 0);
-    ctx.scale(dpr, dpr);
-  }
-  resize();
-  window.addEventListener('resize', resize);
-
-  function setTarget(x, y) { mouse.tx = x / w; mouse.ty = y / h; }
-  document.addEventListener('mousemove', function(e) { setTarget(e.clientX, e.clientY); });
-  document.addEventListener('touchmove', function(e) {
-    if (e.touches[0]) setTarget(e.touches[0].clientX, e.touches[0].clientY);
-  }, { passive: true });
-
-  // Match the original WebGL shader: extremely subtle, large, soft, flowing
-  // gradients over a flat #EFEFEF base. No dot pattern, no hard edges.
-  var blobs = [];
-  for (var i = 0; i < 5; i++) {
-    blobs.push({
-      ox: 0.1 + Math.random() * 0.8, oy: 0.1 + Math.random() * 0.8,
-      rx: 0.08 + Math.random() * 0.06, ry: 0.08 + Math.random() * 0.06,
-      speed: 0.08 + Math.random() * 0.12, phase: Math.random() * Math.PI * 2,
-      radius: 320 + Math.random() * 200,
-    });
-  }
-
-  function draw() {
-    t += 0.002;
-    mouse.x += (mouse.tx - mouse.x) * 0.03;
-    mouse.y += (mouse.ty - mouse.y) * 0.03;
-
-    // Flat base matching original bg-[#EFEFEF]
-    ctx.fillStyle = '#EFEFEF';
-    ctx.fillRect(0, 0, w, h);
-
-    // Very subtle, large, soft flowing gradients — barely visible, matching the
-    // original WebGL shader at 65% opacity (which renders as near-flat grey
-    // with the faintest organic variation)
-    for (var i = 0; i < blobs.length; i++) {
-      var b = blobs[i];
-      var cx = (b.ox + Math.sin(t * b.speed + b.phase) * b.rx + (mouse.x - 0.5) * 0.08) * w;
-      var cy = (b.oy + Math.cos(t * b.speed * 0.7 + b.phase) * b.ry + (mouse.y - 0.5) * 0.08) * h;
-      var r = b.radius * (1 + Math.sin(t * 0.5 + i) * 0.1);
-      var bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      bg.addColorStop(0, 'rgba(20,20,20,0.035)');
-      bg.addColorStop(0.5, 'rgba(20,20,20,0.015)');
-      bg.addColorStop(1, 'rgba(20,20,20,0)');
-      ctx.fillStyle = bg;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.fill();
-    }
-
-    requestAnimationFrame(draw);
-  }
-  draw();
-})();
-</script>
-`;
-    if (/<\/body>/i.test(html)) {
-      html = html.replace(/<\/body>/i, bodyInject + '\n</body>');
-    } else if (/<body[^>]*>/i.test(html)) {
-      html = html.replace(/<body([^>]*)>/i, '<body$1>\n' + bodyInject);
-    } else {
-      html = html + bodyInject;
-    }
+    // 4b. The stealth deep-render captured the original WebGL shader as a PNG
+    //     and set it as a CSS background-image on the [data-shader] .shader div.
+    //     We keep that captured image (no canvas injection needed) so the hero
+    //     background matches the original exactly.
 
     // 5. Deploy to Vercel
     const token = secrets.get('VERCEL_TOKEN');
