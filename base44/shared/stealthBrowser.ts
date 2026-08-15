@@ -224,7 +224,7 @@ export async function scrapeWithStealth(url: string, options: StealthOptions = {
     // Inject WebGL shader capture hook before navigation — overrides
     // shaderSource to capture all shader source code compiled by the page
     await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
-      source: `(function(){window.__capturedShaders=[];var orig=WebGLRenderingContext.prototype.shaderSource;WebGLRenderingContext.prototype.shaderSource=function(shader,source){window.__capturedShaders.push({source:source,type:shader.__flType||null});return orig.call(this,shader,source);};var origCreate=WebGLRenderingContext.prototype.createShader;WebGLRenderingContext.prototype.createShader=function(type){var s=origCreate.call(this,type);s.__flType=type===this.VERTEX_SHADER?'vertex':'fragment';return s;};if(typeof GPUDevice!=='undefined'&&GPUDevice.prototype.createShaderModule){var origCSM=GPUDevice.prototype.createShaderModule;GPUDevice.prototype.createShaderModule=function(descriptor){if(descriptor&&descriptor.code&&descriptor.code.length>50){window.__capturedShaders.push({source:descriptor.code,type:'wgsl',label:descriptor.label||''});}return origCSM.call(this,descriptor);};}})();`
+      source: `(function(){window.__capturedShaders=[];window.__hookInfo={gpu:typeof navigator.gpu,GPUDevice:typeof GPUDevice};var orig=WebGLRenderingContext.prototype.shaderSource;WebGLRenderingContext.prototype.shaderSource=function(shader,source){window.__capturedShaders.push({source:source,type:shader.__flType||null});return orig.call(this,shader,source);};var origCreate=WebGLRenderingContext.prototype.createShader;WebGLRenderingContext.prototype.createShader=function(type){var s=origCreate.call(this,type);s.__flType=type===this.VERTEX_SHADER?'vertex':'fragment';return s;};if(typeof GPUDevice!=='undefined'&&GPUDevice.prototype.createShaderModule){var origCSM=GPUDevice.prototype.createShaderModule;GPUDevice.prototype.createShaderModule=function(descriptor){if(descriptor&&descriptor.code&&descriptor.code.length>50){window.__capturedShaders.push({source:descriptor.code,type:'wgsl',label:descriptor.label||''});}return origCSM.call(this,descriptor);};}if(navigator.gpu&&navigator.gpu.requestDevice){var origRD=navigator.gpu.requestDevice.bind(navigator.gpu);navigator.gpu.requestDevice=function(){return origRD.apply(navigator.gpu,arguments).then(function(dev){if(dev&&dev.createShaderModule){var origCSM2=dev.createShaderModule.bind(dev);dev.createShaderModule=function(d){if(d&&d.code&&d.code.length>50){window.__capturedShaders.push({source:d.code,type:'wgsl',label:d.label||''});}return origCSM2(d);};}return dev;});};}})();`
     }, sessionId);
 
     // Set viewport override if specified (for mobile responsive validation)
@@ -269,16 +269,18 @@ export async function scrapeWithStealth(url: string, options: StealthOptions = {
     const waitAfter = options.waitAfterLoad ?? 2500;
     if (waitAfter > 0) await new Promise(r => setTimeout(r, waitAfter));
 
-    // Extract WebGL shader source BEFORE deepRender (deepRender may cause context loss)
+    // Extract shader source BEFORE deepRender (deepRender may cause context loss)
     let shaderSource: any = null;
+    const debugParts: any = {};
     if (options.deepRender) {
       try {
         // Try 1: Read shaders captured by the pre-navigation hook
         const hookResult = await cdp.send('Runtime.evaluate', {
-          expression: 'JSON.stringify({captured: window.__capturedShaders || [], hookExists: typeof window.__capturedShaders !== "undefined"})',
+          expression: `(function(){var csmHooked=false,rdHooked=false;try{csmHooked=GPUDevice.prototype.createShaderModule.toString().indexOf('__capturedShaders')>=0;}catch(e){}try{rdHooked=navigator.gpu.requestDevice.toString().indexOf('__capturedShaders')>=0;}catch(e){}var canvases=[];document.querySelectorAll('canvas').forEach(function(c){try{var hasWgpu=!!c.getContext('webgpu');canvases.push({id:c.id,cls:c.className,w:c.width,h:c.height,wgpu:hasWgpu});}catch(e){canvases.push({id:c.id,err:e.message});}});return JSON.stringify({captured:window.__capturedShaders||[],hookExists:typeof window.__capturedShaders!=='undefined',hookInfo:window.__hookInfo||null,gpu:typeof navigator.gpu,GPUDevice:typeof GPUDevice,csmHooked:csmHooked,rdHooked:rdHooked,canvases:canvases});})()`,
           returnByValue: true,
         }, sessionId, 10000);
         const hookDebug = hookResult?.result?.value || 'no value';
+        debugParts.hook = hookDebug;
         console.log('Shader hook check:', hookDebug.slice(0, 300));
         if (hookResult?.result?.value) {
           const hookData = JSON.parse(hookResult.result.value);
@@ -301,13 +303,71 @@ export async function scrapeWithStealth(url: string, options: StealthOptions = {
           }
         }
 
-        // Try 2: Direct approach if hook didn't work
+        // Try 1b: Extract WGSL shader variables directly from JS bundles.
+        //    The typegpu library stores shader code as variables (e.g. Nee, Uee)
+        //    and passes them to createShaderModule({code: VAR}). We find all such
+        //    variables, extract their definitions (template strings), and collect
+        //    the WGSL source code.
+        if (!shaderSource) {
+          try {
+            const bundleSearch = await cdp.send('Runtime.evaluate', {
+              expression: `(async function(){var scripts=document.querySelectorAll('script[src]');for(var i=0;i<scripts.length;i++){try{var res=await fetch(scripts[i].src);var text=await res.text();if(text.indexOf('createShaderModule')<0)continue;var varNames=[];var regex=/createShaderModule\\(\\{code:(\\w+)\\)/g;var m;while((m=regex.exec(text))!==null){varNames.push(m[1]);}var shaders=[];for(var v=0;v<varNames.length;v++){var name=varNames[v];var defRegex=new RegExp('(?:var|const|let)\\\\s+'+name+'\\\\s*=\\\\s*\`([\\\\s\\\\S]*?)\`');var dm=text.match(defRegex);if(dm){shaders.push({name:name,source:dm[1],type:'wgsl'});}}if(shaders.length>0)return JSON.stringify({src:scripts[i].src,found:true,shaders:shaders});}return JSON.stringify({found:false});})()`,
+              returnByValue: true,
+              awaitPromise: true,
+            }, sessionId, 20000);
+            const bundleDebug = bundleSearch?.result?.value || 'no value';
+            debugParts.bundle = bundleDebug.slice(0, 2000);
+            console.log('Bundle shader extraction:', bundleDebug.slice(0, 500));
+            if (bundleSearch?.result?.value) {
+              const bundleData = JSON.parse(bundleSearch.result.value);
+              if (bundleData.found && bundleData.shaders && bundleData.shaders.length > 0) {
+                shaderSource = { shaders: bundleData.shaders, uniforms: [], attributes: [] };
+                console.log('Shader source extracted from JS bundle:', bundleData.shaders.length, 'shaders');
+              }
+            }
+          } catch (e) {
+            console.error('Bundle search failed:', e.message);
+          }
+        }
+
+        // Try 1c: If hook didn't capture, inject hook NOW via Runtime.evaluate
+        //        and wait — the hero shader may be created in a useEffect that
+        //        runs after initial render, so a post-load hook can still catch it.
+        if (!shaderSource) {
+          try {
+            await cdp.send('Runtime.evaluate', {
+              expression: `(function(){if(!window.__capturedShaders)window.__capturedShaders=[];if(typeof GPUDevice!=='undefined'&&GPUDevice.prototype.createShaderModule&&!GPUDevice.prototype.createShaderModule.__flHooked){var orig=GPUDevice.prototype.createShaderModule;GPUDevice.prototype.createShaderModule=function(d){if(d&&d.code&&d.code.length>50){window.__capturedShaders.push({source:d.code,type:'wgsl',label:d.label||''});}return orig.call(this,d);};GPUDevice.prototype.createShaderModule.__flHooked=true;}if(navigator.gpu&&navigator.gpu.requestDevice&&!navigator.gpu.requestDevice.__flHooked){var origRD=navigator.gpu.requestDevice.bind(navigator.gpu);navigator.gpu.requestDevice=function(){return origRD.apply(navigator.gpu,arguments).then(function(dev){if(dev&&dev.createShaderModule&&!dev.createShaderModule.__flHooked){var origCSM=dev.createShaderModule.bind(dev);dev.createShaderModule=function(d){if(d&&d.code&&d.code.length>50){window.__capturedShaders.push({source:d.code,type:'wgsl',label:d.label||''});}return origCSM(d);};dev.createShaderModule.__flHooked=true;}return dev;});};navigator.gpu.requestDevice.__flHooked=true;}})();`,
+              returnByValue: true,
+            }, sessionId, 5000);
+            // Wait for the shader to be created (React useEffect may run after load)
+            await new Promise(r => setTimeout(r, 3000));
+            const recheck = await cdp.send('Runtime.evaluate', {
+              expression: 'JSON.stringify(window.__capturedShaders||[])',
+              returnByValue: true,
+            }, sessionId, 5000);
+            const recheckDebug = recheck?.result?.value || 'no value';
+            debugParts.postLoad = recheckDebug;
+            console.log('Post-load hook recheck:', recheckDebug.slice(0, 300));
+            if (recheck?.result?.value) {
+              const captured = JSON.parse(recheck.result.value);
+              if (captured.length > 0) {
+                shaderSource = { shaders: captured, uniforms: [], attributes: [] };
+                console.log('Shader source extracted via post-load hook:', captured.length, 'shaders');
+              }
+            }
+          } catch (e) {
+            console.error('Post-load hook failed:', e.message);
+          }
+        }
+
+        // Try 2: Direct WebGL approach if hook didn't work
         if (!shaderSource) {
           const directResult = await cdp.send('Runtime.evaluate', {
             expression: `(function(){var c=document.querySelector('canvas[data-renderer="shaders"]')||document.querySelector('canvas');if(!c)return JSON.stringify({error:'no_canvas'});var g=c.getContext('webgl2')||c.getContext('webgl');if(!g)return JSON.stringify({error:'no_context'});var lost=g.isContextLost();if(lost)return JSON.stringify({error:'context_lost'});var p=g.getParameter(g.CURRENT_PROGRAM);if(!p)return JSON.stringify({error:'no_program',canvasW:c.width,canvasH:c.height});var sh=g.getAttachedShaders(p);var shaders=[];for(var i=0;i<sh.length;i++){var t=g.getShaderParameter(sh[i],g.SHADER_TYPE);shaders.push({type:t===g.VERTEX_SHADER?'vertex':'fragment',source:g.getShaderSource(sh[i])});}var uniforms=[];var nu=g.getProgramParameter(p,g.ACTIVE_UNIFORMS);for(var u=0;u<nu;u++){var inf=g.getActiveUniform(p,u);if(inf)uniforms.push({name:inf.name,type:inf.type,size:inf.size});}var attribs=[];var na=g.getProgramParameter(p,g.ACTIVE_ATTRIBUTES);for(var a=0;a<na;a++){var ai=g.getActiveAttrib(p,a);if(ai)attribs.push({name:ai.name,type:ai.type,size:ai.size});}return JSON.stringify({shaders:shaders,uniforms:uniforms,attributes:attribs});})()`,
             returnByValue: true,
           }, sessionId, 10000);
           const directDebug = directResult?.result?.value || 'no value';
+          debugParts.direct = directDebug;
           console.log('Shader direct check:', directDebug.slice(0, 300));
           if (directResult?.result?.value) {
             const data = JSON.parse(directResult.result.value);
@@ -524,7 +584,7 @@ export async function scrapeWithStealth(url: string, options: StealthOptions = {
       rendered: true,
       captchaSolved,
       shaderSource,
-      shaderDebug: JSON.stringify({ hook: hookDebug || 'skipped', direct: directDebug || 'skipped' }),
+      shaderDebug: JSON.stringify(debugParts),
     };
   } catch (error) {
     return {

@@ -29,6 +29,7 @@ export default async function(req: Request) {
     let renderMethod = 'stealth';
     let stealthError = null;
     let shaderSource: any = null;
+    let shaderDebugInfo: string | null = null;
     try {
       console.log('Starting stealth scrape session...');
       const result = await scrapeWithStealth(target_url, {
@@ -42,6 +43,7 @@ export default async function(req: Request) {
       if (result.ok && result.html && result.html.length > 2000) {
         html = result.html;
         shaderSource = result.shaderSource || null;
+        shaderDebugInfo = (result as any)?.shaderDebug || null;
         console.log(`Stealth scrape returned ${html.length} chars`);
       } else {
         stealthError = `ok=${result.ok}, len=${result.html?.length}, error=${result.error}`;
@@ -213,6 +215,7 @@ export default async function(req: Request) {
       rendered: renderMethod,
       stealth_error: stealthError,
       has_shader: hasShader,
+      shader_debug: shaderDebugInfo,
       shader_info: shaderSource ? {
         shader_count: shaderSource.shaders?.length || 0,
         shader_types: shaderSource.shaders?.map((s: any) => s.type) || [],
