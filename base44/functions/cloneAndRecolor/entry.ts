@@ -115,7 +115,7 @@ export default async function(req: Request) {
   [data-line] { opacity: 1 !important; transform: none !important; }
   [data-marquee-star] { display: inline-flex !important; }
   /* Replace broken WebGL shader canvas with 3D CSS background */
-  .shader, [data-shader], canvas[data-renderer="shaders"], canvas[id*="shader"] {
+  .shader, [data-shader], canvas[data-renderer="shaders"] {
     display: none !important;
   }
   /* Put #root and all content above the 3D background */
@@ -135,7 +135,7 @@ export default async function(req: Request) {
     //     Insert the canvas right after the opening <section id="hero" ...> tag
     if (/<section id="hero"/i.test(html)) {
       html = html.replace(/<section id="hero"([^>]*)>/i,
-        '<section id="hero"$1>\n<canvas id="fl-shader-bg" style="position:absolute;inset:0;width:100%;height:100%;display:block;z-index:10;pointer-events:none;"></canvas>');
+        '<section id="hero"$1>\n<canvas id="fl-bg-canvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;z-index:10;pointer-events:none;"></canvas>');
       // Make hero bg transparent so canvas is visible
       html = html.replace(/<section id="hero"([^>]*)>/i,
         (match) => match.replace(/bg-\[#EFEFEF\]/i, ''));
@@ -144,9 +144,9 @@ export default async function(req: Request) {
     const bodyInject = `
 <script>
 (function() {
-  var canvas = document.getElementById('fl-shader-bg');
-  if (!canvas) { console.log('fl-shader-bg canvas not found'); return; }
-  console.log('fl-shader-bg canvas found, starting animation');
+  var canvas = document.getElementById('fl-bg-canvas');
+  if (!canvas) { console.log('fl-bg-canvas not found'); return; }
+  console.log('fl-bg-canvas found, starting animation');
   var hero = canvas.parentElement;
   hero.style.background = 'transparent';
   var ctx = canvas.getContext('2d');
@@ -190,9 +190,9 @@ export default async function(req: Request) {
     mouse.y += (mouse.ty - mouse.y) * 0.05;
 
     var grad = ctx.createLinearGradient(0, 0, w, h);
-    grad.addColorStop(0, '#efefef');
-    grad.addColorStop(0.5, '#e8e8e8');
-    grad.addColorStop(1, '#f2f2f2');
+    grad.addColorStop(0, '#e8e8e8');
+    grad.addColorStop(0.5, '#dcdcdc');
+    grad.addColorStop(1, '#e2e2e2');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
@@ -202,9 +202,9 @@ export default async function(req: Request) {
       var cy = (b.oy + Math.cos(t * b.speed * 0.8 + b.phase) * b.ry + (mouse.y - 0.5) * 0.2) * h;
       var r = b.radius * (1 + Math.sin(t * 0.7 + i) * 0.2);
       var bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      bg.addColorStop(0, 'rgba(26,26,26,0.22)');
-      bg.addColorStop(0.4, 'rgba(26,26,26,0.12)');
-      bg.addColorStop(0.7, 'rgba(26,26,26,0.05)');
+      bg.addColorStop(0, 'rgba(26,26,26,0.35)');
+      bg.addColorStop(0.4, 'rgba(26,26,26,0.18)');
+      bg.addColorStop(0.7, 'rgba(26,26,26,0.08)');
       bg.addColorStop(1, 'rgba(26,26,26,0)');
       ctx.fillStyle = bg;
       ctx.beginPath();
@@ -238,10 +238,12 @@ export default async function(req: Request) {
 })();
 </script>
 `;
-    if (/<body[^>]*>/i.test(html)) {
+    if (/<\/body>/i.test(html)) {
+      html = html.replace(/<\/body>/i, bodyInject + '\n</body>');
+    } else if (/<body[^>]*>/i.test(html)) {
       html = html.replace(/<body([^>]*)>/i, '<body$1>\n' + bodyInject);
     } else {
-      html = bodyInject + html;
+      html = html + bodyInject;
     }
 
     // 5. Deploy to Vercel
