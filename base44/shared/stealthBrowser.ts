@@ -311,7 +311,7 @@ export async function scrapeWithStealth(url: string, options: StealthOptions = {
         if (!shaderSource) {
           try {
             const bundleSearch = await cdp.send('Runtime.evaluate', {
-              expression: `(async function(){var scripts=document.querySelectorAll('script[src]');for(var i=0;i<scripts.length;i++){try{var res=await fetch(scripts[i].src);var text=await res.text();if(text.indexOf('createShaderModule')<0)continue;var varNames=[];var regex=/createShaderModule\\(\\{code:(\\w+)\\)/g;var m;while((m=regex.exec(text))!==null){varNames.push(m[1]);}var shaders=[];for(var v=0;v<varNames.length;v++){var name=varNames[v];var defRegex=new RegExp('(?:var|const|let)\\\\s+'+name+'\\\\s*=\\\\s*\`([\\\\s\\\\S]*?)\`');var dm=text.match(defRegex);if(dm){shaders.push({name:name,source:dm[1],type:'wgsl'});}}if(shaders.length>0)return JSON.stringify({src:scripts[i].src,found:true,shaders:shaders});}return JSON.stringify({found:false});})()`,
+              expression: `(async function(){var scripts=document.querySelectorAll('script[src]');for(var i=0;i<scripts.length;i++){try{var res=await fetch(scripts[i].src);var text=await res.text();if(text.indexOf('createShaderModule')<0)continue;var varNames=[];var regex=/createShaderModule\\(\\{code:(\\w+)\\)/g;var m;while((m=regex.exec(text))!==null){varNames.push(m[1]);}var bt=String.fromCharCode(96);var shaders=[];for(var v=0;v<varNames.length;v++){var name=varNames[v];var defRegex=new RegExp('(?:var|const|let)\\\\s+'+name+'\\\\s*=\\\\s*'+bt+'([\\\\s\\\\S]*?)'+bt);var dm=text.match(defRegex);if(dm){shaders.push({name:name,source:dm[1],type:'wgsl'});}}if(shaders.length>0)return JSON.stringify({src:scripts[i].src,found:true,shaders:shaders});}return JSON.stringify({found:false});})()`,
               returnByValue: true,
               awaitPromise: true,
             }, sessionId, 20000);
@@ -719,6 +719,99 @@ export async function crawlSiteStealth(
   }
 
   return { pages, homepage, allLinks: [...allLinks] };
+}
+
+// ─── Shader Extraction from JS Bundles (server-side) ──────────────────
+//    Fetches the page's JS bundles from the Deno runtime and searches for
+//    createShaderModule({code: VAR}) patterns. Extracts the WGSL shader
+//    code from the variable definitions. This is more reliable than
+//    browser-side extraction because it avoids timing issues with hooks.
+
+export async function extractShadersFromBundles(pageUrl: string, html: string): Promise<any> {
+  const debug: any = { scriptUrls: [], scanned: [], varNames: [], errors: [] };
+
+  // Find all script src URLs in the HTML
+  const scriptRegex = /<script[^>]+src=["']([^"']+)["'][^>]*>/gi;
+  const scriptUrls: string[] = [];
+  let m;
+  while ((m = scriptRegex.exec(html)) !== null) {
+    try {
+      const fullUrl = new URL(m[1], pageUrl).href;
+      if (fullUrl.endsWith('.js') || fullUrl.includes('/assets/') || fullUrl.includes('/static/')) {
+        scriptUrls.push(fullUrl);
+      }
+    } catch { /* skip invalid */ }
+  }
+  debug.scriptUrls = scriptUrls;
+  console.log(`Found ${scriptUrls.length} JS bundles to scan for shaders`);
+
+  for (const scriptUrl of scriptUrls) {
+    try {
+      const res = await fetch(scriptUrl, {
+        signal: AbortSignal.timeout(15000),
+        headers: { 'User-Agent': 'Mozilla/5.0 (compatible; ShaderExtractor/1.0)' },
+      });
+      if (!res.ok) { debug.errors.push(`${scriptUrl}: HTTP ${res.status}`); continue; }
+      const text = await res.text();
+      debug.scanned.push({ url: scriptUrl, len: text.length, hasCSM: text.indexOf('createShaderModule') >= 0 });
+      if (text.indexOf('createShaderModule') < 0) continue;
+
+      console.log(`Scanning ${scriptUrl} (${text.length} chars) for shaders...`);
+
+      // Find all createShaderModule({code: VAR}) calls
+      // The pattern is: createShaderModule({code:VAR}) or createShaderModule({code:VAR,label:...})
+      const callRegex = /createShaderModule\(\{code:(\w+)[,}]/g;
+      const varNames: string[] = [];
+      let match;
+      while ((match = callRegex.exec(text)) !== null) {
+        if (!varNames.includes(match[1])) varNames.push(match[1]);
+      }
+      debug.varNames = varNames;
+      console.log(`Found ${varNames.length} shader variables: ${varNames.join(', ')}`);
+
+      // Extract each variable's definition (template string)
+      const shaders: any[] = [];
+      for (const varName of varNames) {
+        // Try patterns: var/const/let NAME = `...`
+        const patterns = [
+          new RegExp(`(?:var|const|let)\\s+${varName}\\s*=\\s*\`([\\s\\S]*?)\``),
+          new RegExp(`\\s${varName}\\s*=\\s*\`([\\s\\S]*?)\``),
+          new RegExp(`,${varName}\\s*=\\s*\`([\\s\\S]*?)\``),
+        ];
+        for (const pattern of patterns) {
+          const defMatch = text.match(pattern);
+          if (defMatch && defMatch[1] && defMatch[1].length > 50) {
+            shaders.push({ name: varName, source: defMatch[1], type: 'wgsl' });
+            break;
+          }
+        }
+      }
+
+      // Also search for ALL template strings containing WGSL markers
+      // (@vertex, @fragment, @compute). This catches shaders passed via
+      // conditional expressions (e.g. t?Uee:Lee) that the simple regex misses.
+      const bt = String.fromCharCode(96);
+      const wgslPattern = bt + '([^' + bt + ']*@(?:vertex|fragment|compute)[^' + bt + ']*?)' + bt;
+      const wgslRegex = new RegExp(wgslPattern, 'g');
+      let wgslMatch;
+      while ((wgslMatch = wgslRegex.exec(text)) !== null) {
+        const code = wgslMatch[1];
+        if (code.length > 50 && !shaders.some(s => s.source === code)) {
+          shaders.push({ name: 'wgsl_extracted', source: code, type: 'wgsl' });
+        }
+      }
+
+      if (shaders.length > 0) {
+        console.log(`Extracted ${shaders.length} shaders from ${scriptUrl}`);
+        return { shaders, uniforms: [], attributes: [], source: scriptUrl, debug };
+      }
+    } catch (e) {
+      debug.errors.push(`${scriptUrl}: ${e.message}`);
+      console.error(`Failed to fetch/scan ${scriptUrl}: ${e.message}`);
+    }
+  }
+
+  return { shaders: [], uniforms: [], attributes: [], source: null, debug };
 }
 
 // ─── Fetch API with Proxies (lightweight fallback) ────────────────────

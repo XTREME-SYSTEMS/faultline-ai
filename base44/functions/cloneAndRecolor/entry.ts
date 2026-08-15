@@ -1,6 +1,6 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
-import { scrapeWithStealth } from '../../shared/stealthBrowser.ts';
+import { scrapeWithStealth, extractShadersFromBundles } from '../../shared/stealthBrowser.ts';
 import { slugify, createVercelProject, disableVercelSso, deployToVercel } from '../../shared/launchInfra.ts';
 
 // Clones a site, replaces its accent color, and deploys to Vercel.
@@ -30,6 +30,7 @@ export default async function(req: Request) {
     let stealthError = null;
     let shaderSource: any = null;
     let shaderDebugInfo: string | null = null;
+    let bundleExtractionDebug: string | null = null;
     try {
       console.log('Starting stealth scrape session...');
       const result = await scrapeWithStealth(target_url, {
@@ -68,6 +69,25 @@ export default async function(req: Request) {
 
     if (html.length < 500) {
       return Response.json({ error: 'Could not fetch sufficient HTML content from target site' }, { status: 500 });
+    }
+
+    // 1b. Server-side shader extraction — fetch JS bundles from the Deno runtime
+    //     and extract WGSL variables BEFORE script tags are stripped from HTML.
+    if (!shaderSource && html.length > 2000) {
+      console.log('Attempting server-side shader extraction from JS bundles...');
+      try {
+        const bundleShaders = await extractShadersFromBundles(target_url, html);
+        bundleExtractionDebug = JSON.stringify(bundleShaders?.debug || {}).slice(0, 1000);
+        if (bundleShaders && bundleShaders.shaders && bundleShaders.shaders.length > 0) {
+          shaderSource = bundleShaders;
+          console.log(`Server-side extraction found ${bundleShaders.shaders.length} shaders from ${bundleShaders.source}`);
+        } else {
+          console.log('Server-side extraction found no shaders');
+        }
+      } catch (e) {
+        bundleExtractionDebug = `error: ${e.message}`;
+        console.error('Server-side shader extraction failed:', e.message);
+      }
     }
 
     // 2. Replace accent color and its variants
@@ -219,12 +239,15 @@ export default async function(req: Request) {
       shader_info: shaderSource ? {
         shader_count: shaderSource.shaders?.length || 0,
         shader_types: shaderSource.shaders?.map((s: any) => s.type) || [],
+        shader_names: shaderSource.shaders?.map((s: any) => s.name || '') || [],
         uniform_count: shaderSource.uniforms?.length || 0,
         uniform_names: shaderSource.uniforms?.map((u: any) => u.name) || [],
         attrib_names: shaderSource.attributes?.map((a: any) => a.name) || [],
         vs_preview: (shaderSource.shaders?.find((s: any) => s.type === 'vertex')?.source || '').slice(0, 200),
         fs_preview: (shaderSource.shaders?.find((s: any) => s.type === 'fragment')?.source || '').slice(0, 200),
-      } : null
+        wgsl_preview: (shaderSource.shaders?.find((s: any) => s.type === 'wgsl')?.source || '').slice(0, 300),
+      } : null,
+      bundle_extraction_debug: bundleExtractionDebug
     });
   } catch (error) {
     console.error('cloneAndRecolor error:', error);
