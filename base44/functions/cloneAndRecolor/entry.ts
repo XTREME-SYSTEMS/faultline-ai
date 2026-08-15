@@ -190,43 +190,43 @@ export default async function(req: Request) {
     mouse.y += (mouse.ty - mouse.y) * 0.05;
 
     var grad = ctx.createLinearGradient(0, 0, w, h);
-    grad.addColorStop(0, '#e8e8e8');
-    grad.addColorStop(0.5, '#dcdcdc');
-    grad.addColorStop(1, '#e2e2e2');
+    grad.addColorStop(0, '#f0f0f0');
+    grad.addColorStop(0.5, '#eeeeee');
+    grad.addColorStop(1, '#f2f2f2');
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
     for (var i = 0; i < blobs.length; i++) {
       var b = blobs[i];
-      var cx = (b.ox + Math.sin(t * b.speed + b.phase) * b.rx + (mouse.x - 0.5) * 0.2) * w;
-      var cy = (b.oy + Math.cos(t * b.speed * 0.8 + b.phase) * b.ry + (mouse.y - 0.5) * 0.2) * h;
-      var r = b.radius * (1 + Math.sin(t * 0.7 + i) * 0.2);
+      var cx = (b.ox + Math.sin(t * b.speed + b.phase) * b.rx + (mouse.x - 0.5) * 0.15) * w;
+      var cy = (b.oy + Math.cos(t * b.speed * 0.8 + b.phase) * b.ry + (mouse.y - 0.5) * 0.15) * h;
+      var r = b.radius * (1 + Math.sin(t * 0.7 + i) * 0.15);
       var bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      bg.addColorStop(0, 'rgba(26,26,26,0.35)');
-      bg.addColorStop(0.4, 'rgba(26,26,26,0.18)');
-      bg.addColorStop(0.7, 'rgba(26,26,26,0.08)');
-      bg.addColorStop(1, 'rgba(26,26,26,0)');
+      bg.addColorStop(0, 'rgba(20,20,20,0.07)');
+      bg.addColorStop(0.4, 'rgba(20,20,20,0.04)');
+      bg.addColorStop(0.7, 'rgba(20,20,20,0.015)');
+      bg.addColorStop(1, 'rgba(20,20,20,0)');
       ctx.fillStyle = bg;
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    ctx.fillStyle = 'rgba(0,0,0,0.05)';
-    var spacing = 28;
-    var offset = (t * 8) % spacing;
+    ctx.fillStyle = 'rgba(0,0,0,0.025)';
+    var spacing = 32;
+    var offset = (t * 6) % spacing;
     for (var x = -offset; x < w; x += spacing) {
       for (var y = -offset; y < h; y += spacing) {
         ctx.beginPath();
-        ctx.arc(x, y, 0.8, 0, Math.PI * 2);
+        ctx.arc(x, y, 0.6, 0, Math.PI * 2);
         ctx.fill();
       }
     }
 
-    var mg = ctx.createRadialGradient(mouse.x * w, mouse.y * h, 0, mouse.x * w, mouse.y * h, 300);
-    mg.addColorStop(0, 'rgba(26,26,26,0.18)');
-    mg.addColorStop(0.5, 'rgba(26,26,26,0.08)');
-    mg.addColorStop(1, 'rgba(26,26,26,0)');
+    var mg = ctx.createRadialGradient(mouse.x * w, mouse.y * h, 0, mouse.x * w, mouse.y * h, 250);
+    mg.addColorStop(0, 'rgba(20,20,20,0.05)');
+    mg.addColorStop(0.5, 'rgba(20,20,20,0.02)');
+    mg.addColorStop(1, 'rgba(20,20,20,0)');
     ctx.fillStyle = mg;
     ctx.beginPath();
     ctx.arc(mouse.x * w, mouse.y * h, 300, 0, Math.PI * 2);
