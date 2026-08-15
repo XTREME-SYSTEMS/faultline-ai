@@ -44,6 +44,8 @@ export interface ScrapeResult {
   rendered: boolean;
   captchaSolved: boolean;
   error?: string;
+  shaderSource?: any;
+  shaderDebug?: string;
 }
 
 export interface CrawledPage extends ScrapeResult {
@@ -219,6 +221,12 @@ export async function scrapeWithStealth(url: string, options: StealthOptions = {
     await cdp.send('Runtime.enable', {}, sessionId);
     await cdp.send('Network.enable', {}, sessionId);
 
+    // Inject WebGL shader capture hook before navigation — overrides
+    // shaderSource to capture all shader source code compiled by the page
+    await cdp.send('Page.addScriptToEvaluateOnNewDocument', {
+      source: `(function(){window.__capturedShaders=[];var orig=WebGLRenderingContext.prototype.shaderSource;WebGLRenderingContext.prototype.shaderSource=function(shader,source){window.__capturedShaders.push({source:source,type:shader.__flType||null});return orig.call(this,shader,source);};var origCreate=WebGLRenderingContext.prototype.createShader;WebGLRenderingContext.prototype.createShader=function(type){var s=origCreate.call(this,type);s.__flType=type===this.VERTEX_SHADER?'vertex':'fragment';return s;};if(typeof GPUDevice!=='undefined'&&GPUDevice.prototype.createShaderModule){var origCSM=GPUDevice.prototype.createShaderModule;GPUDevice.prototype.createShaderModule=function(descriptor){if(descriptor&&descriptor.code&&descriptor.code.length>50){window.__capturedShaders.push({source:descriptor.code,type:'wgsl',label:descriptor.label||''});}return origCSM.call(this,descriptor);};}})();`
+    }, sessionId);
+
     // Set viewport override if specified (for mobile responsive validation)
     if (options.viewport) {
       await cdp.send('Emulation.setDeviceMetricsOverride', {
@@ -260,6 +268,59 @@ export async function scrapeWithStealth(url: string, options: StealthOptions = {
     // Extra wait for SPA / dynamic content
     const waitAfter = options.waitAfterLoad ?? 2500;
     if (waitAfter > 0) await new Promise(r => setTimeout(r, waitAfter));
+
+    // Extract WebGL shader source BEFORE deepRender (deepRender may cause context loss)
+    let shaderSource: any = null;
+    if (options.deepRender) {
+      try {
+        // Try 1: Read shaders captured by the pre-navigation hook
+        const hookResult = await cdp.send('Runtime.evaluate', {
+          expression: 'JSON.stringify({captured: window.__capturedShaders || [], hookExists: typeof window.__capturedShaders !== "undefined"})',
+          returnByValue: true,
+        }, sessionId, 10000);
+        const hookDebug = hookResult?.result?.value || 'no value';
+        console.log('Shader hook check:', hookDebug.slice(0, 300));
+        if (hookResult?.result?.value) {
+          const hookData = JSON.parse(hookResult.result.value);
+          if (hookData.captured.length >= 2) {
+            let uniforms: any[] = [];
+            let attributes: any[] = [];
+            try {
+              const uaResult = await cdp.send('Runtime.evaluate', {
+                expression: `(function(){var c=document.querySelector('canvas[data-renderer="shaders"]')||document.querySelector('canvas');if(!c)return'[]';var g=c.getContext('webgl2')||c.getContext('webgl');if(!g)return'[]';var p=g.getParameter(g.CURRENT_PROGRAM);if(!p)return'[]';var r={uniforms:[],attributes:[]};var nu=g.getProgramParameter(p,g.ACTIVE_UNIFORMS);for(var u=0;u<nu;u++){var i=g.getActiveUniform(p,u);if(i)r.uniforms.push({name:i.name,type:i.type,size:i.size});}var na=g.getProgramParameter(p,g.ACTIVE_ATTRIBUTES);for(var a=0;a<na;a++){var ai=g.getActiveAttrib(p,a);if(ai)r.attributes.push({name:ai.name,type:ai.type,size:ai.size});}return JSON.stringify(r);})()`,
+                returnByValue: true,
+              }, sessionId, 10000);
+              if (uaResult?.result?.value) {
+                const ua = JSON.parse(uaResult.result.value);
+                uniforms = ua.uniforms || [];
+                attributes = ua.attributes || [];
+              }
+            } catch {}
+            shaderSource = { shaders: hookData.captured, uniforms, attributes };
+            console.log('Shader source extracted via hook:', hookData.captured.length, 'shaders');
+          }
+        }
+
+        // Try 2: Direct approach if hook didn't work
+        if (!shaderSource) {
+          const directResult = await cdp.send('Runtime.evaluate', {
+            expression: `(function(){var c=document.querySelector('canvas[data-renderer="shaders"]')||document.querySelector('canvas');if(!c)return JSON.stringify({error:'no_canvas'});var g=c.getContext('webgl2')||c.getContext('webgl');if(!g)return JSON.stringify({error:'no_context'});var lost=g.isContextLost();if(lost)return JSON.stringify({error:'context_lost'});var p=g.getParameter(g.CURRENT_PROGRAM);if(!p)return JSON.stringify({error:'no_program',canvasW:c.width,canvasH:c.height});var sh=g.getAttachedShaders(p);var shaders=[];for(var i=0;i<sh.length;i++){var t=g.getShaderParameter(sh[i],g.SHADER_TYPE);shaders.push({type:t===g.VERTEX_SHADER?'vertex':'fragment',source:g.getShaderSource(sh[i])});}var uniforms=[];var nu=g.getProgramParameter(p,g.ACTIVE_UNIFORMS);for(var u=0;u<nu;u++){var inf=g.getActiveUniform(p,u);if(inf)uniforms.push({name:inf.name,type:inf.type,size:inf.size});}var attribs=[];var na=g.getProgramParameter(p,g.ACTIVE_ATTRIBUTES);for(var a=0;a<na;a++){var ai=g.getActiveAttrib(p,a);if(ai)attribs.push({name:ai.name,type:ai.type,size:ai.size});}return JSON.stringify({shaders:shaders,uniforms:uniforms,attributes:attribs});})()`,
+            returnByValue: true,
+          }, sessionId, 10000);
+          const directDebug = directResult?.result?.value || 'no value';
+          console.log('Shader direct check:', directDebug.slice(0, 300));
+          if (directResult?.result?.value) {
+            const data = JSON.parse(directResult.result.value);
+            if (data.shaders && data.shaders.length >= 2) {
+              shaderSource = data;
+              console.log('Shader source extracted directly:', data.shaders.length, 'shaders');
+            }
+          }
+        }
+      } catch (e) {
+        console.error('Shader extraction failed:', e.message);
+      }
+    }
 
     // Deep render: dismiss cookie/consent banners, scroll through ENTIRE page,
     // resolve lazy-loaded images, extract computed background images, capture
@@ -462,6 +523,8 @@ export async function scrapeWithStealth(url: string, options: StealthOptions = {
       ok: html.length > 100,
       rendered: true,
       captchaSolved,
+      shaderSource,
+      shaderDebug: JSON.stringify({ hook: hookDebug || 'skipped', direct: directDebug || 'skipped' }),
     };
   } catch (error) {
     return {
@@ -475,6 +538,7 @@ export async function scrapeWithStealth(url: string, options: StealthOptions = {
       rendered: false,
       captchaSolved: false,
       error: error.message,
+      shaderSource: null,
     };
   } finally {
     if (cdp) await cdp.close().catch(() => {});
