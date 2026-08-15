@@ -15,14 +15,16 @@ export default async function(req) {
     const { live_url, target_url, target_dna, organization_id, clone_id } = body;
     if (!live_url) return Response.json({ error: 'live_url required' }, { status: 400 });
     const targetOrg = organization_id || orgId;
-    // Auto-detect rebranded clones: if the clone HTML contains our accent
-    // override CSS or pinwheel logo, it's been rebranded — don't penalize
-    // intentional brand changes (name, color, logo, contact info).
-    const isRebranded = /lgny-accent-override|pinwheel|leadgennearyou/i.test(html);
 
     // 1. Basic HTTP check on the live clone
     const r = await fetch(live_url, { signal: AbortSignal.timeout(15000) });
     const html = await r.text();
+    // Auto-detect rebranded clones: if the clone HTML contains our accent
+    // override CSS or pinwheel logo, it's been rebranded — don't penalize
+    // intentional brand changes (name, color, logo, contact info).
+    // Also accept an explicit is_recolor flag for cloneAndRecolor clones where
+    // the accent color is intentionally changed (e.g. orange → metallic black).
+    const isRebranded = body.is_recolor || /lgny-accent-override|pinwheel|leadgennearyou/i.test(html);
     const checks = {
       httpOk: r.status === 200,
       length: html.length,

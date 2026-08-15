@@ -109,6 +109,22 @@ export default async function(req: Request) {
     html = html.split('rgb(242, 101, 34)').join(`rgb(26, 26, 26)`);
     html = html.split('rgb(242,101,34)').join(`rgb(26, 26, 26)`);
 
+    // 2a. Force all images to load immediately — remove loading="lazy" so
+    //     images render before screenshot capture (no JS to manage lazy loading
+    //     on a static clone, and the deep-render scroll may not trigger all).
+    html = html.replace(/\s+loading=["']lazy["']/gi, ' loading="eager"');
+
+    // 2b. Fix images.higgs.ai 403s — this proxy blocks external domains.
+    //     Extract the original CloudFront URL from the `url` query parameter
+    //     and use it directly (CloudFront allows cross-origin requests).
+    html = html.replace(/https?:\/\/images\.higgs\.ai\/\?([^"'\s]+)/g, (match, qs) => {
+      const urlParam = qs.match(/(?:^|&(?:amp;)?)url=([^&]+)/);
+      if (urlParam) {
+        try { return decodeURIComponent(urlParam[1]); } catch { return match; }
+      }
+      return match;
+    });
+
     // 3. Strip Base44/app JS bundles — they won't work on a different domain
     html = html.replace(/<script[^>]*src="[^"]*(?:base44|_app|\/assets\/|\/static\/)[^"]*"[^>]*><\/script>/gi, '');
     html = html.replace(/<script[^>]*type="module"[^>]*src="[^"]*"[^>]*><\/script>/gi, '');
@@ -209,6 +225,12 @@ export default async function(req: Request) {
           html = html + runner;
         }
       }
+    }
+
+    // 4c. Ensure <!DOCTYPE html> is present — stealth browser's outerHTML
+    //     omits it, and without it browsers render in quirks mode (breaks layout).
+    if (!/<!doctype/i.test(html)) {
+      html = '<!DOCTYPE html>\n' + html;
     }
 
     // 5. Deploy to Vercel
