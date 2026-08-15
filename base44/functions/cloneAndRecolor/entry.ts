@@ -174,63 +174,44 @@ export default async function(req: Request) {
     if (e.touches[0]) setTarget(e.touches[0].clientX, e.touches[0].clientY);
   }, { passive: true });
 
+  // Match the original WebGL shader: extremely subtle, large, soft, flowing
+  // gradients over a flat #EFEFEF base. No dot pattern, no hard edges.
   var blobs = [];
-  for (var i = 0; i < 7; i++) {
+  for (var i = 0; i < 5; i++) {
     blobs.push({
-      ox: 0.15 + Math.random() * 0.7, oy: 0.15 + Math.random() * 0.7,
-      rx: 0.12 + Math.random() * 0.12, ry: 0.10 + Math.random() * 0.10,
-      speed: 0.2 + Math.random() * 0.5, phase: Math.random() * Math.PI * 2,
-      radius: 160 + Math.random() * 180,
+      ox: 0.1 + Math.random() * 0.8, oy: 0.1 + Math.random() * 0.8,
+      rx: 0.08 + Math.random() * 0.06, ry: 0.08 + Math.random() * 0.06,
+      speed: 0.08 + Math.random() * 0.12, phase: Math.random() * Math.PI * 2,
+      radius: 320 + Math.random() * 200,
     });
   }
 
   function draw() {
-    t += 0.005;
-    mouse.x += (mouse.tx - mouse.x) * 0.05;
-    mouse.y += (mouse.ty - mouse.y) * 0.05;
+    t += 0.002;
+    mouse.x += (mouse.tx - mouse.x) * 0.03;
+    mouse.y += (mouse.ty - mouse.y) * 0.03;
 
-    var grad = ctx.createLinearGradient(0, 0, w, h);
-    grad.addColorStop(0, '#f0f0f0');
-    grad.addColorStop(0.5, '#eeeeee');
-    grad.addColorStop(1, '#f2f2f2');
-    ctx.fillStyle = grad;
+    // Flat base matching original bg-[#EFEFEF]
+    ctx.fillStyle = '#EFEFEF';
     ctx.fillRect(0, 0, w, h);
 
+    // Very subtle, large, soft flowing gradients — barely visible, matching the
+    // original WebGL shader at 65% opacity (which renders as near-flat grey
+    // with the faintest organic variation)
     for (var i = 0; i < blobs.length; i++) {
       var b = blobs[i];
-      var cx = (b.ox + Math.sin(t * b.speed + b.phase) * b.rx + (mouse.x - 0.5) * 0.15) * w;
-      var cy = (b.oy + Math.cos(t * b.speed * 0.8 + b.phase) * b.ry + (mouse.y - 0.5) * 0.15) * h;
-      var r = b.radius * (1 + Math.sin(t * 0.7 + i) * 0.15);
+      var cx = (b.ox + Math.sin(t * b.speed + b.phase) * b.rx + (mouse.x - 0.5) * 0.08) * w;
+      var cy = (b.oy + Math.cos(t * b.speed * 0.7 + b.phase) * b.ry + (mouse.y - 0.5) * 0.08) * h;
+      var r = b.radius * (1 + Math.sin(t * 0.5 + i) * 0.1);
       var bg = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-      bg.addColorStop(0, 'rgba(20,20,20,0.07)');
-      bg.addColorStop(0.4, 'rgba(20,20,20,0.04)');
-      bg.addColorStop(0.7, 'rgba(20,20,20,0.015)');
+      bg.addColorStop(0, 'rgba(20,20,20,0.035)');
+      bg.addColorStop(0.5, 'rgba(20,20,20,0.015)');
       bg.addColorStop(1, 'rgba(20,20,20,0)');
       ctx.fillStyle = bg;
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.fill();
     }
-
-    ctx.fillStyle = 'rgba(0,0,0,0.025)';
-    var spacing = 32;
-    var offset = (t * 6) % spacing;
-    for (var x = -offset; x < w; x += spacing) {
-      for (var y = -offset; y < h; y += spacing) {
-        ctx.beginPath();
-        ctx.arc(x, y, 0.6, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
-
-    var mg = ctx.createRadialGradient(mouse.x * w, mouse.y * h, 0, mouse.x * w, mouse.y * h, 250);
-    mg.addColorStop(0, 'rgba(20,20,20,0.05)');
-    mg.addColorStop(0.5, 'rgba(20,20,20,0.02)');
-    mg.addColorStop(1, 'rgba(20,20,20,0)');
-    ctx.fillStyle = mg;
-    ctx.beginPath();
-    ctx.arc(mouse.x * w, mouse.y * h, 300, 0, Math.PI * 2);
-    ctx.fill();
 
     requestAnimationFrame(draw);
   }
