@@ -200,3 +200,46 @@ export async function deployToVercel(token, teamId, projectName, projectId, html
   const d = await depRes.json();
   return { id: d.id, url: d.url ? `https://${d.url}` : null, readyState: d.readyState, alias: d.alias || [] };
 }
+
+// Multi-file Vercel deployment — uploads multiple HTML files (multi-page static — uploads multiple HTML files (multi-page static
+// site) and deploys them all in a single deployment. Used by cloneFullSite to
+// deploy every page of a cloned site at once.
+export async function deployToVercelMultiFile(token, teamId, projectName, projectId, files: Array<{ file: string; data: Uint8Array }>) {
+  const uploadUrl = `https://api.vercel.com/v2/files${teamId ? `?teamId=${teamId}` : ''}`;
+  const fileEntries: Array<{ file: string; sha: string; size: number }> = [];
+
+  // Upload each file and collect its SHA + size
+  for (const f of files) {
+    const sha = await sha1hex(f.data);
+    const size = f.data.length;
+    await fetch(uploadUrl, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/octet-stream', 'x-vercel-digest': sha },
+      body: f.data,
+      signal: AbortSignal.timeout(30000),
+    });
+    fileEntries.push({ file: f.file, sha, size });
+  }
+
+  // Create the deployment with all files
+  const depUrl = `https://api.vercel.com/v13/deployments${teamId ? `?teamId=${teamId}` : ''}`;
+  const depBody = {
+    name: projectName,
+    files: fileEntries,
+    target: 'production',
+    projectSettings: { framework: null },
+    ...(projectId ? { project: projectId } : {}),
+  };
+  const depRes = await fetch(depUrl, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(depBody),
+    signal: AbortSignal.timeout(30000),
+  });
+  if (!depRes.ok) {
+    const errText = await depRes.text();
+    throw new Error(`Vercel multi-file deploy failed (${depRes.status}): ${errText.slice(0, 300)}`);
+  }
+  const d = await depRes.json();
+  return { id: d.id, url: d.url ? `https://${d.url}` : null, readyState: d.readyState, alias: d.alias || [] };
+}
