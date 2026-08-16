@@ -49,10 +49,21 @@ export async function createGitHubRepo(token, name) {
 }
 
 export async function pushGitHubFile(token, owner, repo, path, content, message) {
+  // Check if file already exists — if so, we need its SHA to update it
+  let sha: string | undefined;
+  const checkRes = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
+    headers: { Authorization: `Bearer ${token}`, Accept: 'application/vnd.github+json', 'User-Agent': 'FaultLine-AI-Launch-Pipeline', 'X-GitHub-Api-Version': '2022-11-28' }
+  });
+  if (checkRes.ok) {
+    const existing = await checkRes.json();
+    sha = existing.sha;
+  }
+  const body: any = { message, content: btoa(unescape(encodeURIComponent(content))) };
+  if (sha) body.sha = sha;
   const res = await fetch(`https://api.github.com/repos/${owner}/${repo}/contents/${path}`, {
     method: 'PUT',
     headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/vnd.github+json', 'User-Agent': 'FaultLine-AI-Launch-Pipeline', 'X-GitHub-Api-Version': '2022-11-28' },
-    body: JSON.stringify({ message, content: btoa(unescape(encodeURIComponent(content))) })
+    body: JSON.stringify(body)
   });
   if (!res.ok) throw new Error(`GitHub push failed (${res.status}): ${(await res.text()).slice(0, 200)}`);
   return await res.json();
