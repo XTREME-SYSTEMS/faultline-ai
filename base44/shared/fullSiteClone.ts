@@ -371,6 +371,25 @@ export async function clonePageAssets(
   html = html.replace(/<link[^>]+rel=["']canonical["'][^>]*>/gi, '');
   html = html.replace(/<meta[^>]+property=["']og:url["'][^>]*>/gi, '');
 
+  // 10b. Ensure every page has a <title> tag — many SPA sites set the title via
+  //      JavaScript (which we strip), leaving the cloned page titleless. If
+  //      missing, add one derived from the page path + business name.
+  if (!/<title>[^<]+<\/title>/i.test(html)) {
+    let titlePath = '';
+    try { titlePath = new URL(pageUrl).pathname.replace(/^\//, '').replace(/\/$/, '').replace(/-/g, ' '); } catch {}
+    const titleText = titlePath
+      ? titlePath.charAt(0).toUpperCase() + titlePath.slice(1)
+      : (opts.business_name || 'Home');
+    const titleTag = `<title>${titleText}</title>`;
+    if (/<head[^>]*>/i.test(html)) {
+      html = html.replace(/<head[^>]*>/i, m => m + '\n' + titleTag);
+    } else if (/<html[^>]*>/i.test(html)) {
+      html = html.replace(/<html[^>]*>/i, m => m + '\n<head>' + titleTag + '</head>');
+    } else {
+      html = '<head>' + titleTag + '</head>\n' + html;
+    }
+  }
+
   // Add DOCTYPE if missing
   if (!/<!doctype/i.test(html)) {
     html = '<!DOCTYPE html>\n' + html;
@@ -420,23 +439,22 @@ export function buildSearchScript(pageIndex: Array<{ path: string; title: string
 
 // Build a Stripe checkout script that intercepts subscription/purchase buttons
 // and redirects to our Stripe checkout flow.
+// createStoreCheckout expects { items: [{ name, amount, quantity, type }] } — NOT
+// { product_id } — so we send the correct schema here.
 export function buildStripeCheckoutScript(checkoutFunctionUrl: string, products: any): string {
   return `<script>
 (function(){
   var CHECKOUT_URL='${checkoutFunctionUrl}';
   var PRODUCTS=${JSON.stringify(products)};
-  // Intercept buttons with text matching subscription/purchase patterns
   var ctaPatterns=/^(start|subscribe|buy|purchase|get|sign up|join|upgrade|plan|try|begin)/i;
   document.querySelectorAll('a, button').forEach(function(btn){
     var text=(btn.textContent||'').trim();
     if(text.length<3||text.length>40)return;
     if(!ctaPatterns.test(text))return;
-    // Skip nav links and footer links
     if(btn.closest('nav, footer, header'))return;
     btn.addEventListener('click',function(e){
       e.preventDefault();
       e.stopPropagation();
-      // Match button text to a product
       var product=null;
       var lower=text.toLowerCase();
       if(lower.indexOf('month')>=0||lower.indexOf('plan')>=0||lower.indexOf('growth')>=0){
@@ -451,7 +469,6 @@ export function buildStripeCheckoutScript(checkoutFunctionUrl: string, products:
         product=PRODUCTS.find(function(p){return p.id==='ai_tool';});
       }
       if(!product)product=PRODUCTS[0];
-      // Check if in iframe (block checkout from builder preview)
       if(window.self!==window.top){
         alert('Checkout works only from the published app. Please open this site in a new tab.');
         return;
@@ -459,10 +476,10 @@ export function buildStripeCheckoutScript(checkoutFunctionUrl: string, products:
       fetch(CHECKOUT_URL,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({product_id:product.price_id,product_name:product.name})
+        body:JSON.stringify({items:[{name:product.name,amount:product.price,quantity:1,type:product.id}]})
       }).then(function(r){return r.json();}).then(function(j){
         if(j.url)window.location.href=j.url;
-        else alert('Could not start checkout. Please try again.');
+        else alert('Could not start checkout. '+(j.error||'Please try again.'));
       }).catch(function(){alert('Checkout error. Please try again.');});
     });
   });

@@ -194,7 +194,52 @@ export default async function(req: Request) {
       }
       const files: Array<{ file: string; data: Uint8Array }> = [...fileMap.entries()].map(([file, data]) => ({ file, data }));
 
-      // Add vercel.json with security headers + clean URL rewrites for ALL pages
+      // Add 404.html fallback page for any path that wasn't cloned — graceful
+      // "Page Not Found" with search + homepage link instead of Vercel's default.
+      const searchScriptFor404 = buildSearchScript(clonedPages.map(p => ({ path: p.path, title: p.title, headings: p.headings })));
+      const page404 = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Page Not Found</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  body { font-family: 'DM Sans', system-ui, sans-serif; margin: 0; }
+  .hero-404 { min-height: 70vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px; }
+  .hero-404 h1 { font-size: clamp(60px, 10vw, 120px); font-weight: 700; color: #111; margin: 0; line-height: 1; }
+  .hero-404 h2 { font-size: 24px; color: #555; margin: 20px 0 10px; }
+  .hero-404 p { color: #777; max-width: 500px; margin: 0 0 30px; }
+  .hero-404 a.btn { display: inline-block; padding: 14px 28px; background: #111; color: #fff; border-radius: 8px; font-weight: 700; text-decoration: none; }
+  .hero-404 a.btn:hover { background: #333; }
+  .search-404 { width: min(500px, 90%); margin: 20px auto; position: relative; }
+  .search-404 input { width: 100%; padding: 14px 18px; border: 2px solid #ddd; border-radius: 8px; font-size: 16px; outline: none; box-sizing: border-box; }
+  .search-404 input:focus { border-color: #111; }
+  .search-results { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.12); max-height: 300px; overflow: auto; z-index: 999; display: none; }
+  .search-results a { display: block; padding: 10px 14px; border-bottom: 1px solid #eee; text-decoration: none; color: #111; font-size: 14px; }
+  .search-results a:hover { background: #f5f5f5; }
+</style>
+</head>
+<body>
+<div class="hero-404">
+  <h1>404</h1>
+  <h2>Page Not Found</h2>
+  <p>The page you're looking for doesn't exist or has been moved. Try searching or go back to the homepage.</p>
+  <div class="search-404">
+    <input type="search" placeholder="Search all pages..." aria-label="Search">
+    <div class="search-results"></div>
+  </div>
+  <a href="/" class="btn">Back to Homepage</a>
+</div>
+${searchScriptFor404}
+</body>
+</html>`;
+      fileMap.set('404.html', new TextEncoder().encode(page404));
+      files.push({ file: '404.html', data: new TextEncoder().encode(page404) });
+
+      // Add vercel.json with security headers + clean URLs. Vercel automatically
+      // serves 404.html for any path that doesn't match a file — no routes config
+      // needed (routes would override cleanUrls and rewrites).
       const vercelJson = JSON.stringify({
         cleanUrls: true,
         trailingSlash: false,
@@ -208,12 +253,6 @@ export default async function(req: Request) {
             { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" }
           ]
         }],
-        rewrites: clonedPages
-          .filter(p => p.filename !== 'index.html')
-          .map(p => ({
-            source: '/' + p.filename.replace(/\.html$/, ''),
-            destination: '/' + p.filename,
-          })),
       });
       files.push({ file: 'vercel.json', data: new TextEncoder().encode(vercelJson) });
 
