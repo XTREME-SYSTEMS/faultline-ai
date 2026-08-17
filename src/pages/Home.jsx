@@ -63,8 +63,37 @@ const plans = [
   { name: 'Enterprise', audience: 'For multi-location firms.', price: 'Custom', cadence: "Let's build the right solution.", features: ['Multi-location management', 'Custom integrations', 'Dedicated support', 'SLA & security review'], cta: 'Talk to Sales' },
 ];
 
+const footerLinkMap = {
+  // AI Tools
+  'Floor Visualizer': '/store',
+  'Bid Generator': '/tools/ai-bid-writer',
+  'Lead Generator': '/store',
+  'CRM': '/store',
+  'Pricing Calculator': '/store',
+  // Services
+  'Custom Websites': '/consultation',
+  'Lead Generation': '/store',
+  'Estimating': '/tools/ai-bid-writer',
+  'CRM & Pipeline': '/store',
+  // Resources
+  'Floor Gallery': '/#floors',
+  'Before & After': '/#top',
+  'Color Charts': '/store',
+  'Pricing': '/pricing',
+  'Help Center': '/contact',
+  // Company
+  'About Us': '/about',
+  'Xtreme Polishing Systems': '/about',
+  'Polished Concrete University': '/about',
+  'Contact': '/contact',
+  'Trust Center': '/security',
+};
+
 function FooterColumn({ title, links }) {
-  return <div><h3>{title}</h3>{links.map(link => <a href="#" key={link}>{link}</a>)}</div>;
+  return <div><h3>{title}</h3>{links.map(link => {
+    const to = footerLinkMap[link] || '/store';
+    return <Link to={to} key={link}>{link}</Link>;
+  })}</div>;
 }
 
 export default function Home() {
@@ -131,7 +160,7 @@ export default function Home() {
             <a href="#services" style={{ color: '#fff' }}>Services</a>
             <Link to="/pricing" style={{ color: '#fff' }}>Pricing</Link>
           </nav>
-          <div className="header-actions" style={{ color: '#fff' }}>{user ? <><Link to="/lgny" className="button button--gold button--small">Client Portal <Icon name="arrow-right" /></Link></> : <><Link to="/autoleads/login" style={{ color: '#fff' }}>Sign In</Link><button className="button button--gold button--small" type="button" onClick={() => navigate('/consultation')}>Get a Website <Icon name="arrow-right" /></button></>}</div>
+          <div className="header-actions" style={{ color: '#fff' }}>{user ? <><Link to="/app" className="button button--gold button--small">Client Portal <Icon name="arrow-right" /></Link></> : <><Link to="/autoleads/login" style={{ color: '#fff' }}>Sign In</Link><Link to="/store" className="button button--gold button--small" style={{ display: 'inline-flex', alignItems: 'center' }}>Browse AI Tools <Icon name="arrow-right" /></Link></>}</div>
         </div>
       </header>
 
@@ -144,7 +173,7 @@ export default function Home() {
               <h1 style={{ font: "400 clamp(40px, 5vw, 70px)/1 'Libre Caslon Display', serif", letterSpacing: '-.035em', margin: '0 0 18px' }}>Win More Jobs.<br /><span style={{ color: '#FFD700' }}>Scale Your Construction Business.</span></h1>
               <p style={{ fontSize: 18, lineHeight: 1.7, color: '#c9c9cc', maxWidth: 540, margin: 0 }}>AUTO LEADS is the AI-powered construction intelligence platform. Buy AI tools, generate photoreal project visualizations, and get a custom website built for your business.</p>
               <div className="button-row" style={{ marginTop: 28 }}>
-                <Link to="/app" className="button button--gold">Explore AI Tools <Icon name="arrow-right" /></Link>
+                <Link to="/store" className="button button--gold">Explore AI Tools <Icon name="arrow-right" /></Link>
                 <button type="button" className="button button--dark-outline" onClick={() => navigate('/consultation')}>Get a Website <Icon name="arrow-right" /></button>
               </div>
               <ul className="hero-trust" style={{ color: '#9a9a9e', marginTop: 22 }}>
@@ -197,7 +226,7 @@ export default function Home() {
               <h2 style={{ font: "400 clamp(34px, 3.5vw, 52px)/1.05 'Libre Caslon Display', serif", margin: '0 0 16px' }}>Show Clients the Transformation.</h2>
               <p style={{ fontSize: 17, lineHeight: 1.7, color: '#bbb' }}>Use the Xtreme Visualizer to turn a drab, cracked slab into a flawless flake-epoxy showpiece — then drop the before/after straight into your bid or website. Clients buy the outcome when they can see it.</p>
               <div style={{ marginTop: 26 }}>
-                <Link to="/app" className="button button--gold">Try the Visualizer <Icon name="arrow-right" /></Link>
+                <Link to="/store" className="button button--gold">Try the Visualizer <Icon name="arrow-right" /></Link>
               </div>
             </div>
           </div>
@@ -226,7 +255,7 @@ export default function Home() {
               })}
             </div>
             <div className="center-action" style={{ marginTop: 32 }}>
-              <Link to="/app" className="button button--dark">Open the XV Suite <Icon name="arrow-right" /></Link>
+              <Link to="/store" className="button button--dark">Open the XV Suite <Icon name="arrow-right" /></Link>
             </div>
           </div>
         </section>
@@ -334,6 +363,7 @@ export default function Home() {
           <FooterColumn title="Services" links={['Custom Websites', 'Floor Visualizer', 'Lead Generation', 'Estimating', 'CRM & Pipeline']} />
           <FooterColumn title="Resources" links={['Floor Gallery', 'Before & After', 'Color Charts', 'Pricing', 'Help Center']} />
           <FooterColumn title="Company" links={['About Us', 'Xtreme Polishing Systems', 'Polished Concrete University', 'Contact', 'Trust Center']} />
+          {/* Footer legal links — all point to real pages */}
           <div className="newsletter">
             <h3>Newsletter</h3>
             <p>AI tips &amp; tools to grow your floor business.</p>
@@ -347,7 +377,7 @@ export default function Home() {
         </div>
         <div className="page-wrap footer-bottom">
           <span>© 2026 AUTO LEADS. All rights reserved.</span>
-          <nav><a href="#">Privacy Policy</a><a href="#">Terms of Service</a><a href="#">Cookie Policy</a><a href="#">Acceptable Use</a></nav>
+          <nav><Link to="/security">Privacy Policy</Link><Link to="/security">Terms of Service</Link><Link to="/security">Cookie Policy</Link><Link to="/security">Acceptable Use</Link></nav>
           <span className="compliance"><Icon name="shield" />Built for<br />Construction Pros</span>
         </div>
       </footer>
