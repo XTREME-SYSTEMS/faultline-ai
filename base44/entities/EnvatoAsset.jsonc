@@ -1,0 +1,169 @@
+{
+  "name": "EnvatoAsset",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "asset_id": {
+      "type": "string",
+      "description": "External SKU / unique asset identifier"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "graphic_templates",
+        "video_templates",
+        "presentation_templates",
+        "audio",
+        "fonts",
+        "photos",
+        "graphics",
+        "3d",
+        "web_templates",
+        "app_templates",
+        "ai_tools",
+        "addons",
+        "cms_templates"
+      ],
+      "description": "Top-level Envato Elements category"
+    },
+    "subcategory": {
+      "type": "string",
+      "description": "e.g. 'Logos', 'Social Media', 'Brochures'"
+    },
+    "asset_type": {
+      "type": "string",
+      "enum": [
+        "template",
+        "font",
+        "photo",
+        "graphic",
+        "3d_model",
+        "music",
+        "sfx",
+        "ai_tool",
+        "addon",
+        "preset",
+        "action"
+      ]
+    },
+    "software": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Compatible software: photoshop, illustrator, after_effects, premiere_pro, figma, sketch, xd, indesign, blender, cinema4d, react_native, flutter, wordpress, etc."
+    },
+    "thumbnail_url": {
+      "type": "string"
+    },
+    "preview_url": {
+      "type": "string",
+      "description": "Larger preview image or video"
+    },
+    "file_url": {
+      "type": "string",
+      "description": "Downloadable asset file (zip, psd, aep, etc.)"
+    },
+    "file_size_mb": {
+      "type": "number"
+    },
+    "file_format": {
+      "type": "string",
+      "description": "e.g. PSD, AI, AEP, ZIP, OTF, TTF, MP4, PNG"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "author": {
+      "type": "string",
+      "description": "Creator / designer name"
+    },
+    "author_url": {
+      "type": "string"
+    },
+    "license_type": {
+      "type": "string",
+      "enum": [
+        "subscription",
+        "one_time",
+        "free"
+      ],
+      "default": "subscription"
+    },
+    "price": {
+      "type": "number",
+      "default": 0,
+      "description": "One-time price (0 = included in subscription)"
+    },
+    "downloads_count": {
+      "type": "number",
+      "default": 0
+    },
+    "views_count": {
+      "type": "number",
+      "default": 0
+    },
+    "rating": {
+      "type": "number",
+      "default": 0
+    },
+    "rating_count": {
+      "type": "number",
+      "default": 0
+    },
+    "featured": {
+      "type": "boolean",
+      "default": false
+    },
+    "trending": {
+      "type": "boolean",
+      "default": false
+    },
+    "published_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "published",
+        "draft",
+        "archived"
+      ],
+      "default": "published"
+    }
+  },
+  "required": [
+    "organization_id",
+    "name",
+    "category",
+    "asset_type"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

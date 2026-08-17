@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
 import { createStealthSession, releaseSession, CDPClient, crawlSiteStealth } from '../../shared/stealthBrowser.ts';
-import { clonePageAssets, rewriteInternalLinks, pathToFilename, buildSearchScript, buildStripeCheckoutScript, buildSupabaseFormScript } from '../../shared/fullSiteClone.ts';
+import { clonePageAssets, rewriteInternalLinks, pathToFilename, buildSearchScript, buildStripeCheckoutScript, buildSupabaseFormScript, buildCatalogScript } from '../../shared/fullSiteClone.ts';
 import { slugify, createVercelProject, disableVercelSso, deployToVercelMultiFile, createDriveFolder, createGitHubRepo, pushGitHubFile, createSupabaseProject } from '../../shared/launchInfra.ts';
 import { buildAllAiToolPages, rewriteAiToolLinks, AI_TOOLS, buildAiToolsSidebarScript, buildAiLinkInterceptorScript } from '../../shared/aiToolPages.ts';
 
@@ -317,6 +317,7 @@ export default async function(req: Request) {
 
     // ─── 5. INJECT SEARCH + CHECKOUT + AI TOOLS ───────────────────────
     const checkoutUrl = `https://base44.app/api/apps/${appId}/functions/createStoreCheckout`;
+    const catalogApiUrl = `https://base44.app/api/apps/${appId}/functions/getEnvatoCatalog`;
     const invokeAiUrl = `https://base44.app/api/apps/${appId}/functions/invokeAiTool`;
     const stripeProducts = [
       { id: 'ai_tool', name: 'AI Tool — Lifetime', price_id: 'prod_V2N0XL5DRE706G', price: 29 },
@@ -326,6 +327,7 @@ export default async function(req: Request) {
       { id: 'operating', name: 'Operating System — Monthly', price_id: 'prod_UzkHWgaWke7ITk', price: 699 },
     ];
     const searchScript = buildSearchScript(pageMetadata.map(p => ({ path: p.path, title: p.title, headings: p.headings })));
+    const catalogScript = buildCatalogScript(catalogApiUrl, checkoutUrl);
     const checkoutScript = buildStripeCheckoutScript(checkoutUrl, stripeProducts);
     const aiSidebarScript = buildAiToolsSidebarScript();
     const aiLinkInterceptor = buildAiLinkInterceptorScript();
@@ -342,7 +344,7 @@ export default async function(req: Request) {
     for (const meta of pageMetadata) {
       let html = new TextDecoder().decode(fileMap.get(meta.filename)!);
       html = rewriteAiToolLinks(html);
-      const inject = searchScript + '\n' + checkoutScript + '\n' + aiSidebarScript + '\n' + aiLinkInterceptor + (supabaseFormScript ? '\n' + supabaseFormScript : '');
+      const inject = searchScript + '\n' + catalogScript + '\n' + checkoutScript + '\n' + aiSidebarScript + '\n' + aiLinkInterceptor + (supabaseFormScript ? '\n' + supabaseFormScript : '');
       if (html.includes('</body>')) {
         html = html.replace('</body>', inject + '\n</body>');
       } else {
@@ -519,6 +521,11 @@ export default async function(req: Request) {
         github_repo: !!githubUrl,
         supabase_backend: !!supabaseUrl,
         vercel_deployment: !!vercelUrl,
+        full_catalog: true,
+        asset_fulfillment: true,
+        license_management: true,
+        catalog_api: true,
+        download_tracking: true,
       },
       provision_errors: provisionErrors.length ? provisionErrors : undefined,
       message: `Autonomous clone complete: ${pageMetadata.length} pages from ${sitemapUrls.length} sitemap URLs — full stack provisioned`

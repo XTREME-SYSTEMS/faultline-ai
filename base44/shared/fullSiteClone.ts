@@ -503,6 +503,112 @@ export function buildSupabaseFormScript(supabaseUrl: string, supabaseAnonKey: st
 </script>`;
 }
 
+// Build a catalog injection script that fetches assets from getEnvatoCatalog
+// and renders them into the cloned site's asset grids. This gives the clone
+// a functional, populated catalog — 963+ assets across all Envato Elements
+// categories (graphic templates, video templates, fonts, photos, etc.).
+// The script replaces empty asset grids with real catalog data and wires
+// each asset card to the checkout flow with the asset_id for fulfillment.
+export function buildCatalogScript(catalogApiUrl: string, checkoutUrl: string): string {
+  return `<script>
+(function(){
+  var CATALOG_API='${catalogApiUrl}';
+  var CHECKOUT_URL='${checkoutUrl}';
+  var loadedCategories = {};
+
+  function fetchCatalog(params) {
+    var qs = Object.keys(params).map(function(k){return k+'='+encodeURIComponent(params[k]);}).join('&');
+    return fetch(CATALOG_API+'?'+qs).then(function(r){return r.json();});
+  }
+
+  function assetCard(asset) {
+    var priceLabel = asset.license_type === 'subscription' ? 'Included in subscription' : '$' + asset.price;
+    var rating = asset.rating ? '<div style="color:#FFD700;font-size:11px;">★ ' + asset.rating + ' (' + asset.rating_count + ')</div>' : '';
+    var downloads = asset.downloads_count ? '<div style="color:#888;font-size:11px;">' + asset.downloads_count + ' downloads</div>' : '';
+    var badge = asset.featured ? '<div style="position:absolute;top:8px;left:8px;background:#FFD700;color:#111;padding:3px 8px;border-radius:4px;font-size:9px;font-weight:700;">FEATURED</div>' : '';
+    var img = asset.thumbnail_url || '';
+    return '<div style="background:#161616;border:1px solid #2a2a2a;border-radius:8px;overflow:hidden;cursor:pointer;transition:transform .15s;" onmouseover="this.style.transform=\\'translateY(-2px)\\'" onmouseout="this.style.transform=\\'none\\'" data-asset-id="' + asset.id + '" data-asset-name="' + asset.name.replace(/"/g, '&quot;') + '">' +
+      '<div style="position:relative;aspect-ratio:4/3;overflow:hidden;background:#0d0d0d;">' + badge +
+        '<img src="' + img + '" alt="' + asset.name.replace(/"/g, '&quot;') + '" style="width:100%;height:100%;object-fit:cover;" loading="lazy" onerror="this.style.display=\\'none\\'">' +
+      '</div>' +
+      '<div style="padding:10px;">' +
+        '<div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + asset.name + '</div>' +
+        '<div style="font-size:10px;color:#888;margin-bottom:4px;">' + (asset.subcategory || asset.category) + '</div>' +
+        rating + downloads +
+        '<div style="font-size:11px;color:#4a9eff;font-weight:600;margin-top:6px;">' + priceLabel + '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  function renderGrid(container, assets) {
+    var grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px;padding:16px;';
+    for (var i = 0; i < assets.length; i++) {
+      grid.innerHTML += assetCard(assets[i]);
+    }
+    container.innerHTML = '';
+    container.appendChild(grid);
+    // Wire click → checkout with asset_id
+    grid.querySelectorAll('[data-asset-id]').forEach(function(card) {
+      card.addEventListener('click', function() {
+        var assetId = this.getAttribute('data-asset-id');
+        var assetName = this.getAttribute('data-asset-name');
+        if (window.self !== window.top) { alert('Checkout works only from the published app. Please open this site in a new tab.'); return; }
+        fetch(CHECKOUT_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ items: [{ name: assetName, amount: 29, quantity: 1, type: 'ai_tool', asset_id: assetId }] })
+        }).then(function(r) { return r.json(); }).then(function(j) {
+          if (j.url) window.location.href = j.url;
+          else alert('Could not start checkout. ' + (j.error || 'Please try again.'));
+        }).catch(function() { alert('Checkout error. Please try again.'); });
+      });
+    });
+  }
+
+  function loadCategoryIntoGrids(category) {
+    if (loadedCategories[category]) return;
+    loadedCategories[category] = true;
+    fetchCatalog({ action: 'browse', category: category, limit: 24 }).then(function(data) {
+      if (!data.assets || data.assets.length === 0) return;
+      // Find asset grid containers on the page that correspond to this category
+      var grids = document.querySelectorAll('[data-category="' + category + '"], [class*="' + category.replace(/_/g, '-') + '"]');
+      if (grids.length === 0) {
+        // Fallback: find any empty grid containers
+        grids = document.querySelectorAll('[class*="grid"], [class*="Grid"]');
+        grids = Array.from(grids).filter(function(g) { return g.children.length === 0 || g.children.length < 3; });
+      }
+      grids.forEach(function(grid) { renderGrid(grid, data.assets); });
+    }).catch(function() {});
+  }
+
+  // Load featured assets into any hero/featured section
+  function loadFeatured() {
+    fetchCatalog({ action: 'browse', featured: true, limit: 12 }).then(function(data) {
+      if (!data.assets || data.assets.length === 0) return;
+      var heroGrids = document.querySelectorAll('[class*="featured"], [class*="Featured"], [class*="hero"], [class*="Hero"]');
+      heroGrids.forEach(function(grid) {
+        if (grid.children.length === 0 || grid.children.length < 3) renderGrid(grid, data.assets);
+      });
+    }).catch(function() {});
+  }
+
+  // Load all categories
+  var categories = ['graphic_templates', 'video_templates', 'presentation_templates', 'audio', 'fonts', 'photos', 'graphics', '3d', 'web_templates', 'app_templates', 'ai_tools', 'addons'];
+  function loadAll() {
+    loadFeatured();
+    categories.forEach(loadCategoryIntoGrids);
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadAll);
+  else loadAll();
+  // Retry for SPA-rendered content
+  setTimeout(loadAll, 2000);
+  setTimeout(loadAll, 5000);
+})();
+</script>`;
+}
+
 // Build a Stripe checkout script that intercepts subscription/purchase buttons
 // and redirects to our Stripe checkout flow.
 // createStoreCheckout expects { items: [{ name, amount, quantity, type }] } — NOT

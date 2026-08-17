@@ -37,7 +37,7 @@ export default async function(req) {
       ...(customer_email ? { customer_email } : {}),
       metadata: {
         base44_app_id: Deno.env.get('BASE44_APP_ID'),
-        items: JSON.stringify(items.map((it) => ({ pack_id: it.pack_id, type: it.type, name: it.name, amount: it.amount })))
+        items: JSON.stringify(items.map((it) => ({ pack_id: it.pack_id, asset_id: it.asset_id, type: it.type, name: it.name, amount: it.amount })))
       }
     });
 

@@ -1,0 +1,100 @@
+{
+  "name": "AssetLicense",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "asset_id": {
+      "type": "string",
+      "description": "EnvatoAsset ID"
+    },
+    "asset_name": {
+      "type": "string"
+    },
+    "asset_category": {
+      "type": "string"
+    },
+    "customer_email": {
+      "type": "string"
+    },
+    "customer_name": {
+      "type": "string"
+    },
+    "stripe_session_id": {
+      "type": "string",
+      "description": "Stripe checkout session that granted this license"
+    },
+    "stripe_customer_id": {
+      "type": "string"
+    },
+    "license_type": {
+      "type": "string",
+      "enum": [
+        "subscription",
+        "one_time",
+        "free"
+      ],
+      "default": "one_time"
+    },
+    "license_key": {
+      "type": "string",
+      "description": "Unique license key for this purchase"
+    },
+    "download_url": {
+      "type": "string",
+      "description": "Signed URL for downloading the asset"
+    },
+    "download_count": {
+      "type": "number",
+      "default": 0
+    },
+    "max_downloads": {
+      "type": "number",
+      "default": 50
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "expired",
+        "revoked",
+        "pending"
+      ],
+      "default": "active"
+    },
+    "activated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "last_downloaded_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "organization_id",
+    "asset_id",
+    "customer_email"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
