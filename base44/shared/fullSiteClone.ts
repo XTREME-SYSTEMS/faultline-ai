@@ -349,23 +349,49 @@ export async function clonePageAssets(
     }
   }
 
-  // 9. Remove Next.js hydration + analytics
-  html = html.replace(/<script[^>]*id=["']__NEXT_DATA__["'][^>]*>[\s\S]*?<\/script>/gi, '');
-  html = html.replace(/window\.__NEXT_DATA__\s*=\s*[\s\S]*?;\s*<\/script>/gi, '</script>');
-  html = html.replace(/<script[^>]+src=["'][^"']*\/_next\/static\/[^"']*["'][^>]*><\/script>/gi, '');
-  html = html.replace(/<script[^>]*>[\s\S]*?__NEXT_DATA__[\s\S]*?<\/script>/gi, '');
-  const trackingSrcPatterns = [
-    'google-analytics.com', 'googletagmanager.com', 'connect.facebook.net',
-    'static.hotjar.com', 'cdn.mxpnl.com', 'cdn.segment.com', 'snap.licdn.com',
-    'bat.bing.com', 'platform.twitter.com', 'platform.linkedin.com',
-    'adservice.google.com', 'doubleclick.net', 'widget.trustpilot.com'
-  ];
+  // 9. Remove ALL original-site scripts — SPA bundles, hydration data, analytics.
+  // We inject our own functional scripts (search, checkout, forms, AI tools), so
+  // keeping the original site's JS only causes React hydration errors and breaks
+  // the static clone. Strip every external script from the target domain + its
+  // asset CDNs, plus all inline hydration/analytics blobs.
+  let targetOrigin: string;
+  try { targetOrigin = new URL(targetUrl).origin; } catch { targetOrigin = ''; }
+  const targetHost = targetOrigin ? new URL(targetUrl).hostname.replace(/^www\./, '') : '';
+  // Strip ALL external <script src="..."> tags from the target domain or its asset hosts
   html = html.replace(/<script[^>]*src=["']([^"']+)["'][^>]*><\/script>/gi, (match, src) => {
-    if (trackingSrcPatterns.some(p => src.toLowerCase().includes(p))) return '';
+    const lower = src.toLowerCase();
+    // Always strip known tracking/analytics
+    const trackingPatterns = [
+      'google-analytics.com', 'googletagmanager.com', 'connect.facebook.net',
+      'static.hotjar.com', 'cdn.mxpnl.com', 'cdn.segment.com', 'snap.licdn.com',
+      'bat.bing.com', 'platform.twitter.com', 'platform.linkedin.com',
+      'adservice.google.com', 'doubleclick.net', 'widget.trustpilot.com',
+      'consent.cookiebot.com', 'cdn.cookiebot.com'
+    ];
+    if (trackingPatterns.some(p => lower.includes(p))) return '';
+    // Strip scripts from the target site's own domain or any subdomain of its root domain
+    if (targetHost) {
+      const rootDomain = targetHost.split('.').slice(-2).join('.');
+      if (lower.includes(rootDomain)) return '';
+    }
+    // Strip _next/static and _nuxt paths (SPA bundles)
+    if (lower.includes('/_next/') || lower.includes('/_nuxt/')) return '';
     return match;
   });
+  // Strip ALL inline scripts that contain hydration data, React bootstrap, or
+  // SPA initialization code — these try to hydrate a React app that no longer has
+  // its data, causing "something went wrong" error boundaries.
+  html = html.replace(/<script[^>]*id=["']__NEXT_DATA__["'][^>]*>[\s\S]*?<\/script>/gi, '');
+  html = html.replace(/<script[^>]*>[\s\S]*?__NEXT_DATA__[\s\S]*?<\/script>/gi, '');
+  html = html.replace(/<script[^>]*>[\s\S]*?__NUXT__[\s\S]*?<\/script>/gi, '');
+  html = html.replace(/<script[^>]*>[\s\S]*?__INITIAL_STATE__[\s\S]*?<\/script>/gi, '');
+  html = html.replace(/<script[^>]*>[\s\S]*?__APOLLO_STATE__[\s\S]*?<\/script>/gi, '');
+  html = html.replace(/<script[^>]*>[\s\S]*?window\.__NEXT_DATA__[\s\S]*?<\/script>/gi, '');
   html = html.replace(/<script[^>]*>[\s\S]*?gtag\('js'[\s\S]*?<\/script>/gi, '');
   html = html.replace(/<script[^>]*>[\s\S]*?fbq\('init'[\s\S]*?<\/script>/gi, '');
+  html = html.replace(/<script[^>]*>[\s\S]*?dataLayer[\s\S]*?<\/script>/gi, '');
+  // Strip empty inline scripts (leftover from previous stripping)
+  html = html.replace(/<script\s*>\s*<\/script>/gi, '');
 
   // 10. Meta tag sanitization
   html = html.replace(/<link[^>]+rel=["']canonical["'][^>]*>/gi, '');
