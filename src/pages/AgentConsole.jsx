@@ -1,9 +1,17 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import ReactMarkdown from 'react-markdown';
-import { Shield, Wrench, Send, Loader2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Palette } from 'lucide-react';
+import { Shield, Wrench, Send, Loader2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Palette, Copy } from 'lucide-react';
 
 const AGENTS = [
+  {
+    name: 'clone_agent',
+    label: 'Clone Agent',
+    icon: Copy,
+    color: '#2563EB',
+    description: 'Clones the entire Envato Elements site — every page, all content, all tools, full backend + frontend. Deploys as a functional multi-page static site with Vercel, GitHub, Supabase, Drive.',
+    placeholder: 'Clone the entire Envato Elements site end-to-end...',
+  },
   {
     name: 'system_tester',
     label: 'System Tester',
@@ -159,7 +167,13 @@ export default function AgentConsole() {
     }
   };
 
-  const quickActions = activeAgent === 'system_tester'
+  const quickActions = activeAgent === 'clone_agent'
+    ? [
+        { label: 'Clone Full Site', prompt: 'Clone the entire Envato Elements site end-to-end. Use target_url https://elements.envato.com/, project_name "Envato Elements Full Clone", max_pages 22, deploy true. Report the Vercel URL, pages cloned, and all provisioned services.' },
+        { label: 'Re-Clone (Fast)', prompt: 'Re-clone Envato Elements from scratch with max_pages 15 for a faster build. Use target_url https://elements.envato.com/, project_name "Envato Elements Fast Clone", deploy true.' },
+        { label: 'Check Existing', prompt: 'Check if an Envato clone already exists. Query LaunchProject records for benchmark_url containing envato, sorted by created_date descending. Report the most recent clone URL, status, and pages cloned.' },
+      ]
+    : activeAgent === 'system_tester'
     ? [
         { label: 'Full Audit', prompt: 'Run a full system audit on the most recent clone. Test forensic, visual, operational, E2E, and deep paths. Report all scores.' },
         { label: 'Quick Check', prompt: 'Quick check — just run the recursive E2E validator on the latest clone and report the summary.' },
@@ -181,7 +195,7 @@ export default function AgentConsole() {
     <div className="min-h-screen bg-slate-50 flex flex-col">
       <header className="bg-white border-b border-slate-200 px-6 py-4">
         <h1 className="text-xl font-bold text-slate-900">Agent Console</h1>
-        <p className="text-sm text-slate-500">Autonomous testing & auto-fix agents for the clone system</p>
+        <p className="text-sm text-slate-500">Clone → Test → Fix — autonomous agents for the full Envato clone pipeline</p>
       </header>
 
       <div className="flex-1 flex overflow-hidden">
@@ -204,8 +218,9 @@ export default function AgentConsole() {
             );
           })}
           <div className="mt-auto p-3 bg-slate-50 rounded-xl border border-slate-200">
-            <p className="text-xs text-slate-600 font-medium mb-2">Workflow:</p>
+            <p className="text-xs text-slate-600 font-medium mb-2">Pipeline:</p>
             <ol className="text-xs text-slate-500 space-y-1 list-decimal list-inside">
+              <li>Run <b>Clone</b> to build</li>
               <li>Run <b>Tester</b> to audit</li>
               <li>Run <b>Fixer</b> to repair</li>
               <li>Run <b>Rebrand</b> to rebrand</li>
