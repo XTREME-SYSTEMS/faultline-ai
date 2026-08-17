@@ -40,8 +40,8 @@ export default async function(req: Request) {
     //    via the stealth browser (JS execution + deep render).
     const crawl = await crawlSiteStealth(target_url, {
       deepRender: true,
-      timeout: 35000,
-      waitAfterLoad: 4000,
+      timeout: 25000,
+      waitAfterLoad: 1500,
       solveCaptchas: true,
       proxies: true,
       maxPages: max_pages,
@@ -96,11 +96,26 @@ export default async function(req: Request) {
           form_handler_url: formHandlerUrl,
           link_rewrite_map: linkMap,
           rehost_images: true,
-          max_images: 50,
+          max_images: 30,
         });
 
         // Rewrite internal links to point to cloned .html files
         let finalHtml = rewriteInternalLinks(clonedHtml, linkMap);
+
+        // Strip heavy inline scripts (Next.js __NEXT_DATA__, hydration blobs,
+        // large JSON data) to reduce page size from ~1.3MB to ~300KB. This
+        // prevents memory-limit crashes when deploying many pages and speeds
+        // up page load. The visible DOM is unaffected.
+        if (finalHtml.length > 400000) {
+          finalHtml = finalHtml.replace(/<script[^>]*id="__NEXT_DATA__"[^>]*>[\s\S]*?<\/script>/gi, '');
+          finalHtml = finalHtml.replace(/<script[^>]*type="application\/json"[^>]*>[\s\S]*?<\/script>/gi, '');
+          finalHtml = finalHtml.replace(/<script[^>]*data-nscript[^>]*>[\s\S]*?<\/script>/gi, '');
+          // Remove any inline script larger than 20KB (analytics, tracking, data blobs)
+          finalHtml = finalHtml.replace(/<script[^>]*>([\s\S]{20000,})<\/script>/gi, (m) => '');
+          // Remove Next.js hydration comment markers
+          finalHtml = finalHtml.replace(/<!--[\s\S]*?-->/g, (m) => m.length > 1000 ? '' : m);
+          console.log(`  Stripped heavy scripts: ${clonedHtml.length} → ${finalHtml.length} chars (saved ${clonedHtml.length - finalHtml.length})`);
+        }
 
         // Extract page title and headings for the search index
         const titleMatch = finalHtml.match(/<title>([^<]+)<\/title>/i);

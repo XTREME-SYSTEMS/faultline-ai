@@ -627,34 +627,42 @@ export async function crawlSiteStealth(
 
   if (!homepage.ok) return { pages, homepage, allLinks: [] };
 
-  // Discover internal links from homepage
-  const linkRegex = /<a[^>]+href=["']([^"']+)["'][^>]*>([^<]*)<\/a>/gi;
-  let m;
-  while ((m = linkRegex.exec(homepage.html)) !== null) {
-    try {
-      const fullUrl = new URL(m[1], url).href.split('#')[0];
-      if (fullUrl.startsWith(baseOrigin) && !fullUrl.match(/\.(jpg|jpeg|png|gif|svg|pdf|css|js|ico|woff|ttf|mp4|webm|zip|docx?|xlsx?|pptx?)$/i)) {
-        allLinks.add(fullUrl);
-      }
-    } catch { /* skip */ }
+  // Helper: extract internal links from rendered HTML
+  function extractLinks(html: string, baseUrl: string): string[] {
+    const found = new Set<string>();
+    const lr = /<a[^>]+href=["']([^"']+)["'][^>]*>/gi;
+    let lm;
+    while ((lm = lr.exec(html)) !== null) {
+      try {
+        const fullUrl = new URL(lm[1], baseUrl).href.split('#')[0];
+        if (fullUrl.startsWith(baseOrigin) && !fullUrl.match(/\.(jpg|jpeg|png|gif|svg|pdf|css|js|ico|woff|ttf|mp4|webm|zip|docx?|xlsx?|pptx?)$/i)) {
+          found.add(fullUrl);
+        }
+      } catch { /* skip */ }
+    }
+    return [...found];
   }
 
-  // Prioritize content pages
-  const priorityPatterns = /about|pricing|contact|services|products|blog|solutions|features|team|company|product|faq|portfolio|case-study|gallery|testimonials/i;
-  const sortedLinks = [...allLinks].sort((a, b) => {
+  // Discover internal links from homepage
+  const homeLinks = extractLinks(homepage.html, url);
+  for (const l of homeLinks) allLinks.add(l);
+
+  // BFS crawl queue — discover links recursively across all pages.
+  // This catches deep category/sub-category pages that aren't linked
+  // directly from the homepage (e.g. /graphic-templates/compatible-with-photoshop).
+  const priorityPatterns = /about|pricing|contact|services|products|blog|solutions|features|team|company|product|faq|portfolio|case-study|gallery|testimonials|templates|fonts|photos|audio|music|video|graphic|icons|illustrations|mockups|logos|infographics|3d|web-|cms-|ecommerce|print-|social-|instagram|facebook|youtube|twitch|tiktok|pinterest|linkedin|twitter|snapchat|whatsapp|discord|telegram|zoom|teams|wallpaper|ebook|album|podcast|sticker|t-shirt|label|menu|calendar|certificate|coupon|card|poster|flyer|banner|brochure|resume|business-card|invitation|newsletter|signature|email-|landing|html-|app-|website-|device-|product-mockup|scene|branding|serif|sans-serif|display|handwriting|script|sound-effects|music-packs|stock-video|royalty-free/i;
+  const queue: string[] = [...allLinks].sort((a, b) => {
     const aMatch = priorityPatterns.test(a) ? 0 : 1;
     const bMatch = priorityPatterns.test(b) ? 0 : 1;
     return aMatch - bMatch;
   });
 
-  // Crawl each page (reuse session for efficiency — create one, scrape all, release)
-  const toCrawl = sortedLinks.slice(0, maxPages - 1);
   let session: { id: string; connectUrl: string } | null = null;
   let cdp: CDPClient | null = null;
   let cdpSessionId: string | null = null;
 
   try {
-    if (toCrawl.length > 0) {
+    if (queue.length > 0) {
       session = await createStealthSession(options);
       cdp = new CDPClient();
       await cdp.connect(session.connectUrl);
@@ -666,9 +674,13 @@ export async function crawlSiteStealth(
       await cdp.send('Runtime.enable', {}, cdpSessionId);
     }
 
-    for (const pageUrl of toCrawl) {
+    // BFS loop: crawl pages, collect newly discovered links, add to queue
+    while (queue.length > 0 && pages.length < maxPages) {
+      const pageUrl = queue.shift()!;
       if (visited.has(pageUrl)) continue;
       visited.add(pageUrl);
+      if (pages.length >= maxPages) break;
+
       try {
         await cdp!.send('Page.navigate', { url: pageUrl }, cdpSessionId, options.timeout || 25000);
         await new Promise<void>((resolve) => {
@@ -686,18 +698,11 @@ export async function crawlSiteStealth(
         const html = htmlResult?.result?.value || '';
         const path = (() => { try { return new URL(pageUrl).pathname; } catch { return pageUrl; } })();
 
-        // Collect links from this page too
-        const pageLinks: string[] = [];
-        let lm;
-        const lr = /<a[^>]+href=["']([^"']+)["'][^>]*>([^<]*)<\/a>/gi;
-        while ((lm = lr.exec(html)) !== null) {
-          try {
-            const fullUrl = new URL(lm[1], pageUrl).href.split('#')[0];
-            if (fullUrl.startsWith(baseOrigin)) {
-              pageLinks.push(fullUrl);
-              allLinks.add(fullUrl);
-            }
-          } catch { /* skip */ }
+        // Collect links from this page and add NEW ones to the queue (BFS)
+        const pageLinks = extractLinks(html, pageUrl);
+        for (const l of pageLinks) {
+          allLinks.add(l);
+          if (!visited.has(l) && !queue.includes(l)) queue.push(l);
         }
 
         pages.push({
@@ -705,6 +710,7 @@ export async function crawlSiteStealth(
           title: '', sessionId: session!.id, ok: html.length > 100,
           rendered: true, captchaSolved: false, path, links: pageLinks,
         });
+        console.log(`BFS crawled ${pages.length}/${maxPages}: ${path} (${html.length} chars, queue: ${queue.length})`);
       } catch (e) {
         pages.push({
           html: '', status: 0, url: pageUrl, finalUrl: pageUrl, title: '',
