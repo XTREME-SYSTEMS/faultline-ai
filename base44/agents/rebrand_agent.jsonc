@@ -15,7 +15,7 @@
     },
     {
       "function_name": "rebrandCloneSite",
-      "description": "Basic rebrand function \u2014 simpler text replacement + logo swap + Vercel redeploy + domain assignment. Use as a fallback if deepRebrandSite fails."
+      "description": "Basic rebrand function \u2014 simpler text replacement + logo swap + Vercel redeploy + domain assignment. Used as a fallback if deepRebrandSite fails."
     }
   ],
   "context_files": [],

@@ -1,30 +1,39 @@
 // Shared rebrand utilities used by rebrandCloneSite and deepRebrandSite.
 // Extracted to avoid duplication between the two rebrand functions.
 
-// Build a runtime logo-swap script that forces every header/nav logo <img>
-// and <svg> to render the new logo URL. Runs on DOMContentLoaded + two delayed
-// passes to catch late-rendered logos (SPA hydration, lazy nav, etc.).
+// Build a runtime wordmark-swap script that replaces every header/nav logo
+// (<svg> wordmark or <img> logo) with a styled TEXT element showing the new
+// brand name — NOT a logo image. The old brand's wordmark becomes the new
+// brand's name in text. Runs on DOMContentLoaded + two delayed passes to
+// catch late-rendered logos (SPA hydration, lazy nav, etc.).
 export function buildLogoSwapScript(logoUrl: string, brandName: string): string {
   return `
 <script>
 (function(){
-  var LOGO='${logoUrl}';
   var BRAND='${brandName}';
+  function makeWordmark(){
+    var s=document.createElement('span');
+    s.textContent=BRAND;
+    s.style.font='700 22px -apple-system,BlinkMacSystemFont,"Segoe UI",Inter,system-ui,sans-serif';
+    s.style.letterSpacing='-0.02em';
+    s.style.color='#111';
+    s.style.whiteSpace='nowrap';
+    s.style.display='inline-block';
+    return s;
+  }
   function swapLogos(){
-    var imgs=document.querySelectorAll('img');
-    imgs.forEach(function(img){
+    document.querySelectorAll('header svg, nav svg, [class*="logo" i] svg, [class*="brand" i] svg').forEach(function(svg){
+      var ctx=svg.closest('header,nav,[class*="logo" i],[class*="brand" i],a[href="/"],a[href=""]');
+      if(!ctx) return;
+      if(svg.dataset && svg.dataset.flReplaced) return;
+      svg.replaceWith(makeWordmark());
+    });
+    document.querySelectorAll('img').forEach(function(img){
       var ctx=img.closest('header,nav,[class*="logo" i],[class*="brand" i],a[href="/"],a[href=""]');
       if(!ctx) return;
       if(img.width>300||img.height>200) return;
-      img.src=LOGO; img.srcset=''; img.removeAttribute('srcset');
-      img.style.maxHeight='40px'; img.style.width='auto'; img.style.height='auto'; img.style.objectFit='contain';
-    });
-    document.querySelectorAll('header svg, nav svg, [class*="logo" i] svg').forEach(function(svg){
-      if(svg.closest('header,nav,[class*="logo" i]')){
-        var wrap=document.createElement('div'); wrap.style.display='inline-flex'; wrap.style.alignItems='center';
-        var nImg=document.createElement('img'); nImg.src=LOGO; nImg.style.maxHeight='40px'; nImg.style.width='auto'; nImg.style.height='auto'; nImg.style.objectFit='contain';
-        wrap.appendChild(nImg); svg.replaceWith(wrap);
-      }
+      if(img.dataset && img.dataset.flReplaced) return;
+      img.replaceWith(makeWordmark());
     });
   }
   if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',swapLogos);}else{swapLogos();}
