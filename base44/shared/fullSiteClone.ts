@@ -424,6 +424,46 @@ export async function clonePageAssets(
   return { html, images_rehosted: imagesRehosted, images_total: imagesTotal };
 }
 
+// Build a form-handler script that intercepts all form submissions and POSTs
+// them to the ingestCloneLead backend function. Extracted here so both the
+// static-page pipeline (clonePageAssets) and RSC-page pipeline can use it.
+export function buildFormHandlerScript(formHandlerUrl: string, organizationId: string): string {
+  return `<script>
+(function(){
+  var HANDLER='${formHandlerUrl}';
+  var ORG='${organizationId || ''}';
+  var CLONE=window.location.href;
+  document.querySelectorAll('form').forEach(function(f){
+    if(f.dataset.flWired)return;f.dataset.flWired='1';
+    f.setAttribute('action',HANDLER);
+    f.setAttribute('method','POST');
+    f.addEventListener('submit',function(e){
+      e.preventDefault();
+      var data={organization_id:ORG,clone_id:CLONE,source_url:CLONE};
+      var fd=new FormData(f);
+      fd.forEach(function(v,k){if(typeof v==='string')data[k]=v;});
+      if(!data.name&&data.Name)data.name=data.Name;
+      if(!data.email&&data.Email)data.email=data.Email;
+      if(!data.message&&data.Message)data.message=data.Message;
+      fetch(HANDLER,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data)})
+        .then(function(r){return r.json();})
+        .then(function(j){
+          if(j.ok){
+            f.reset();
+            var msg=document.createElement('div');
+            msg.textContent='Thank you! We\\'ll be in touch shortly.';
+            msg.style.cssText='padding:15px;background:#d4edda;color:#155724;border-radius:6px;margin-top:10px;font-family:sans-serif;';
+            f.appendChild(msg);
+            setTimeout(function(){msg.remove();},5000);
+          }
+        })
+        .catch(function(){});
+    });
+  });
+})();
+</script>`;
+}
+
 // Build a client-side search script that indexes all cloned pages and provides
 // a functional search experience on the static clone. The search index is built
 // from the page titles and headings extracted during crawling.

@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
 import { createStealthSession, releaseSession, CDPClient, crawlSiteStealth } from '../../shared/stealthBrowser.ts';
-import { clonePageAssets, rewriteInternalLinks, pathToFilename, buildSearchScript, buildStripeCheckoutScript, buildSupabaseFormScript, buildCatalogScript } from '../../shared/fullSiteClone.ts';
+import { clonePageAssets, rewriteInternalLinks, pathToFilename, buildSearchScript, buildStripeCheckoutScript, buildSupabaseFormScript, buildCatalogScript, buildFormHandlerScript } from '../../shared/fullSiteClone.ts';
 import { slugify, createVercelProject, disableVercelSso, deployToVercelMultiFile, createDriveFolder, createGitHubRepo, pushGitHubFile, createSupabaseProject } from '../../shared/launchInfra.ts';
 import { buildAllAiToolPages, rewriteAiToolLinks, AI_TOOLS, buildAiToolsSidebarScript, buildAiLinkInterceptorScript } from '../../shared/aiToolPages.ts';
 
@@ -105,15 +105,37 @@ export default async function(req: Request) {
         let images_rehosted = 0;
 
         if (isRscPage) {
-          // RSC/SPA page — keep original HTML & scripts so the SPA renders.
-          // Just rewrite internal links and strip loading states.
+          // RSC/SPA page — keep original HTML & scripts so the SPA can hydrate
+          // and render content. The stealth browser already captured the
+          // rendered DOM, but RSC pages need their scripts for CSS-in-JS styling
+          // and layout. Stripping scripts causes layout collapse.
+          // We DO inject: form handler, loading-state removal, link rewriting.
           finalHtml = rawHtml;
           finalHtml = finalHtml.replace(/class="appLoading"/gi, 'class=""');
           finalHtml = finalHtml.replace(/<div[^>]*data-testid="loading-neue-page"[^>]*>[\s\S]*?<\/div>/gi, '');
           finalHtml = finalHtml.replace(/<div[^>]*data-testid="loading-spinner[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
           finalHtml = finalHtml.replace(/<svg[^>]*data-testid="loading-spinner[^"]*"[^>]*>[\s\S]*?<\/svg>/gi, '');
           finalHtml = rewriteInternalLinks(finalHtml, linkMap);
-          console.log(`[autonomousFullSiteClone] RSC page detected — keeping original scripts for ${path}`);
+          // Inject form handler + post-hydration footer dedup for RSC pages
+          const formScript = buildFormHandlerScript(formHandlerUrl, targetOrg || '');
+          const footerDedupScript = `<script>
+(function(){
+  function dedupFooters(){
+    var fs=document.querySelectorAll('footer');
+    if(fs.length>1){for(var i=1;i<fs.length;i++){fs[i].remove();}}
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',dedupFooters);
+  else dedupFooters();
+  setTimeout(dedupFooters,1000);setTimeout(dedupFooters,3000);
+})();
+</script>`;
+          const rscInject = formScript + '\n' + footerDedupScript;
+          if (finalHtml.includes('</body>')) {
+            finalHtml = finalHtml.replace('</body>', rscInject + '\n</body>');
+          } else {
+            finalHtml += rscInject;
+          }
+          console.log(`[autonomousFullSiteClone] RSC page — keeping original scripts for hydration: ${path}`);
         } else {
           // Static page — full clone pipeline (rehost images, swap branding, strip scripts)
           const { html: clonedHtml, images_rehosted: ir } = await clonePageAssets(base44, rawHtml, {
@@ -126,8 +148,8 @@ export default async function(req: Request) {
         }
         if (!isRscPage) {
           // Aggressive stripping of large inline scripts/data blobs — these are
-          // hydration/JSON blobs that bloat pages to 2MB+. We inject our own
-          // scripts, so removing them is safe and cuts pages from ~2MB to ~300KB.
+          // hydration/JSON blobs that bloat pages to 2MB+. Applied to non-RSC
+          // pages only (RSC pages need their scripts for hydration + CSS-in-JS).
           // 1. Strip ALL inline <script> tags with > 2000 chars of JS content
           finalHtml = finalHtml.replace(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi, (m, content) => {
             return content.length > 2000 ? '' : m;
@@ -144,11 +166,25 @@ export default async function(req: Request) {
           finalHtml = finalHtml.replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, (m, content) => {
             return content.length > 50000 ? '' : m;
           });
-          // 5b. Remove SPA loading states
-          finalHtml = finalHtml.replace(/class="appLoading"/gi, 'class=""');
-          finalHtml = finalHtml.replace(/<div[^>]*data-testid="loading-neue-page"[^>]*>[\s\S]*?<\/div>/gi, '');
-          finalHtml = finalHtml.replace(/<div[^>]*data-testid="loading-spinner[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
-          finalHtml = finalHtml.replace(/<svg[^>]*data-testid="loading-spinner[^"]*"[^>]*>[\s\S]*?<\/svg>/gi, '');
+        }
+        // 5b. Remove SPA loading states (all pages)
+        finalHtml = finalHtml.replace(/class="appLoading"/gi, 'class=""');
+        finalHtml = finalHtml.replace(/<div[^>]*data-testid="loading-neue-page"[^>]*>[\s\S]*?<\/div>/gi, '');
+        finalHtml = finalHtml.replace(/<div[^>]*data-testid="loading-spinner[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
+        finalHtml = finalHtml.replace(/<svg[^>]*data-testid="loading-spinner[^"]*"[^>]*>[\s\S]*?<\/svg>/gi, '');
+        // 5c. Ensure every page has a <title> tag
+        if (!/<title>[^<]+<\/title>/i.test(finalHtml)) {
+          let titlePath = '';
+          try { titlePath = new URL(pageUrl).pathname.replace(/^\//, '').replace(/\/$/, '').replace(/-/g, ' '); } catch {}
+          const titleText = titlePath ? titlePath.charAt(0).toUpperCase() + titlePath.slice(1) : (business_name || 'Home');
+          const titleTag = `<title>${titleText}</title>`;
+          if (/<head[^>]*>/i.test(finalHtml)) {
+            finalHtml = finalHtml.replace(/<head[^>]*>/i, m => m + '\n' + titleTag);
+          } else if (/<html[^>]*>/i.test(finalHtml)) {
+            finalHtml = finalHtml.replace(/<html[^>]*>/i, m => m + '\n<head>' + titleTag + '</head>');
+          } else {
+            finalHtml = '<head>' + titleTag + '</head>\n' + finalHtml;
+          }
         }
         const titleMatch = finalHtml.match(/<title>([^<]+)<\/title>/i);
         const title = titleMatch ? titleMatch[1].trim() : fallbackTitle || path;
