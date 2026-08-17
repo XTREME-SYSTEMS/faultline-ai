@@ -357,7 +357,7 @@ export default function Home() {
           <div className="footer-brand">
             <img src={LOGO_LIGHT} alt="AUTO LEADS" style={{ height: 60, width: 'auto' }} />
             <p>Construction Intelligence — AI tools &amp; websites for construction pros.</p>
-            <div className="socials"><a href="#" aria-label="LinkedIn">in</a><a href="#" aria-label="Instagram">◎</a><a href="#" aria-label="YouTube">▶</a></div>
+            <div className="socials"><a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">in</a><a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">◎</a><a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube">▶</a></div>
           </div>
           <FooterColumn title="AI Tools" links={['Floor Visualizer', 'Bid Generator', 'Lead Generator', 'CRM', 'Pricing Calculator']} />
           <FooterColumn title="Services" links={['Custom Websites', 'Floor Visualizer', 'Lead Generation', 'Estimating', 'CRM & Pipeline']} />
