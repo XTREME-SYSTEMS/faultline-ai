@@ -102,12 +102,25 @@ export default async function(req: Request) {
           link_rewrite_map: linkMap, rehost_images: true, max_images: 40,
         });
         let finalHtml = rewriteInternalLinks(clonedHtml, linkMap);
-        if (finalHtml.length > 400000) {
-          finalHtml = finalHtml.replace(/<script[^>]*id="__NEXT_DATA__"[^>]*>[\s\S]*?<\/script>/gi, '');
-          finalHtml = finalHtml.replace(/<script[^>]*type="application\/json"[^>]*>[\s\S]*?<\/script>/gi, '');
-          finalHtml = finalHtml.replace(/<script[^>]*data-nscript[^>]*>[\s\S]*?<\/script>/gi, '');
-          finalHtml = finalHtml.replace(/<!--[\s\S]*?-->/g, (m) => m.length > 1000 ? '' : m);
-        }
+        // Aggressive stripping of large inline scripts/data blobs — these are
+        // hydration/JSON blobs that bloat pages to 2MB+. We inject our own
+        // scripts, so removing them is safe and cuts pages from ~2MB to ~300KB.
+        // 1. Strip ALL inline <script> tags with > 2000 chars of JS content
+        finalHtml = finalHtml.replace(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi, (m, content) => {
+          return content.length > 2000 ? '' : m;
+        });
+        // 2. Strip JSON-LD blobs (we don't need structured data on clones)
+        finalHtml = finalHtml.replace(/<script[^>]*type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>/gi, '');
+        // 3. Strip Next.js/Nuxt hydration data
+        finalHtml = finalHtml.replace(/<script[^>]*id="__NEXT_DATA__"[^>]*>[\s\S]*?<\/script>/gi, '');
+        finalHtml = finalHtml.replace(/<script[^>]*type="application\/json"[^>]*>[\s\S]*?<\/script>/gi, '');
+        finalHtml = finalHtml.replace(/<script[^>]*data-nscript[^>]*>[\s\S]*?<\/script>/gi, '');
+        // 4. Strip large HTML comments (likely template remnants)
+        finalHtml = finalHtml.replace(/<!--[\s\S]*?-->/g, (m) => m.length > 500 ? '' : m);
+        // 5. Strip inline style blocks > 50KB (already extracted to external CSS)
+        finalHtml = finalHtml.replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, (m, content) => {
+          return content.length > 50000 ? '' : m;
+        });
         const titleMatch = finalHtml.match(/<title>([^<]+)<\/title>/i);
         const title = titleMatch ? titleMatch[1].trim() : fallbackTitle || path;
         const headings: string[] = [];
@@ -407,7 +420,7 @@ export default async function(req: Request) {
       launch_project_id: launchProjectId,
       sitemap_urls_found: sitemapUrls.length,
       used_bfs_fallback: usedBfsFallback,
-      pages_scraped: scrapedPages.length,
+      pages_scraped: pageMetadata.length,
       pages_cloned: pageMetadata.length,
       images_rehosted: totalImagesRehosted,
       ai_tools: AI_TOOLS.map(t => ({ slug: t.slug, title: t.title, tool_type: t.tool_type })),
