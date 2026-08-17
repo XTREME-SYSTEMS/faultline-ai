@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { base44 } from '@/api/base44Client';
 import ReactMarkdown from 'react-markdown';
-import { Shield, Wrench, Send, Loader2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock } from 'lucide-react';
+import { Shield, Wrench, Send, Loader2, ChevronDown, ChevronRight, CheckCircle2, XCircle, Clock, Palette } from 'lucide-react';
 
 const AGENTS = [
   {
@@ -19,6 +19,14 @@ const AGENTS = [
     color: '#237A4B',
     description: 'Repairs anything the tester finds — heals clones, fixes security, cleans orphans, forces 100% parity.',
     placeholder: 'Fix all issues found in the last audit...',
+  },
+  {
+    name: 'rebrand_agent',
+    label: 'Rebrand Agent',
+    icon: Palette,
+    color: '#7C3AED',
+    description: 'Rebrands a deployed clone end-to-end — replaces the old brand name everywhere (text, meta, JSON-LD, alt, schema), injects new logo, assigns domain, verifies.',
+    placeholder: 'Rebrand the latest clone to "AI App Factory" with logo URL and domain...',
   },
 ];
 
@@ -157,6 +165,12 @@ export default function AgentConsole() {
         { label: 'Quick Check', prompt: 'Quick check — just run the recursive E2E validator on the latest clone and report the summary.' },
         { label: 'Deep Paths', prompt: 'Test deep path resolution on 5 category paths: /graphic-templates/compatible-with-adobe-photoshop, /video-templates/compatible-with-after-effects, /presentation-templates/compatible-with-powerpoint, /audio/music-packs, /fonts/serif' },
       ]
+    : activeAgent === 'rebrand_agent'
+    ? [
+        { label: 'Rebrand Latest Clone', prompt: 'Rebrand the most recent clone to "AI App Factory". Use this logo URL: https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/b69f184f2_ChatGPTImageAug16202609_57_15PM.png and assign the domain aiappfactory.io. Replace all "Envato" and "Envato Elements" references with "AI App Factory" across the entire site, inject the new logo, redeploy, and verify no old references remain.' },
+        { label: 'Rebrand Only (No Domain)', prompt: 'Rebrand the most recent clone to "AI App Factory" with logo URL https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/b69f184f2_ChatGPTImageAug16202609_57_15PM.png — replace all old brand references, inject the logo, redeploy, and verify. Do not assign a domain.' },
+        { label: 'Verify Rebrand', prompt: 'Check the most recent rebrand — scan the deployed site for any remaining old-brand references and report whether the rebrand is complete.' },
+      ]
     : [
         { label: 'Fix All', prompt: 'Find and fix all issues from the most recent QA report. Heal clones, fix security, force 100% parity, and verify.' },
         { label: 'Heal Clones', prompt: 'Heal all clones that are below 100% parity. Run healAllClonesTo100 and then forceClonesTo100 if needed.' },
@@ -194,6 +208,7 @@ export default function AgentConsole() {
             <ol className="text-xs text-slate-500 space-y-1 list-decimal list-inside">
               <li>Run <b>Tester</b> to audit</li>
               <li>Run <b>Fixer</b> to repair</li>
+              <li>Run <b>Rebrand</b> to rebrand</li>
               <li>Re-run <b>Tester</b> to verify</li>
             </ol>
           </div>

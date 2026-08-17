@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
 import { deployToVercelMultiFile } from '../../shared/launchInfra.ts';
+import { buildLogoSwapScript } from '../../shared/rebrandUtils.ts';
 
 // Rebrand a deployed multi-page clone in place:
 // 1. Pull every HTML file from the clone's GitHub repo (via GitHub OAuth connector).
@@ -10,45 +11,6 @@ import { deployToVercelMultiFile } from '../../shared/launchInfra.ts';
 // 4. Redeploy all files to the SAME Vercel project (new production deployment).
 // 5. Assign a custom domain to that Vercel project.
 // 6. Update the LaunchProject record with the new brand + domain.
-
-function buildLogoSwapScript(logoUrl: string, brandName: string): string {
-  return `
-<script>
-(function(){
-  var LOGO='${logoUrl}';
-  var BRAND='${brandName}';
-  function swapLogos(){
-    var imgs=document.querySelectorAll('img');
-    imgs.forEach(function(img){
-      var ctx=img.closest('header,nav,[class*="logo" i],[class*="brand" i],a[href="/"],a[href=""]');
-      if(!ctx) return;
-      if(img.width>300||img.height>200) return;
-      img.src=LOGO; img.srcset=''; img.removeAttribute('srcset');
-      img.style.maxHeight='40px'; img.style.width='auto'; img.style.height='auto'; img.style.objectFit='contain';
-    });
-    document.querySelectorAll('header svg, nav svg, [class*="logo" i] svg').forEach(function(svg){
-      if(svg.closest('header,nav,[class*="logo" i]')){
-        var wrap=document.createElement('div'); wrap.style.display='inline-flex'; wrap.style.alignItems='center';
-        var nImg=document.createElement('img'); nImg.src=LOGO; nImg.style.maxHeight='40px'; nImg.style.width='auto'; nImg.style.height='auto'; nImg.style.objectFit='contain';
-        wrap.appendChild(nImg); svg.replaceWith(wrap);
-      }
-    });
-    document.querySelectorAll('a,span,div,h1,h2').forEach(function(el){
-      if(el.children.length>2) return;
-      var t=(el.textContent||'').trim();
-      if(/^(envato\\s*elements?|envato)$/i.test(t) && t.length<30){ el.textContent=BRAND; }
-    });
-    if(document.title) document.title=document.title.replace(/envato\\s*elements?/gi,BRAND).replace(/envato/gi,BRAND);
-    document.querySelectorAll('meta[name="description"],meta[property*="title"],meta[name="application-name"]').forEach(function(m){
-      var c=m.getAttribute('content');
-      if(c) m.setAttribute('content',c.replace(/envato\\s*elements?/gi,BRAND).replace(/envato/gi,BRAND));
-    });
-  }
-  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',swapLogos);}else{swapLogos();}
-  setTimeout(swapLogos,1500);setTimeout(swapLogos,3000);
-})();
-</script>`;
-}
 
 export default async function(req: Request) {
   try {
