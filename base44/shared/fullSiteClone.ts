@@ -649,6 +649,86 @@ export function buildCatalogScript(catalogApiUrl: string, checkoutUrl: string): 
 </script>`;
 }
 
+// Build an auth interceptor script that rewrites ALL sign-in, login, register,
+// and account links to point to MY app's auth system instead of Envato's.
+// Uses MutationObserver for SPA-rendered links + click interception as fallback.
+export function buildAuthInterceptorScript(loginUrl: string, registerUrl: string): string {
+  return `<script>
+(function(){
+  var LOGIN='${loginUrl}';
+  var REGISTER='${registerUrl}';
+  var authPatterns=/(sign-in|signin|login|sign-up|signup|register|join|my-account|account|profile)/i;
+  var registerPatterns=/(sign-up|signup|register|join|create-account)/i;
+  function rewriteAuthLink(el){
+    if(!el||!el.href)return;
+    var href=el.href||'';
+    var text=(el.textContent||'').trim().toLowerCase();
+    // Skip if already pointing to my auth
+    if(href.indexOf('autoleads')>=0)return;
+    // Match envato.com sign-in/login/register/account links
+    if(/envato\\.com.*(sign-in|login|register|sign-up|signup|account|my-account|profile)/i.test(href)||
+       href.indexOf('/sign-in')>=0||href.indexOf('/login')>=0||href.indexOf('/register')>=0||
+       href.indexOf('/sign-up')>=0||href.indexOf('/signup')>=0||href.indexOf('/join')>=0||
+       href.indexOf('/my-account')>=0||href.indexOf('/account')>=0){
+      if(registerPatterns.test(text)||registerPatterns.test(href)){
+        el.href=REGISTER;
+      }else{
+        el.href=LOGIN;
+      }
+      el.setAttribute('target','_self');
+      el.removeAttribute('rel');
+    }
+  }
+  function rewriteAllAuthLinks(){
+    document.querySelectorAll('a[href]').forEach(rewriteAuthLink);
+  }
+  // Also intercept clicks on auth-related buttons (not just links)
+  document.addEventListener('click',function(e){
+    var el=e.target.closest('a,button');
+    if(!el)return;
+    var text=(el.textContent||'').trim().toLowerCase();
+    var href=el.getAttribute('href')||'';
+    if(href.indexOf('autoleads')>=0)return;
+    if(authPatterns.test(text)||authPatterns.test(href)){
+      if(/envato\\.com/i.test(href)||href.indexOf('/sign-in')>=0||href.indexOf('/login')>=0||
+         href.indexOf('/register')>=0||href.indexOf('/sign-up')>=0||href.indexOf('/signup')>=0||
+         href.indexOf('/join')>=0||href.indexOf('/my-account')>=0||href.indexOf('/account')>=0||
+         href===''||href==='#'){
+        e.preventDefault();
+        e.stopPropagation();
+        if(registerPatterns.test(text)){
+          window.location.href=REGISTER;
+        }else{
+          window.location.href=LOGIN;
+        }
+      }
+    }
+  },true);
+  // Initial rewrite + delayed for SPA render
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',rewriteAllAuthLinks);}
+  else{rewriteAllAuthLinks();}
+  setTimeout(rewriteAllAuthLinks,1000);setTimeout(rewriteAllAuthLinks,3000);setTimeout(rewriteAllAuthLinks,5000);
+  // MutationObserver for dynamically rendered links
+  if(typeof MutationObserver!=='undefined'){
+    var obs=new MutationObserver(function(muts){
+      for(var i=0;i<muts.length;i++){
+        var added=muts[i].addedNodes;
+        for(var j=0;j<added.length;j++){
+          var node=added[j];
+          if(node.nodeType===1){
+            if(node.tagName==='A')rewriteAuthLink(node);
+            else node.querySelectorAll&&node.querySelectorAll('a[href]').forEach(rewriteAuthLink);
+          }
+        }
+      }
+    });
+    if(document.body){obs.observe(document.body,{childList:true,subtree:true});}
+    else{document.addEventListener('DOMContentLoaded',function(){obs.observe(document.body,{childList:true,subtree:true});});}
+  }
+})();
+</script>`;
+}
+
 // Build a Stripe checkout script that intercepts subscription/purchase buttons
 // and redirects to our Stripe checkout flow.
 // createStoreCheckout expects { items: [{ name, amount, quantity, type }] } — NOT

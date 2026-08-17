@@ -358,6 +358,213 @@ export function buildAiLinkInterceptorScript(): string {
 </script>`;
 }
 
+// Build a dedicated category page (video-templates, audio, graphics, etc.)
+// that displays assets from getEnvatoCatalog for that category. These pages
+// replace the 404 fallback for category routes, giving each category its own
+// SEO-friendly page with a populated asset grid.
+export interface CategoryPageConfig {
+  slug: string;           // URL slug (e.g. "video-templates")
+  title: string;          // Page title
+  category: string;       // getEnvatoCatalog category (e.g. "video_templates")
+  description: string;
+  icon: string;
+}
+
+export const CATEGORY_PAGES: CategoryPageConfig[] = [
+  { slug: 'video-templates', title: 'Video Templates — After Effects, Premiere Pro', category: 'video_templates', description: 'Unlimited downloads of premium video templates for After Effects, Premiere Pro, and more.', icon: '🎬' },
+  { slug: 'stock-video', title: 'Stock Video — Royalty-free footage', category: 'video_templates', description: 'Download royalty-free stock video footage for your next project.', icon: '📹' },
+  { slug: 'audio', title: 'Audio — Music, SFX, and more', category: 'audio', description: 'Unlimited downloads of royalty-free music, sound effects, and audio assets.', icon: '🎵' },
+  { slug: 'graphics', title: 'Graphics — Icons, illustrations, and more', category: 'graphics', description: 'Download premium graphics, icons, illustrations, and design elements.', icon: '🎨' },
+  { slug: 'design-templates', title: 'Design Templates — Print, web, and more', category: 'presentation_templates', description: 'Unlimited downloads of design templates for print, web, and presentations.', icon: '📐' },
+  { slug: 'graphic-templates', title: 'Graphic Templates — Logos, social media, and more', category: 'graphic_templates', description: 'Download premium graphic templates for logos, social media, brochures, and more.', icon: '🖌️' },
+  { slug: 'presentation-templates', title: 'Presentation Templates — PowerPoint, Keynote', category: 'presentation_templates', description: 'Unlimited downloads of presentation templates for PowerPoint, Keynote, and Google Slides.', icon: '📊' },
+  { slug: 'fonts', title: 'Fonts — Premium font families', category: 'fonts', description: 'Download premium fonts for your next design project.', icon: '🔤' },
+  { slug: 'photos', title: 'Photos — Royalty-free stock photos', category: 'photos', description: 'Unlimited downloads of royalty-free stock photos.', icon: '📷' },
+  { slug: '3d', title: '3D — Models, textures, and more', category: '3d', description: 'Download premium 3D models, textures, and assets.', icon: '🧊' },
+  { slug: 'web-templates', title: 'Web Templates — HTML, React, and more', category: 'web_templates', description: 'Unlimited downloads of web templates for HTML, React, WordPress, and more.', icon: '🌐' },
+  { slug: 'app-templates', title: 'App Templates — React Native, Flutter, and more', category: 'app_templates', description: 'Download premium app templates for React Native, Flutter, and more.', icon: '📱' },
+  { slug: 'addons', title: 'Addons — Plugins, extensions, and more', category: 'addons', description: 'Unlimited downloads of addons, plugins, and extensions.', icon: '🔌' },
+  { slug: 'cms-templates', title: 'CMS Templates — WordPress, Joomla, and more', category: 'cms_templates', description: 'Download premium CMS templates for WordPress, Joomla, and more.', icon: '📝' },
+  { slug: 'more', title: 'All Categories — Browse all assets', category: 'graphic_templates', description: 'Browse all asset categories — millions of creative assets.', icon: '✨' },
+  { slug: 'license', title: 'License — Usage rights and terms', category: '', description: 'Learn about our license terms and usage rights.', icon: '📜' },
+  { slug: 'enterprise', title: 'Enterprise — Team plans for organizations', category: '', description: 'Enterprise plans for teams and organizations.', icon: '🏢' },
+  { slug: 'pricing', title: 'Pricing — Plans for every budget', category: '', description: 'Choose the plan that works for you.', icon: '💰' },
+  { slug: 'subscribe', title: 'Get Unlimited Downloads — Subscribe today', category: '', description: 'Get unlimited downloads of millions of creative assets.', icon: '⭐' },
+  { slug: 'all-items', title: 'All Items — Browse the full catalog', category: 'graphic_templates', description: 'Browse the full catalog of creative assets.', icon: '🗂️' },
+  { slug: 'about', title: 'About — Our story', category: '', description: 'Learn about our company and mission.', icon: 'ℹ️' },
+  { slug: 'contact', title: 'Contact — Get in touch', category: '', description: 'Contact us with any questions.', icon: '✉️' },
+  { slug: 'help', title: 'Help Center — Support and FAQs', category: '', description: 'Find answers to common questions.', icon: '❓' },
+  { slug: 'terms', title: 'Terms of Service', category: '', description: 'Our terms of service.', icon: '📋' },
+  { slug: 'privacy', title: 'Privacy Policy', category: '', description: 'Our privacy policy.', icon: '🔒' },
+  { slug: 'refund', title: 'Refund Policy', category: '', description: 'Our refund policy.', icon: '↩️' },
+];
+
+export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string, checkoutUrl: string, loginUrl: string, registerUrl: string): string {
+  const hasCatalog = cat.category.length > 0;
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>${cat.title}</title>
+<meta name="description" content="${cat.description}">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; }
+  .nav { background: #111; border-bottom: 1px solid #222; padding: 16px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .nav a { color: #ccc; text-decoration: none; font-size: 14px; font-weight: 600; }
+  .nav a:hover { color: #fff; }
+  .nav .logo { font-size: 20px; font-weight: 800; color: #fff; }
+  .nav .signin { margin-left: auto; }
+  .nav .signin a { background: #4a9eff; color: #fff; padding: 8px 16px; border-radius: 6px; }
+  .hero { padding: 60px 24px 40px; text-align: center; max-width: 900px; margin: 0 auto; }
+  .hero h1 { font-size: 48px; font-weight: 800; margin: 0 0 16px; line-height: 1.1; }
+  .hero p { font-size: 18px; color: #999; line-height: 1.6; margin: 0 0 32px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; padding: 0 24px 60px; max-width: 1400px; margin: 0 auto; }
+  .card { background: #161616; border: 1px solid #2a2a2a; border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform .15s; }
+  .card:hover { transform: translateY(-2px); }
+  .card-img { aspect-ratio: 4/3; overflow: hidden; background: #0d0d0d; }
+  .card-img img { width: 100%; height: 100%; object-fit: cover; }
+  .card-body { padding: 12px; }
+  .card-title { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-cat { font-size: 11px; color: #888; margin-bottom: 4px; }
+  .card-price { font-size: 12px; color: #4a9eff; font-weight: 600; }
+  .featured-badge { position: absolute; top: 8px; left: 8px; background: #FFD700; color: #111; padding: 3px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; }
+  .loading { text-align: center; padding: 60px; color: #555; }
+  .info-page { max-width: 800px; margin: 0 auto; padding: 60px 24px; }
+  .info-page h2 { font-size: 28px; margin: 30px 0 16px; }
+  .info-page p { color: #999; line-height: 1.8; margin: 0 0 16px; }
+  .cta-btn { display: inline-block; background: linear-gradient(135deg, #4a9eff, #2563eb); color: #fff; padding: 14px 36px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 16px; margin: 20px 0; }
+  footer { text-align: center; padding: 40px 24px; color: #555; font-size: 13px; border-top: 1px solid #222; }
+  footer a { color: #999; text-decoration: none; margin: 0 8px; }
+  @media (max-width: 640px) { .hero h1 { font-size: 32px; } .grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="/" class="logo">⚡ Creative Assets</a>
+  <a href="/video-templates">Video</a>
+  <a href="/audio">Audio</a>
+  <a href="/graphics">Graphics</a>
+  <a href="/design-templates">Templates</a>
+  <a href="/fonts">Fonts</a>
+  <a href="/photos">Photos</a>
+  <a href="/ai-image-generator">AI Tools</a>
+  <a href="/pricing">Pricing</a>
+  <span class="signin"><a href="${loginUrl}">Sign In</a></span>
+</nav>
+
+<section class="hero">
+  <div style="font-size: 56px; margin-bottom: 12px;">${cat.icon}</div>
+  <h1>${cat.title.split('—')[0].trim()}</h1>
+  <p>${cat.description}</p>
+</section>
+
+${hasCatalog ? `<div class="grid" id="assetGrid"><div class="loading">Loading assets...</div></div>` : `
+<div class="info-page">
+  <h2>${cat.title.split('—')[0].trim()}</h2>
+  <p>${cat.description}</p>
+  <p>For more information or to get started, browse our catalog or sign up for a subscription.</p>
+  <a href="/subscribe" class="cta-btn">Get Unlimited Downloads</a>
+</div>`}
+
+<footer>
+  <a href="${loginUrl}">Sign In</a>
+  <a href="${registerUrl}">Sign Up</a>
+  <a href="/pricing">Pricing</a>
+  <a href="/license">License</a>
+  <a href="/terms">Terms</a>
+  <a href="/privacy">Privacy</a>
+  <a href="/help">Help</a>
+</footer>
+
+<script>
+var CATALOG_API='${catalogApiUrl}';
+var CHECKOUT_URL='${checkoutUrl}';
+var LOGIN_URL='${loginUrl}';
+var REGISTER_URL='${registerUrl}';
+var CATEGORY='${cat.category}';
+
+${hasCatalog ? `
+function fetchAssets() {
+  fetch(CATALOG_API+'?action=browse&category='+encodeURIComponent(CATEGORY)+'&limit=48')
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(!data.assets||data.assets.length===0){
+        document.getElementById('assetGrid').innerHTML='<div class="loading">No assets found.</div>';
+        return;
+      }
+      var html=data.assets.map(function(a){
+        var price=a.license_type==='subscription'?'Included':('$'+a.price);
+        var badge=a.featured?'<div class="featured-badge">FEATURED</div>':'';
+        var rating=a.rating?'<div style="color:#FFD700;font-size:11px;">★ '+a.rating+'</div>':'';
+        return '<div class="card" data-asset-id="'+a.id+'" data-asset-name="'+a.name.replace(/"/g,'&quot;')+'">'+
+          '<div class="card-img" style="position:relative;">'+badge+
+            '<img src="'+(a.thumbnail_url||'')+'" alt="'+a.name.replace(/"/g,'&quot;')+'" loading="lazy" onerror="this.style.display=\\'none\\'">'+
+          '</div>'+
+          '<div class="card-body">'+
+            '<div class="card-title">'+a.name+'</div>'+
+            '<div class="card-cat">'+(a.subcategory||a.category)+'</div>'+
+            rating+
+            '<div class="card-price">'+price+'</div>'+
+          '</div>'+
+        '</div>';
+      }).join('');
+      document.getElementById('assetGrid').innerHTML=html;
+      document.querySelectorAll('[data-asset-id]').forEach(function(card){
+        card.addEventListener('click',function(){
+          var aid=this.getAttribute('data-asset-id');
+          var aname=this.getAttribute('data-asset-name');
+          if(window.self!==window.top){alert('Checkout works only from the published app. Please open this site in a new tab.');return;}
+          fetch(CHECKOUT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:[{name:aname,amount:29,quantity:1,type:'ai_tool',asset_id:aid}]})})
+            .then(function(r){return r.json();})
+            .then(function(j){if(j.url)window.location.href=j.url;else alert('Could not start checkout.');})
+            .catch(function(){alert('Checkout error.');});
+        });
+      });
+    })
+    .catch(function(){document.getElementById('assetGrid').innerHTML='<div class="loading">Error loading assets.</div>';});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fetchAssets);
+else fetchAssets();
+` : ''}
+
+// Auth link interceptor
+(function(){
+  var LOGIN=LOGIN_URL,REGISTER=REGISTER_URL;
+  var authPat=/(sign-in|signin|login|sign-up|signup|register|join|my-account|account|profile)/i;
+  var regPat=/(sign-up|signup|register|join|create-account)/i;
+  function rewrite(el){
+    if(!el||!el.href)return;
+    if(el.href.indexOf('autoleads')>=0)return;
+    var t=(el.textContent||'').toLowerCase();
+    if(authPat.test(t)||authPat.test(el.href)){
+      el.href=regPat.test(t)?REGISTER:LOGIN;
+    }
+  }
+  document.addEventListener('click',function(e){
+    var el=e.target.closest('a,button');if(!el)return;
+    var t=(el.textContent||'').toLowerCase();
+    if(el.href&&el.href.indexOf('autoleads')>=0)return;
+    if(authPat.test(t)){e.preventDefault();e.stopPropagation();window.location.href=regPat.test(t)?REGISTER:LOGIN;}
+  },true);
+  document.querySelectorAll('a[href]').forEach(rewrite);
+  setTimeout(function(){document.querySelectorAll('a[href]').forEach(rewrite);},2000);
+})();
+</script>
+</body>
+</html>`;
+}
+
+export function buildAllCategoryPages(catalogApiUrl: string, checkoutUrl: string, loginUrl: string, registerUrl: string): Map<string, string> {
+  const pages = new Map<string, string>();
+  for (const cat of CATEGORY_PAGES) {
+    pages.set(cat.slug + '.html', buildCategoryPage(cat, catalogApiUrl, checkoutUrl, loginUrl, registerUrl));
+  }
+  return pages;
+}
+
 // Rewrite AI tool links in the cloned HTML to point to our functional pages
 // instead of the original Envato site
 export function rewriteAiToolLinks(html: string): string {
