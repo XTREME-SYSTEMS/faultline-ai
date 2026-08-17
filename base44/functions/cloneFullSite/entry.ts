@@ -197,12 +197,16 @@ export default async function(req: Request) {
       // Add 404.html fallback page for any path that wasn't cloned — graceful
       // "Page Not Found" with search + homepage link instead of Vercel's default.
       const searchScriptFor404 = buildSearchScript(clonedPages.map(p => ({ path: p.path, title: p.title, headings: p.headings })));
+      const resolveUrl = `https://base44.app/api/apps/${appId}/functions/resolveDeepPath`;
+      const targetUrl = target_url;
+      const bizName = business_name || '';
+      const orgId = targetOrg || '';
       const page404 = `<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Page Not Found</title>
+<title>Loading...</title>
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   body { font-family: 'DM Sans', system-ui, sans-serif; margin: 0; }
@@ -218,10 +222,18 @@ export default async function(req: Request) {
   .search-results { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #ddd; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,.12); max-height: 300px; overflow: auto; z-index: 999; display: none; }
   .search-results a { display: block; padding: 10px 14px; border-bottom: 1px solid #eee; text-decoration: none; color: #111; font-size: 14px; }
   .search-results a:hover { background: #f5f5f5; }
+  .loader-404 { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; gap: 20px; }
+  .loader-404 .spin { width: 48px; height: 48px; border: 4px solid #e5e5e5; border-top-color: #111; border-radius: 50%; animation: spin 1s linear infinite; }
+  .loader-404 p { color: #555; font-size: 16px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
 </style>
 </head>
 <body>
-<div class="hero-404">
+<div id="loader" class="loader-404">
+  <div class="spin"></div>
+  <p>Loading content...</p>
+</div>
+<div id="fallback" class="hero-404" style="display:none;">
   <h1>404</h1>
   <h2>Page Not Found</h2>
   <p>The page you're looking for doesn't exist or has been moved. Try searching or go back to the homepage.</p>
@@ -231,6 +243,41 @@ export default async function(req: Request) {
   </div>
   <a href="/" class="btn">Back to Homepage</a>
 </div>
+<script>
+(function(){
+  var RESOLVE_URL='${resolveUrl}';
+  var TARGET_URL='${targetUrl}';
+  var BIZ='${bizName}';
+  var ORG='${orgId}';
+  var path=window.location.pathname;
+  // Skip asset files, AI tool pages, and API paths
+  if (/\\.(css|js|png|jpg|jpeg|gif|svg|webp|ico|woff2?|ttf|eot|map)$/i.test(path)||path.indexOf('/ai-')===0){
+    document.getElementById('loader').style.display='none';
+    document.getElementById('fallback').style.display='flex';
+    document.title='Page Not Found';
+    return;
+  }
+  fetch(RESOLVE_URL,{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({path:path,target_url:TARGET_URL,business_name:BIZ,organization_id:ORG})
+  }).then(function(r){return r.json();}).then(function(j){
+    if(j&&j.html&&j.html.length>500){
+      document.open();
+      document.write(j.html);
+      document.close();
+    }else{
+      document.getElementById('loader').style.display='none';
+      document.getElementById('fallback').style.display='flex';
+      document.title='Page Not Found';
+    }
+  }).catch(function(){
+    document.getElementById('loader').style.display='none';
+    document.getElementById('fallback').style.display='flex';
+    document.title='Page Not Found';
+  });
+})();
+</script>
 ${searchScriptFor404}
 </body>
 </html>`;
