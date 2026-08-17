@@ -96,31 +96,60 @@ export default async function(req: Request) {
     async function cloneAndStore(pageUrl: string, path: string, rawHtml: string, fallbackTitle: string) {
       const filename = pathToFilename(path);
       try {
-        const { html: clonedHtml, images_rehosted } = await clonePageAssets(base44, rawHtml, {
-          target_url, page_url: pageUrl, business_name, client_email, client_phone,
-          organization_id: targetOrg, form_handler_url: formHandlerUrl,
-          link_rewrite_map: linkMap, rehost_images: true, max_images: 40,
-        });
-        let finalHtml = rewriteInternalLinks(clonedHtml, linkMap);
-        // Aggressive stripping of large inline scripts/data blobs — these are
-        // hydration/JSON blobs that bloat pages to 2MB+. We inject our own
-        // scripts, so removing them is safe and cuts pages from ~2MB to ~300KB.
-        // 1. Strip ALL inline <script> tags with > 2000 chars of JS content
-        finalHtml = finalHtml.replace(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi, (m, content) => {
-          return content.length > 2000 ? '' : m;
-        });
-        // 2. Strip JSON-LD blobs (we don't need structured data on clones)
-        finalHtml = finalHtml.replace(/<script[^>]*type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>/gi, '');
-        // 3. Strip Next.js/Nuxt hydration data
-        finalHtml = finalHtml.replace(/<script[^>]*id="__NEXT_DATA__"[^>]*>[\s\S]*?<\/script>/gi, '');
-        finalHtml = finalHtml.replace(/<script[^>]*type="application\/json"[^>]*>[\s\S]*?<\/script>/gi, '');
-        finalHtml = finalHtml.replace(/<script[^>]*data-nscript[^>]*>[\s\S]*?<\/script>/gi, '');
-        // 4. Strip large HTML comments (likely template remnants)
-        finalHtml = finalHtml.replace(/<!--[\s\S]*?-->/g, (m) => m.length > 500 ? '' : m);
-        // 5. Strip inline style blocks > 50KB (already extracted to external CSS)
-        finalHtml = finalHtml.replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, (m, content) => {
-          return content.length > 50000 ? '' : m;
-        });
+        // Detect React Server Components (RSC) pages — these stream content
+        // via JavaScript and cannot be cloned as static HTML. For RSC pages,
+        // keep the original scripts so the SPA can render the content.
+        const isRscPage = rawHtml.includes('<!--$?-->') || rawHtml.includes('<template id="B:');
+
+        let finalHtml: string;
+        let images_rehosted = 0;
+
+        if (isRscPage) {
+          // RSC/SPA page — keep original HTML & scripts so the SPA renders.
+          // Just rewrite internal links and strip loading states.
+          finalHtml = rawHtml;
+          finalHtml = finalHtml.replace(/class="appLoading"/gi, 'class=""');
+          finalHtml = finalHtml.replace(/<div[^>]*data-testid="loading-neue-page"[^>]*>[\s\S]*?<\/div>/gi, '');
+          finalHtml = finalHtml.replace(/<div[^>]*data-testid="loading-spinner[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
+          finalHtml = finalHtml.replace(/<svg[^>]*data-testid="loading-spinner[^"]*"[^>]*>[\s\S]*?<\/svg>/gi, '');
+          finalHtml = rewriteInternalLinks(finalHtml, linkMap);
+          console.log(`[autonomousFullSiteClone] RSC page detected — keeping original scripts for ${path}`);
+        } else {
+          // Static page — full clone pipeline (rehost images, swap branding, strip scripts)
+          const { html: clonedHtml, images_rehosted: ir } = await clonePageAssets(base44, rawHtml, {
+            target_url, page_url: pageUrl, business_name, client_email, client_phone,
+            organization_id: targetOrg, form_handler_url: formHandlerUrl,
+            link_rewrite_map: linkMap, rehost_images: true, max_images: 40,
+          });
+          images_rehosted = ir;
+          finalHtml = rewriteInternalLinks(clonedHtml, linkMap);
+        }
+        if (!isRscPage) {
+          // Aggressive stripping of large inline scripts/data blobs — these are
+          // hydration/JSON blobs that bloat pages to 2MB+. We inject our own
+          // scripts, so removing them is safe and cuts pages from ~2MB to ~300KB.
+          // 1. Strip ALL inline <script> tags with > 2000 chars of JS content
+          finalHtml = finalHtml.replace(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi, (m, content) => {
+            return content.length > 2000 ? '' : m;
+          });
+          // 2. Strip JSON-LD blobs (we don't need structured data on clones)
+          finalHtml = finalHtml.replace(/<script[^>]*type="application\/ld\+json"[^>]*>[\s\S]*?<\/script>/gi, '');
+          // 3. Strip Next.js/Nuxt hydration data
+          finalHtml = finalHtml.replace(/<script[^>]*id="__NEXT_DATA__"[^>]*>[\s\S]*?<\/script>/gi, '');
+          finalHtml = finalHtml.replace(/<script[^>]*type="application\/json"[^>]*>[\s\S]*?<\/script>/gi, '');
+          finalHtml = finalHtml.replace(/<script[^>]*data-nscript[^>]*>[\s\S]*?<\/script>/gi, '');
+          // 4. Strip large HTML comments (likely template remnants)
+          finalHtml = finalHtml.replace(/<!--[\s\S]*?-->/g, (m) => m.length > 500 ? '' : m);
+          // 5. Strip inline style blocks > 50KB (already extracted to external CSS)
+          finalHtml = finalHtml.replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, (m, content) => {
+            return content.length > 50000 ? '' : m;
+          });
+          // 5b. Remove SPA loading states
+          finalHtml = finalHtml.replace(/class="appLoading"/gi, 'class=""');
+          finalHtml = finalHtml.replace(/<div[^>]*data-testid="loading-neue-page"[^>]*>[\s\S]*?<\/div>/gi, '');
+          finalHtml = finalHtml.replace(/<div[^>]*data-testid="loading-spinner[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
+          finalHtml = finalHtml.replace(/<svg[^>]*data-testid="loading-spinner[^"]*"[^>]*>[\s\S]*?<\/svg>/gi, '');
+        }
         const titleMatch = finalHtml.match(/<title>([^<]+)<\/title>/i);
         const title = titleMatch ? titleMatch[1].trim() : fallbackTitle || path;
         const headings: string[] = [];
@@ -157,7 +186,13 @@ export default async function(req: Request) {
         const html = await res.text();
         const hasBody = html.includes('<body') && html.length > 5000;
         const hasContent = /<main|<article|<div[^>]*class/i.test(html);
-        if (hasBody && hasContent) {
+        // Count real content elements — SSR pages (like Envato) have hundreds
+        // of divs even with "appLoading" class. Only route to stealth if the
+        // page is truly a shell with almost no content.
+        const divCount = (html.match(/<div/g) || []).length;
+        const textLength = html.replace(/<[^>]+>/g, '').trim().length;
+        const isSpaShell = divCount < 20 && textLength < 2000;
+        if (hasBody && hasContent && !isSpaShell) {
           const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
           const title = titleMatch ? titleMatch[1].trim() : '';
           await cloneAndStore(pageUrl, path, html, title);
@@ -193,6 +228,22 @@ export default async function(req: Request) {
 
         for (const pageUrl of stealthNeeded) {
           try {
+            // Track network requests to detect when SPA finishes loading
+            let pendingRequests = 0;
+            let lastRequestTime = Date.now();
+            const networkListener = (params: any) => {
+              if (params.method === 'Network.requestWillBeSent') {
+                pendingRequests++;
+                lastRequestTime = Date.now();
+              } else if (params.method === 'Network.loadingFinished' || params.method === 'Network.loadingFailed' || params.method === 'Network.responseReceived') {
+                if (pendingRequests > 0) pendingRequests--;
+                lastRequestTime = Date.now();
+              }
+            };
+            cdp!.on('Network.requestWillBeSent', (p: any) => networkListener({ method: 'Network.requestWillBeSent', ...p }));
+            cdp!.on('Network.loadingFinished', (p: any) => networkListener({ method: 'Network.loadingFinished', ...p }));
+            cdp!.on('Network.loadingFailed', (p: any) => networkListener({ method: 'Network.loadingFailed', ...p }));
+
             await cdp.send('Page.navigate', { url: pageUrl }, cdpSessionId, 25000);
             await new Promise<void>((resolve) => {
               let done = false;
@@ -200,13 +251,41 @@ export default async function(req: Request) {
               cdp!.on('Page.loadEventFired', finish);
               setTimeout(finish, 12000);
             });
-            await new Promise(r => setTimeout(r, 1200));
+            // Wait for network idle — SPA data fetching to complete.
+            // Poll until no pending requests for 2 consecutive seconds (up to 20s).
+            await new Promise<void>((resolve) => {
+              const start = Date.now();
+              const check = () => {
+                const elapsed = Date.now() - start;
+                const idle = Date.now() - lastRequestTime > 2000;
+                if ((idle && pendingRequests <= 0) || elapsed > 20000) resolve();
+                else setTimeout(check, 500);
+              };
+              setTimeout(check, 1000);
+            });
+            // Extra wait for DOM rendering after network idle
+            await new Promise(r => setTimeout(r, 3000));
+            // Scroll to trigger lazy-loaded content
             try {
               await cdp.send('Runtime.evaluate', {
-                expression: `(async()=>{var h=document.body.scrollHeight;for(var y=0;y<h;y+=900){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,100));}window.scrollTo(0,0);document.querySelectorAll('img[data-src]').forEach(function(i){if(i.dataset.src)i.src=i.dataset.src;});document.querySelectorAll('img[srcset]').forEach(function(i){if(!i.src||i.src.indexOf('data:')===0){var s=i.getAttribute('srcset')||'';var u=s.split(',').pop().trim().split(/\\s+/)[0];if(u)i.src=u;}});await new Promise(r=>setTimeout(r,500));})()`,
+                expression: `(async()=>{
+                  var h=document.body.scrollHeight;
+                  for(var y=0;y<Math.min(h,5000);y+=600){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,150));}
+                  window.scrollTo(0,0);
+                  document.querySelectorAll('img[data-src]').forEach(function(i){if(i.dataset.src)i.src=i.dataset.src;});
+                  document.querySelectorAll('img[srcset]').forEach(function(i){if(!i.src||i.src.indexOf('data:')===0){var s=i.getAttribute('srcset')||'';var u=s.split(',').pop().trim().split(/\\s+/)[0];if(u)i.src=u;}});
+                  await new Promise(r=>setTimeout(r,1000));
+                })()`,
                 returnByValue: true, awaitPromise: true,
               }, cdpSessionId, 15000);
             } catch {}
+            // Check if real content rendered (not just a loading shell)
+            const contentCheck = await cdp.send('Runtime.evaluate', {
+              expression: `document.querySelectorAll('div, article, section').length + '|' + document.querySelectorAll('img').length + '|' + document.body.scrollHeight`,
+              returnByValue: true,
+            }, cdpSessionId);
+            const [divCount, imgCount, scrollH] = (contentCheck?.result?.value || '0|0|0').split('|').map(Number);
+            console.log(`[autonomousFullSiteClone] stealth ${pageUrl}: ${divCount} divs, ${imgCount} imgs, ${scrollH}px tall`);
             const htmlResult = await cdp.send('Runtime.evaluate', {
               expression: 'document.documentElement.outerHTML', returnByValue: true,
             }, cdpSessionId);
