@@ -151,7 +151,7 @@ export function buildAiToolPage(tool: AiToolConfig, invokeUrl: string, checkoutU
   <a href="/ai-image-generator">AI Image</a>
   <a href="/ai-voice-generator">AI Voice</a>
   <a href="/ai-music-generator">AI Music</a>
-  <a href="/pricing">Pricing</a>
+  <a href="/ai-image-generator" style="margin-left:auto;color:#4a9eff;">Try All Tools →</a>
 </nav>
 
 <section class="hero">
@@ -181,7 +181,7 @@ export function buildAiToolPage(tool: AiToolConfig, invokeUrl: string, checkoutU
 <div class="cta-section">
   <h2>Unlock Unlimited Downloads</h2>
   <p>Get access to 29+ million creative assets, all AI tools, and a lifetime commercial license.</p>
-  <a href="/pricing" class="cta-btn">View Plans</a>
+  <a href="/ai-image-generator" class="cta-btn">Try All AI Tools</a>
 </div>
 
 <footer>

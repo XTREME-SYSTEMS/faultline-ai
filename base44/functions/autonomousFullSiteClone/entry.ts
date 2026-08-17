@@ -16,7 +16,7 @@ import { buildAllAiToolPages, rewriteAiToolLinks, AI_TOOLS, buildAiToolsSidebarS
 // to Vercel → provision Drive + GitHub + Supabase → return full report.
 
 const BATCH_SIZE = 12; // pages per scrape batch (memory-managed)
-const MAX_SITEMAP_URLS = 120; // cap to stay within function timeout
+const MAX_SITEMAP_URLS = 300; // cap to stay within function timeout
 
 export default async function(req: Request) {
   try {
@@ -195,7 +195,7 @@ export default async function(req: Request) {
           form_handler_url: formHandlerUrl,
           link_rewrite_map: linkMap,
           rehost_images: true,
-          max_images: 25, // lower per-page cap for memory
+          max_images: 40, // per-page image re-host cap
         });
 
         let finalHtml = rewriteInternalLinks(clonedHtml, linkMap);

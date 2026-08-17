@@ -32,8 +32,8 @@ export default async function(req) {
     const session = await stripe.checkout.sessions.create({
       mode: 'payment',
       line_items,
-      success_url: `${origin}/store?status=success`,
-      cancel_url: `${origin}/store?status=canceled`,
+      success_url: `${origin}?status=success`,
+      cancel_url: `${origin}?status=canceled`,
       ...(customer_email ? { customer_email } : {}),
       metadata: {
         base44_app_id: Deno.env.get('BASE44_APP_ID'),
