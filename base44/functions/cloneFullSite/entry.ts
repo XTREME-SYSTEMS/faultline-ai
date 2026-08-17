@@ -110,8 +110,6 @@ export default async function(req: Request) {
           finalHtml = finalHtml.replace(/<script[^>]*id="__NEXT_DATA__"[^>]*>[\s\S]*?<\/script>/gi, '');
           finalHtml = finalHtml.replace(/<script[^>]*type="application\/json"[^>]*>[\s\S]*?<\/script>/gi, '');
           finalHtml = finalHtml.replace(/<script[^>]*data-nscript[^>]*>[\s\S]*?<\/script>/gi, '');
-          // Remove any inline script larger than 20KB (analytics, tracking, data blobs)
-          finalHtml = finalHtml.replace(/<script[^>]*>([\s\S]{20000,})<\/script>/gi, (m) => '');
           // Remove Next.js hydration comment markers
           finalHtml = finalHtml.replace(/<!--[\s\S]*?-->/g, (m) => m.length > 1000 ? '' : m);
           console.log(`  Stripped heavy scripts: ${clonedHtml.length} → ${finalHtml.length} chars (saved ${clonedHtml.length - finalHtml.length})`);
@@ -133,6 +131,8 @@ export default async function(req: Request) {
       } catch (e) {
         console.error(`Failed to clone page ${path}: ${e.message}`);
       }
+      // Free original HTML to prevent memory accumulation across 30+ pages
+      crawl.pages[i].html = null;
     }
 
     console.log(`Cloned ${clonedPages.length} pages, re-hosted ${totalImagesRehosted} images total`);
