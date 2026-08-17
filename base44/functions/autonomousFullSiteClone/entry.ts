@@ -81,137 +81,35 @@ export default async function(req: Request) {
       }
     }
 
-    // ─── 3. BATCH-SCRAPE ALL PAGES ───────────────────────────────────
-    // Create ONE stealth session and reuse it for all pages (much faster than
-    // creating a new session per page). Process in batches to manage memory.
-    const scrapedPages: Array<{ url: string; path: string; html: string; ok: boolean; title: string }> = [];
-    let session: { id: string; connectUrl: string } | null = null;
-    let cdp: CDPClient | null = null;
-    let cdpSessionId: string | null = null;
-
-    try {
-      session = await createStealthSession({
-        deepRender: true,
-        timeout: 25000,
-        waitAfterLoad: 1200,
-        solveCaptchas: true,
-        proxies: true,
-      });
-      cdp = new CDPClient();
-      await cdp.connect(session.connectUrl);
-      const { targetInfos } = await cdp.send('Target.getTargets');
-      const pageTarget = targetInfos.find((t: any) => t.type === 'page') || targetInfos[0];
-      const attach = await cdp.send('Target.attachToTarget', { targetId: pageTarget.targetId, flatten: true });
-      cdpSessionId = attach.sessionId;
-      await cdp.send('Page.enable', {}, cdpSessionId);
-      await cdp.send('Runtime.enable', {}, cdpSessionId);
-      await cdp.send('Network.enable', {}, cdpSessionId);
-
-      console.log(`[autonomousFullSiteClone] Stealth session created — scraping ${urlsToClone.length} pages in batches of ${BATCH_SIZE}`);
-
-      for (let i = 0; i < urlsToClone.length; i += BATCH_SIZE) {
-        const batch = urlsToClone.slice(i, i + BATCH_SIZE);
-        console.log(`[autonomousFullSiteClone] Batch ${Math.floor(i / BATCH_SIZE) + 1}/${Math.ceil(urlsToClone.length / BATCH_SIZE)} — ${batch.length} pages`);
-
-        for (const pageUrl of batch) {
-          try {
-            // Navigate to the page
-            await cdp.send('Page.navigate', { url: pageUrl }, cdpSessionId, 25000);
-            // Wait for load
-            await new Promise<void>((resolve) => {
-              let done = false;
-              const finish = () => { if (!done) { done = true; resolve(); } };
-              cdp!.on('Page.loadEventFired', finish);
-              setTimeout(finish, 12000);
-            });
-            await new Promise(r => setTimeout(r, 1200));
-
-            // Deep render: scroll + resolve lazy images
-            try {
-              await cdp.send('Runtime.evaluate', {
-                expression: `(async()=>{var h=document.body.scrollHeight;for(var y=0;y<h;y+=900){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,100));}window.scrollTo(0,0);document.querySelectorAll('img[data-src]').forEach(function(i){if(i.dataset.src)i.src=i.dataset.src;});document.querySelectorAll('img[srcset]').forEach(function(i){if(!i.src||i.src.indexOf('data:')===0){var s=i.getAttribute('srcset')||'';var u=s.split(',').pop().trim().split(/\\s+/)[0];if(u)i.src=u;}});await new Promise(r=>setTimeout(r,500));})()`,
-                returnByValue: true,
-                awaitPromise: true,
-              }, cdpSessionId, 15000);
-            } catch {}
-
-            // Extract HTML
-            const htmlResult = await cdp.send('Runtime.evaluate', {
-              expression: 'document.documentElement.outerHTML',
-              returnByValue: true,
-            }, cdpSessionId);
-            const html = htmlResult?.result?.value || '';
-            const titleResult = await cdp.send('Runtime.evaluate', {
-              expression: 'document.title',
-              returnByValue: true,
-            }, cdpSessionId);
-            const title = titleResult?.result?.value || '';
-
-            let path: string;
-            try { path = new URL(pageUrl).pathname; } catch { path = '/'; }
-
-            if (html.length > 500) {
-              scrapedPages.push({ url: pageUrl, path, html, ok: true, title });
-              console.log(`[autonomousFullSiteClone] ✓ ${path} (${html.length} chars)`);
-            } else {
-              console.log(`[autonomousFullSiteClone] ✗ ${path} — too short (${html.length} chars)`);
-            }
-          } catch (e) {
-            console.log(`[autonomousFullSiteClone] ✗ ${pageUrl} — ${e.message}`);
-          }
-        }
-        console.log(`[autonomousFullSiteClone] Batch done — ${scrapedPages.length} pages scraped so far`);
-      }
-    } finally {
-      if (cdp) await cdp.close().catch(() => {});
-      if (session) await releaseSession(session.id);
-    }
-
-    if (scrapedPages.length === 0) {
-      return Response.json({ error: 'No pages could be scraped', sitemap_urls: sitemapUrls.length }, { status: 502 });
-    }
-
-    console.log(`[autonomousFullSiteClone] Scraped ${scrapedPages.length} pages total`);
-
-    // ─── 4. CLONE EACH PAGE (re-host assets, swap branding, rewrite links) ───
+    // ─── 3+4. INTERLEAVED SCRAPE-AND-CLONE ────────────────────────────
+    // Memory-critical: scrape AND clone each page in a single pass, then null
+    // the HTML immediately after encoding to Uint8Array. This keeps only ONE
+    // page's HTML in memory at any time, preventing OOM on 50+ pages.
     const appId = Deno.env.get('BASE44_APP_ID');
     const formHandlerUrl = `https://base44.app/api/apps/${appId}/functions/ingestCloneLead`;
-    const clonedPages: Array<{ filename: string; html: string; path: string; title: string; headings: string[]; images_rehosted: number }> = [];
+    const pageMetadata: Array<{ filename: string; path: string; title: string; headings: string[]; images_rehosted: number }> = [];
+    const fileMap = new Map<string, Uint8Array>();
     let totalImagesRehosted = 0;
+    const stealthNeeded: string[] = [];
 
-    for (let i = 0; i < scrapedPages.length; i++) {
-      const page = scrapedPages[i];
-      const filename = pathToFilename(page.path);
-      console.log(`[autonomousFullSiteClone] Cloning ${i + 1}/${scrapedPages.length}: ${page.path} → ${filename}`);
-
+    // Helper: clone a single page's HTML → metadata + encoded Uint8Array
+    async function cloneAndStore(pageUrl: string, path: string, rawHtml: string, fallbackTitle: string) {
+      const filename = pathToFilename(path);
       try {
-        const { html: clonedHtml, images_rehosted } = await clonePageAssets(base44, page.html, {
-          target_url,
-          page_url: page.url,
-          business_name,
-          client_email,
-          client_phone,
-          organization_id: targetOrg,
-          form_handler_url: formHandlerUrl,
-          link_rewrite_map: linkMap,
-          rehost_images: true,
-          max_images: 40, // per-page image re-host cap
+        const { html: clonedHtml, images_rehosted } = await clonePageAssets(base44, rawHtml, {
+          target_url, page_url: pageUrl, business_name, client_email, client_phone,
+          organization_id: targetOrg, form_handler_url: formHandlerUrl,
+          link_rewrite_map: linkMap, rehost_images: true, max_images: 40,
         });
-
         let finalHtml = rewriteInternalLinks(clonedHtml, linkMap);
-
-        // Strip heavy inline scripts (Next.js hydration blobs)
         if (finalHtml.length > 400000) {
           finalHtml = finalHtml.replace(/<script[^>]*id="__NEXT_DATA__"[^>]*>[\s\S]*?<\/script>/gi, '');
           finalHtml = finalHtml.replace(/<script[^>]*type="application\/json"[^>]*>[\s\S]*?<\/script>/gi, '');
           finalHtml = finalHtml.replace(/<script[^>]*data-nscript[^>]*>[\s\S]*?<\/script>/gi, '');
           finalHtml = finalHtml.replace(/<!--[\s\S]*?-->/g, (m) => m.length > 1000 ? '' : m);
-          console.log(`[autonomousFullSiteClone] Stripped scripts: ${clonedHtml.length} → ${finalHtml.length}`);
         }
-
-        // Extract title and headings for search index
         const titleMatch = finalHtml.match(/<title>([^<]+)<\/title>/i);
-        const title = titleMatch ? titleMatch[1].trim() : page.title || page.path;
+        const title = titleMatch ? titleMatch[1].trim() : fallbackTitle || path;
         const headings: string[] = [];
         const hRe = /<h[1-3][^>]*>([\s\S]*?)<\/h[1-3]>/gi;
         let hm;
@@ -219,17 +117,111 @@ export default async function(req: Request) {
           const text = hm[1].replace(/<[^>]+>/g, '').trim().replace(/\s+/g, ' ');
           if (text.length > 3) headings.push(text);
         }
-
-        clonedPages.push({ filename, html: finalHtml, path: page.path, title, headings, images_rehosted });
+        pageMetadata.push({ filename, path, title, headings, images_rehosted });
+        fileMap.set(filename, new TextEncoder().encode(finalHtml));
         totalImagesRehosted += images_rehosted;
+        console.log(`[autonomousFullSiteClone] ✓ cloned ${path} → ${filename} (${finalHtml.length} chars, ${images_rehosted} imgs)`);
       } catch (e) {
-        console.error(`[autonomousFullSiteClone] Clone failed for ${page.path}: ${e.message}`);
+        console.error(`[autonomousFullSiteClone] Clone failed for ${path}: ${e.message}`);
       }
-      // Free raw HTML to prevent memory accumulation
-      scrapedPages[i].html = '';
     }
 
-    console.log(`[autonomousFullSiteClone] Cloned ${clonedPages.length} pages, re-hosted ${totalImagesRehosted} images`);
+    // Phase 1: Fast HTTP fetch + immediate clone for each page
+    console.log(`[autonomousFullSiteClone] Phase 1: HTTP fetch + clone for ${urlsToClone.length} pages`);
+    for (const pageUrl of urlsToClone) {
+      let path: string;
+      try { path = new URL(pageUrl).pathname; } catch { path = '/'; }
+      try {
+        const res = await fetch(pageUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          },
+          signal: AbortSignal.timeout(10000),
+          redirect: 'follow',
+        });
+        if (!res.ok) { stealthNeeded.push(pageUrl); continue; }
+        const html = await res.text();
+        const hasBody = html.includes('<body') && html.length > 5000;
+        const hasContent = /<main|<article|<div[^>]*class/i.test(html);
+        if (hasBody && hasContent) {
+          const titleMatch = html.match(/<title>([^<]+)<\/title>/i);
+          const title = titleMatch ? titleMatch[1].trim() : '';
+          await cloneAndStore(pageUrl, path, html, title);
+        } else {
+          stealthNeeded.push(pageUrl);
+        }
+      } catch (e) {
+        stealthNeeded.push(pageUrl);
+        console.log(`[autonomousFullSiteClone] → stealth needed: ${path} (${e.message})`);
+      }
+    }
+    console.log(`[autonomousFullSiteClone] HTTP phase done: ${pageMetadata.length} cloned, ${stealthNeeded.length} need stealth`);
+
+    // Phase 2: Stealth browser for JS-heavy pages (interleaved with cloning)
+    if (stealthNeeded.length > 0) {
+      let session: { id: string; connectUrl: string } | null = null;
+      let cdp: CDPClient | null = null;
+      let cdpSessionId: string | null = null;
+      try {
+        session = await createStealthSession({
+          deepRender: true, timeout: 25000, waitAfterLoad: 1200, solveCaptchas: true, proxies: true,
+        });
+        cdp = new CDPClient();
+        await cdp.connect(session.connectUrl);
+        const { targetInfos } = await cdp.send('Target.getTargets');
+        const pageTarget = targetInfos.find((t: any) => t.type === 'page') || targetInfos[0];
+        const attach = await cdp.send('Target.attachToTarget', { targetId: pageTarget.targetId, flatten: true });
+        cdpSessionId = attach.sessionId;
+        await cdp.send('Page.enable', {}, cdpSessionId);
+        await cdp.send('Runtime.enable', {}, cdpSessionId);
+        await cdp.send('Network.enable', {}, cdpSessionId);
+        console.log(`[autonomousFullSiteClone] Phase 2: Stealth + clone ${stealthNeeded.length} pages`);
+
+        for (const pageUrl of stealthNeeded) {
+          try {
+            await cdp.send('Page.navigate', { url: pageUrl }, cdpSessionId, 25000);
+            await new Promise<void>((resolve) => {
+              let done = false;
+              const finish = () => { if (!done) { done = true; resolve(); } };
+              cdp!.on('Page.loadEventFired', finish);
+              setTimeout(finish, 12000);
+            });
+            await new Promise(r => setTimeout(r, 1200));
+            try {
+              await cdp.send('Runtime.evaluate', {
+                expression: `(async()=>{var h=document.body.scrollHeight;for(var y=0;y<h;y+=900){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,100));}window.scrollTo(0,0);document.querySelectorAll('img[data-src]').forEach(function(i){if(i.dataset.src)i.src=i.dataset.src;});document.querySelectorAll('img[srcset]').forEach(function(i){if(!i.src||i.src.indexOf('data:')===0){var s=i.getAttribute('srcset')||'';var u=s.split(',').pop().trim().split(/\\s+/)[0];if(u)i.src=u;}});await new Promise(r=>setTimeout(r,500));})()`,
+                returnByValue: true, awaitPromise: true,
+              }, cdpSessionId, 15000);
+            } catch {}
+            const htmlResult = await cdp.send('Runtime.evaluate', {
+              expression: 'document.documentElement.outerHTML', returnByValue: true,
+            }, cdpSessionId);
+            const html = htmlResult?.result?.value || '';
+            const titleResult = await cdp.send('Runtime.evaluate', {
+              expression: 'document.title', returnByValue: true,
+            }, cdpSessionId);
+            const title = titleResult?.result?.value || '';
+            let path: string;
+            try { path = new URL(pageUrl).pathname; } catch { path = '/'; }
+            if (html.length > 500) {
+              await cloneAndStore(pageUrl, path, html, title);
+            }
+          } catch (e) {
+            console.log(`[autonomousFullSiteClone] ✗ stealth ${pageUrl} — ${e.message}`);
+          }
+        }
+      } finally {
+        if (cdp) await cdp.close().catch(() => {});
+        if (session) await releaseSession(session.id);
+      }
+    }
+
+    if (pageMetadata.length === 0) {
+      return Response.json({ error: 'No pages could be scraped', sitemap_urls: sitemapUrls.length }, { status: 502 });
+    }
+
+    console.log(`[autonomousFullSiteClone] Cloned ${pageMetadata.length} pages, re-hosted ${totalImagesRehosted} images`);
 
     // ─── 5. INJECT SEARCH + CHECKOUT + AI TOOLS ───────────────────────
     const checkoutUrl = `https://base44.app/api/apps/${appId}/functions/createStoreCheckout`;
@@ -241,7 +233,7 @@ export default async function(req: Request) {
       { id: 'growth', name: 'Growth Plan — Monthly', price_id: 'prod_UzkHKEVTvIfq7v', price: 299 },
       { id: 'operating', name: 'Operating System — Monthly', price_id: 'prod_UzkHWgaWke7ITk', price: 699 },
     ];
-    const searchScript = buildSearchScript(clonedPages.map(p => ({ path: p.path, title: p.title, headings: p.headings })));
+    const searchScript = buildSearchScript(pageMetadata.map(p => ({ path: p.path, title: p.title, headings: p.headings })));
     const checkoutScript = buildStripeCheckoutScript(checkoutUrl, stripeProducts);
     const aiSidebarScript = buildAiToolsSidebarScript();
     const aiToolPages = buildAllAiToolPages(invokeAiUrl, checkoutUrl);
@@ -253,24 +245,28 @@ export default async function(req: Request) {
       ? buildSupabaseFormScript(ibeamSupabaseUrl, ibeamSupabaseAnonKey)
       : '';
 
-    for (const page of clonedPages) {
-      page.html = rewriteAiToolLinks(page.html);
+    // Inject scripts into each cloned page — decode from fileMap, rewrite, re-encode
+    for (const meta of pageMetadata) {
+      let html = new TextDecoder().decode(fileMap.get(meta.filename)!);
+      html = rewriteAiToolLinks(html);
       const inject = searchScript + '\n' + checkoutScript + '\n' + aiSidebarScript + (supabaseFormScript ? '\n' + supabaseFormScript : '');
-      if (page.html.includes('</body>')) {
-        page.html = page.html.replace('</body>', inject + '\n</body>');
+      if (html.includes('</body>')) {
+        html = html.replace('</body>', inject + '\n</body>');
       } else {
-        page.html += inject;
+        html += inject;
       }
+      fileMap.set(meta.filename, new TextEncoder().encode(html));
     }
 
     // Add AI tool pages
     for (const [filename, html] of aiToolPages) {
       const slug = filename.replace(/\.html$/, '');
-      clonedPages.push({
-        filename, html, path: '/' + slug,
+      pageMetadata.push({
+        filename, path: '/' + slug,
         title: AI_TOOLS.find(t => t.slug === slug)?.title || slug,
         headings: [], images_rehosted: 0,
       });
+      fileMap.set(filename, new TextEncoder().encode(html));
       linkMap.set('/' + slug, '/' + filename);
       linkMap.set('/ai/' + slug, '/' + filename);
     }
@@ -288,12 +284,6 @@ export default async function(req: Request) {
       const token = secrets.get('VERCEL_TOKEN');
       if (!token) throw new Error('VERCEL_TOKEN secret not set');
       const teamId = secrets.get('VERCEL_TEAM_ID') || null;
-
-      // Build file list (deduplicate by filename)
-      const fileMap = new Map<string, Uint8Array>();
-      for (const page of clonedPages) {
-        fileMap.set(page.filename, new TextEncoder().encode(page.html));
-      }
 
       // 404 fallback page
       const resolveUrl = `https://base44.app/api/apps/${appId}/functions/resolveDeepPath`;
@@ -352,8 +342,10 @@ export default async function(req: Request) {
           const conn = await base44.asServiceRole.connectors.getConnection('github');
           if (!conn?.accessToken) throw new Error('GitHub connector not authorized');
           const repo = await createGitHubRepo(conn.accessToken, baseSlug);
-          for (const page of clonedPages.slice(0, 30)) {
-            try { await pushGitHubFile(conn.accessToken, repo.owner, baseSlug, page.filename, page.html, `Add ${page.filename}`); } catch {}
+          let pushed = 0;
+          for (const [filename, encoded] of fileMap) {
+            if (pushed >= 30) break;
+            try { await pushGitHubFile(conn.accessToken, repo.owner, baseSlug, filename, new TextDecoder().decode(encoded), `Add ${filename}`); pushed++; } catch {}
           }
           githubUrl = repo.url;
         } catch (e) { provisionErrors.push({ step: 'github', error: e.message }); console.error('[autonomousFullSiteClone] GitHub failed:', e.message); }
@@ -393,7 +385,7 @@ export default async function(req: Request) {
           parity_score: 0,
           metadata: {
             method: 'autonomous_full_site_clone',
-            pages_cloned: clonedPages.length,
+            pages_cloned: pageMetadata.length,
             sitemap_urls: sitemapUrls.length,
             images_rehosted: totalImagesRehosted,
             ai_tools: AI_TOOLS.map(t => t.slug),
@@ -416,7 +408,7 @@ export default async function(req: Request) {
       sitemap_urls_found: sitemapUrls.length,
       used_bfs_fallback: usedBfsFallback,
       pages_scraped: scrapedPages.length,
-      pages_cloned: clonedPages.length,
+      pages_cloned: pageMetadata.length,
       images_rehosted: totalImagesRehosted,
       ai_tools: AI_TOOLS.map(t => ({ slug: t.slug, title: t.title, tool_type: t.tool_type })),
       features: {
@@ -436,7 +428,7 @@ export default async function(req: Request) {
         vercel_deployment: !!vercelUrl,
       },
       provision_errors: provisionErrors.length ? provisionErrors : undefined,
-      message: `Autonomous clone complete: ${clonedPages.length} pages from ${sitemapUrls.length} sitemap URLs — full stack provisioned`
+      message: `Autonomous clone complete: ${pageMetadata.length} pages from ${sitemapUrls.length} sitemap URLs — full stack provisioned`
     });
   } catch (error) {
     console.error('[autonomousFullSiteClone] Error:', error);
