@@ -1,0 +1,112 @@
+{
+  "description": "Autonomous pipeline: clones the full target site (sitemap-driven, 100+ pages), waits for deployment, validates parity, and auto-heals if below 100. Runs every 6 hours to keep the clone fresh.",
+  "name": "Autonomous Full Site Clone",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "autonomous_full_site_clone",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "clone_site": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "autonomousFullSiteClone",
+            "args": {
+              "target_url": "https://elements.envato.com/",
+              "project_name": "Envato Elements Autonomous Clone",
+              "max_pages": 100,
+              "deploy": true
+            }
+          },
+          "then": "wait_for_deploy",
+          "x-base44": {
+            "title": "Clone Full Site",
+            "description": "Sitemap-driven clone of all pages + full stack provisioning"
+          }
+        }
+      },
+      {
+        "wait_for_deploy": {
+          "wait": "PT2M",
+          "then": "validate_clone",
+          "x-base44": {
+            "title": "Wait for Deployment",
+            "description": "2 min for Vercel propagation"
+          }
+        }
+      },
+      {
+        "validate_clone": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "validateFullStack",
+            "args": {
+              "launch_project_id": "${ .clone_site.launch_project_id }",
+              "live_url": "${ .clone_site.vercel_url }",
+              "target_url": "https://elements.envato.com/"
+            }
+          },
+          "then": "check_score",
+          "x-base44": {
+            "title": "Validate Clone",
+            "description": "Full-stack parity validation"
+          }
+        }
+      },
+      {
+        "check_score": {
+          "switch": [
+            {
+              "when": "${ (.validate_clone.overall_score // 0) < 100 }",
+              "then": "heal_clone"
+            },
+            {
+              "when": "${ true }",
+              "then": "end"
+            }
+          ],
+          "x-base44": {
+            "title": "Check Score",
+            "description": "If below 100, auto-heal"
+          }
+        }
+      },
+      {
+        "heal_clone": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "healAllClonesTo100",
+            "args": {
+              "launch_project_id": "${ .clone_site.launch_project_id }"
+            }
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Auto-Heal Clone",
+            "description": "Force all clones to 100% parity"
+          }
+        }
+      }
+    ]
+  },
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "UTC",
+      "interval_value": 6,
+      "interval_unit": "hours",
+      "interval_anchor": "2026-08-17T04:00:00Z",
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  }
+}

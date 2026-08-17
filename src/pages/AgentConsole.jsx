@@ -169,8 +169,8 @@ export default function AgentConsole() {
 
   const quickActions = activeAgent === 'clone_agent'
     ? [
-        { label: 'Clone Full Site', prompt: 'Clone the entire Envato Elements site end-to-end. Use target_url https://elements.envato.com/, project_name "Envato Elements Full Clone", max_pages 22, deploy true. Report the Vercel URL, pages cloned, and all provisioned services.' },
-        { label: 'Re-Clone (Fast)', prompt: 'Re-clone Envato Elements from scratch with max_pages 15 for a faster build. Use target_url https://elements.envato.com/, project_name "Envato Elements Fast Clone", deploy true.' },
+        { label: 'Clone Full Site (100+ pages)', prompt: 'Clone the entire Envato Elements site end-to-end using the autonomous sitemap-driven clone. Use target_url https://elements.envato.com/, project_name "Envato Elements Full Clone", max_pages 100, deploy true. Report the Vercel URL, sitemap URLs found, pages cloned, and all provisioned services.' },
+        { label: 'Re-Clone (Fast 30 pages)', prompt: 'Re-clone Envato Elements with max_pages 30 for a faster build. Use target_url https://elements.envato.com/, project_name "Envato Elements Fast Clone", deploy true.' },
         { label: 'Check Existing', prompt: 'Check if an Envato clone already exists. Query LaunchProject records for benchmark_url containing envato, sorted by created_date descending. Report the most recent clone URL, status, and pages cloned.' },
       ]
     : activeAgent === 'system_tester'

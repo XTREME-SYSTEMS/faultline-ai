@@ -131,7 +131,7 @@ export async function releaseSession(sessionId: string): Promise<void> {
 
 // ─── CDP WebSocket Client ─────────────────────────────────────────────
 
-class CDPClient {
+export class CDPClient {
   private ws: WebSocket;
   private msgId = 0;
   private pending = new Map<number, { resolve: (v: any) => void; reject: (e: Error) => void }>();
