@@ -32,11 +32,11 @@
     },
     {
       "function_name": "healAllClonesTo100",
-      "description": "Autonomous healing loop for Envato clones below 100% parity \u2014 re-scrapes elements.envato.com, re-clones, re-deploys until parity achieved."
+      "description": "Autonomous healing loop for Envato clones below 100% parity."
     },
     {
       "function_name": "forceClonesTo100",
-      "description": "Force Envato clones through the rigorous clone gate to 100% parity when healing alone is insufficient."
+      "description": "Force Envato clones through the rigorous clone gate to 100% parity."
     },
     {
       "function_name": "finishStalledClones",
@@ -44,40 +44,58 @@
     },
     {
       "function_name": "resumeStuckClones",
-      "description": "Resume Envato clones stuck in a non-terminal state \u2014 restarts the pipeline."
+      "description": "Resume Envato clones stuck in a non-terminal state."
     },
     {
       "function_name": "cleanupBrokenClones",
-      "description": "Remove irrecoverable broken Envato clones with persistent errors."
+      "description": "Remove irrecoverable broken Envato clones."
     },
     {
       "function_name": "cleanupOrphanedVercelProjects",
-      "description": "Delete Vercel projects not linked to any LaunchProject to free deployment quota and resolve 429 rate limits."
+      "description": "Delete orphaned Vercel projects to free deployment quota."
     },
     {
       "function_name": "operationalHarden",
-      "description": "Fix form handlers, CTA link integrity, AI tool endpoints, and other operational parity issues on the Envato clone."
+      "description": "Fix form handlers, CTA links, AI tool endpoints on the Envato clone."
     },
     {
       "function_name": "forensicAuditAndHarden",
-      "description": "Forensic audit with auto_heal=true to inject missing security headers on the Envato clone."
+      "description": "Forensic audit with auto_heal=true to inject missing security headers."
     },
     {
       "function_name": "applyAutoFix",
-      "description": "Apply a specific automated fix for a given issue on the Envato clone \u2014 surgical repair for individual problems."
+      "description": "Apply a specific automated fix for a given issue on the Envato clone."
     },
     {
       "function_name": "rebuildCustomClone",
-      "description": "Rebuild a broken Envato clone from scratch \u2014 fresh scrape of elements.envato.com, clone, and deploy."
+      "description": "Rebuild a broken Envato clone from scratch."
     },
     {
       "function_name": "recursiveEndToEndValidator",
-      "description": "Re-run the full E2E validator on the Envato clone after fixes to verify all scores are 100/100."
+      "description": "Re-run the full E2E validator after fixes to verify all scores are 100/100."
     },
     {
       "function_name": "cloneFullSite",
-      "description": "Clone elements.envato.com from scratch if no Envato clone exists or the existing one is beyond repair."
+      "description": "Clone elements.envato.com from scratch if no Envato clone exists or is beyond repair."
     }
   ],
+  "context_files": [],
+  "app_user_connector_configs": [],
+  "selected_skill_names": [],
+  "selected_workspace_skill_ids": [],
+  "model": "automatic",
+  "whatsapp_greeting": null,
+  "telegram_greeting": null,
+  "line_greeting": null,
+  "memory_config": {
+    "enabled": true,
+    "scope": "both",
+    "include_other_conversation_context": false,
+    "instructions": null
+  },
+  "voice_config": {
+    "voice_id": null
+  },
+  "allow_anonymous_access": false,
   "name": "auto_fixer"
 }
