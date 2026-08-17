@@ -1,7 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
 import { createStealthSession, releaseSession, CDPClient, crawlSiteStealth } from '../../shared/stealthBrowser.ts';
-import { clonePageAssets, rewriteInternalLinks, pathToFilename, buildSearchScript, buildStripeCheckoutScript } from '../../shared/fullSiteClone.ts';
+import { clonePageAssets, rewriteInternalLinks, pathToFilename, buildSearchScript, buildStripeCheckoutScript, buildSupabaseFormScript } from '../../shared/fullSiteClone.ts';
 import { slugify, createVercelProject, disableVercelSso, deployToVercelMultiFile, createDriveFolder, createGitHubRepo, pushGitHubFile, createSupabaseProject } from '../../shared/launchInfra.ts';
 import { buildAllAiToolPages, rewriteAiToolLinks, AI_TOOLS, buildAiToolsSidebarScript } from '../../shared/aiToolPages.ts';
 
@@ -246,9 +246,16 @@ export default async function(req: Request) {
     const aiSidebarScript = buildAiToolsSidebarScript();
     const aiToolPages = buildAllAiToolPages(invokeAiUrl, checkoutUrl);
 
+    // Supabase form backend — wire all forms to the IBEAM Supabase leads table
+    const ibeamSupabaseUrl = secrets.get('IBEAM_SUPABASE_URL');
+    const ibeamSupabaseAnonKey = secrets.get('IBEAM_SUPABASE_ANON_KEY');
+    const supabaseFormScript = (ibeamSupabaseUrl && ibeamSupabaseAnonKey)
+      ? buildSupabaseFormScript(ibeamSupabaseUrl, ibeamSupabaseAnonKey)
+      : '';
+
     for (const page of clonedPages) {
       page.html = rewriteAiToolLinks(page.html);
-      const inject = searchScript + '\n' + checkoutScript + '\n' + aiSidebarScript;
+      const inject = searchScript + '\n' + checkoutScript + '\n' + aiSidebarScript + (supabaseFormScript ? '\n' + supabaseFormScript : '');
       if (page.html.includes('</body>')) {
         page.html = page.html.replace('</body>', inject + '\n</body>');
       } else {
@@ -421,6 +428,7 @@ export default async function(req: Request) {
         form_handler: true,
         security_headers: true,
         functional_ai_tools: true,
+        supabase_form_backend: !!supabaseFormScript,
         full_stack_provisioning: true,
         google_drive: !!driveUrl,
         github_repo: !!githubUrl,

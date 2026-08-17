@@ -437,6 +437,46 @@ export function buildSearchScript(pageIndex: Array<{ path: string; title: string
 </script>`;
 }
 
+// Build a Supabase form-wiring script that intercepts all form submissions
+// on the cloned site and POSTs them directly to the IBEAM Supabase leads table.
+// This gives every clone a working backend for lead capture — no server needed.
+export function buildSupabaseFormScript(supabaseUrl: string, supabaseAnonKey: string): string {
+  return `<script>
+(function(){
+  var SB_URL='${supabaseUrl}';
+  var SB_KEY='${supabaseAnonKey}';
+  var CLONE_URL=window.location.href;
+  document.querySelectorAll('form').forEach(function(f){
+    if(f.dataset.sbWired)return;f.dataset.sbWired='1';
+    f.addEventListener('submit',function(e){
+      e.preventDefault();
+      var fd=new FormData(f);
+      var data={clone_url:CLONE_URL,source:'clone'};
+      fd.forEach(function(v,k){if(typeof v==='string')data[k]=v;});
+      // Normalize common field names
+      if(!data.full_name&&(data.name||data.Name||data['full-name']))data.full_name=data.name||data.Name||data['full-name'];
+      if(!data.email&&data.Email)data.email=data.Email;
+      if(!data.phone&&data.Phone)data.phone=data.Phone;
+      if(!data.company&&data.Company)data.company=data.Company;
+      if(!data.message&&(data.Message||data.comments||data.message_body))data.message=data.Message||data.comments||data.message_body;
+      fetch(SB_URL+'/rest/v1/leads',{
+        method:'POST',
+        headers:{'apikey':SB_KEY,'Authorization':'Bearer '+SB_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+        body:JSON.stringify(data)
+      }).then(function(r){return r.json();}).then(function(){
+        f.reset();
+        var msg=document.createElement('div');
+        msg.textContent='Thank you! We\\'ll be in touch shortly.';
+        msg.style.cssText='padding:15px;background:#d4edda;color:#155724;border-radius:6px;margin-top:10px;font-family:sans-serif;';
+        f.appendChild(msg);
+        setTimeout(function(){msg.remove();},5000);
+      }).catch(function(){});
+    });
+  });
+})();
+</script>`;
+}
+
 // Build a Stripe checkout script that intercepts subscription/purchase buttons
 // and redirects to our Stripe checkout flow.
 // createStoreCheckout expects { items: [{ name, amount, quantity, type }] } — NOT

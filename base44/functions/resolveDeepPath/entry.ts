@@ -1,6 +1,7 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { secrets } from 'base44:runtime';
 import { scrapeWithStealth } from '../../shared/stealthBrowser.ts';
-import { clonePageAssets, rewriteInternalLinks, buildSearchScript, buildStripeCheckoutScript } from '../../shared/fullSiteClone.ts';
+import { clonePageAssets, rewriteInternalLinks, buildSearchScript, buildStripeCheckoutScript, buildSupabaseFormScript } from '../../shared/fullSiteClone.ts';
 import { buildAiToolsSidebarScript, rewriteAiToolLinks, AI_TOOLS } from '../../shared/aiToolPages.ts';
 
 // On-demand deep path resolver. When a user hits a path on the cloned site
@@ -91,7 +92,12 @@ export default async function(req: Request) {
     const searchScript = buildSearchScript([{ path, title: path, headings: [] }]);
     const checkoutScript = buildStripeCheckoutScript(checkoutUrl, stripeProducts);
     const aiSidebarScript = buildAiToolsSidebarScript();
-    const inject = searchScript + '\n' + checkoutScript + '\n' + aiSidebarScript;
+    const ibeamSupabaseUrl = secrets.get('IBEAM_SUPABASE_URL');
+    const ibeamSupabaseAnonKey = secrets.get('IBEAM_SUPABASE_ANON_KEY');
+    const supabaseFormScript = (ibeamSupabaseUrl && ibeamSupabaseAnonKey)
+      ? buildSupabaseFormScript(ibeamSupabaseUrl, ibeamSupabaseAnonKey)
+      : '';
+    const inject = searchScript + '\n' + checkoutScript + '\n' + aiSidebarScript + (supabaseFormScript ? '\n' + supabaseFormScript : '');
     if (finalHtml.includes('</body>')) {
       finalHtml = finalHtml.replace('</body>', inject + '\n</body>');
     } else {

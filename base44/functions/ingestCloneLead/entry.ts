@@ -1,8 +1,10 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { secrets } from 'base44:runtime';
 
 // Generic, CORS-enabled form backend for every deployed clone. The clone's contact
 // form POSTs here (injected by buildInferredBackend); this saves a real Lead record,
 // making the clone operationally complete — not just a static visual copy.
+// Also syncs the lead to the IBEAM Supabase leads table for centralized reporting.
 const cors = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
@@ -17,9 +19,6 @@ export default async function(req) {
     const { organization_id, clone_id, name, email, phone, message, source_url } = body;
     if (!organization_id) return Response.json({ ok: false, error: 'organization_id required' }, { status: 400, headers: cors });
     if (!name && !email) return Response.json({ ok: false, error: 'name or email required' }, { status: 400, headers: cors });
-    // Origin validation: only accept submissions from Vercel deployments or
-    // the Base44 app itself. Reject requests from unknown origins to prevent
-    // lead spam to arbitrary organizations.
     const origin = req.headers.get('origin') || req.headers.get('referer') || '';
     const isAllowed = !origin || /vercel\.app|base44\.app|localhost/i.test(origin);
     if (!isAllowed) {
@@ -35,6 +34,26 @@ export default async function(req) {
       source: 'manual',
       status: 'new'
     });
+
+    // Best-effort sync to IBEAM Supabase leads table
+    const sbUrl = secrets.get('IBEAM_SUPABASE_URL');
+    const sbKey = secrets.get('IBEAM_SUPABASE_SERVICE_KEY');
+    if (sbUrl && sbKey) {
+      await fetch(`${sbUrl}/rest/v1/leads`, {
+        method: 'POST',
+        headers: { apikey: sbKey, Authorization: `Bearer ${sbKey}`, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+        body: JSON.stringify({
+          full_name: name || 'Clone Lead',
+          email: email || '',
+          phone: phone || '',
+          message: message || '',
+          source: 'clone_form',
+          clone_url: source_url || clone_id || origin,
+          status: 'new',
+        }),
+      }).catch(() => {});
+    }
+
     return Response.json({ ok: true, status: 'captured' }, { headers: cors });
   } catch (error) {
     console.error('ingestCloneLead error:', error);
