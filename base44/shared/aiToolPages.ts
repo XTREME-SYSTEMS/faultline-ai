@@ -300,6 +300,64 @@ export function buildAiToolsSidebarScript(): string {
 </script>`;
 }
 
+// Build a client-side script that rewrites AI tool links AFTER the SPA renders.
+// RSC/SPA pages render links via JavaScript, so server-side rewriting can't
+// catch them. This script uses a MutationObserver + click interception to
+// redirect any elements.envato.com/ai/* links to our local functional pages.
+export function buildAiLinkInterceptorScript(): string {
+  const toolMap = AI_TOOLS.map(t => `{slug:"${t.slug}",title:${JSON.stringify(t.title)}}`).join(',');
+  return `<script>
+(function(){
+  var TOOLS=[${toolMap}];
+  var SLUGS=TOOLS.map(function(t){return t.slug;});
+  function rewriteLink(el){
+    if(!el||!el.href)return;
+    var href=el.href||'';
+    // Match elements.envato.com/ai/ai-video-generator → /ai-video-generator
+    var m=href.match(/elements\\.envato\\.com\\/ai\\/([a-z-]+)/i);
+    if(m&&SLUGS.indexOf(m[1])>=0){
+      el.href='/'+m[1]+'.html';
+      return;
+    }
+    // Match /ai/ai-video-generator (relative)
+    var m2=href.match(/\\/ai\\/([a-z-]+)/i);
+    if(m2&&SLUGS.indexOf(m2[1])>=0){
+      el.href='/'+m2[1]+'.html';
+      return;
+    }
+    // Generic /ai link → first tool
+    if(/elements\\.envato\\.com\\/ai\\/?$/i.test(href)||href.indexOf('/ai')>=0&&href.indexOf('/ai-')<0){
+      el.href='/ai-image-generator.html';
+    }
+  }
+  function rewriteAll(){
+    document.querySelectorAll('a[href]').forEach(rewriteLink);
+  }
+  // Initial rewrite + delayed for SPA render
+  if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',rewriteAll);}
+  else{rewriteAll();}
+  setTimeout(rewriteAll,1000);setTimeout(rewriteAll,3000);setTimeout(rewriteAll,5000);
+  // MutationObserver for dynamically rendered links
+  if(typeof MutationObserver!=='undefined'){
+    var obs=new MutationObserver(function(muts){
+      for(var i=0;i<muts.length;i++){
+        var added=muts[i].addedNodes;
+        for(var j=0;j<added.length;j++){
+          var node=added[j];
+          if(node.nodeType===1){
+            if(node.tagName==='A')rewriteLink(node);
+            else node.querySelectorAll&&node.querySelectorAll('a[href]').forEach(rewriteLink);
+          }
+        }
+      }
+    });
+    if(document.body){obs.observe(document.body,{childList:true,subtree:true});}
+    else{document.addEventListener('DOMContentLoaded',function(){obs.observe(document.body,{childList:true,subtree:true});});}
+  }
+})();
+</script>`;
+}
+
 // Rewrite AI tool links in the cloned HTML to point to our functional pages
 // instead of the original Envato site
 export function rewriteAiToolLinks(html: string): string {

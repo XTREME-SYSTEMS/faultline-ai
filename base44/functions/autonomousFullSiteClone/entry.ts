@@ -3,7 +3,7 @@ import { secrets } from 'base44:runtime';
 import { createStealthSession, releaseSession, CDPClient, crawlSiteStealth } from '../../shared/stealthBrowser.ts';
 import { clonePageAssets, rewriteInternalLinks, pathToFilename, buildSearchScript, buildStripeCheckoutScript, buildSupabaseFormScript } from '../../shared/fullSiteClone.ts';
 import { slugify, createVercelProject, disableVercelSso, deployToVercelMultiFile, createDriveFolder, createGitHubRepo, pushGitHubFile, createSupabaseProject } from '../../shared/launchInfra.ts';
-import { buildAllAiToolPages, rewriteAiToolLinks, AI_TOOLS, buildAiToolsSidebarScript } from '../../shared/aiToolPages.ts';
+import { buildAllAiToolPages, rewriteAiToolLinks, AI_TOOLS, buildAiToolsSidebarScript, buildAiLinkInterceptorScript } from '../../shared/aiToolPages.ts';
 
 // Autonomous full-site clone engine — sitemap-driven (not BFS), so it discovers
 // ALL pages upfront and clones every one. Handles 100+ pages in a single run by
@@ -328,6 +328,7 @@ export default async function(req: Request) {
     const searchScript = buildSearchScript(pageMetadata.map(p => ({ path: p.path, title: p.title, headings: p.headings })));
     const checkoutScript = buildStripeCheckoutScript(checkoutUrl, stripeProducts);
     const aiSidebarScript = buildAiToolsSidebarScript();
+    const aiLinkInterceptor = buildAiLinkInterceptorScript();
     const aiToolPages = buildAllAiToolPages(invokeAiUrl, checkoutUrl);
 
     // Supabase form backend — wire all forms to the IBEAM Supabase leads table
@@ -341,7 +342,7 @@ export default async function(req: Request) {
     for (const meta of pageMetadata) {
       let html = new TextDecoder().decode(fileMap.get(meta.filename)!);
       html = rewriteAiToolLinks(html);
-      const inject = searchScript + '\n' + checkoutScript + '\n' + aiSidebarScript + (supabaseFormScript ? '\n' + supabaseFormScript : '');
+      const inject = searchScript + '\n' + checkoutScript + '\n' + aiSidebarScript + '\n' + aiLinkInterceptor + (supabaseFormScript ? '\n' + supabaseFormScript : '');
       if (html.includes('</body>')) {
         html = html.replace('</body>', inject + '\n</body>');
       } else {
