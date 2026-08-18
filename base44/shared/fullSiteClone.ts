@@ -260,12 +260,18 @@ export async function clonePageAssets(
   }
 
   // 5. Inline all CSS into the HTML (self-contained clone)
+  // Strip @font-face rules that reference external CDNs — these cause CORS
+  // failures on the clone. The clone uses a system font stack instead.
+  styleText = styleText.replace(/@font-face\s*\{[^}]*\}/gi, (m) => {
+    // Keep @font-face only if it references a data: URI (inline font)
+    return /url\(["']?data:/.test(m) ? m : '';
+  });
   html = html.replace(/<link[^>]+rel=["']stylesheet["'][^>]*>/gi, '');
   if (styleText.trim()) {
     const styleTag = `<style>\n/* Inlined from target stylesheets */\n${styleText}\n</style>`;
     html = html.includes('</head>')
       ? html.replace('</head>', styleTag + '\n</head>')
-      : styleTag + html;
+      : styleText + html;
   }
 
   // 6. Swap branding
@@ -349,6 +355,14 @@ export async function clonePageAssets(
     }
   }
 
+  // 8b. Strip @font-face from inline <style> tags too (not just inlined CSS)
+  html = html.replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, (match, content) => {
+    const cleaned = content.replace(/@font-face\s*\{[^}]*\}/gi, (m: string) => {
+      return /url\(["']?data:/.test(m) ? m : '';
+    });
+    return '<style>' + cleaned + '</style>';
+  });
+
   // 9. Remove ALL original-site scripts — SPA bundles, hydration data, analytics.
   // We inject our own functional scripts (search, checkout, forms, AI tools), so
   // keeping the original site's JS only causes React hydration errors and breaks
@@ -366,7 +380,9 @@ export async function clonePageAssets(
       'static.hotjar.com', 'cdn.mxpnl.com', 'cdn.segment.com', 'snap.licdn.com',
       'bat.bing.com', 'platform.twitter.com', 'platform.linkedin.com',
       'adservice.google.com', 'doubleclick.net', 'widget.trustpilot.com',
-      'consent.cookiebot.com', 'cdn.cookiebot.com'
+      'consent.cookiebot.com', 'cdn.cookiebot.com',
+      'accounts.google.com', 'smartlock.google.com', 'clientjs.google.com',
+      'apis.google.com', 'www.gstatic.com', 'oauths.google.com'
     ];
     if (trackingPatterns.some(p => lower.includes(p))) return '';
     // Strip scripts from the target site's own domain or any subdomain of its root domain
@@ -390,6 +406,11 @@ export async function clonePageAssets(
   html = html.replace(/<script[^>]*>[\s\S]*?gtag\('js'[\s\S]*?<\/script>/gi, '');
   html = html.replace(/<script[^>]*>[\s\S]*?fbq\('init'[\s\S]*?<\/script>/gi, '');
   html = html.replace(/<script[^>]*>[\s\S]*?dataLayer[\s\S]*?<\/script>/gi, '');
+  html = html.replace(/<script[^>]*>[\s\S]*?google\.accounts[\s\S]*?<\/script>/gi, '');
+  html = html.replace(/<script[^>]*>[\s\S]*?gapi\.load[\s\S]*?<\/script>/gi, '');
+  html = html.replace(/<script[^>]*>[\s\S]*?tokenClient[\s\S]*?<\/script>/gi, '');
+  html = html.replace(/<script[^>]*>[\s\S]*?GSI_LOGGER[\s\S]*?<\/script>/gi, '');
+  html = html.replace(/<script[^>]*>[\s\S]*?FedCM[\s\S]*?<\/script>/gi, '');
   // Strip empty inline scripts (leftover from previous stripping)
   html = html.replace(/<script\s*>\s*<\/script>/gi, '');
 
@@ -656,6 +677,78 @@ export function buildCatalogScript(catalogApiUrl: string, checkoutUrl: string): 
 // generated category/AI-tool/auth pages and rewrites the href attribute, plus
 // intercepts clicks as a fallback. This is the clone-engine root-cause fix
 // for the "every nav link is href='#'" defect class.
+// Build a brand-link fixer script that rewrites external links pointing to the
+// original site's root domain back to `/` (the clone homepage). SPA marketplaces
+// like Envato set the brand logo's href to the original site URL (not href="#"),
+// so the nav resolver doesn't catch it. This script ensures the clone is
+// self-contained — no links back to the original site from nav/brand elements.
+// Build a font-fix script that eliminates CORS font-loading failures.
+// SPA marketplaces load fonts from their own CDN (e.g. assets.elements.envato.com)
+// which blocks cross-origin requests. This script strips all @font-face rules
+// from stylesheets and applies a system font stack, so the clone renders with
+// local fonts instead of trying to load blocked external fonts.
+export function buildFontFixScript(): string {
+  return `<script>
+(function(){
+  function fixFonts(){
+    // Remove all @font-face rules from all stylesheets
+    for(var i=0;i<document.styleSheets.length;i++){
+      try{
+        var sheet=document.styleSheets[i];
+        var rules=sheet.cssRules||sheet.rules;
+        for(var j=rules.length-1;j>=0;j--){
+          if(rules[j].type===CSSRule.FONT_FACE_RULE){
+            sheet.deleteRule(j);
+          }
+        }
+      }catch(e){}
+    }
+    // Override body font with a clean system stack
+    document.body.style.fontFamily="'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fixFonts);
+  else fixFonts();
+  setTimeout(fixFonts,1000);setTimeout(fixFonts,3000);
+})();
+</script>`;
+}
+
+export function buildBrandLinkFixScript(targetUrl: string): string {
+  let targetHost = '';
+  try { targetHost = new URL(targetUrl).hostname.replace(/^www\./, ''); } catch {}
+  const rootDomain = targetHost ? targetHost.split('.').slice(-2).join('.') : '';
+  return `<script>
+(function(){
+  var ROOT_DOMAIN='${rootDomain}';
+  if(!ROOT_DOMAIN)return;
+  function fixBrandLinks(){
+    document.querySelectorAll('a[href]').forEach(function(a){
+      var href=a.getAttribute('href')||'';
+      if(href.indexOf('autoleads')>=0)return;
+      // Rewrite links to the original site's root domain → /
+      if(href.indexOf(ROOT_DOMAIN)>=0){
+        try{
+          var u=new URL(href);
+          // Only rewrite root-domain links (pathname = /), not deep links to assets
+          if(u.pathname==='/'||u.pathname===''){
+            a.setAttribute('href','/');
+          }
+        }catch(e){}
+      }
+    });
+  }
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fixBrandLinks);
+  else fixBrandLinks();
+  setTimeout(fixBrandLinks,1000);setTimeout(fixBrandLinks,3000);
+  if(typeof MutationObserver!=='undefined'){
+    var obs=new MutationObserver(function(){fixBrandLinks();});
+    if(document.body)obs.observe(document.body,{childList:true,subtree:true});
+    else document.addEventListener('DOMContentLoaded',function(){obs.observe(document.body,{childList:true,subtree:true});});
+  }
+})();
+</script>`;
+}
+
 export function buildNavLinkResolverScript(registerUrl: string, loginUrl: string): string {
   // Label (lowercase) → generated page slug (without .html extension).
   // Auth-related labels route to the external auth URL (same as buildAuthInterceptorScript).

