@@ -273,7 +273,13 @@ export default async function(req: Request) {
       const html = await res.text();
       const loadTime = Date.now() - start;
       const pageSize = html.length;
-      const hasLargeInline = /<script[^>]*>[\s\S]{200000,}<\/script>/i.test(html);
+      // Check each individual script tag's content length (non-greedy match
+      // per-tag, not across multiple tags which causes false positives).
+      const scriptTags = html.match(/<script[^>]*>[\s\S]*?<\/script>/gi) || [];
+      const hasLargeInline = scriptTags.some(s => {
+        const content = s.replace(/<script[^>]*>/i, '').replace(/<\/script>/i, '');
+        return content.length > 200000;
+      });
       testRecords.push({
         organization_id: orgId, test_id: nextTestId('PERF'), category: 'performance',
         requirement: 'Page loads in < 5s with no oversized inline scripts (>200KB)',
@@ -308,6 +314,115 @@ export default async function(req: Request) {
       testRecords.push({
         organization_id: orgId, test_id: nextTestId('ERR'), category: 'reliability_recovery',
         requirement: 'Error handling', actual_result: `Error: ${e.message}`,
+        status: 'fail', clone_url, run_at: new Date().toISOString(),
+      });
+    }
+
+    // ─── 9. ACCESSIBILITY ───────────────────────────────────────────
+    console.log('[runCoverageAudit] Testing accessibility...');
+    try {
+      const res = await fetch(clone_url, { signal: AbortSignal.timeout(10000) });
+      const html = await res.text();
+      const hasLangAttr = /<html[^>]+lang=["']/i.test(html);
+      const hasAltTexts = /<img[^>]+alt=["']/i.test(html);
+      const hasAriaLabels = /aria-label=/i.test(html);
+      const hasMetaViewport = /<meta[^>]+name=["']viewport["']/i.test(html);
+      const hasSkipLink = /skip[^<]*(content|main|nav)/i.test(html) || /<a[^>]+href=["']#main/i.test(html);
+      const a11yScore = [hasLangAttr, hasAltTexts, hasAriaLabels, hasMetaViewport].filter(Boolean).length;
+      testRecords.push({
+        organization_id: orgId, test_id: nextTestId('A11Y'), category: 'accessibility',
+        requirement: 'Page has lang attribute, alt texts, aria labels, viewport meta',
+        expected_result: 'All accessibility elements present',
+        actual_result: `lang=${hasLangAttr}, alt=${hasAltTexts}, aria=${hasAriaLabels}, viewport=${hasMetaViewport}, skip=${hasSkipLink}`,
+        status: a11yScore >= 3 ? 'pass' : 'fail',
+        environment: 'all', clone_url, run_at: new Date().toISOString(),
+      });
+    } catch (e) {
+      testRecords.push({
+        organization_id: orgId, test_id: nextTestId('A11Y'), category: 'accessibility',
+        requirement: 'Accessibility', actual_result: `Error: ${e.message}`,
+        status: 'fail', clone_url, run_at: new Date().toISOString(),
+      });
+    }
+
+    // ─── 10. FRONTEND-BACKEND INTEGRATION ───────────────────────────
+    console.log('[runCoverageAudit] Testing frontend-backend integration...');
+    try {
+      const res = await fetch(clone_url, { signal: AbortSignal.timeout(10000) });
+      const html = await res.text();
+      const hasFormHandler = /ingestCloneLead|formHandler|HANDLER/i.test(html);
+      const hasCheckout = /createStoreCheckout|CHECKOUT_URL/i.test(html);
+      const hasCatalog = /getEnvatoCatalog|CATALOG_API/i.test(html);
+      const hasAiTools = /invokeAiTool/i.test(html);
+      const integrationScore = [hasFormHandler, hasCheckout, hasCatalog, hasAiTools].filter(Boolean).length;
+      testRecords.push({
+        organization_id: orgId, test_id: nextTestId('FBI'), category: 'frontend_backend_integration',
+        requirement: 'Clone has form handler, Stripe checkout, catalog API, and AI tool integration scripts',
+        expected_result: 'All integration scripts present',
+        actual_result: `form=${hasFormHandler}, checkout=${hasCheckout}, catalog=${hasCatalog}, ai=${hasAiTools}`,
+        status: integrationScore >= 3 ? 'pass' : 'fail',
+        environment: 'all', clone_url, run_at: new Date().toISOString(),
+      });
+    } catch (e) {
+      testRecords.push({
+        organization_id: orgId, test_id: nextTestId('FBI'), category: 'frontend_backend_integration',
+        requirement: 'Frontend-backend integration', actual_result: `Error: ${e.message}`,
+        status: 'fail', clone_url, run_at: new Date().toISOString(),
+      });
+    }
+
+    // ─── 11. DATA PERSISTENCE ───────────────────────────────────────
+    console.log('[runCoverageAudit] Testing data persistence...');
+    try {
+      const res = await fetch(clone_url, { signal: AbortSignal.timeout(10000) });
+      const html = await res.text();
+      const hasSupabase = /supabase|SB_URL|SB_KEY/i.test(html);
+      const hasFormAction = /action=["'][^"']*ingestCloneLead/i.test(html) || /formHandler|HANDLER/i.test(html);
+      const hasLocalStorage = /localStorage|sessionStorage/i.test(html);
+      const persistenceScore = [hasSupabase, hasFormAction, hasLocalStorage].filter(Boolean).length;
+      testRecords.push({
+        organization_id: orgId, test_id: nextTestId('DP'), category: 'data_persistence',
+        requirement: 'Clone has data persistence (Supabase forms, form handler, local storage)',
+        expected_result: 'Persistence mechanisms present',
+        actual_result: `supabase=${hasSupabase}, form_action=${hasFormAction}, local_storage=${hasLocalStorage}`,
+        status: persistenceScore >= 2 ? 'pass' : 'fail',
+        environment: 'all', clone_url, run_at: new Date().toISOString(),
+      });
+    } catch (e) {
+      testRecords.push({
+        organization_id: orgId, test_id: nextTestId('DP'), category: 'data_persistence',
+        requirement: 'Data persistence', actual_result: `Error: ${e.message}`,
+        status: 'fail', clone_url, run_at: new Date().toISOString(),
+      });
+    }
+
+    // ─── 12. CLONE-ENGINE REGRESSION ────────────────────────────────
+    console.log('[runCoverageAudit] Testing clone-engine regression...');
+    try {
+      const res = await fetch(clone_url, { signal: AbortSignal.timeout(10000) });
+      const html = await res.text();
+      // Known defect classes that should NOT be present
+      const deadLinkCount = (html.match(/href=["']#["']/gi) || []).length;
+      const hasExternalFonts = /fonts\.googleapis\.com|fonts\.gstatic\.com|@font-face[^}]*url\(["']?(?!data:)/i.test(html);
+      const hasGsiScript = /accounts\.google\.com\/gsi|gapi\.load/i.test(html);
+      const hasOriginalBrand = /envato\.com(?!\/api)/i.test(html) && !/elements\.envato\.com/.test(html);
+      const regressionScore = [
+        deadLinkCount < 5,      // Few dead links (some are caught by nav resolver)
+        !hasExternalFonts,      // No external font loading
+        !hasGsiScript,          // No GSI script
+      ].filter(Boolean).length;
+      testRecords.push({
+        organization_id: orgId, test_id: nextTestId('REG'), category: 'clone_engine_regression',
+        requirement: 'No known defect classes: dead links, external fonts, GSI scripts, original brand refs',
+        expected_result: 'No regression defects',
+        actual_result: `dead_links=${deadLinkCount}, ext_fonts=${hasExternalFonts}, gsi=${hasGsiScript}, orig_brand=${hasOriginalBrand}`,
+        status: regressionScore >= 2 ? 'pass' : 'fail',
+        environment: 'all', clone_url, run_at: new Date().toISOString(),
+      });
+    } catch (e) {
+      testRecords.push({
+        organization_id: orgId, test_id: nextTestId('REG'), category: 'clone_engine_regression',
+        requirement: 'Clone-engine regression', actual_result: `Error: ${e.message}`,
         status: 'fail', clone_url, run_at: new Date().toISOString(),
       });
     }

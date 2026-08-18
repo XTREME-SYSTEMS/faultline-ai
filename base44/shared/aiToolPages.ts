@@ -470,8 +470,30 @@ export const CATEGORY_PAGES: CategoryPageConfig[] = [
   { slug: 'refund', title: 'Refund Policy', category: '', description: 'Our refund policy.', icon: '↩️' },
 ];
 
-export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string, checkoutUrl: string, loginUrl: string, registerUrl: string): string {
+export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string, checkoutUrl: string, loginUrl: string, registerUrl: string, preRenderedAssets?: any[]): string {
   const hasCatalog = cat.category.length > 0;
+  // Pre-render asset cards server-side if data is provided — this eliminates
+  // the "Loading..." flash and gives the page real content for crawlers,
+  // differential validation, and headless browser audits.
+  const preRenderedHtml = (preRenderedAssets && preRenderedAssets.length > 0)
+    ? preRenderedAssets.map(a => {
+        const price = a.license_type === 'subscription' ? 'Included' : ('$' + a.price);
+        const badge = a.featured ? '<div class="featured-badge">FEATURED</div>' : '';
+        const rating = a.rating ? '<div style="color:#FFD700;font-size:11px;">★ ' + a.rating + '</div>' : '';
+        const safeName = (a.name || '').replace(/"/g, '&quot;');
+        return '<div class="card" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
+          '<div class="card-img" style="position:relative;">' + badge +
+            '<img src="' + (a.thumbnail_url || '') + '" alt="' + safeName + '" loading="lazy" onerror="this.style.display=\'none\'">' +
+          '</div>' +
+          '<div class="card-body">' +
+            '<div class="card-title">' + (a.name || '') + '</div>' +
+            '<div class="card-cat">' + (a.subcategory || a.category || '') + '</div>' +
+            rating +
+            '<div class="card-price">' + price + '</div>' +
+          '</div>' +
+        '</div>';
+      }).join('')
+    : '';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -532,7 +554,7 @@ export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string
   <p>${cat.description}</p>
 </section>
 
-${hasCatalog ? `<div class="grid" id="assetGrid"><div class="loading">Loading assets...</div></div>` : `
+${hasCatalog ? `<div class="grid" id="assetGrid">${preRenderedHtml || '<div class="loading">Loading assets...</div>'}</div>` : `
 <div class="info-page">
   <h2>${cat.title.split('—')[0].trim()}</h2>
   <p>${cat.description}</p>
@@ -628,10 +650,11 @@ else fetchAssets();
 </html>`;
 }
 
-export function buildAllCategoryPages(catalogApiUrl: string, checkoutUrl: string, loginUrl: string, registerUrl: string): Map<string, string> {
+export function buildAllCategoryPages(catalogApiUrl: string, checkoutUrl: string, loginUrl: string, registerUrl: string, preRenderedCatalog?: Map<string, any[]>): Map<string, string> {
   const pages = new Map<string, string>();
   for (const cat of CATEGORY_PAGES) {
-    pages.set(cat.slug + '.html', buildCategoryPage(cat, catalogApiUrl, checkoutUrl, loginUrl, registerUrl));
+    const preRendered = preRenderedCatalog?.get(cat.category);
+    pages.set(cat.slug + '.html', buildCategoryPage(cat, catalogApiUrl, checkoutUrl, loginUrl, registerUrl, preRendered));
   }
   // Add search page (reads ?q= query parameter)
   pages.set('search.html', buildSearchPage(catalogApiUrl, checkoutUrl, loginUrl, registerUrl));

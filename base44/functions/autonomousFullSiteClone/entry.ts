@@ -409,7 +409,22 @@ export default async function(req: Request) {
     const interactionReconScript = buildInteractionReconstructionScript();
 
     // Category pages — dedicated pages for each Envato category (replaces 404 fallback)
-    const categoryPages = buildAllCategoryPages(catalogApiUrl, checkoutUrl, myLoginUrl, myRegisterUrl);
+    // Pre-render catalog assets server-side by fetching from EnvatoAsset entity.
+    // This eliminates the "Loading..." flash and gives pages real content for
+    // crawlers, differential validation, and headless browser audits.
+    const preRenderedCatalog = new Map<string, any[]>();
+    try {
+      const allAssets = await base44.asServiceRole.entities.EnvatoAsset.list('-created_date', 500);
+      for (const asset of allAssets) {
+        if (!asset.category || asset.status !== 'published') continue;
+        if (!preRenderedCatalog.has(asset.category)) preRenderedCatalog.set(asset.category, []);
+        preRenderedCatalog.get(asset.category)!.push(asset);
+      }
+      console.log(`[autonomousFullSiteClone] Pre-rendered catalog: ${preRenderedCatalog.size} categories, ${allAssets.length} total assets`);
+    } catch (e) {
+      console.log(`[autonomousFullSiteClone] Catalog pre-render skipped: ${e.message}`);
+    }
+    const categoryPages = buildAllCategoryPages(catalogApiUrl, checkoutUrl, myLoginUrl, myRegisterUrl, preRenderedCatalog);
 
     // Supabase form backend — wire all forms to the IBEAM Supabase leads table
     const ibeamSupabaseUrl = secrets.get('IBEAM_SUPABASE_URL');

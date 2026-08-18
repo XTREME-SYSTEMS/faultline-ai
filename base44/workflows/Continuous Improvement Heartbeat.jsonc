@@ -1,0 +1,45 @@
+{
+  "name": "Continuous Improvement Heartbeat",
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "continuous_improvement_heartbeat",
+      "version": "1.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_heartbeat": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "continuousImprovementHeartbeat",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Run improvement heartbeat",
+            "description": "Audit latest clone, heal if <99%"
+          }
+        }
+      }
+    ]
+  },
+  "description": "Every 5 minutes: audits the latest clone, and if any coverage category is below 99%, triggers a re-clone with the latest engine improvements. This is the autonomous loop that drives the system toward 99%+ parity across all categories.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": 5,
+      "interval_unit": "minutes",
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  }
+}
