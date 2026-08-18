@@ -3,6 +3,8 @@
 // Each page is a self-contained HTML file with a prompt input, generate button,
 // and results area, styled to match the Envato Elements dark theme.
 
+import { generateAssetPlaceholderServer, buildMarketplaceCSS, buildMarketplaceJS } from './marketplaceEngine.ts';
+
 export interface AiToolConfig {
   slug: string;           // URL slug on the cloned site (e.g. "ai-video-generator")
   title: string;          // Page title
@@ -472,18 +474,20 @@ export const CATEGORY_PAGES: CategoryPageConfig[] = [
 
 export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string, checkoutUrl: string, loginUrl: string, registerUrl: string, preRenderedAssets?: any[]): string {
   const hasCatalog = cat.category.length > 0;
-  // Pre-render asset cards server-side if data is provided — this eliminates
-  // the "Loading..." flash and gives the page real content for crawlers,
-  // differential validation, and headless browser audits.
+  // Pre-render asset cards server-side with SAME-ORIGIN SVG placeholder images.
+  // This eliminates ALL cross-origin image failures (ORB, CORS, ERR_FAILED)
+  // that occurred with Unsplash hotlinking. Each placeholder is a deterministic
+  // gradient with the asset name and category icon.
   const preRenderedHtml = (preRenderedAssets && preRenderedAssets.length > 0)
     ? preRenderedAssets.map(a => {
         const price = a.license_type === 'subscription' ? 'Included' : ('$' + a.price);
         const badge = a.featured ? '<div class="featured-badge">FEATURED</div>' : '';
-        const rating = a.rating ? '<div style="color:#FFD700;font-size:11px;">★ ' + a.rating + '</div>' : '';
+        const rating = a.rating ? '<div class="rating">★ ' + a.rating + '</div>' : '';
         const safeName = (a.name || '').replace(/"/g, '&quot;');
+        const img = generateAssetPlaceholderServer(a, cat.icon);
         return '<div class="card" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
-          '<div class="card-img" style="position:relative;">' + badge +
-            '<img src="' + (a.thumbnail_url || '') + '" alt="' + safeName + '" loading="lazy" onerror="this.style.display=\'none\'">' +
+          '<div class="card-img">' + badge +
+            '<img src="' + img + '" alt="' + safeName + '" loading="lazy">' +
           '</div>' +
           '<div class="card-body">' +
             '<div class="card-title">' + (a.name || '') + '</div>' +
@@ -494,6 +498,17 @@ export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string
         '</div>';
       }).join('')
     : '';
+  // Embed ALL assets as JSON for client-side filtering/sorting/pagination.
+  // This enables the dynamic marketplace experience without API calls.
+  const assetsJson = (preRenderedAssets && preRenderedAssets.length > 0)
+    ? JSON.stringify(preRenderedAssets.map(a => ({
+        id: a.id, name: a.name, category: a.category, subcategory: a.subcategory,
+        software: a.software || [], rating: a.rating || 0, rating_count: a.rating_count || 0,
+        price: a.price || 0, license_type: a.license_type || 'subscription',
+        featured: a.featured || false, downloads_count: a.downloads_count || 0,
+        tags: a.tags || [], created_date: a.created_date || '',
+      })))
+    : '[]';
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -502,37 +517,7 @@ export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string
 <title>${cat.title}</title>
 <meta name="description" content="${cat.description}">
 <script src="https://cdn.tailwindcss.com"></script>
-<style>
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; }
-  .nav { background: #111; border-bottom: 1px solid #222; padding: 16px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-  .nav a { color: #ccc; text-decoration: none; font-size: 14px; font-weight: 600; }
-  .nav a:hover { color: #fff; }
-  .nav .logo { font-size: 20px; font-weight: 800; color: #fff; }
-  .nav .signin { margin-left: auto; }
-  .nav .signin a { background: #4a9eff; color: #fff; padding: 8px 16px; border-radius: 6px; }
-  .hero { padding: 60px 24px 40px; text-align: center; max-width: 900px; margin: 0 auto; }
-  .hero h1 { font-size: 48px; font-weight: 800; margin: 0 0 16px; line-height: 1.1; }
-  .hero p { font-size: 18px; color: #999; line-height: 1.6; margin: 0 0 32px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; padding: 0 24px 60px; max-width: 1400px; margin: 0 auto; }
-  .card { background: #161616; border: 1px solid #2a2a2a; border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform .15s; }
-  .card:hover { transform: translateY(-2px); }
-  .card-img { aspect-ratio: 4/3; overflow: hidden; background: #0d0d0d; }
-  .card-img img { width: 100%; height: 100%; object-fit: cover; }
-  .card-body { padding: 12px; }
-  .card-title { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .card-cat { font-size: 11px; color: #888; margin-bottom: 4px; }
-  .card-price { font-size: 12px; color: #4a9eff; font-weight: 600; }
-  .featured-badge { position: absolute; top: 8px; left: 8px; background: #FFD700; color: #111; padding: 3px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; }
-  .loading { text-align: center; padding: 60px; color: #555; }
-  .info-page { max-width: 800px; margin: 0 auto; padding: 60px 24px; }
-  .info-page h2 { font-size: 28px; margin: 30px 0 16px; }
-  .info-page p { color: #999; line-height: 1.8; margin: 0 0 16px; }
-  .cta-btn { display: inline-block; background: linear-gradient(135deg, #4a9eff, #2563eb); color: #fff; padding: 14px 36px; border-radius: 10px; font-weight: 700; text-decoration: none; font-size: 16px; margin: 20px 0; }
-  footer { text-align: center; padding: 40px 24px; color: #555; font-size: 13px; border-top: 1px solid #222; }
-  footer a { color: #999; text-decoration: none; margin: 0 8px; }
-  @media (max-width: 640px) { .hero h1 { font-size: 32px; } .grid { grid-template-columns: repeat(2, 1fr); } }
-</style>
+<style>${buildMarketplaceCSS()}</style>
 </head>
 <body>
 <nav class="nav">
@@ -554,7 +539,32 @@ export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string
   <p>${cat.description}</p>
 </section>
 
-${hasCatalog ? `<div class="grid" id="assetGrid">${preRenderedHtml || '<div class="loading">Loading assets...</div>'}</div>` : `
+${hasCatalog ? `
+<button class="filter-toggle" id="filterToggle">⚙ Filters</button>
+<div class="layout">
+  <aside class="filters" id="filterSidebar"></aside>
+  <div class="main">
+    <div class="toolbar">
+      <span class="count" id="resultCount">Loading...</span>
+      <input type="search" id="searchWithin" class="search-within" placeholder="Search within ${cat.title.split('—')[0].trim()}...">
+      <div class="sort">
+        <select id="sortSelect">
+          <option value="featured">Featured</option>
+          <option value="newest">Newest</option>
+          <option value="popular">Most Popular</option>
+          <option value="rating">Highest Rated</option>
+          <option value="name">Name A-Z</option>
+          <option value="price_low">Price: Low to High</option>
+          <option value="price_high">Price: High to Low</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid" id="assetGrid">${preRenderedHtml || '<div class="empty">Loading assets...</div>'}</div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</div>
+<script type="application/json" id="asset-data">${assetsJson}</script>
+` : `
 <div class="info-page">
   <h2>${cat.title.split('—')[0].trim()}</h2>
   <p>${cat.description}</p>
@@ -573,80 +583,7 @@ ${hasCatalog ? `<div class="grid" id="assetGrid">${preRenderedHtml || '<div clas
 </footer>
 
 <script>
-var CATALOG_API='${catalogApiUrl}';
-var CHECKOUT_URL='${checkoutUrl}';
-var LOGIN_URL='${loginUrl}';
-var REGISTER_URL='${registerUrl}';
-var CATEGORY='${cat.category}';
-
-${hasCatalog ? `
-function fetchAssets() {
-  fetch(CATALOG_API+'?action=browse&category='+encodeURIComponent(CATEGORY)+'&limit=48')
-    .then(function(r){return r.json();})
-    .then(function(data){
-      if(!data.assets||data.assets.length===0){
-        document.getElementById('assetGrid').innerHTML='<div class="loading">No assets found.</div>';
-        return;
-      }
-      var html=data.assets.map(function(a){
-        var price=a.license_type==='subscription'?'Included':('$'+a.price);
-        var badge=a.featured?'<div class="featured-badge">FEATURED</div>':'';
-        var rating=a.rating?'<div style="color:#FFD700;font-size:11px;">★ '+a.rating+'</div>':'';
-        return '<div class="card" data-asset-id="'+a.id+'" data-asset-name="'+a.name.replace(/"/g,'&quot;')+'">'+
-          '<div class="card-img" style="position:relative;">'+badge+
-            '<img src="'+(a.thumbnail_url||'')+'" alt="'+a.name.replace(/"/g,'&quot;')+'" loading="lazy" onerror="this.style.display=\\'none\\'">'+
-          '</div>'+
-          '<div class="card-body">'+
-            '<div class="card-title">'+a.name+'</div>'+
-            '<div class="card-cat">'+(a.subcategory||a.category)+'</div>'+
-            rating+
-            '<div class="card-price">'+price+'</div>'+
-          '</div>'+
-        '</div>';
-      }).join('');
-      document.getElementById('assetGrid').innerHTML=html;
-      document.querySelectorAll('[data-asset-id]').forEach(function(card){
-        card.addEventListener('click',function(){
-          var aid=this.getAttribute('data-asset-id');
-          var aname=this.getAttribute('data-asset-name');
-          if(window.self!==window.top){alert('Checkout works only from the published app. Please open this site in a new tab.');return;}
-          fetch(CHECKOUT_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({items:[{name:aname,amount:29,quantity:1,type:'ai_tool',asset_id:aid}]})})
-            .then(function(r){return r.json();})
-            .then(function(j){if(j.url)window.location.href=j.url;else alert('Could not start checkout.');})
-            .catch(function(){alert('Checkout error.');});
-        });
-      });
-    })
-    .catch(function(){document.getElementById('assetGrid').innerHTML='<div class="loading">Error loading assets.</div>';});
-}
-// Only fetch from API if no pre-rendered assets exist (pre-rendered = SSR)
-var grid=document.getElementById('assetGrid');
-if(grid&&grid.querySelector('.card')){console.log('Pre-rendered assets present - skipping API fetch');}
-else{if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fetchAssets);else fetchAssets();}
-` : ''}
-
-// Auth link interceptor
-(function(){
-  var LOGIN=LOGIN_URL,REGISTER=REGISTER_URL;
-  var authPat=/(sign-in|signin|login|sign-up|signup|register|join|my-account|account|profile)/i;
-  var regPat=/(sign-up|signup|register|join|create-account)/i;
-  function rewrite(el){
-    if(!el||!el.href)return;
-    if(el.href.indexOf('autoleads')>=0)return;
-    var t=(el.textContent||'').toLowerCase();
-    if(authPat.test(t)||authPat.test(el.href)){
-      el.href=regPat.test(t)?REGISTER:LOGIN;
-    }
-  }
-  document.addEventListener('click',function(e){
-    var el=e.target.closest('a,button');if(!el)return;
-    var t=(el.textContent||'').toLowerCase();
-    if(el.href&&el.href.indexOf('autoleads')>=0)return;
-    if(authPat.test(t)){e.preventDefault();e.stopPropagation();window.location.href=regPat.test(t)?REGISTER:LOGIN;}
-  },true);
-  document.querySelectorAll('a[href]').forEach(rewrite);
-  setTimeout(function(){document.querySelectorAll('a[href]').forEach(rewrite);},2000);
-})();
+${buildMarketplaceJS({ category: cat.category, checkoutUrl, loginUrl, registerUrl, categoryIcon: cat.icon })}
 </script>
 </body>
 </html>`;

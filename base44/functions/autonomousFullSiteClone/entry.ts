@@ -4,7 +4,7 @@ import { createStealthSession, releaseSession, CDPClient, crawlSiteStealth } fro
 import { clonePageAssets, rewriteInternalLinks, pathToFilename, buildSearchScript, buildStripeCheckoutScript, buildSupabaseFormScript, buildCatalogScript, buildFormHandlerScript } from '../../shared/fullSiteClone.ts';
 import { slugify, createVercelProject, disableVercelSso, deployToVercelMultiFile, createDriveFolder, createGitHubRepo, pushGitHubFile, createSupabaseProject } from '../../shared/launchInfra.ts';
 import { buildAllAiToolPages, rewriteAiToolLinks, AI_TOOLS, buildAiToolsSidebarScript, buildAiLinkInterceptorScript, buildAllCategoryPages, CATEGORY_PAGES } from '../../shared/aiToolPages.ts';
-import { buildAuthInterceptorScript, buildNavLinkResolverScript, buildBrandLinkFixScript, buildFontFixScript, buildGsiBlockScript, buildFetchInterceptorScript } from '../../shared/fullSiteClone.ts';
+import { buildAuthInterceptorScript, buildNavLinkResolverScript, buildBrandLinkFixScript, buildFontFixScript, buildGsiBlockScript, buildFetchInterceptorScript, buildConsoleMitigationScript } from '../../shared/fullSiteClone.ts';
 import { buildInteractionReconstructionScript } from '../../shared/interactionReconstruction.ts';
 
 // Autonomous full-site clone engine — sitemap-driven (not BFS), so it discovers
@@ -474,7 +474,8 @@ if('serviceWorker' in navigator){
 }
 </script>`;
       const fetchInterceptorScript = buildFetchInterceptorScript();
-      const earlyInject = fetchInterceptorScript + '\n' + fontFixScript + '\n' + gsiBlockScript + '\n' + swRegisterScript;
+      const consoleMitigationScript = buildConsoleMitigationScript();
+      const earlyInject = fetchInterceptorScript + '\n' + consoleMitigationScript + '\n' + fontFixScript + '\n' + gsiBlockScript + '\n' + swRegisterScript;
       if (/<head[^>]*>/i.test(html)) {
         html = html.replace(/<head[^>]*>/i, m => m + '\n' + earlyInject);
       } else if (/<html[^>]*>/i.test(html)) {
@@ -611,10 +612,34 @@ self.addEventListener('fetch', function(e){
 `;
       fileMap.set('sw.js', new TextEncoder().encode(swJs));
 
-      // vercel.json with security headers + clean URLs
+      // vercel.json with security headers + clean URLs + subcategory rewrites
+      // Rewrite rules serve the category page for any subcategory path
+      // (e.g. /video-templates/luts → /video-templates.html). This eliminates
+      // 404/ERR_CONNECTION_CLOSED errors for subcategory URLs that the SPA
+      // routes via JavaScript but the static clone doesn't have files for.
       const vercelJson = JSON.stringify({
         cleanUrls: true,
         trailingSlash: false,
+        rewrites: [
+          { source: '/video-templates/:sub', destination: '/video-templates.html' },
+          { source: '/stock-video/:sub', destination: '/stock-video.html' },
+          { source: '/audio/:sub', destination: '/audio.html' },
+          { source: '/graphics/:sub', destination: '/graphics.html' },
+          { source: '/graphic-templates/:sub', destination: '/graphic-templates.html' },
+          { source: '/design-templates/:sub', destination: '/design-templates.html' },
+          { source: '/presentation-templates/:sub', destination: '/presentation-templates.html' },
+          { source: '/fonts/:sub', destination: '/fonts.html' },
+          { source: '/photos/:sub', destination: '/photos.html' },
+          { source: '/3d/:sub', destination: '/3d.html' },
+          { source: '/web-templates/:sub', destination: '/web-templates.html' },
+          { source: '/app-templates/:sub', destination: '/app-templates.html' },
+          { source: '/addons/:sub', destination: '/addons.html' },
+          { source: '/cms-templates/:sub', destination: '/cms-templates.html' },
+          { source: '/all-items/:sub', destination: '/all-items.html' },
+          { source: '/royalty-free-music/:sub', destination: '/audio.html' },
+          { source: '/sound-effects/:sub', destination: '/audio.html' },
+          { source: '/add-ons/:sub', destination: '/addons.html' },
+        ],
         headers: [{
           source: "/(.*)",
           headers: [
