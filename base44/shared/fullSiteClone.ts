@@ -649,6 +649,103 @@ export function buildCatalogScript(catalogApiUrl: string, checkoutUrl: string): 
 </script>`;
 }
 
+// Build a nav-link resolver script that rewrites href="#" dead links to real
+// generated pages. Envato and other SPA marketplaces route navigation via JS
+// click handlers (not real hrefs), so when the cloner strips SPA scripts the
+// nav links become href="#" dead links. This script maps known nav labels to
+// generated category/AI-tool/auth pages and rewrites the href attribute, plus
+// intercepts clicks as a fallback. This is the clone-engine root-cause fix
+// for the "every nav link is href='#'" defect class.
+export function buildNavLinkResolverScript(registerUrl: string, loginUrl: string): string {
+  // Label (lowercase) → generated page slug (without .html extension).
+  // Auth-related labels route to the external auth URL (same as buildAuthInterceptorScript).
+  const REGISTER_URL = registerUrl;
+  const LOGIN_URL = loginUrl;
+  const NAV_MAP: Record<string, string> = {
+    // Top nav / brand
+    'market': 'all-items', 'elements': 'all-items', 'browse marketplace': 'all-items',
+    'explore elements': 'all-items', 'all items': 'all-items', 'browse': 'all-items',
+    'graphicriver': 'graphics', 'themeforest': 'web-templates', 'videohive': 'video-templates',
+    'audiojungle': 'audio', 'photodune': 'photos', '3docean': '3d', 'codecanyon': 'addons',
+    // Category links
+    'graphic templates': 'graphic-templates', 'stock video': 'stock-video',
+    'audio & music': 'audio', 'audio and music': 'audio', 'music': 'audio',
+    'wordpress themes': 'web-templates', 'wp themes': 'web-templates',
+    'code fragments': 'addons', 'code': 'addons', 'addons': 'addons',
+    'web templates': 'web-templates', 'website templates': 'web-templates',
+    'app templates': 'app-templates', 'presentation templates': 'presentation-templates',
+    'design templates': 'design-templates', 'fonts': 'fonts', 'photos': 'photos',
+    'graphics': 'graphics', '3d': '3d', 'video templates': 'video-templates',
+    'cms templates': 'cms-templates', 'more': 'more',
+    // Footer / utility
+    'sell on clone v21': 'autoleads-register', 'sell': 'autoleads-register',
+    'affiliate program': 'autoleads-register', 'become an author': 'autoleads-register',
+    'start selling': 'autoleads-register', 'get started': 'autoleads-register',
+    'sign up': 'autoleads-register', 'sign up free': 'autoleads-register',
+    'forums & events': 'about', 'forums and events': 'about', 'forum': 'about',
+    'creative blog': 'about', 'blog': 'about', 'news': 'about',
+    'elite authors': 'about', 'authors': 'about', 'about us': 'about', 'about': 'about',
+    'help center': 'help', 'help': 'help', 'support': 'help', 'faq': 'help',
+    'licensing terms': 'terms', 'license terms': 'terms', 'terms': 'terms', 'terms of service': 'terms',
+    'refund policy': 'refund', 'refunds': 'refund', 'return policy': 'refund',
+    'privacy control': 'privacy', 'privacy policy': 'privacy', 'privacy': 'privacy',
+    'contact us': 'contact', 'contact': 'contact', 'get in touch': 'contact',
+    'pricing': 'pricing', 'plans': 'pricing', 'subscribe': 'subscribe', 'subscription': 'subscribe',
+    'license': 'license', 'licensing': 'license', 'enterprise': 'enterprise',
+  };
+  const mapJson = JSON.stringify(NAV_MAP);
+  return `<script>
+(function(){
+  var NAV_MAP=${mapJson};
+  var REGISTER_URL='${REGISTER_URL}';
+  var LOGIN_URL='${LOGIN_URL}';
+  function resolveLink(el){
+    if(!el||el.getAttribute('href')!=='#')return null;
+    var text=(el.innerText||el.getAttribute('aria-label')||el.getAttribute('title')||'').trim().toLowerCase();
+    if(!text)return null;
+    // Direct match
+    if(NAV_MAP[text])return NAV_MAP[text];
+    // Partial match (label contains a known key)
+    for(var k in NAV_MAP){
+      if(text.indexOf(k)>=0||k.indexOf(text)>=0){return NAV_MAP[k];}
+    }
+    return null;
+  }
+  function rewriteAll(){
+    document.querySelectorAll('a[href="#"]').forEach(function(a){
+      var slug=resolveLink(a);
+      if(slug){
+        if(slug==='autoleads-register'){a.setAttribute('href',REGISTER_URL);a.setAttribute('target','_self');a.removeAttribute('rel');}
+        else if(slug==='autoleads-login'){a.setAttribute('href',LOGIN_URL);a.setAttribute('target','_self');a.removeAttribute('rel');}
+        else{a.setAttribute('href','/'+slug+'.html');}
+      }
+    });
+  }
+  // Click interception as fallback (catches dynamically rendered links)
+  document.addEventListener('click',function(e){
+    var a=e.target.closest&&e.target.closest('a[href="#"]');
+    if(!a)return;
+    var slug=resolveLink(a);
+    if(slug){
+      e.preventDefault();
+      e.stopPropagation();
+      if(slug==='autoleads-register')window.location.href=REGISTER_URL;
+      else if(slug==='autoleads-login')window.location.href=LOGIN_URL;
+      else window.location.href='/'+slug+'.html';
+    }
+  },true);
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',rewriteAll);
+  else rewriteAll();
+  setTimeout(rewriteAll,1000);setTimeout(rewriteAll,3000);
+  if(typeof MutationObserver!=='undefined'){
+    var obs=new MutationObserver(function(){rewriteAll();});
+    if(document.body)obs.observe(document.body,{childList:true,subtree:true});
+    else document.addEventListener('DOMContentLoaded',function(){obs.observe(document.body,{childList:true,subtree:true});});
+  }
+})();
+</script>`;
+}
+
 // Build an auth interceptor script that rewrites ALL sign-in, login, register,
 // and account links to point to MY app's auth system instead of Envato's.
 // Uses MutationObserver for SPA-rendered links + click interception as fallback.

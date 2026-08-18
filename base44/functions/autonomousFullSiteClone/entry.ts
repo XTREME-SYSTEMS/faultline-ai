@@ -4,7 +4,7 @@ import { createStealthSession, releaseSession, CDPClient, crawlSiteStealth } fro
 import { clonePageAssets, rewriteInternalLinks, pathToFilename, buildSearchScript, buildStripeCheckoutScript, buildSupabaseFormScript, buildCatalogScript, buildFormHandlerScript } from '../../shared/fullSiteClone.ts';
 import { slugify, createVercelProject, disableVercelSso, deployToVercelMultiFile, createDriveFolder, createGitHubRepo, pushGitHubFile, createSupabaseProject } from '../../shared/launchInfra.ts';
 import { buildAllAiToolPages, rewriteAiToolLinks, AI_TOOLS, buildAiToolsSidebarScript, buildAiLinkInterceptorScript, buildAllCategoryPages, CATEGORY_PAGES } from '../../shared/aiToolPages.ts';
-import { buildAuthInterceptorScript } from '../../shared/fullSiteClone.ts';
+import { buildAuthInterceptorScript, buildNavLinkResolverScript } from '../../shared/fullSiteClone.ts';
 
 // Autonomous full-site clone engine — sitemap-driven (not BFS), so it discovers
 // ALL pages upfront and clones every one. Handles 100+ pages in a single run by
@@ -374,6 +374,8 @@ export default async function(req: Request) {
     const myLoginUrl = `https://fault-line.base44.app/autoleads/login`;
     const myRegisterUrl = `https://fault-line.base44.app/autoleads/register`;
     const authInterceptorScript = buildAuthInterceptorScript(myLoginUrl, myRegisterUrl);
+    // Nav-link resolver — rewrite href="#" dead links to real generated pages
+    const navResolverScript = buildNavLinkResolverScript(myRegisterUrl, myLoginUrl);
 
     // Category pages — dedicated pages for each Envato category (replaces 404 fallback)
     const categoryPages = buildAllCategoryPages(catalogApiUrl, checkoutUrl, myLoginUrl, myRegisterUrl);
@@ -389,7 +391,7 @@ export default async function(req: Request) {
     for (const meta of pageMetadata) {
       let html = new TextDecoder().decode(fileMap.get(meta.filename)!);
       html = rewriteAiToolLinks(html);
-      const inject = searchScript + '\n' + catalogScript + '\n' + checkoutScript + '\n' + aiSidebarScript + '\n' + aiLinkInterceptor + '\n' + authInterceptorScript + (supabaseFormScript ? '\n' + supabaseFormScript : '');
+      const inject = searchScript + '\n' + catalogScript + '\n' + checkoutScript + '\n' + aiSidebarScript + '\n' + aiLinkInterceptor + '\n' + authInterceptorScript + '\n' + navResolverScript + (supabaseFormScript ? '\n' + supabaseFormScript : '');
       if (html.includes('</body>')) {
         html = html.replace('</body>', inject + '\n</body>');
       } else {
