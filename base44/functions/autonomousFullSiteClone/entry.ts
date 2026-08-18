@@ -4,7 +4,7 @@ import { createStealthSession, releaseSession, CDPClient, crawlSiteStealth } fro
 import { clonePageAssets, rewriteInternalLinks, pathToFilename, buildSearchScript, buildStripeCheckoutScript, buildSupabaseFormScript, buildCatalogScript, buildFormHandlerScript } from '../../shared/fullSiteClone.ts';
 import { slugify, createVercelProject, disableVercelSso, deployToVercelMultiFile, createDriveFolder, createGitHubRepo, pushGitHubFile, createSupabaseProject } from '../../shared/launchInfra.ts';
 import { buildAllAiToolPages, rewriteAiToolLinks, AI_TOOLS, buildAiToolsSidebarScript, buildAiLinkInterceptorScript, buildAllCategoryPages, CATEGORY_PAGES } from '../../shared/aiToolPages.ts';
-import { buildAuthInterceptorScript, buildNavLinkResolverScript, buildBrandLinkFixScript, buildFontFixScript } from '../../shared/fullSiteClone.ts';
+import { buildAuthInterceptorScript, buildNavLinkResolverScript, buildBrandLinkFixScript, buildFontFixScript, buildGsiBlockScript } from '../../shared/fullSiteClone.ts';
 
 // Autonomous full-site clone engine — sitemap-driven (not BFS), so it discovers
 // ALL pages upfront and clones every one. Handles 100+ pages in a single run by
@@ -110,12 +110,28 @@ export default async function(req: Request) {
           // and render content. The stealth browser already captured the
           // rendered DOM, but RSC pages need their scripts for CSS-in-JS styling
           // and layout. Stripping scripts causes layout collapse.
-          // We DO inject: form handler, loading-state removal, link rewriting.
+          // We DO inject: form handler, loading-state removal, link rewriting,
+          // AND font-face stripping (RSC pages skip clonePageAssets, so we must
+          // strip @font-face at the HTML level here to prevent CORS font errors).
           finalHtml = rawHtml;
           finalHtml = finalHtml.replace(/class="appLoading"/gi, 'class=""');
           finalHtml = finalHtml.replace(/<div[^>]*data-testid="loading-neue-page"[^>]*>[\s\S]*?<\/div>/gi, '');
           finalHtml = finalHtml.replace(/<div[^>]*data-testid="loading-spinner[^"]*"[^>]*>[\s\S]*?<\/div>/gi, '');
           finalHtml = finalHtml.replace(/<svg[^>]*data-testid="loading-spinner[^"]*"[^>]*>[\s\S]*?<\/svg>/gi, '');
+          // Strip @font-face from inline <style> tags (prevents CORS font fetches)
+          finalHtml = finalHtml.replace(/<style[^>]*>([\s\S]*?)<\/style>/gi, (match: string, content: string) => {
+            const cleaned = content.replace(/@font-face\s*\{[^}]*\}/gi, (m: string) => {
+              return /url\(["']?data:/.test(m) ? m : '';
+            });
+            return '<style>' + cleaned + '</style>';
+          });
+          // Remove <link rel="preload" as="font"> tags
+          finalHtml = finalHtml.replace(/<link[^>]+rel=["']preload["'][^>]+as=["']font["'][^>]*>/gi, '');
+          // Remove <link rel="stylesheet"> pointing to external font CSS (Google Fonts, etc.)
+          finalHtml = finalHtml.replace(/<link[^>]+rel=["']stylesheet["'][^>]*href=["']([^"']+)["'][^>]*>/gi, (match: string, href: string) => {
+            if (/fonts\.googleapis|fonts\.gstatic|\.woff2?|elements\.envato.*font/i.test(href)) return '';
+            return match;
+          });
           finalHtml = rewriteInternalLinks(finalHtml, linkMap);
           // Inject form handler + post-hydration footer dedup for RSC pages
           const formScript = buildFormHandlerScript(formHandlerUrl, targetOrg || '');
@@ -378,8 +394,13 @@ export default async function(req: Request) {
     const navResolverScript = buildNavLinkResolverScript(myRegisterUrl, myLoginUrl);
     // Brand-link fixer — rewrite external links to the original site's root to `/`
     const brandLinkFixScript = buildBrandLinkFixScript(target_url);
-    // Font fix — strip external @font-face rules to eliminate CORS font failures
+    // Font fix — aggressive early-blocker injected in <head> BEFORE SPA bundles.
+    // Neutralizes FontFace constructor, patches CSSStyleSheet.insertRule, and
+    // strips @font-face from dynamically injected <style> elements.
     const fontFixScript = buildFontFixScript();
+    // GSI block — neutralizes Google Identity Services to prevent "Not signed in"
+    // console errors from the SPA's dynamically loaded GSI script.
+    const gsiBlockScript = buildGsiBlockScript();
 
     // Category pages — dedicated pages for each Envato category (replaces 404 fallback)
     const categoryPages = buildAllCategoryPages(catalogApiUrl, checkoutUrl, myLoginUrl, myRegisterUrl);
@@ -400,7 +421,28 @@ export default async function(req: Request) {
       if (/<head[^>]*>/i.test(html) && !/rel=["']icon["']/i.test(html)) {
         html = html.replace(/<head[^>]*>/i, m => m + '\n' + faviconTag);
       }
-      const inject = searchScript + '\n' + catalogScript + '\n' + checkoutScript + '\n' + aiSidebarScript + '\n' + aiLinkInterceptor + '\n' + authInterceptorScript + '\n' + navResolverScript + '\n' + brandLinkFixScript + '\n' + fontFixScript + (supabaseFormScript ? '\n' + supabaseFormScript : '');
+      // EARLY INJECT: font-fix + GSI-block + SW registration go in <head> BEFORE
+      // any SPA bundle. The font-fix must run before the SPA's CSS-in-JS system
+      // injects @font-face rules, and the GSI block must run before the SPA
+      // loads the Google Identity Services script. The Service Worker registration
+      // must happen early so it's active before the SPA requests fonts.
+      const swRegisterScript = `<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('/sw.js').catch(function(){});
+  });
+}
+</script>`;
+      const earlyInject = fontFixScript + '\n' + gsiBlockScript + '\n' + swRegisterScript;
+      if (/<head[^>]*>/i.test(html)) {
+        html = html.replace(/<head[^>]*>/i, m => m + '\n' + earlyInject);
+      } else if (/<html[^>]*>/i.test(html)) {
+        html = html.replace(/<html[^>]*>/i, m => m + '\n<head>' + earlyInject + '</head>');
+      } else {
+        html = earlyInject + html;
+      }
+      // BODY INJECT: search, catalog, checkout, AI tools, auth/nav/brand fixers
+      const inject = searchScript + '\n' + catalogScript + '\n' + checkoutScript + '\n' + aiSidebarScript + '\n' + aiLinkInterceptor + '\n' + authInterceptorScript + '\n' + navResolverScript + '\n' + brandLinkFixScript + (supabaseFormScript ? '\n' + supabaseFormScript : '');
       if (html.includes('</body>')) {
         html = html.replace('</body>', inject + '\n</body>');
       } else {
@@ -457,6 +499,37 @@ export default async function(req: Request) {
       const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#0a0a0a"/><text x="16" y="22" font-size="18" font-weight="bold" text-anchor="middle" fill="#FFD700">C</text></svg>`;
       fileMap.set('favicon.svg', new TextEncoder().encode(faviconSvg));
       fileMap.set('favicon.ico', new TextEncoder().encode(faviconSvg));
+
+      // Service Worker — intercepts ALL font requests to external domains and
+      // returns an empty response. This is the ONLY reliable way to block fonts
+      // injected at runtime by the SPA's CSS-in-JS system (Emotion, etc.), which
+      // bypass static @font-face stripping and CSP font-src restrictions.
+      const swJs = `
+self.addEventListener('install', function(e){ self.skipWaiting(); });
+self.addEventListener('activate', function(e){ e.waitUntil(self.clients.claim()); });
+self.addEventListener('fetch', function(e){
+  var u = e.request.url || '';
+  var origin = self.location.origin;
+  // Block all font file requests to external domains — return 404 so the
+  // browser treats it as "font not found" and doesn't attempt to decode a
+  // response body (which causes "Failed to decode downloaded font" warnings).
+  if (/\\.woff2?|\\.ttf|\\.otf|\\.eot/i.test(u) && u.indexOf(origin) !== 0) {
+    e.respondWith(new Response(null, { status: 404, statusText: 'Not Found' }));
+    return;
+  }
+  // Block Google Fonts CSS — return empty CSS
+  if (/fonts\\.googleapis\\.com|fonts\\.gstatic\\.com/i.test(u)) {
+    e.respondWith(new Response('', { status: 200, headers: { 'Content-Type': 'text/css' } }));
+    return;
+  }
+  // Block Envato asset CDN font requests
+  if (/assets\\.elements\\.envato\\.com.*\\.(woff2?|ttf|otf|eot)/i.test(u)) {
+    e.respondWith(new Response(null, { status: 404, statusText: 'Not Found' }));
+    return;
+  }
+});
+`;
+      fileMap.set('sw.js', new TextEncoder().encode(swJs));
 
       // vercel.json with security headers + clean URLs
       const vercelJson = JSON.stringify({

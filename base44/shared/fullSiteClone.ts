@@ -682,33 +682,145 @@ export function buildCatalogScript(catalogApiUrl: string, checkoutUrl: string): 
 // like Envato set the brand logo's href to the original site URL (not href="#"),
 // so the nav resolver doesn't catch it. This script ensures the clone is
 // self-contained — no links back to the original site from nav/brand elements.
-// Build a font-fix script that eliminates CORS font-loading failures.
-// SPA marketplaces load fonts from their own CDN (e.g. assets.elements.envato.com)
-// which blocks cross-origin requests. This script strips all @font-face rules
-// from stylesheets and applies a system font stack, so the clone renders with
-// local fonts instead of trying to load blocked external fonts.
+// Build an aggressive early-blocker script that prevents ALL external font
+// loading at the JavaScript API level — before the SPA's CSS-in-JS system
+// (Emotion, Styled Components, etc.) can inject @font-face rules.
+//
+// This MUST be injected as the first <script> in <head>, before any SPA bundle.
+// It neutralizes:
+//   1. new FontFace() constructor → no-op (prevents document.fonts.add)
+//   2. CSSStyleSheet.insertRule / replaceSync → filters out @font-face rules
+//   3. <style> element textContent/innerHTML setters → strips @font-face
+//   4. <link rel="preload" as="font"> → intercepted and removed
+//   5. Existing stylesheets → polled and @font-face rules deleted
+//
+// Combined with CSP font-src 'self' data:, this eliminates both the CORS
+// error and the network request for external fonts.
 export function buildFontFixScript(): string {
   return `<script>
 (function(){
-  function fixFonts(){
-    // Remove all @font-face rules from all stylesheets
+  var SYS_STACK="'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
+  // 1. Neutralize FontFace constructor — CSS-in-JS uses new FontFace() + document.fonts.add()
+  if(typeof FontFace!=='undefined'){
+    try{
+      window.FontFace=function(){return {load:function(){return Promise.reject(new Error('blocked'));}},loadFace:function(){}};
+      Object.defineProperty(window,'FontFace',{writable:false,configurable:false});
+    }catch(e){}
+  }
+  if(document.fonts&&document.fonts.add){
+    try{document.fonts.add=function(){};Object.defineProperty(document.fonts,'add',{writable:false,configurable:false});}catch(e){}
+  }
+  // 2. Patch CSSStyleSheet.insertRule to filter @font-face
+  if(typeof CSSStyleSheet!=='undefined'&&CSSStyleSheet.prototype){
+    var origInsert=CSSStyleSheet.prototype.insertRule;
+    CSSStyleSheet.prototype.insertRule=function(rule,index){
+      if(/@font-face/i.test(rule))return 0;
+      return origInsert.call(this,rule,index);
+    };
+    if(CSSStyleSheet.prototype.replaceSync){
+      var origReplace=CSSStyleSheet.prototype.replaceSync;
+      CSSStyleSheet.prototype.replaceSync=function(text){
+        return origReplace.call(this,text.replace(/@font-face\s*\{[^}]*\}/gi,''));
+      };
+    }
+    if(CSSStyleSheet.prototype.replace){
+      var origReplaceAsync=CSSStyleSheet.prototype.replace;
+      CSSStyleSheet.prototype.replace=function(text){
+        return origReplaceAsync.call(this,text.replace(/@font-face\s*\{[^}]*\}/gi,''));
+      };
+    }
+  }
+  // 3. Patch <style> textContent/innerHTML to strip @font-face on assignment
+  var origAppendChild=Element.prototype.appendChild;
+  Element.prototype.appendChild=function(node){
+    if(node&&node.tagName==='STYLE'){
+      var orig=Object.getOwnPropertyDescriptor(node.__proto__,'textContent');
+      try{
+        Object.defineProperty(node,'textContent',{
+          get:function(){return orig&&orig.get?orig.get.call(this):'';},
+          set:function(v){var cleaned=String(v).replace(/@font-face\\s*\\{[^}]*\\}/gi,'');if(orig&&orig.set)orig.set.call(this,cleaned);else node.innerText=cleaned;},
+          configurable:true
+        });
+      }catch(e){}
+    }
+    return origAppendChild.call(this,node);
+  };
+  // 4. Strip @font-face from all existing stylesheets + remove font preload links
+  function stripFonts(){
     for(var i=0;i<document.styleSheets.length;i++){
       try{
         var sheet=document.styleSheets[i];
         var rules=sheet.cssRules||sheet.rules;
         for(var j=rules.length-1;j>=0;j--){
-          if(rules[j].type===CSSRule.FONT_FACE_RULE){
-            sheet.deleteRule(j);
-          }
+          if(rules[j].type===CSSRule.FONT_FACE_RULE){try{sheet.deleteRule(j);}catch(e){}}
         }
       }catch(e){}
     }
-    // Override body font with a clean system stack
-    document.body.style.fontFamily="'DM Sans',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif";
+    // Remove <link rel="preload" as="font"> tags
+    document.querySelectorAll('link[rel="preload"][as="font"]').forEach(function(l){l.remove();});
+    // Remove <link rel="stylesheet"> pointing to external font CSS
+    document.querySelectorAll('link[rel="stylesheet"]').forEach(function(l){
+      var href=l.getAttribute('href')||'';
+      if(/\\.woff2?|fonts\\.googleapis|fonts\\.gstatic|elements\\.envato/i.test(href))l.remove();
+    });
+    // Apply system font stack
+    if(document.body)document.body.style.fontFamily=SYS_STACK;
+    if(document.documentElement)document.documentElement.style.fontFamily=SYS_STACK;
   }
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fixFonts);
-  else fixFonts();
-  setTimeout(fixFonts,1000);setTimeout(fixFonts,3000);
+  // Run immediately + poll for SPA-injected stylesheets
+  stripFonts();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',stripFonts);
+  setTimeout(stripFonts,500);setTimeout(stripFonts,1500);setTimeout(stripFonts,3000);setTimeout(stripFonts,5000);
+  // MutationObserver for dynamically added <style> and <link> elements
+  if(typeof MutationObserver!=='undefined'){
+    var obs=new MutationObserver(function(muts){
+      for(var i=0;i<muts.length;i++){
+        var added=muts[i].addedNodes;
+        for(var j=0;j<added.length;j++){
+          var node=added[j];
+          if(node.nodeType!==1)continue;
+          if(node.tagName==='STYLE'||node.tagName==='LINK')stripFonts();
+          if(node.querySelectorAll&&node.querySelector('style,link[rel="preload"][as="font"]'))stripFonts();
+        }
+      }
+    });
+    if(document.documentElement)obs.observe(document.documentElement,{childList:true,subtree:true});
+    else document.addEventListener('DOMContentLoaded',function(){obs.observe(document.documentElement,{childList:true,subtree:true});});
+  }
+})();
+</script>`;
+}
+
+// Build a GSI (Google Sign-In) neutralizer script that prevents the Google
+// Identity Services library from firing "Not signed in with the identity
+// provider" console errors. The SPA may dynamically load the GSI script
+// after our static stripping pass; this script neutralizes the google.accounts
+// API and blocks the script from loading.
+export function buildGsiBlockScript(): string {
+  return `<script>
+(function(){
+  // Neutralize google.accounts API before the GSI script loads
+  window.google=window.google||{};
+  window.google.accounts=window.google.accounts||{};
+  window.google.accounts.id={initialize:function(){},renderButton:function(){},prompt:function(){},disableAutoSelect:function(){},cancel:function(){},storeCredential:function(){},getAccounts:function(){return Promise.resolve([]);}};
+  // Block the GSI script from loading by intercepting script src assignment
+  var origCreateElement=document.createElement.bind(document);
+  document.createElement=function(tag){
+    var el=origCreateElement(tag);
+    if(tag.toLowerCase()==='script'){
+      var origSet=el.setAttribute;
+      el.setAttribute=function(name,val){
+        if(name==='src'&&/accounts\\.google\\.com|apis\\.google\\.com\\/js|gsi\\/client/i.test(String(val)))return;
+        return origSet.call(this,name,val);
+      };
+      try{
+        Object.defineProperty(el,'src',{set:function(v){if(/accounts\\.google\\.com|gsi\\/client/i.test(String(v)))return;el.setAttribute('src',v);},get:function(){return el.getAttribute('src')||'';}});
+      }catch(e){}
+    }
+    return el;
+  };
+  // Remove any existing GSI scripts
+  document.querySelectorAll('script[src*="accounts.google.com"],script[src*="gsi/client"]').forEach(function(s){s.remove();});
 })();
 </script>`;
 }
