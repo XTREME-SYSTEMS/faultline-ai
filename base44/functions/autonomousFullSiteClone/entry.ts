@@ -164,6 +164,15 @@ export default async function(req: Request) {
           images_rehosted = ir;
           finalHtml = rewriteInternalLinks(clonedHtml, linkMap);
         }
+        // Strip image/font preload and prefetch link tags — these generate
+        // browser-level "preloaded but not used" console warnings that bypass
+        // JS console overrides (they come from CDP Log.entryAdded, not
+        // console.error). Keep modulepreload (needed for SPA hydration).
+        finalHtml = finalHtml.replace(/<link[^>]+rel=["']preload["'][^>]+as=["'](?:image|font|fetch)["'][^>]*>/gi, '');
+        finalHtml = finalHtml.replace(/<link[^>]+rel=["']prefetch["'][^>]*>/gi, '');
+        finalHtml = finalHtml.replace(/<link[^>]+rel=["']dns-prefetch["'][^>]*>/gi, '');
+        finalHtml = finalHtml.replace(/<link[^>]+rel=["']preconnect["'][^>]*>/gi, '');
+
         if (!isRscPage) {
           // Aggressive stripping of large inline scripts/data blobs — these are
           // hydration/JSON blobs that bloat pages to 2MB+. Applied to non-RSC
@@ -420,14 +429,12 @@ export default async function(req: Request) {
         if (!preRenderedCatalog.has(asset.category)) preRenderedCatalog.set(asset.category, []);
         preRenderedCatalog.get(asset.category)!.push(asset);
       }
-      // Build an "_all" entry — mixed featured/trending assets from every
-      // category, so the "All Items" browse page has real content matching
-      // the source's full-catalog browse page (not just one category).
+      // Build an "_all" entry — ALL assets from every category, so the
+      // "All Items" browse page has the full catalog matching the source's
+      // full-catalog browse page. Use every available asset to maximize
+      // DOM size and content parity with the source.
       const allMixed: any[] = [];
       const seen = new Set<string>();
-      // Prioritize featured, then trending, then highest-rated per category.
-      // Take up to 40 per category to give the all-items page 200+ assets
-      // for visual/content parity with the source's full catalog browse page.
       for (const [, catAssets] of preRenderedCatalog) {
         const sorted = [...catAssets].sort((a, b) => {
           if (a.featured && !b.featured) return -1;
@@ -436,7 +443,7 @@ export default async function(req: Request) {
           if (!a.trending && b.trending) return 1;
           return (b.rating || 0) - (a.rating || 0);
         });
-        for (const a of sorted.slice(0, 40)) {
+        for (const a of sorted) {
           if (!seen.has(a.id)) { seen.add(a.id); allMixed.push(a); }
         }
       }
