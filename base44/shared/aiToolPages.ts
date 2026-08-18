@@ -253,7 +253,78 @@ export function buildAllAiToolPages(invokeUrl: string, checkoutUrl: string): Map
     const filename = tool.slug + '.html';
     pages.set(filename, buildAiToolPage(tool, invokeUrl, checkoutUrl));
   }
+  // Add AI tools index page
+  pages.set('ai-tools.html', buildAiToolsIndexPage());
   return pages;
+}
+
+// Build an AI tools index page that lists all available AI tools with links
+// to their individual pages. This is the /ai-tools route.
+export function buildAiToolsIndexPage(): string {
+  const toolsGrid = AI_TOOLS.map(t => `
+    <a href="/${t.slug}.html" style="display:block;text-decoration:none;background:#161616;border:1px solid #2a2a2a;border-radius:12px;padding:24px;transition:transform .15s,border-color .15s;" onmouseover="this.style.transform='translateY(-3px)';this.style.borderColor='#4a9eff';" onmouseout="this.style.transform='none';this.style.borderColor='#2a2a2a';">
+      <div style="font-size:36px;margin-bottom:12px;">${t.icon}</div>
+      <h3 style="font-size:16px;font-weight:700;color:#fff;margin:0 0 8px;">${t.title.split('—')[0].trim()}</h3>
+      <p style="font-size:13px;color:#888;line-height:1.5;margin:0;">${t.description}</p>
+      <div style="margin-top:16px;font-size:13px;color:#4a9eff;font-weight:600;">Try now →</div>
+    </a>`).join('\n');
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI Tools — Create with AI</title>
+<meta name="description" content="Create stunning content with our AI tools — generate videos, images, voiceovers, music, and more from text prompts.">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; }
+  .nav { background: #111; border-bottom: 1px solid #222; padding: 16px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .nav a { color: #ccc; text-decoration: none; font-size: 14px; font-weight: 600; }
+  .nav a:hover { color: #fff; }
+  .nav .logo { font-size: 20px; font-weight: 800; color: #fff; }
+  .nav .signin { margin-left: auto; }
+  .nav .signin a { background: #4a9eff; color: #fff; padding: 8px 16px; border-radius: 6px; }
+  .hero { padding: 60px 24px 40px; text-align: center; max-width: 900px; margin: 0 auto; }
+  .hero h1 { font-size: 48px; font-weight: 800; margin: 0 0 16px; line-height: 1.1; }
+  .hero p { font-size: 18px; color: #999; line-height: 1.6; margin: 0 0 32px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 0 24px 60px; max-width: 1400px; margin: 0 auto; }
+  footer { text-align: center; padding: 40px 24px; color: #555; font-size: 13px; border-top: 1px solid #222; }
+  footer a { color: #999; text-decoration: none; margin: 0 8px; }
+  @media (max-width: 640px) { .hero h1 { font-size: 32px; } .grid { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="/" class="logo">⚡ Creative Assets</a>
+  <a href="/video-templates">Video</a>
+  <a href="/audio">Audio</a>
+  <a href="/graphics">Graphics</a>
+  <a href="/fonts">Fonts</a>
+  <a href="/photos">Photos</a>
+  <a href="/ai-tools" style="color:#4a9eff;">AI Tools</a>
+  <a href="/pricing">Pricing</a>
+</nav>
+
+<section class="hero">
+  <div style="font-size: 56px; margin-bottom: 12px;">🤖</div>
+  <h1>AI Tools — Create with AI</h1>
+  <p>Generate stunning videos, images, voiceovers, music, and more from simple text prompts. Powered by AI.</p>
+</section>
+
+<div class="grid">
+${toolsGrid}
+</div>
+
+<footer>
+  <a href="/pricing">Pricing</a>
+  <a href="/terms">Terms</a>
+  <a href="/privacy">Privacy</a>
+  <a href="/help">Help</a>
+</footer>
+</body>
+</html>`;
 }
 
 // Build a script that injects a hover sidebar onto the "Create with our AI Tools"
@@ -562,7 +633,192 @@ export function buildAllCategoryPages(catalogApiUrl: string, checkoutUrl: string
   for (const cat of CATEGORY_PAGES) {
     pages.set(cat.slug + '.html', buildCategoryPage(cat, catalogApiUrl, checkoutUrl, loginUrl, registerUrl));
   }
+  // Add search page (reads ?q= query parameter)
+  pages.set('search.html', buildSearchPage(catalogApiUrl, checkoutUrl, loginUrl, registerUrl));
   return pages;
+}
+
+// Build a search page that reads the ?q= query parameter and searches the
+// catalog API. This is a critical user journey — the search reconstruction
+// script redirects all search inputs to /search.html?q=...
+export function buildSearchPage(catalogApiUrl: string, checkoutUrl: string, loginUrl: string, registerUrl: string): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Search — Find creative assets</title>
+<meta name="description" content="Search for creative assets, templates, AI tools, and more.">
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; }
+  .nav { background: #111; border-bottom: 1px solid #222; padding: 16px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .nav a { color: #ccc; text-decoration: none; font-size: 14px; font-weight: 600; }
+  .nav a:hover { color: #fff; }
+  .nav .logo { font-size: 20px; font-weight: 800; color: #fff; }
+  .nav .signin { margin-left: auto; }
+  .nav .signin a { background: #4a9eff; color: #fff; padding: 8px 16px; border-radius: 6px; }
+  .search-bar { max-width: 700px; margin: 40px auto 20px; padding: 0 24px; }
+  .search-bar h1 { font-size: 36px; font-weight: 800; margin: 0 0 20px; text-align: center; }
+  .search-bar input { width: 100%; padding: 16px 20px; font-size: 18px; border: 2px solid #333; border-radius: 12px; background: #161616; color: #fff; outline: none; }
+  .search-bar input:focus { border-color: #4a9eff; }
+  .results-info { text-align: center; color: #888; font-size: 14px; margin: 20px 0; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; padding: 0 24px 60px; max-width: 1400px; margin: 0 auto; }
+  .card { background: #161616; border: 1px solid #2a2a2a; border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform .15s; }
+  .card:hover { transform: translateY(-2px); }
+  .card-img { aspect-ratio: 4/3; overflow: hidden; background: #0d0d0d; }
+  .card-img img { width: 100%; height: 100%; object-fit: cover; }
+  .card-body { padding: 12px; }
+  .card-title { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-cat { font-size: 11px; color: #888; margin-bottom: 4px; }
+  .card-price { font-size: 12px; color: #4a9eff; font-weight: 600; }
+  .loading { text-align: center; padding: 60px; color: #555; }
+  .no-results { text-align: center; padding: 60px; color: #555; }
+  .no-results a { color: #4a9eff; }
+  footer { text-align: center; padding: 40px 24px; color: #555; font-size: 13px; border-top: 1px solid #222; }
+  footer a { color: #999; text-decoration: none; margin: 0 8px; }
+  @media (max-width: 640px) { .search-bar h1 { font-size: 24px; } .grid { grid-template-columns: repeat(2, 1fr); } }
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a href="/" class="logo">⚡ Creative Assets</a>
+  <a href="/video-templates">Video</a>
+  <a href="/audio">Audio</a>
+  <a href="/graphics">Graphics</a>
+  <a href="/fonts">Fonts</a>
+  <a href="/photos">Photos</a>
+  <a href="/ai-image-generator">AI Tools</a>
+  <a href="/pricing">Pricing</a>
+  <span class="signin"><a href="${loginUrl}">Sign In</a></span>
+</nav>
+
+<div class="search-bar">
+  <h1>Search Creative Assets</h1>
+  <input type="search" id="searchInput" placeholder="Search for templates, graphics, photos, AI tools..." value="">
+</div>
+
+<div class="results-info" id="resultsInfo"></div>
+<div class="grid" id="assetGrid"><div class="loading">Enter a search term to find assets...</div></div>
+
+<footer>
+  <a href="${loginUrl}">Sign In</a>
+  <a href="${registerUrl}">Sign Up</a>
+  <a href="/pricing">Pricing</a>
+  <a href="/terms">Terms</a>
+  <a href="/privacy">Privacy</a>
+  <a href="/help">Help</a>
+</footer>
+
+<script>
+var CATALOG_API='${catalogApiUrl}';
+var CHECKOUT_URL='${checkoutUrl}';
+var LOGIN_URL='${loginUrl}';
+var REGISTER_URL='${registerUrl}';
+
+function getQueryParam(name) {
+  var params = new URLSearchParams(window.location.search);
+  return params.get(name) || '';
+}
+
+function searchAssets(query) {
+  var grid = document.getElementById('assetGrid');
+  var info = document.getElementById('resultsInfo');
+  if (!query || query.length < 2) {
+    grid.innerHTML = '<div class="loading">Enter a search term to find assets...</div>';
+    info.textContent = '';
+    return;
+  }
+  grid.innerHTML = '<div class="loading">Searching...</div>';
+  info.textContent = 'Searching for "' + query + '"...';
+  
+  // Fetch from all categories and filter by query
+  var categories = ['graphic_templates', 'video_templates', 'web_templates', 'photos', 'graphics', 'fonts', '3d', 'audio', 'app_templates', 'presentation_templates', 'addons'];
+  var allAssets = [];
+  var completed = 0;
+  
+  categories.forEach(function(cat) {
+    fetch(CATALOG_API + '?action=browse&category=' + encodeURIComponent(cat) + '&limit=12')
+      .then(function(r) { return r.json(); })
+      .then(function(data) {
+        if (data.assets) {
+          var q = query.toLowerCase();
+          var matches = data.assets.filter(function(a) {
+            return (a.name || '').toLowerCase().indexOf(q) >= 0 ||
+                   (a.description || '').toLowerCase().indexOf(q) >= 0 ||
+                   (a.subcategory || '').toLowerCase().indexOf(q) >= 0 ||
+                   (a.tags || []).some(function(t) { return t.toLowerCase().indexOf(q) >= 0; });
+          });
+          allAssets = allAssets.concat(matches);
+        }
+      })
+      .catch(function() {})
+      .finally(function() {
+        completed++;
+        if (completed === categories.length) {
+          renderResults(allAssets, query);
+        }
+      });
+  });
+}
+
+function renderResults(assets, query) {
+  var grid = document.getElementById('assetGrid');
+  var info = document.getElementById('resultsInfo');
+  if (assets.length === 0) {
+    grid.innerHTML = '<div class="no-results">No results found for "' + query + '". <a href="/all-items">Browse all items</a></div>';
+    info.textContent = '0 results';
+    return;
+  }
+  info.textContent = assets.length + ' result' + (assets.length !== 1 ? 's' : '') + ' for "' + query + '"';
+  grid.innerHTML = assets.slice(0, 48).map(function(a) {
+    var price = a.license_type === 'subscription' ? 'Included' : ('$' + a.price);
+    var rating = a.rating ? '<div style="color:#FFD700;font-size:11px;">★ ' + a.rating + '</div>' : '';
+    return '<div class="card" data-asset-id="' + a.id + '" data-asset-name="' + a.name.replace(/"/g, '&quot;') + '">' +
+      '<div class="card-img"><img src="' + (a.thumbnail_url || '') + '" alt="' + a.name.replace(/"/g, '&quot;') + '" loading="lazy" onerror="this.style.display=\\'none\\'"></div>' +
+      '<div class="card-body"><div class="card-title">' + a.name + '</div>' +
+      '<div class="card-cat">' + (a.subcategory || a.category) + '</div>' + rating +
+      '<div class="card-price">' + price + '</div></div></div>';
+  }).join('');
+  
+  document.querySelectorAll('[data-asset-id]').forEach(function(card) {
+    card.addEventListener('click', function() {
+      var aid = this.getAttribute('data-asset-id');
+      var aname = this.getAttribute('data-asset-name');
+      if (window.self !== window.top) { alert('Checkout works only from the published app. Please open this site in a new tab.'); return; }
+      fetch(CHECKOUT_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: [{ name: aname, amount: 29, quantity: 1, type: 'ai_tool', asset_id: aid }] }) })
+        .then(function(r) { return r.json(); })
+        .then(function(j) { if (j.url) window.location.href = j.url; else alert('Could not start checkout.'); })
+        .catch(function() { alert('Checkout error.'); });
+    });
+  });
+}
+
+// Initialize
+var initialQuery = getQueryParam('q');
+document.getElementById('searchInput').value = initialQuery;
+if (initialQuery) searchAssets(initialQuery);
+
+// Live search on input
+var debounceTimer;
+document.getElementById('searchInput').addEventListener('input', function() {
+  clearTimeout(debounceTimer);
+  var q = this.value.trim();
+  debounceTimer = setTimeout(function() {
+    var newUrl = window.location.pathname + (q ? '?q=' + encodeURIComponent(q) : '');
+    window.history.replaceState({}, '', newUrl);
+    searchAssets(q);
+  }, 400);
+});
+
+// Enter key
+document.getElementById('searchInput').addEventListener('keydown', function(e) {
+  if (e.key === 'Enter') { e.preventDefault(); clearTimeout(debounceTimer); searchAssets(this.value.trim()); }
+});
+</script>
+</body>
+</html>`;
 }
 
 // Rewrite AI tool links in the cloned HTML to point to our functional pages

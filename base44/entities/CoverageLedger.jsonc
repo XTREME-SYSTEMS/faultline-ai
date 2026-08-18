@@ -1,0 +1,134 @@
+{
+  "name": "CoverageLedger",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "test_id": {
+      "type": "string",
+      "description": "Immutable test ID (e.g. FE-001, BE-003, INT-012)"
+    },
+    "category": {
+      "type": "string",
+      "enum": [
+        "frontend_functional",
+        "public_route",
+        "interaction",
+        "navigation",
+        "dropdown_menu",
+        "responsive",
+        "visual",
+        "content_structure",
+        "auth",
+        "frontend_backend_integration",
+        "backend_functional",
+        "data_persistence",
+        "api_function",
+        "accessibility",
+        "security",
+        "performance",
+        "reliability_recovery",
+        "observability",
+        "clone_engine_regression"
+      ],
+      "description": "Score family category"
+    },
+    "requirement": {
+      "type": "string",
+      "description": "What this test verifies"
+    },
+    "source_evidence": {
+      "type": "string",
+      "description": "Evidence from source site (URL, screenshot, behavior record)"
+    },
+    "clone_implementation": {
+      "type": "string",
+      "description": "How the clone implements this (route, script, backend function)"
+    },
+    "expected_result": {
+      "type": "string"
+    },
+    "actual_result": {
+      "type": "string"
+    },
+    "environment": {
+      "type": "string",
+      "enum": [
+        "desktop_1440",
+        "tablet_768",
+        "mobile_390",
+        "all"
+      ],
+      "default": "all"
+    },
+    "screenshot_url": {
+      "type": "string"
+    },
+    "network_evidence": {
+      "type": "string"
+    },
+    "backend_evidence": {
+      "type": "string"
+    },
+    "persistence_evidence": {
+      "type": "string"
+    },
+    "defect_id": {
+      "type": "string"
+    },
+    "repair_id": {
+      "type": "string"
+    },
+    "regression_result": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "not_run"
+      ],
+      "default": "not_run"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "blocked_external",
+        "not_applicable_with_proof"
+      ],
+      "default": "fail"
+    },
+    "clone_url": {
+      "type": "string",
+      "description": "The clone deployment URL this test was run against"
+    },
+    "run_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "organization_id",
+    "test_id",
+    "category",
+    "requirement",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

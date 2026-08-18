@@ -5,6 +5,7 @@ import { clonePageAssets, rewriteInternalLinks, pathToFilename, buildSearchScrip
 import { slugify, createVercelProject, disableVercelSso, deployToVercelMultiFile, createDriveFolder, createGitHubRepo, pushGitHubFile, createSupabaseProject } from '../../shared/launchInfra.ts';
 import { buildAllAiToolPages, rewriteAiToolLinks, AI_TOOLS, buildAiToolsSidebarScript, buildAiLinkInterceptorScript, buildAllCategoryPages, CATEGORY_PAGES } from '../../shared/aiToolPages.ts';
 import { buildAuthInterceptorScript, buildNavLinkResolverScript, buildBrandLinkFixScript, buildFontFixScript, buildGsiBlockScript } from '../../shared/fullSiteClone.ts';
+import { buildInteractionReconstructionScript } from '../../shared/interactionReconstruction.ts';
 
 // Autonomous full-site clone engine — sitemap-driven (not BFS), so it discovers
 // ALL pages upfront and clones every one. Handles 100+ pages in a single run by
@@ -401,6 +402,11 @@ export default async function(req: Request) {
     // GSI block — neutralizes Google Identity Services to prevent "Not signed in"
     // console errors from the SPA's dynamically loaded GSI script.
     const gsiBlockScript = buildGsiBlockScript();
+    // Interaction reconstruction — generic clone-side behavior for dropdowns,
+    // modals, tabs, accordions, mobile menus, search, filters, carousels,
+    // pagination, and dead buttons. This is the behavioral reconstruction engine
+    // that replaces lost SPA click handlers with equivalent clone-side behavior.
+    const interactionReconScript = buildInteractionReconstructionScript();
 
     // Category pages — dedicated pages for each Envato category (replaces 404 fallback)
     const categoryPages = buildAllCategoryPages(catalogApiUrl, checkoutUrl, myLoginUrl, myRegisterUrl);
@@ -442,7 +448,7 @@ if('serviceWorker' in navigator){
         html = earlyInject + html;
       }
       // BODY INJECT: search, catalog, checkout, AI tools, auth/nav/brand fixers
-      const inject = searchScript + '\n' + catalogScript + '\n' + checkoutScript + '\n' + aiSidebarScript + '\n' + aiLinkInterceptor + '\n' + authInterceptorScript + '\n' + navResolverScript + '\n' + brandLinkFixScript + (supabaseFormScript ? '\n' + supabaseFormScript : '');
+      const inject = searchScript + '\n' + catalogScript + '\n' + checkoutScript + '\n' + aiSidebarScript + '\n' + aiLinkInterceptor + '\n' + authInterceptorScript + '\n' + navResolverScript + '\n' + brandLinkFixScript + '\n' + interactionReconScript + (supabaseFormScript ? '\n' + supabaseFormScript : '');
       if (html.includes('</body>')) {
         html = html.replace('</body>', inject + '\n</body>');
       } else {
