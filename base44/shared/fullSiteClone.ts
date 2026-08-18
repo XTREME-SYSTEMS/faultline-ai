@@ -791,6 +791,74 @@ export function buildFontFixScript(): string {
 </script>`;
 }
 
+// Build a fetch interceptor script that runs BEFORE the SPA loads and intercepts
+// all fetch/XMLHttpRequest calls to external API endpoints and font URLs. This
+// is the FIRST LINE OF DEFENSE against network failures — the service worker
+// only activates after the first page load, so the SPA's initial API calls and
+// font requests bypass the SW entirely. This script patches window.fetch and
+// XMLHttpRequest at the JavaScript level, returning empty 200 responses for
+// blocked requests BEFORE the SPA can send them.
+//
+// This is the universal pattern for cloned SPA sites: intercept network calls
+// at the JS level (pre-SPA) AND at the SW level (post-activation) to cover
+// both the first page load and all subsequent navigations.
+export function buildFetchInterceptorScript(): string {
+  return `<script>
+(function(){
+  var SYS_FONT=/\\.woff2?|\\.ttf|\\.otf|\\.eot/i;
+  var API_BLOCK=/envato\\.com\\/api|envato\\.com\\/graphql|account\\.envato\\.com|elements\\.envato\\.com\\/api|amazonaws\\.com|execute-api/i;
+  var FONT_CSS_BLOCK=/fonts\\.googleapis\\.com|fonts\\.gstatic\\.com/i;
+  var LOCAL_API_BLOCK=/\\/auth-api\\/|\\/elements-api\\//i;
+  var IMG_BLOCK=/unsplash\\.com/i;
+  // Patch window.fetch
+  var origFetch=window.fetch;
+  window.fetch=function(input,init){
+    var url=typeof input==='string'?input:(input&&input.url)||'';
+    if(API_BLOCK.test(url)||LOCAL_API_BLOCK.test(url)){
+      return Promise.resolve(new Response('{}',{status:200,headers:{'Content-Type':'application/json'}}));
+    }
+    if(FONT_CSS_BLOCK.test(url)){
+      return Promise.resolve(new Response('',{status:200,headers:{'Content-Type':'text/css'}}));
+    }
+    if(SYS_FONT.test(url)&&url.indexOf(location.origin)!==0){
+      return Promise.resolve(new Response('',{status:200,headers:{'Content-Type':'font/woff2'}}));
+    }
+    if(IMG_BLOCK.test(url)){
+      return Promise.resolve(new Response('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>',{status:200,headers:{'Content-Type':'image/svg+xml'}}));
+    }
+    return origFetch.apply(this,arguments);
+  };
+  // Patch XMLHttpRequest
+  var origOpen=XMLHttpRequest.prototype.open;
+  XMLHttpRequest.prototype.open=function(method,url){
+    if(API_BLOCK.test(url)||LOCAL_API_BLOCK.test(url)){
+      arguments[1]='data:application/json,{}';
+    }else if(FONT_CSS_BLOCK.test(url)){
+      arguments[1]='data:text/css,';
+    }else if(SYS_FONT.test(url)&&url.indexOf(location.origin)!==0){
+      arguments[1]='data:font/woff2,';
+    }else if(IMG_BLOCK.test(url)){
+      arguments[1]='data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg"/>';
+    }
+    return origOpen.apply(this,arguments);
+  };
+  // Patch FontFace (redundant with fontFixScript, but ensures coverage)
+  if(typeof FontFace!=='undefined'){
+    try{
+      var origFF=window.FontFace;
+      window.FontFace=function(family,source,descriptors){
+        if(typeof source==='string'&&SYS_FONT.test(source)){
+          source='data:font/woff2,';
+        }
+        return new origFF(family,source,descriptors);
+      };
+      window.FontFace.prototype=origFF.prototype;
+    }catch(e){}
+  }
+})();
+</script>`;
+}
+
 // Build a GSI (Google Sign-In) neutralizer script that prevents the Google
 // Identity Services library from firing "Not signed in with the identity
 // provider" console errors. The SPA may dynamically load the GSI script

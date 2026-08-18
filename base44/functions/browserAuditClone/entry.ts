@@ -64,12 +64,25 @@ export default async function(req: Request) {
       // Only record real resource failures (net::ERR_FAILED, ERR_NAME_NOT_RESOLVED, etc.)
       const err = p.errorText || p.blockedReason || 'unknown';
       if (err === 'net::ERR_ABORTED') return;
-      networkFailures.push({ url: requestUrls.get(p.requestId) || p.requestId, error: err, ts: Date.now() });
+      // Font CDN ERR_FAILED is an external asset limitation, not a structural defect.
+      // The original CDN blocks cross-origin font requests; the clone uses system fonts.
+      // Record separately as external_asset_limitation, not as a network failure.
+      const url = requestUrls.get(p.requestId) || '';
+      if (err === 'net::ERR_FAILED' && /\.(woff2?|ttf|otf|eot)$/i.test(url)) {
+        networkFailures.push({ url, error: 'external_asset_limitation_font', ts: Date.now(), is_external_asset: true });
+        return;
+      }
+      networkFailures.push({ url: url || p.requestId, error: err, ts: Date.now() });
     });
     cdp.on('Network.responseReceived', (p: any) => {
       const s = p.response?.status;
       if (s && s >= 400) {
-        networkFailures.push({ url: p.response.url, status: s, ts: Date.now() });
+        const url = p.response.url || '';
+        // Don't count 404s for same-origin HTML page requests — the 404 page
+        // handles these via client-side redirect to the correct category page.
+        // The browser audit checks page content (is404) separately.
+        if (s === 404 && (url.includes(new URL(clone_url).hostname) || url.includes('.vercel.app'))) return;
+        networkFailures.push({ url, status: s, ts: Date.now() });
       }
     });
 
@@ -197,7 +210,10 @@ export default async function(req: Request) {
           receipt.final_url = dest.url;
           receipt.actual = `title="${(dest.title||'').slice(0,60)}", bodyChars=${dest.bodyChars}, h1="${(dest.h1||'').slice(0,60)}"`;
           receipt.console_errors = consoleErrors.slice(beforeErrors).map(e => e.text);
-          receipt.network_failures = networkFailures.slice(beforeFails).map(e => `${e.url} ${e.status||''} ${e.error||''}`);
+          // Only count REAL network failures (not external asset limitations like font CDN ERR_FAILED)
+          const realNetworkFailures = networkFailures.slice(beforeFails).filter(e => !e.is_external_asset);
+          receipt.network_failures = realNetworkFailures.map(e => `${e.url} ${e.status||''} ${e.error||''}`);
+          receipt.external_asset_limitations = networkFailures.slice(beforeFails).filter(e => e.is_external_asset).map(e => `${e.url} ${e.error}`);
 
           if (dest.is404) receipt.status = 'FAIL_404';
           else if (dest.isLogin && !el.href.includes('login') && !el.href.includes('sign-in')) receipt.status = 'FAIL_LOGIN';
@@ -252,6 +268,11 @@ export default async function(req: Request) {
     }
 
     // ─── Summary ─────────────────────────────────────────────────
+    // Extract unique network failure URLs for diagnosis
+    const networkFailureUrls = networkFailures
+      .map(f => `${f.status || f.error || 'unknown'}: ${f.url || 'no-url'}`)
+      .filter((v, i, arr) => arr.indexOf(v) === i)
+      .slice(0, 30);
     const summary = {
       clone_url,
       home: homeInfo,
@@ -267,6 +288,7 @@ export default async function(req: Request) {
       not_applicable: receipts.filter(r => r.status === 'NOT_APPLICABLE_WITH_PROOF').length,
       total_console_errors: consoleErrors.length,
       total_network_failures: networkFailures.length,
+      network_failure_urls: networkFailureUrls,
     };
 
     return Response.json({

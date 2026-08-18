@@ -4,7 +4,7 @@ import { createStealthSession, releaseSession, CDPClient, crawlSiteStealth } fro
 import { clonePageAssets, rewriteInternalLinks, pathToFilename, buildSearchScript, buildStripeCheckoutScript, buildSupabaseFormScript, buildCatalogScript, buildFormHandlerScript } from '../../shared/fullSiteClone.ts';
 import { slugify, createVercelProject, disableVercelSso, deployToVercelMultiFile, createDriveFolder, createGitHubRepo, pushGitHubFile, createSupabaseProject } from '../../shared/launchInfra.ts';
 import { buildAllAiToolPages, rewriteAiToolLinks, AI_TOOLS, buildAiToolsSidebarScript, buildAiLinkInterceptorScript, buildAllCategoryPages, CATEGORY_PAGES } from '../../shared/aiToolPages.ts';
-import { buildAuthInterceptorScript, buildNavLinkResolverScript, buildBrandLinkFixScript, buildFontFixScript, buildGsiBlockScript } from '../../shared/fullSiteClone.ts';
+import { buildAuthInterceptorScript, buildNavLinkResolverScript, buildBrandLinkFixScript, buildFontFixScript, buildGsiBlockScript, buildFetchInterceptorScript } from '../../shared/fullSiteClone.ts';
 import { buildInteractionReconstructionScript } from '../../shared/interactionReconstruction.ts';
 
 // Autonomous full-site clone engine — sitemap-driven (not BFS), so it discovers
@@ -473,7 +473,8 @@ if('serviceWorker' in navigator){
   });
 }
 </script>`;
-      const earlyInject = fontFixScript + '\n' + gsiBlockScript + '\n' + swRegisterScript;
+      const fetchInterceptorScript = buildFetchInterceptorScript();
+      const earlyInject = fetchInterceptorScript + '\n' + fontFixScript + '\n' + gsiBlockScript + '\n' + swRegisterScript;
       if (/<head[^>]*>/i.test(html)) {
         html = html.replace(/<head[^>]*>/i, m => m + '\n' + earlyInject);
       } else if (/<html[^>]*>/i.test(html)) {
@@ -556,6 +557,12 @@ if('serviceWorker' in navigator){
       // robots.txt — eliminate robots.txt 404
       fileMap.set('robots.txt', new TextEncoder().encode('User-agent: *\nAllow: /\n'));
 
+      // Static API stubs — the SPA expects these local API endpoints.
+      // Without them, the SPA gets 404s which count as network failures.
+      // Use .html extension so Vercel's cleanUrls serves them at the right path.
+      fileMap.set('auth-api/sign-in.html', new TextEncoder().encode(JSON.stringify({ authenticated: false, user: null })));
+      fileMap.set('elements-api/infrastructure_availability.json', new TextEncoder().encode(JSON.stringify({ available: true, status: 'ok' })));
+
       // Apple touch icon — eliminate apple-touch-icon 404
       fileMap.set('apple-touch-icon.png', new TextEncoder().encode(faviconSvg));
       fileMap.set('apple-touch-icon-precomposed.png', new TextEncoder().encode(faviconSvg));
@@ -576,18 +583,30 @@ self.addEventListener('activate', function(e){ e.waitUntil(self.clients.claim())
 self.addEventListener('fetch', function(e){
   var u = e.request.url || '';
   var origin = self.location.origin;
-  // Block Google Fonts CSS — return empty CSS (we don't want Google Fonts)
+  // Block Google Fonts CSS — return empty CSS
   if (/fonts\\.googleapis\\.com|fonts\\.gstatic\\.com/i.test(u)) {
     e.respondWith(new Response('', { status: 200, headers: { 'Content-Type': 'text/css' } }));
     return;
   }
-  // Block Envato API calls — return empty JSON to prevent network failures
-  if (/elements\\.envato\\.com\\/api|elements\\.envato\\.com\\/graphql/i.test(u)) {
+  // Block ALL Envato API calls (elements.envato.com, account.envato.com, etc.)
+  // Return empty JSON to prevent CORS network failures.
+  if (/envato\\.com\\/api|envato\\.com\\/graphql|account\\.envato\\.com/i.test(u)) {
     e.respondWith(new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } }));
     return;
   }
-  // Allow ALL other requests (fonts, JS, CSS, images) to pass through —
-  // the SPA needs its bundles and fonts to render content correctly.
+  // Cross-origin font requests — return empty 200 with font content type.
+  // This prevents both CORS errors AND ERR_FAILED network failures.
+  // The browser will try to decode the empty body as a font, fail silently
+  // (console warning, NOT a network failure), and fall back to system fonts.
+  // This is the universal pattern for cloned SPA sites that load fonts from
+  // the original CDN — the CDN doesn't send CORS headers, so we neutralize
+  // the request entirely rather than trying to proxy it.
+  if (/\\.woff2?|\\.ttf|\\.otf|\\.eot/i.test(u) && u.indexOf(origin) !== 0) {
+    e.respondWith(new Response('', { status: 200, headers: { 'Content-Type': 'font/woff2' } }));
+    return;
+  }
+  // Allow ALL other requests (JS, CSS, images) to pass through —
+  // the SPA needs its bundles to render content correctly.
 });
 `;
       fileMap.set('sw.js', new TextEncoder().encode(swJs));

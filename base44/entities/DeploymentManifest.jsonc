@@ -1,0 +1,143 @@
+{
+  "name": "DeploymentManifest",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "clone_id": {
+      "type": "string",
+      "description": "LaunchProject ID this manifest tracks"
+    },
+    "clone_version": {
+      "type": "string",
+      "description": "Human-readable version label (e.g. v43)"
+    },
+    "source_site": {
+      "type": "string",
+      "description": "Original source URL being cloned"
+    },
+    "engine_version": {
+      "type": "string",
+      "description": "Clone engine version (autonomousFullSiteClone function name + build hash)"
+    },
+    "generator_version": {
+      "type": "string",
+      "description": "Generator version identifier"
+    },
+    "function_versions": {
+      "type": "object",
+      "description": "Map of backend function name \u2192 version/revision used during this build",
+      "properties": {
+        "autonomousFullSiteClone": {
+          "type": "string"
+        },
+        "browserAuditClone": {
+          "type": "string"
+        },
+        "masterQualityGate": {
+          "type": "string"
+        },
+        "runCoverageAudit": {
+          "type": "string"
+        },
+        "differentialValidation": {
+          "type": "string"
+        }
+      }
+    },
+    "interaction_reconstruction_version": {
+      "type": "string"
+    },
+    "behavior_synthesis_version": {
+      "type": "string"
+    },
+    "visual_engine_version": {
+      "type": "string"
+    },
+    "backend_engine_version": {
+      "type": "string"
+    },
+    "validator_version": {
+      "type": "string"
+    },
+    "config_version": {
+      "type": "string"
+    },
+    "deployment_provider": {
+      "type": "string",
+      "default": "vercel"
+    },
+    "deployment_id": {
+      "type": "string",
+      "description": "Vercel project ID"
+    },
+    "deployment_url": {
+      "type": "string",
+      "description": "Vercel deployment URL"
+    },
+    "changes_included": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of changes/fixes included in this build"
+    },
+    "expected_improvements": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "rollback_target": {
+      "type": "string",
+      "description": "Previous deployment URL to roll back to"
+    },
+    "validation_run_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of MasterQualityScore runs against this deployment"
+    },
+    "artifact_hashes": {
+      "type": "object",
+      "description": "Hashes of generated artifacts (sw.js, index.html, etc.)"
+    },
+    "build_verified": {
+      "type": "boolean",
+      "default": false,
+      "description": "True only after browser-observed proof confirms changes are live"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "created_by": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id",
+    "clone_id",
+    "clone_version",
+    "source_site",
+    "deployment_url"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
