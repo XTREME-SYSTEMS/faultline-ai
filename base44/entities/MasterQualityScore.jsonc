@@ -1,0 +1,145 @@
+{
+  "name": "MasterQualityScore",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "clone_url": {
+      "type": "string",
+      "description": "The clone deployment URL scored"
+    },
+    "source_url": {
+      "type": "string",
+      "description": "The source benchmark URL"
+    },
+    "engine_version": {
+      "type": "string"
+    },
+    "static_coverage": {
+      "type": "number",
+      "description": "runCoverageAudit overall score 0-100"
+    },
+    "browser_interaction_score": {
+      "type": "number",
+      "description": "Browser audit pass rate 0-100"
+    },
+    "behavioral_parity_score": {
+      "type": "number",
+      "description": "Differential validation journey pass rate 0-100"
+    },
+    "visual_parity_score": {
+      "type": "number",
+      "description": "Differential validation avg visual parity 0-100"
+    },
+    "responsive_parity_score": {
+      "type": "number"
+    },
+    "backend_score": {
+      "type": "number"
+    },
+    "frontend_backend_integration_score": {
+      "type": "number"
+    },
+    "auth_score": {
+      "type": "number"
+    },
+    "data_persistence_score": {
+      "type": "number"
+    },
+    "accessibility_score": {
+      "type": "number"
+    },
+    "security_score": {
+      "type": "number"
+    },
+    "performance_score": {
+      "type": "number"
+    },
+    "error_recovery_score": {
+      "type": "number"
+    },
+    "content_structure_score": {
+      "type": "number"
+    },
+    "route_coverage_score": {
+      "type": "number"
+    },
+    "clone_engine_regression_score": {
+      "type": "number"
+    },
+    "overall_score": {
+      "type": "number",
+      "description": "Minimum of all category scores \u2014 no averaging"
+    },
+    "category_scores": {
+      "type": "object",
+      "description": "Full breakdown of all category scores"
+    },
+    "hard_gates_passed": {
+      "type": "boolean",
+      "description": "True only if ALL hard gates pass"
+    },
+    "clean_pass": {
+      "type": "boolean",
+      "description": "True if hard_gates_passed AND zero critical/high defects"
+    },
+    "open_critical_defects": {
+      "type": "number",
+      "default": 0
+    },
+    "open_high_defects": {
+      "type": "number",
+      "default": 0
+    },
+    "top_gaps": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Ranked list of largest remaining gaps"
+    },
+    "repair_queue": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "priority": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "root_cause": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "run_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "organization_id",
+    "clone_url",
+    "overall_score"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

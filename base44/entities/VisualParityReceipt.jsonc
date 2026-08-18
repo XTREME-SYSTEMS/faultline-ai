@@ -1,0 +1,103 @@
+{
+  "name": "VisualParityReceipt",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "clone_url": {
+      "type": "string"
+    },
+    "source_url": {
+      "type": "string"
+    },
+    "page_path": {
+      "type": "string",
+      "description": "Page path tested"
+    },
+    "viewport": {
+      "type": "string",
+      "enum": [
+        "desktop_1440",
+        "tablet_768",
+        "mobile_390"
+      ]
+    },
+    "component_name": {
+      "type": "string",
+      "description": "Component or section name"
+    },
+    "source_screenshot": {
+      "type": "string"
+    },
+    "clone_screenshot": {
+      "type": "string"
+    },
+    "structural_parity": {
+      "type": "number",
+      "description": "0-100 structural element match"
+    },
+    "layout_geometry_parity": {
+      "type": "number",
+      "description": "0-100 bounding box / geometry match"
+    },
+    "component_presence_parity": {
+      "type": "number",
+      "description": "0-100 expected components present"
+    },
+    "typography_parity": {
+      "type": "number"
+    },
+    "color_parity": {
+      "type": "number"
+    },
+    "image_aspect_ratio_parity": {
+      "type": "number"
+    },
+    "overall_parity": {
+      "type": "number",
+      "description": "0-100 overall visual parity for this component"
+    },
+    "differences": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "root_cause": {
+      "type": "string",
+      "description": "css, content, asset, state, responsive, component"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pass",
+        "fail",
+        "partial"
+      ],
+      "default": "fail"
+    }
+  },
+  "required": [
+    "organization_id",
+    "clone_url",
+    "page_path",
+    "overall_parity"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

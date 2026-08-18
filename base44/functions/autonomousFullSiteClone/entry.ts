@@ -540,6 +540,32 @@ if('serviceWorker' in navigator){
       fileMap.set('favicon.svg', new TextEncoder().encode(faviconSvg));
       fileMap.set('favicon.ico', new TextEncoder().encode(faviconSvg));
 
+      // Manifest — eliminate manifest.webmanifest 404
+      const manifest = JSON.stringify({
+        name: business_name || 'Creative Assets',
+        short_name: (business_name || 'Creative').slice(0, 12),
+        start_url: '/',
+        display: 'standalone',
+        background_color: '#0a0a0a',
+        theme_color: '#0a0a0a',
+        icons: [{ src: '/favicon.svg', sizes: 'any', type: 'image/svg+xml' }],
+      });
+      fileMap.set('manifest.webmanifest', new TextEncoder().encode(manifest));
+      fileMap.set('manifest.json', new TextEncoder().encode(manifest));
+
+      // robots.txt — eliminate robots.txt 404
+      fileMap.set('robots.txt', new TextEncoder().encode('User-agent: *\nAllow: /\n'));
+
+      // Apple touch icon — eliminate apple-touch-icon 404
+      fileMap.set('apple-touch-icon.png', new TextEncoder().encode(faviconSvg));
+      fileMap.set('apple-touch-icon-precomposed.png', new TextEncoder().encode(faviconSvg));
+
+      // sitemap.xml — eliminate sitemap 404
+      const sitemapXml = '<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n' +
+        pageMetadata.map(p => `  <url><loc>/${p.filename.replace(/\.html$/, '')}</loc></url>`).join('\n') +
+        '\n</urlset>';
+      fileMap.set('sitemap.xml', new TextEncoder().encode(sitemapXml));
+
       // Service Worker — intercepts ALL font requests to external domains and
       // returns an empty response. This is the ONLY reliable way to block fonts
       // injected at runtime by the SPA's CSS-in-JS system (Emotion, etc.), which
@@ -550,23 +576,18 @@ self.addEventListener('activate', function(e){ e.waitUntil(self.clients.claim())
 self.addEventListener('fetch', function(e){
   var u = e.request.url || '';
   var origin = self.location.origin;
-  // Block all font file requests to external domains — return 404 so the
-  // browser treats it as "font not found" and doesn't attempt to decode a
-  // response body (which causes "Failed to decode downloaded font" warnings).
-  if (/\\.woff2?|\\.ttf|\\.otf|\\.eot/i.test(u) && u.indexOf(origin) !== 0) {
-    e.respondWith(new Response(null, { status: 404, statusText: 'Not Found' }));
-    return;
-  }
-  // Block Google Fonts CSS — return empty CSS
+  // Block Google Fonts CSS — return empty CSS (we don't want Google Fonts)
   if (/fonts\\.googleapis\\.com|fonts\\.gstatic\\.com/i.test(u)) {
     e.respondWith(new Response('', { status: 200, headers: { 'Content-Type': 'text/css' } }));
     return;
   }
-  // Block Envato asset CDN font requests
-  if (/assets\\.elements\\.envato\\.com.*\\.(woff2?|ttf|otf|eot)/i.test(u)) {
-    e.respondWith(new Response(null, { status: 404, statusText: 'Not Found' }));
+  // Block Envato API calls — return empty JSON to prevent network failures
+  if (/elements\\.envato\\.com\\/api|elements\\.envato\\.com\\/graphql/i.test(u)) {
+    e.respondWith(new Response('{}', { status: 200, headers: { 'Content-Type': 'application/json' } }));
     return;
   }
+  // Allow ALL other requests (fonts, JS, CSS, images) to pass through —
+  // the SPA needs its bundles and fonts to render content correctly.
 });
 `;
       fileMap.set('sw.js', new TextEncoder().encode(swJs));
@@ -578,7 +599,7 @@ self.addEventListener('fetch', function(e){
         headers: [{
           source: "/(.*)",
           headers: [
-            { key: "Content-Security-Policy", value: "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: ; img-src * data: ; font-src 'self' data: ; media-src * ;" },
+            { key: "Content-Security-Policy", value: "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: ; img-src * data: ; font-src * data: ; media-src * ;" },
             { key: "X-Frame-Options", value: "SAMEORIGIN" },
             { key: "X-Content-Type-Options", value: "nosniff" },
             { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
@@ -869,6 +890,10 @@ function build404Page(resolveUrl: string, targetUrl: string, bizName: string, or
     document.title='Page Not Found';
     return;
   }
+  // Subcategory redirect: /<category>/<subcategory> → /<category>.html
+  var CATS=['video-templates','audio','graphics','graphic-templates','web-templates','app-templates','presentation-templates','design-templates','fonts','photos','3d','addons','cms-templates','ai-tools','all-items','stock-video','more','pricing','subscribe','license','enterprise','about','contact','help','terms','privacy','refund','search'];
+  var subMatch=path.match(/^\\/([a-z][a-z-]+)\\/([a-z0-9-]+)/i);
+  if(subMatch&&CATS.indexOf(subMatch[1])>=0){window.location.replace('/'+subMatch[1]+'.html');return;}
   fetch(RESOLVE_URL,{
     method:'POST',
     headers:{'Content-Type':'application/json'},

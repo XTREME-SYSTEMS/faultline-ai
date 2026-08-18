@@ -1,0 +1,127 @@
+{
+  "name": "InteractionGraph",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "source_url": {
+      "type": "string",
+      "description": "Source site URL"
+    },
+    "clone_url": {
+      "type": "string",
+      "description": "Clone URL this graph applies to"
+    },
+    "page_url": {
+      "type": "string",
+      "description": "Page on which the interaction occurs"
+    },
+    "element_selector": {
+      "type": "string",
+      "description": "CSS-like selector signature"
+    },
+    "element_role": {
+      "type": "string"
+    },
+    "element_text": {
+      "type": "string"
+    },
+    "aria_label": {
+      "type": "string"
+    },
+    "component_region": {
+      "type": "string",
+      "description": "header, nav, footer, sidebar, main, etc."
+    },
+    "component_type": {
+      "type": "string",
+      "description": "dropdown, modal, tab, search, etc."
+    },
+    "interaction_type": {
+      "type": "string",
+      "enum": [
+        "click",
+        "hover",
+        "keyboard",
+        "focus",
+        "scroll",
+        "input"
+      ]
+    },
+    "state_before": {
+      "type": "string",
+      "description": "State A description"
+    },
+    "state_after": {
+      "type": "string",
+      "description": "State B description"
+    },
+    "resulting_url": {
+      "type": "string"
+    },
+    "dom_diff": {
+      "type": "string",
+      "description": "Summary of DOM changes"
+    },
+    "network_requests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "screenshot_before": {
+      "type": "string"
+    },
+    "screenshot_after": {
+      "type": "string"
+    },
+    "clone_reconstruction": {
+      "type": "string",
+      "description": "How the clone reconstructs this interaction"
+    },
+    "clone_reconstruction_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "reconstructed",
+        "validated",
+        "failed"
+      ],
+      "default": "pending"
+    },
+    "device_width": {
+      "type": "number"
+    },
+    "auth_state": {
+      "type": "string",
+      "enum": [
+        "anonymous",
+        "authenticated"
+      ],
+      "default": "anonymous"
+    }
+  },
+  "required": [
+    "organization_id",
+    "source_url",
+    "page_url",
+    "element_selector"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
