@@ -279,6 +279,7 @@ export default async function(req: Request) {
         method: 'browserbase_cdp_real_click',
         session_id: session.id,
         timestamp: new Date().toISOString(),
+        resolver_injected,
       },
     });
   } catch (error: any) {

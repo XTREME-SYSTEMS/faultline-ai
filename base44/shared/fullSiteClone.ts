@@ -702,13 +702,20 @@ export function buildNavLinkResolverScript(registerUrl: string, loginUrl: string
   function resolveLink(el){
     if(!el||el.getAttribute('href')!=='#')return null;
     var text=(el.innerText||el.getAttribute('aria-label')||el.getAttribute('title')||'').trim().toLowerCase();
-    if(!text)return null;
+    // Brand logo fallback: if the link is inside a header/nav and has no text
+    // match, map to the homepage. This catches brand logos with href="#".
+    if(!text){
+      if(el.closest('header,nav,[class*="header"],[class*="nav"],[class*="logo"]'))return 'index';
+      return null;
+    }
     // Direct match
     if(NAV_MAP[text])return NAV_MAP[text];
     // Partial match (label contains a known key)
     for(var k in NAV_MAP){
       if(text.indexOf(k)>=0||k.indexOf(text)>=0){return NAV_MAP[k];}
     }
+    // Unrecognized href="#" link in header/nav area → homepage
+    if(el.closest('header,nav,[class*="header"],[class*="nav"]'))return 'index';
     return null;
   }
   function rewriteAll(){
@@ -717,6 +724,7 @@ export function buildNavLinkResolverScript(registerUrl: string, loginUrl: string
       if(slug){
         if(slug==='autoleads-register'){a.setAttribute('href',REGISTER_URL);a.setAttribute('target','_self');a.removeAttribute('rel');}
         else if(slug==='autoleads-login'){a.setAttribute('href',LOGIN_URL);a.setAttribute('target','_self');a.removeAttribute('rel');}
+        else if(slug==='index'){a.setAttribute('href','/');}
         else{a.setAttribute('href','/'+slug+'.html');}
       }
     });
@@ -731,6 +739,7 @@ export function buildNavLinkResolverScript(registerUrl: string, loginUrl: string
       e.stopPropagation();
       if(slug==='autoleads-register')window.location.href=REGISTER_URL;
       else if(slug==='autoleads-login')window.location.href=LOGIN_URL;
+      else if(slug==='index')window.location.href='/';
       else window.location.href='/'+slug+'.html';
     }
   },true);
