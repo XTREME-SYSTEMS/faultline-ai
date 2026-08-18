@@ -141,6 +141,70 @@ export function buildInteractionReconstructionScript(): string {
       }, true);
     });
 
+    // Pattern 2c: Nav category navigation — buttons/divs in the nav bar or
+    // category cards on the homepage that should navigate to category pages.
+    // APPROACH: Replace the element with an <a> tag wrapping the same content.
+    // This uses the browser's native link handling, which CANNOT be intercepted
+    // by SPA event handlers (React onClick, stopPropagation, etc.).
+    var CATEGORY_MAP = {
+      'ai tools': '/ai-tools.html',
+      'video templates': '/video-templates.html',
+      'video': '/video-templates.html',
+      'audio': '/audio.html',
+      'music': '/audio.html',
+      'graphics': '/graphics.html',
+      'graphic templates': '/graphic-templates.html',
+      'fonts': '/fonts.html',
+      'photos': '/photos.html',
+      '3d': '/3d.html',
+      'web templates': '/web-templates.html',
+      'app templates': '/app-templates.html',
+      'presentation templates': '/presentation-templates.html',
+      'design templates': '/design-templates.html',
+      'addons': '/addons.html',
+      'add-ons': '/addons.html',
+      'cms templates': '/cms-templates.html',
+      'all items': '/all-items.html',
+      'unlimited downloads': '/all-items.html',
+      'subscription': '/pricing.html',
+      'pricing': '/pricing.html',
+      'plans': '/pricing.html',
+    };
+    document.querySelectorAll('button, [role="button"], div[class*="card"], div[class*="item"], div[class*="tile"]').forEach(function(trigger) {
+      if (trigger.dataset.flRecon) return;
+      if (trigger.tagName === 'A' && trigger.getAttribute('href') && trigger.getAttribute('href') !== '#') return;
+      var text = (trigger.textContent || '').trim().toLowerCase().replace(/\\s+/g, ' ').trim();
+      var catUrl = null;
+      if (CATEGORY_MAP[text]) {
+        catUrl = CATEGORY_MAP[text];
+      } else {
+        for (var cat in CATEGORY_MAP) {
+          if (text.indexOf(cat) === 0 || text === cat) { catUrl = CATEGORY_MAP[cat]; break; }
+        }
+      }
+      if (!catUrl) return;
+      trigger.dataset.flRecon = 'nav-category';
+      trigger.style.cursor = 'pointer';
+      // Replace with <a> tag — native browser navigation can't be intercepted by SPA
+      try {
+        var link = document.createElement('a');
+        link.href = catUrl;
+        link.innerHTML = trigger.innerHTML;
+        link.className = trigger.className;
+        link.style.cssText = trigger.style.cssText;
+        if (trigger.id) link.id = trigger.id;
+        for (var ai = 0; ai < trigger.attributes.length; ai++) {
+          var attr = trigger.attributes[ai];
+          if (attr.name.indexOf('data-') === 0 && attr.name !== 'data-fl-recon') link.setAttribute(attr.name, attr.value);
+        }
+        link.dataset.flRecon = 'nav-category';
+        trigger.parentNode.replaceChild(link, trigger);
+      } catch(e) {
+        // Fallback: capture-phase click handler
+        trigger.addEventListener('click', function(e) { e.preventDefault(); e.stopImmediatePropagation(); window.location.href = catUrl; }, true);
+      }
+    });
+
     // Pattern 3: Hover-based mega menus (common on marketplace sites)
     document.querySelectorAll('[class*="mega-menu"], [class*="megamenu"], [class*="mega_menu"]').forEach(function(mega) {
       if (mega.dataset.flRecon) return;
@@ -587,6 +651,69 @@ export function buildInteractionReconstructionScript(): string {
     });
   }
 
+  // ─── DOCUMENT-LEVEL CATEGORY NAVIGATION (immune to SPA re-rendering) ──
+  // A document-level capture-phase click handler that checks if the clicked
+  // element (or its ancestor) matches a category button. This survives SPA
+  // re-renders because the handler is on document, not on the element.
+  var DOC_CATEGORY_MAP = {
+    'ai tools': '/ai-tools.html',
+    'video templates': '/video-templates.html',
+    'video': '/video-templates.html',
+    'audio': '/audio.html',
+    'music': '/audio.html',
+    'graphics': '/graphics.html',
+    'graphic templates': '/graphic-templates.html',
+    'fonts': '/fonts.html',
+    'photos': '/photos.html',
+    '3d': '/3d.html',
+    'web templates': '/web-templates.html',
+    'app templates': '/app-templates.html',
+    'presentation templates': '/presentation-templates.html',
+    'design templates': '/design-templates.html',
+    'addons': '/addons.html',
+    'add-ons': '/addons.html',
+    'cms templates': '/cms-templates.html',
+    'all items': '/all-items.html',
+    'unlimited downloads': '/all-items.html',
+    'subscription': '/pricing.html',
+    'pricing': '/pricing.html',
+    'plans': '/pricing.html',
+  };
+  var docCatHandlerInstalled = false;
+  function installDocCategoryHandler() {
+    if (docCatHandlerInstalled) return;
+    docCatHandlerInstalled = true;
+    document.addEventListener('click', function(e) {
+      // Walk up from the click target to find a matching category element
+      var el = e.target;
+      for (var depth = 0; depth < 5 && el && el !== document.body; depth++) {
+        if (el.dataset && el.dataset.flRecon === 'nav-category') return; // already handled by <a> replacement
+        var tag = el.tagName;
+        if (tag === 'BUTTON' || tag === 'A' || tag === 'DIV' || el.getAttribute('role') === 'button') {
+          var text = (el.textContent || '').trim().toLowerCase().replace(/\\s+/g, ' ').trim();
+          // Check exact match or starts-with (for cards with extra text)
+          var catUrl = null;
+          if (DOC_CATEGORY_MAP[text]) {
+            catUrl = DOC_CATEGORY_MAP[text];
+          } else {
+            for (var cat in DOC_CATEGORY_MAP) {
+              if (text.indexOf(cat) === 0) { catUrl = DOC_CATEGORY_MAP[cat]; break; }
+            }
+          }
+          if (catUrl) {
+            // Only intercept if the element doesn't have a real href
+            if (tag === 'A' && el.getAttribute('href') && el.getAttribute('href') !== '#') return;
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            window.location.href = catUrl;
+            return;
+          }
+        }
+        el = el.parentElement;
+      }
+    }, true); // capture phase — fires BEFORE any SPA handlers
+  }
+
   // ─── MASTER RECONSTRUCTION RUNNER ────────────────────────────────
   function reconstructAll() {
     try { reconstructDropdowns(); } catch(e) {}
@@ -600,6 +727,7 @@ export function buildInteractionReconstructionScript(): string {
     try { reconstructPagination(); } catch(e) {}
     try { reconstructDeadButtons(); } catch(e) {}
     try { reconstructFormValidation(); } catch(e) {}
+    try { installDocCategoryHandler(); } catch(e) {}
   }
 
   // Initial run

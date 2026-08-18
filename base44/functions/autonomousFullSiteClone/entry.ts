@@ -425,7 +425,9 @@ export default async function(req: Request) {
       // the source's full-catalog browse page (not just one category).
       const allMixed: any[] = [];
       const seen = new Set<string>();
-      // Prioritize featured, then trending, then highest-rated per category
+      // Prioritize featured, then trending, then highest-rated per category.
+      // Take up to 40 per category to give the all-items page 200+ assets
+      // for visual/content parity with the source's full catalog browse page.
       for (const [, catAssets] of preRenderedCatalog) {
         const sorted = [...catAssets].sort((a, b) => {
           if (a.featured && !b.featured) return -1;
@@ -434,7 +436,7 @@ export default async function(req: Request) {
           if (!a.trending && b.trending) return 1;
           return (b.rating || 0) - (a.rating || 0);
         });
-        for (const a of sorted.slice(0, 8)) {
+        for (const a of sorted.slice(0, 40)) {
           if (!seen.has(a.id)) { seen.add(a.id); allMixed.push(a); }
         }
       }
