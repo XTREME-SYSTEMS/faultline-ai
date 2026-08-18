@@ -420,7 +420,26 @@ export default async function(req: Request) {
         if (!preRenderedCatalog.has(asset.category)) preRenderedCatalog.set(asset.category, []);
         preRenderedCatalog.get(asset.category)!.push(asset);
       }
-      console.log(`[autonomousFullSiteClone] Pre-rendered catalog: ${preRenderedCatalog.size} categories, ${allAssets.length} total assets`);
+      // Build an "_all" entry — mixed featured/trending assets from every
+      // category, so the "All Items" browse page has real content matching
+      // the source's full-catalog browse page (not just one category).
+      const allMixed: any[] = [];
+      const seen = new Set<string>();
+      // Prioritize featured, then trending, then highest-rated per category
+      for (const [, catAssets] of preRenderedCatalog) {
+        const sorted = [...catAssets].sort((a, b) => {
+          if (a.featured && !b.featured) return -1;
+          if (!a.featured && b.featured) return 1;
+          if (a.trending && !b.trending) return -1;
+          if (!a.trending && b.trending) return 1;
+          return (b.rating || 0) - (a.rating || 0);
+        });
+        for (const a of sorted.slice(0, 8)) {
+          if (!seen.has(a.id)) { seen.add(a.id); allMixed.push(a); }
+        }
+      }
+      preRenderedCatalog.set('_all', allMixed);
+      console.log(`[autonomousFullSiteClone] Pre-rendered catalog: ${preRenderedCatalog.size} categories, ${allAssets.length} total assets, ${allMixed.length} mixed for _all`);
     } catch (e) {
       console.log(`[autonomousFullSiteClone] Catalog pre-render skipped: ${e.message}`);
     }

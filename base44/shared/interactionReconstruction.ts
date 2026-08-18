@@ -81,6 +81,66 @@ export function buildInteractionReconstructionScript(): string {
       }, true);
     });
 
+    // Pattern 2b: Generic button/trigger with a hidden sibling panel containing
+    // links. Catches SPA custom dropdowns that don't use standard ARIA or
+    // data-toggle attributes (common on RSC/Next.js sites like Envato).
+    document.querySelectorAll('button, a, [role="button"], div[class*="trigger"], div[class*="toggle"]').forEach(function(trigger) {
+      if (trigger.dataset.flRecon) return;
+      if (trigger.hasAttribute('data-toggle') || trigger.hasAttribute('data-bs-toggle') || trigger.getAttribute('aria-haspopup')) return;
+      // Look for a hidden sibling or child panel with links
+      var panel = null;
+      var sibling = trigger.nextElementSibling;
+      if (sibling && sibling.querySelector('a[href]')) {
+        var style = window.getComputedStyle(sibling);
+        if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || sibling.getAttribute('aria-hidden') === 'true') {
+          panel = sibling;
+        }
+      }
+      if (!panel) {
+        // Check parent's next sibling (common in nested nav structures)
+        var parent = trigger.parentElement;
+        if (parent && parent.nextElementSibling && parent.nextElementSibling.querySelector('a[href]')) {
+          var ps = window.getComputedStyle(parent.nextElementSibling);
+          if (ps.display === 'none' || ps.visibility === 'hidden' || ps.opacity === '0') {
+            panel = parent.nextElementSibling;
+          }
+        }
+      }
+      if (!panel) {
+        // Check for a child panel (button > panel pattern)
+        panel = trigger.querySelector('[role="menu"], [class*="dropdown"], [class*="menu-panel"], [class*="popover"]');
+        if (panel) {
+          var cs = window.getComputedStyle(panel);
+          if (cs.display !== 'none' && cs.visibility !== 'hidden') panel = null; // already visible, not a dropdown
+        }
+      }
+      if (!panel) return;
+      trigger.dataset.flRecon = 'dropdown-generic';
+      trigger.style.cursor = 'pointer';
+      trigger.setAttribute('aria-expanded', 'false');
+      trigger.setAttribute('aria-haspopup', 'true');
+      trigger.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        var isOpen = panel.style.display === 'block' || trigger.getAttribute('aria-expanded') === 'true';
+        if (isOpen) {
+          panel.style.display = 'none';
+          trigger.setAttribute('aria-expanded', 'false');
+        } else {
+          panel.style.display = 'block';
+          panel.style.visibility = 'visible';
+          panel.style.opacity = '1';
+          trigger.setAttribute('aria-expanded', 'true');
+        }
+      });
+      document.addEventListener('click', function(ev) {
+        if (!trigger.contains(ev.target) && !panel.contains(ev.target)) {
+          panel.style.display = 'none';
+          trigger.setAttribute('aria-expanded', 'false');
+        }
+      }, true);
+    });
+
     // Pattern 3: Hover-based mega menus (common on marketplace sites)
     document.querySelectorAll('[class*="mega-menu"], [class*="megamenu"], [class*="mega_menu"]').forEach(function(mega) {
       if (mega.dataset.flRecon) return;

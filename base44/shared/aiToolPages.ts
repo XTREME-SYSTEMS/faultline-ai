@@ -461,7 +461,7 @@ export const CATEGORY_PAGES: CategoryPageConfig[] = [
   { slug: 'enterprise', title: 'Enterprise — Team plans for organizations', category: '', description: 'Enterprise plans for teams and organizations.', icon: '🏢' },
   { slug: 'pricing', title: 'Pricing — Plans for every budget', category: '', description: 'Choose the plan that works for you.', icon: '💰' },
   { slug: 'subscribe', title: 'Get Unlimited Downloads — Subscribe today', category: '', description: 'Get unlimited downloads of millions of creative assets.', icon: '⭐' },
-  { slug: 'all-items', title: 'All Items — Browse the full catalog', category: 'graphic_templates', description: 'Browse the full catalog of creative assets.', icon: '🗂️' },
+  { slug: 'all-items', title: 'All Items — Browse the full catalog', category: '_all', description: 'Browse the full catalog of creative assets.', icon: '🗂️' },
   { slug: 'about', title: 'About — Our story', category: '', description: 'Learn about our company and mission.', icon: 'ℹ️' },
   { slug: 'contact', title: 'Contact — Get in touch', category: '', description: 'Contact us with any questions.', icon: '✉️' },
   { slug: 'help', title: 'Help Center — Support and FAQs', category: '', description: 'Find answers to common questions.', icon: '❓' },
@@ -619,8 +619,10 @@ function fetchAssets() {
     })
     .catch(function(){document.getElementById('assetGrid').innerHTML='<div class="loading">Error loading assets.</div>';});
 }
-if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fetchAssets);
-else fetchAssets();
+// Only fetch from API if no pre-rendered assets exist (pre-rendered = SSR)
+var grid=document.getElementById('assetGrid');
+if(grid&&grid.querySelector('.card')){console.log('Pre-rendered assets present - skipping API fetch');}
+else{if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',fetchAssets);else fetchAssets();}
 ` : ''}
 
 // Auth link interceptor
