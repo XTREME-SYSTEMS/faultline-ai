@@ -60,7 +60,7 @@ export default async function(req: Request) {
 
     try {
       session = await createStealthSession({
-        deepRender: true, timeout: 30000, waitAfterLoad: 2000, solveCaptchas: true, proxies: true,
+        deepRender: true, timeout: 20000, waitAfterLoad: 1000, solveCaptchas: true, proxies: true,
       });
       cdp = new CDPClient();
       await cdp.connect(session.connectUrl);
@@ -93,21 +93,21 @@ export default async function(req: Request) {
         try {
           // ─── SOURCE CAPTURE ───────────────────────────────────────
           const sourceFullUrl = new URL(journey.source_path, source_url).href;
-          await cdp.send('Page.navigate', { url: sourceFullUrl }, cdpSessionId, 20000);
+          await cdp.send('Page.navigate', { url: sourceFullUrl }, cdpSessionId, 10000);
           await new Promise<void>((resolve) => {
             let done = false;
             const finish = () => { if (!done) { done = true; resolve(); } };
             cdp!.on('Page.loadEventFired', finish);
-            setTimeout(finish, 12000);
+            setTimeout(finish, 6000);
           });
-          await new Promise(r => setTimeout(r, 3000));
+          await new Promise(r => setTimeout(r, 1500));
 
           // Scroll to trigger lazy content
           try {
             await cdp.send('Runtime.evaluate', {
               expression: `(async()=>{var h=document.body.scrollHeight;for(var y=0;y<Math.min(h,3000);y+=600){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,100));}window.scrollTo(0,0);})()`,
               returnByValue: true, awaitPromise: true,
-            }, cdpSessionId, 10000);
+            }, cdpSessionId, 5000);
           } catch {}
 
           const sourceState = await cdp.send('Runtime.evaluate', {
@@ -129,20 +129,20 @@ export default async function(req: Request) {
 
           // ─── CLONE CAPTURE ─────────────────────────────────────────
           const cloneFullUrl = new URL(journey.clone_path, clone_url).href;
-          await cdp.send('Page.navigate', { url: cloneFullUrl }, cdpSessionId, 20000);
+          await cdp.send('Page.navigate', { url: cloneFullUrl }, cdpSessionId, 10000);
           await new Promise<void>((resolve) => {
             let done = false;
             const finish = () => { if (!done) { done = true; resolve(); } };
             cdp!.on('Page.loadEventFired', finish);
-            setTimeout(finish, 12000);
+            setTimeout(finish, 6000);
           });
-          await new Promise(r => setTimeout(r, 3000));
+          await new Promise(r => setTimeout(r, 1500));
 
           try {
             await cdp.send('Runtime.evaluate', {
               expression: `(async()=>{var h=document.body.scrollHeight;for(var y=0;y<Math.min(h,3000);y+=600){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,100));}window.scrollTo(0,0);})()`,
               returnByValue: true, awaitPromise: true,
-            }, cdpSessionId, 10000);
+            }, cdpSessionId, 5000);
           } catch {}
 
           const cloneState = await cdp.send('Runtime.evaluate', {

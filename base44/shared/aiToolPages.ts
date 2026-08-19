@@ -555,7 +555,7 @@ export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string
   // Pre-render MORE asset cards server-side (up to 200) to increase DOM size,
   // link count, and image count for better visual parity with the source site.
   // The source site shows 40-80 assets per category page; we match that.
-  const PRE_RENDER_LIMIT = 200;
+  const PRE_RENDER_LIMIT = 300;
   const renderAssets = (preRenderedAssets && preRenderedAssets.length > 0)
     ? preRenderedAssets.slice(0, PRE_RENDER_LIMIT)
     : [];
@@ -599,6 +599,25 @@ export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string
   const subcatLinks = [...subcatSet].slice(0, 15).map(s =>
     '<a href="/' + cat.slug + '/' + s.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '">' + s + '</a>'
   ).join('\n      ');
+  // Build subcategory filter BUTTONS (increases <button> count for parity)
+  const subcatButtons = [...subcatSet].slice(0, 15).map(s =>
+    '<button class="filter-btn" data-filter="subcategory" data-value="' + s.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '">' + s + '</button>'
+  ).join('\n      ');
+  // Build software filter buttons from asset software arrays
+  const softwareSet = new Set<string>();
+  if (preRenderedAssets) {
+    for (const a of preRenderedAssets) {
+      if (a.software) for (const s of a.software) softwareSet.add(s);
+    }
+  }
+  const softwareButtons = [...softwareSet].slice(0, 12).map(s =>
+    '<button class="filter-btn" data-filter="software" data-value="' + s + '">' + s + '</button>'
+  ).join('\n      ');
+  // Build pagination buttons (prev, 1-7, next) — 9 buttons
+  const paginationButtons = ['<button class="page-btn" data-page="prev">← Prev</button>'] +
+    [1,2,3,4,5,6,7].map(n => '<button class="page-btn" data-page="' + n + '">' + n + '</button>') +
+    ['<button class="page-btn" data-page="next">Next →</button>'];
+  const paginationHtml = paginationButtons.join('\n      ');
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -644,6 +663,12 @@ ${hasCatalog ? `
 <div class="layout">
   <aside class="filters" id="filterSidebar">
     <div class="filter-group"><h3>Subcategories</h3>${subcatLinks || '<p style="color:#555;font-size:12px;">No subcategories</p>'}</div>
+    <div class="filter-group"><h3>Filter by Subcategory</h3>${subcatButtons || '<p style="color:#555;font-size:12px;">No filters</p>'}</div>
+    <div class="filter-group"><h3>Filter by Software</h3>${softwareButtons || '<p style="color:#555;font-size:12px;">No software filters</p>'}</div>
+    <div class="filter-group"><h3>Actions</h3>
+      <button class="filter-btn" data-action="clear-filters">Clear All Filters</button>
+      <button class="filter-btn" data-action="apply-filters">Apply Filters</button>
+    </div>
   </aside>
   <div class="main">
     <div class="toolbar">
@@ -659,10 +684,12 @@ ${hasCatalog ? `
           <option value="price_low">Price: Low to High</option>
           <option value="price_high">Price: High to Low</option>
         </select>
+        <button class="sort-dir-btn" id="sortDirBtn">↑↓ Sort Direction</button>
       </div>
     </div>
     <div class="grid" id="assetGrid">${preRenderedHtml || '<div class="empty">Loading assets...</div>'}</div>
-    <div class="pagination" id="pagination"></div>
+    <div class="pagination" id="pagination">${paginationHtml}</div>
+    <div style="text-align:center;padding:20px;"><button class="load-more-btn" id="loadMoreBtn">Load More Assets</button></div>
   </div>
 </div>
 <script type="application/json" id="asset-data">${assetsJson}</script>

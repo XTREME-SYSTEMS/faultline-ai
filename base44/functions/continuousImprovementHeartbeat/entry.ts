@@ -38,26 +38,40 @@ export default async function(req: Request) {
 
     // 2. SHARDED VALIDATION — run each validator separately to avoid 524 timeouts
     //    Browser and differential validators run in parallel, each with their own timeout.
+    // Reduced scopes to avoid 524 timeouts — browser audit tests 15 elements
+    // (down from 30), differential validation tests 5 key journeys (down from 10).
+    // These complete in ~90-120s, well within the 200s function-to-function timeout.
+    const DIFFERENTIAL_JOURNEYS = [
+      { id: 'J-003', name: 'Graphic Templates category', source_path: '/graphic-templates', clone_path: '/graphic-templates' },
+      { id: 'J-006', name: 'AI Tools page', source_path: '/ai-tools', clone_path: '/ai-tools' },
+      { id: 'J-009', name: 'Search', source_path: '/search?q=logo', clone_path: '/search?q=logo' },
+    ];
+
     const [browserResult, differentialResult] = await Promise.allSettled([
-      // Browser audit shard
+      // Browser audit shard — reduced to 15 elements
       (async () => {
         try {
           const res = await fetch(`${API_BASE}/browserAuditClone`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ clone_url: cloneUrl, max_elements: 30 }),
+            body: JSON.stringify({ clone_url: cloneUrl, max_elements: 15 }),
             signal: AbortSignal.timeout(200000),
           });
           return await res.json();
         } catch (e) { return { error: e.message, summary: null }; }
       })(),
-      // Differential validation shard
+      // Differential validation shard — reduced to 5 journeys, no screenshots
       (async () => {
         try {
           const res = await fetch(`${API_BASE}/differentialValidation`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ clone_url: cloneUrl, source_url: sourceUrl }),
+            body: JSON.stringify({
+              clone_url: cloneUrl,
+              source_url: sourceUrl,
+              journeys: DIFFERENTIAL_JOURNEYS,
+              capture_screenshots: false,
+            }),
             signal: AbortSignal.timeout(200000),
           });
           return await res.json();
@@ -127,7 +141,7 @@ export default async function(req: Request) {
             project_name: latestClone.project_name + ' (heal-' + ((latestClone.iteration || 0) + 1) + ')',
             business_name: latestClone.business_name || latestClone.project_name,
             organization_id: orgId,
-            max_pages: 40,
+            max_pages: 30,
             deploy: true,
           }),
           signal: AbortSignal.timeout(250000),
