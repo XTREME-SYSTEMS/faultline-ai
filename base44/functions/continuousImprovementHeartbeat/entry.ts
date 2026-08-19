@@ -79,8 +79,20 @@ export default async function(req: Request) {
       })(),
     ]);
 
-    const browserAuditResult = browserResult.status === 'fulfilled' ? browserResult.value : null;
-    const differentialValResult = differentialResult.status === 'fulfilled' ? differentialResult.value : null;
+    // Only pass valid results to MQG. If the shard failed, pass an explicit error
+    // object so MQG marks the validator as FAILED without retrying live (which
+    // would defeat the sharded architecture and risk 524 timeouts).
+    const browserAuditResult = (browserResult.status === 'fulfilled'
+      && browserResult.value?.summary
+      && browserResult.value.summary.elements_tested > 0
+      && browserResult.value.status !== 'error')
+      ? browserResult.value
+      : { status: 'error', error: browserResult.status === 'rejected' ? 'shard rejected' : 'shard returned no valid summary', summary: null };
+    const differentialValResult = (differentialResult.status === 'fulfilled'
+      && differentialResult.value?.journeys_tested > 0
+      && differentialResult.value.status !== 'error')
+      ? differentialResult.value
+      : { status: 'error', error: differentialResult.status === 'rejected' ? 'shard rejected' : 'shard returned no valid journeys', journeys_tested: 0 };
 
     console.log(`[heartbeat] Browser: ${browserAuditResult?.summary?.pass || 0}/${browserAuditResult?.summary?.elements_tested || 0} passed`);
     console.log(`[heartbeat] Differential: ${differentialValResult?.passed || 0}/${differentialValResult?.journeys_tested || 0} journeys passed`);

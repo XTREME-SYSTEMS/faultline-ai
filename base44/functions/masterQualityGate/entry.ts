@@ -23,7 +23,7 @@ export default async function(req: Request) {
     const user = await base44.auth.me().catch(() => null);
     const orgId = user?.data?.organization_id;
     const body = await req.json().catch(() => ({}));
-    const { clone_url, source_url, organization_id, max_elements = 30, browser_audit_result, differential_result } = body;
+    const { clone_url, source_url, organization_id, max_elements = 30, browser_audit_result, differential_result, coverage_result } = body;
 
     if (!clone_url) return Response.json({ error: 'clone_url required' }, { status: 400 });
     const targetOrg = organization_id || orgId;
@@ -36,8 +36,13 @@ export default async function(req: Request) {
     const validatorErrors: Record<string, string> = {};
 
     const validators = [
-      // Coverage audit — static, content, security, route, accessibility
+      // Coverage audit — use pre-computed result if provided, else call live
       (async () => {
+        if (coverage_result) {
+          validatorResults.coverage = coverage_result;
+          console.log('[masterQualityGate] Coverage audit: using pre-computed result');
+          return;
+        }
         try {
           const res = await fetch(`${API_BASE}/runCoverageAudit`, {
             method: 'POST',
@@ -99,6 +104,40 @@ export default async function(req: Request) {
 
     await Promise.allSettled(validators);
 
+    // ─── Validate validator results (reject malformed/empty/error) ───
+    // A validator that returned an error, empty object, or missing summary is
+    // a VALIDATOR FAILURE, not a zero-scored category. We must distinguish
+    // "validator ran and found defects" from "validator itself is broken".
+    const validatorStatus: Record<string, { status: 'completed' | 'failed' | 'missing'; reason?: string }> = {};
+
+    const coverageResult = validatorResults.coverage;
+    const coverageValid = !!coverageResult?.scorecard && typeof coverageResult.scorecard === 'object';
+    validatorStatus.coverage = coverageValid
+      ? { status: 'completed' }
+      : { status: coverageResult ? 'failed' : 'missing', reason: coverageResult?.error || (!coverageResult ? 'no result' : 'missing scorecard') };
+
+    const browserResult = validatorResults.browser;
+    const browserValid = !!browserResult?.summary
+      && typeof browserResult.summary.elements_tested === 'number'
+      && browserResult.summary.elements_tested > 0
+      && browserResult.status !== 'error';
+    validatorStatus.browser = browserValid
+      ? { status: 'completed' }
+      : { status: browserResult ? 'failed' : 'missing', reason: browserResult?.error || (!browserResult ? 'no result' : !browserResult.summary ? 'missing summary' : 'zero elements tested') };
+
+    const diffResult = validatorResults.differential;
+    const diffValid = !!diffResult
+      && diffResult.status !== 'error'
+      && (typeof diffResult.journeys_tested === 'number' && diffResult.journeys_tested > 0);
+    validatorStatus.differential = diffValid
+      ? { status: 'completed' }
+      : { status: diffResult ? 'failed' : 'missing', reason: diffResult?.error || (!diffResult ? 'no result' : 'zero journeys tested') };
+
+    // Validator reliability — a scored clone-engine category.
+    // 3 validators, each must produce a valid result. Missing/failed = 0.
+    const completedCount = Object.values(validatorStatus).filter(v => v.status === 'completed').length;
+    const validatorReliability = Math.round((completedCount / 3) * 100);
+
     // ─── Calculate category scores ──────────────────────────────────
     const categoryScores: Record<string, number> = {};
     const topGaps: string[] = [];
@@ -138,8 +177,8 @@ export default async function(req: Request) {
     }
 
     // 2. Browser interaction (from browserAuditClone)
-    if (validatorResults.browser?.summary) {
-      const bs = validatorResults.browser.summary;
+    if (browserValid) {
+      const bs = browserResult.summary;
       const total = bs.elements_tested || 1;
       const passed = bs.pass || 0;
       const notApplicable = bs.not_applicable || 0;
@@ -175,15 +214,16 @@ export default async function(req: Request) {
       if (bs.fail_404 > 0) topGaps.push(`${bs.fail_404} elements leading to 404 pages`);
       if (consoleErrors > 50) topGaps.push(`${consoleErrors} console errors (target: 0)`);
     } else {
+      // VALIDATOR FAILURE — distinguish from "validator found defects"
       categoryScores.browser_interaction = 0;
       categoryScores.console_health = 0;
       categoryScores.network_health = 0;
-      topGaps.push('Browser audit failed or returned no summary');
+      topGaps.push(`Browser validator FAILED: ${validatorStatus.browser.reason}`);
     }
 
     // 3. Behavioral + visual parity (from differentialValidation)
-    const diff = validatorResults.differential;
-    if (diff && (diff.summary || diff.journeys_tested !== undefined)) {
+    const diff = diffResult;
+    if (diffValid) {
       const ds = diff.summary || diff;
       // Calculate behavioral parity from journey results
       const journeysTested = ds.journeys_tested || diff.journeys_tested || 0;
@@ -234,11 +274,13 @@ export default async function(req: Request) {
         }
       }
     } else {
+      // VALIDATOR FAILURE — distinguish from "validator found defects"
       categoryScores.behavioral_parity = 0;
       categoryScores.visual_parity = 0;
+      categoryScores.responsive_parity = 0;
       categoryScores.search = 0;
       categoryScores.filter_sort_pagination = 0;
-      topGaps.push('Differential validation failed or returned no summary');
+      topGaps.push(`Differential validator FAILED: ${validatorStatus.differential.reason}`);
     }
 
     // 4. Deployment integrity — verify the clone is actually live and reachable
@@ -250,6 +292,10 @@ export default async function(req: Request) {
       categoryScores.deployment_integrity = 0;
       topGaps.push(`Clone URL unreachable: ${e.message}`);
     }
+
+    // Validator reliability is a scored clone-engine category
+    categoryScores.validator_reliability = validatorReliability;
+    categoryScores.receipt_completeness = validatorReliability;
 
     // ─── Calculate overall score (MINIMUM, not average) ──────────────
     const allScores = Object.values(categoryScores).filter(s => typeof s === 'number');
@@ -334,14 +380,15 @@ export default async function(req: Request) {
       repair_queue: repairQueue,
       score_id: scoreId,
       validators_run: {
-        coverage: { status: validatorResults.coverage ? 'completed' : 'failed', error: validatorErrors.coverage },
-        browser: { status: validatorResults.browser ? 'completed' : 'failed', error: validatorErrors.browser },
-        differential: { status: validatorResults.differential ? 'completed' : 'failed', error: validatorErrors.differential },
+        coverage: validatorStatus.coverage,
+        browser: validatorStatus.browser,
+        differential: validatorStatus.differential,
       },
+      validator_reliability: validatorReliability,
       raw_results: {
-        coverage_summary: validatorResults.coverage?.scorecard || null,
-        browser_summary: validatorResults.browser?.summary || null,
-        differential_summary: validatorResults.differential?.summary || null,
+        coverage_summary: coverageResult?.scorecard || null,
+        browser_summary: browserResult?.summary || null,
+        differential_summary: diffResult?.summary || null,
       },
     });
   } catch (error: any) {
