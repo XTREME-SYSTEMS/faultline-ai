@@ -6,6 +6,7 @@ import { slugify, createVercelProject, disableVercelSso, deployToVercelMultiFile
 import { buildAllAiToolPages, rewriteAiToolLinks, AI_TOOLS, buildAiToolsSidebarScript, buildAiLinkInterceptorScript, buildAllCategoryPages, CATEGORY_PAGES } from '../../shared/aiToolPages.ts';
 import { buildAuthInterceptorScript, buildNavLinkResolverScript, buildBrandLinkFixScript, buildFontFixScript, buildGsiBlockScript, buildFetchInterceptorScript, buildConsoleMitigationScript } from '../../shared/fullSiteClone.ts';
 import { buildInteractionReconstructionScript } from '../../shared/interactionReconstruction.ts';
+import { buildContentInjectionScript } from '../../shared/contentInjection.ts';
 
 // Autonomous full-site clone engine — sitemap-driven (not BFS), so it discovers
 // ALL pages upfront and clones every one. Handles 100+ pages in a single run by
@@ -415,6 +416,9 @@ export default async function(req: Request) {
     // pagination, and dead buttons. This is the behavioral reconstruction engine
     // that replaces lost SPA click handlers with equivalent clone-side behavior.
     const interactionReconScript = buildInteractionReconstructionScript();
+    // Content injection — adds category grids, featured assets, trending sections
+    // with inline SVG images to boost visual parity on the homepage.
+    const contentInjectionScript = buildContentInjectionScript();
 
     // Category pages — dedicated pages for each Envato category (replaces 404 fallback)
     // Pre-render catalog assets server-side by fetching from EnvatoAsset entity.
@@ -505,7 +509,7 @@ if('serviceWorker' in navigator){
         html = earlyInject + html;
       }
       // BODY INJECT: search, catalog, checkout, AI tools, auth/nav/brand fixers
-      const inject = searchScript + '\n' + catalogScript + '\n' + checkoutScript + '\n' + aiSidebarScript + '\n' + aiLinkInterceptor + '\n' + authInterceptorScript + '\n' + navResolverScript + '\n' + brandLinkFixScript + '\n' + interactionReconScript + (supabaseFormScript ? '\n' + supabaseFormScript : '');
+      const inject = searchScript + '\n' + catalogScript + '\n' + checkoutScript + '\n' + aiSidebarScript + '\n' + aiLinkInterceptor + '\n' + authInterceptorScript + '\n' + navResolverScript + '\n' + brandLinkFixScript + '\n' + interactionReconScript + '\n' + contentInjectionScript + (supabaseFormScript ? '\n' + supabaseFormScript : '');
       if (html.includes('</body>')) {
         html = html.replace('</body>', inject + '\n</body>');
       } else {

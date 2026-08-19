@@ -614,9 +614,11 @@ export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string
     '<button class="filter-btn" data-filter="software" data-value="' + s + '">' + s + '</button>'
   ).join('\n      ');
   // Build pagination buttons (prev, 1-7, next) — 9 buttons
-  const paginationButtons = ['<button class="page-btn" data-page="prev">← Prev</button>'] +
-    [1,2,3,4,5,6,7].map(n => '<button class="page-btn" data-page="' + n + '">' + n + '</button>') +
-    ['<button class="page-btn" data-page="next">Next →</button>'];
+  const paginationButtons = [
+    '<button class="page-btn" data-page="prev">← Prev</button>',
+    ...[1,2,3,4,5,6,7].map(n => '<button class="page-btn" data-page="' + n + '">' + n + '</button>'),
+    '<button class="page-btn" data-page="next">Next →</button>'
+  ];
   const paginationHtml = paginationButtons.join('\n      ');
 
   return `<!DOCTYPE html>
