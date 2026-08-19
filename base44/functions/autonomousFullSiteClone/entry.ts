@@ -394,7 +394,6 @@ export default async function(req: Request) {
     const checkoutScript = buildStripeCheckoutScript(checkoutUrl, stripeProducts);
     const aiSidebarScript = buildAiToolsSidebarScript();
     const aiLinkInterceptor = buildAiLinkInterceptorScript();
-    const aiToolPages = buildAllAiToolPages(invokeAiUrl, checkoutUrl);
 
     // Auth interceptor — redirect all sign-in/login/register links to my auth pages
     const myLoginUrl = `https://fault-line.base44.app/autoleads/login`;
@@ -453,6 +452,19 @@ export default async function(req: Request) {
       console.log(`[autonomousFullSiteClone] Catalog pre-render skipped: ${e.message}`);
     }
     const categoryPages = buildAllCategoryPages(catalogApiUrl, checkoutUrl, myLoginUrl, myRegisterUrl, preRenderedCatalog);
+
+    // AI tool pages — build with featured assets for visual parity on the index page
+    const allFeaturedAssets: any[] = [];
+    if (preRenderedCatalog) {
+      const seen = new Set<string>();
+      for (const [, catAssets] of preRenderedCatalog) {
+        const sorted = [...catAssets].sort((a, b) => (b.downloads_count || 0) - (a.downloads_count || 0));
+        for (const a of sorted) {
+          if (!seen.has(a.id)) { seen.add(a.id); allFeaturedAssets.push(a); }
+        }
+      }
+    }
+    const aiToolPages = buildAllAiToolPages(invokeAiUrl, checkoutUrl, myLoginUrl, myRegisterUrl, allFeaturedAssets.slice(0, 120));
 
     // Supabase form backend — wire all forms to the IBEAM Supabase leads table
     const ibeamSupabaseUrl = secrets.get('IBEAM_SUPABASE_URL');

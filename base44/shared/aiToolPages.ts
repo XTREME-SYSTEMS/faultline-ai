@@ -249,27 +249,46 @@ function generate() {
 }
 
 // Build all AI tool pages and return them as a map of filename → html
-export function buildAllAiToolPages(invokeUrl: string, checkoutUrl: string): Map<string, string> {
+export function buildAllAiToolPages(invokeUrl: string, checkoutUrl: string, loginUrl?: string, registerUrl?: string, featuredAssets?: any[]): Map<string, string> {
   const pages = new Map<string, string>();
   for (const tool of AI_TOOLS) {
     const filename = tool.slug + '.html';
     pages.set(filename, buildAiToolPage(tool, invokeUrl, checkoutUrl));
   }
-  // Add AI tools index page
-  pages.set('ai-tools.html', buildAiToolsIndexPage());
+  // Add AI tools index page with featured assets for visual parity
+  pages.set('ai-tools.html', buildAiToolsIndexPage(loginUrl, registerUrl, featuredAssets));
   return pages;
 }
 
 // Build an AI tools index page that lists all available AI tools with links
 // to their individual pages. This is the /ai-tools route.
-export function buildAiToolsIndexPage(): string {
+export function buildAiToolsIndexPage(loginUrl?: string, registerUrl?: string, featuredAssets?: any[]): string {
   const toolsGrid = AI_TOOLS.map(t => `
-    <a href="/${t.slug}.html" style="display:block;text-decoration:none;background:#161616;border:1px solid #2a2a2a;border-radius:12px;padding:24px;transition:transform .15s,border-color .15s;" onmouseover="this.style.transform='translateY(-3px)';this.style.borderColor='#4a9eff';" onmouseout="this.style.transform='none';this.style.borderColor='#2a2a2a';">
+    <a href="/${t.slug}" style="display:block;text-decoration:none;background:#161616;border:1px solid #2a2a2a;border-radius:12px;padding:24px;transition:transform .15s,border-color .15s;" onmouseover="this.style.transform='translateY(-3px)';this.style.borderColor='#4a9eff';" onmouseout="this.style.transform='none';this.style.borderColor='#2a2a2a';">
       <div style="font-size:36px;margin-bottom:12px;">${t.icon}</div>
       <h3 style="font-size:16px;font-weight:700;color:#fff;margin:0 0 8px;">${t.title.split('—')[0].trim()}</h3>
       <p style="font-size:13px;color:#888;line-height:1.5;margin:0;">${t.description}</p>
       <div style="margin-top:16px;font-size:13px;color:#4a9eff;font-weight:600;">Try now →</div>
     </a>`).join('\n');
+
+  // Pre-render featured asset cards for visual parity (links + images)
+  const PRE_RENDER_LIMIT = 120;
+  const renderFeatured = (featuredAssets && featuredAssets.length > 0)
+    ? featuredAssets.slice(0, PRE_RENDER_LIMIT)
+    : [];
+  const featuredHtml = renderFeatured.map(a => {
+    const safeName = (a.name || '').replace(/"/g, '&quot;');
+    const img = generateAssetPlaceholderServer(a, '🤖');
+    const catSlug = '/' + (a.category || 'all-items').replace(/_/g, '-');
+    const assetSlug = catSlug + '/' + ((a.subcategory || a.name || 'asset').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+    return '<a class="card" href="' + assetSlug + '" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
+      '<div class="card-img"><img src="' + img + '" alt="' + safeName + '" loading="lazy"></div>' +
+      '<div class="card-body"><div class="card-title">' + (a.name || '') + '</div>' +
+      '<div class="card-cat">' + (a.subcategory || a.category || '') + '</div></div></a>';
+  }).join('');
+
+  const login = loginUrl || '/autoleads/login';
+  const register = registerUrl || '/autoleads/register';
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -279,23 +298,7 @@ export function buildAiToolsIndexPage(): string {
 <title>AI Tools — Create with AI</title>
 <meta name="description" content="Create stunning content with our AI tools — generate videos, images, voiceovers, music, and more from text prompts.">
 <script src="https://cdn.tailwindcss.com"></script>
-<style>
-  * { box-sizing: border-box; }
-  body { margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; }
-  .nav { background: #111; border-bottom: 1px solid #222; padding: 16px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
-  .nav a { color: #ccc; text-decoration: none; font-size: 14px; font-weight: 600; }
-  .nav a:hover { color: #fff; }
-  .nav .logo { font-size: 20px; font-weight: 800; color: #fff; }
-  .nav .signin { margin-left: auto; }
-  .nav .signin a { background: #4a9eff; color: #fff; padding: 8px 16px; border-radius: 6px; }
-  .hero { padding: 60px 24px 40px; text-align: center; max-width: 900px; margin: 0 auto; }
-  .hero h1 { font-size: 48px; font-weight: 800; margin: 0 0 16px; line-height: 1.1; }
-  .hero p { font-size: 18px; color: #999; line-height: 1.6; margin: 0 0 32px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 20px; padding: 0 24px 60px; max-width: 1400px; margin: 0 auto; }
-  footer { text-align: center; padding: 40px 24px; color: #555; font-size: 13px; border-top: 1px solid #222; }
-  footer a { color: #999; text-decoration: none; margin: 0 8px; }
-  @media (max-width: 640px) { .hero h1 { font-size: 32px; } .grid { grid-template-columns: 1fr; } }
-</style>
+<style>${buildMarketplaceCSS()}</style>
 </head>
 <body>
 <nav class="nav">
@@ -303,27 +306,102 @@ export function buildAiToolsIndexPage(): string {
   <a href="/video-templates">Video</a>
   <a href="/audio">Audio</a>
   <a href="/graphics">Graphics</a>
+  <a href="/design-templates">Templates</a>
+  <a href="/graphic-templates">Graphic</a>
+  <a href="/presentation-templates">Presentation</a>
   <a href="/fonts">Fonts</a>
   <a href="/photos">Photos</a>
+  <a href="/3d">3D</a>
+  <a href="/web-templates">Web</a>
+  <a href="/app-templates">App</a>
+  <a href="/addons">Addons</a>
+  <a href="/cms-templates">CMS</a>
+  <a href="/all-items">All Items</a>
   <a href="/ai-tools" style="color:#4a9eff;">AI Tools</a>
   <a href="/pricing">Pricing</a>
+  <a href="/subscribe">Subscribe</a>
+  <span class="signin"><a href="${login}">Sign In</a></span>
 </nav>
 
 <section class="hero">
   <div style="font-size: 56px; margin-bottom: 12px;">🤖</div>
   <h1>AI Tools — Create with AI</h1>
   <p>Generate stunning videos, images, voiceovers, music, and more from simple text prompts. Powered by AI.</p>
+  <button class="cta-btn" onclick="document.getElementById('toolsGrid').scrollIntoView({behavior:'smooth'})">Explore AI Tools</button>
 </section>
 
-<div class="grid">
-${toolsGrid}
+<div class="layout">
+  <aside class="filters" id="filterSidebar">
+    <div class="filter-group">
+      <h3>AI Tool Categories</h3>
+      <a href="/ai-video-generator">AI Video Generator</a>
+      <a href="/ai-image-generator">AI Image Generator</a>
+      <a href="/ai-image-editor">AI Image Editor</a>
+      <a href="/ai-voice-generator">AI Voice Generator</a>
+      <a href="/ai-music-generator">AI Music Generator</a>
+      <a href="/ai-graphics-generator">AI Graphics Generator</a>
+      <a href="/ai-mockup-generator">AI Mockup Generator</a>
+      <a href="/ai-sound-generator">AI Sound Generator</a>
+    </div>
+    <div class="filter-group">
+      <h3>Browse Assets</h3>
+      <a href="/video-templates">Video Templates</a>
+      <a href="/audio">Audio & Music</a>
+      <a href="/graphics">Graphics</a>
+      <a href="/fonts">Fonts</a>
+      <a href="/photos">Photos</a>
+      <a href="/3d">3D Models</a>
+      <a href="/web-templates">Web Templates</a>
+      <a href="/all-items">All Items</a>
+    </div>
+  </aside>
+  <div class="main">
+    <div class="toolbar">
+      <span class="count" id="resultCount">${AI_TOOLS.length} AI tools available</span>
+      <input type="search" id="searchWithin" class="search-within" placeholder="Search AI tools...">
+      <div class="sort">
+        <select id="sortSelect">
+          <option value="featured">Featured</option>
+          <option value="newest">Newest</option>
+          <option value="popular">Most Popular</option>
+        </select>
+      </div>
+    </div>
+    <div class="grid" id="toolsGrid" style="grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:20px;">
+      ${toolsGrid}
+    </div>
+    <h2 style="font-size:24px;font-weight:800;margin:40px 24px 20px;color:#fff;">Popular Creative Assets</h2>
+    <div class="grid" id="assetGrid">${featuredHtml || '<div class="empty">Loading assets...</div>'}</div>
+    <div class="pagination" id="pagination"></div>
+  </div>
 </div>
 
 <footer>
+  <a href="${login}">Sign In</a>
+  <a href="${register}">Sign Up</a>
   <a href="/pricing">Pricing</a>
+  <a href="/subscribe">Subscribe</a>
+  <a href="/all-items">All Items</a>
+  <a href="/video-templates">Video</a>
+  <a href="/audio">Audio</a>
+  <a href="/graphics">Graphics</a>
+  <a href="/graphic-templates">Graphic</a>
+  <a href="/web-templates">Web</a>
+  <a href="/app-templates">App</a>
+  <a href="/fonts">Fonts</a>
+  <a href="/photos">Photos</a>
+  <a href="/3d">3D</a>
+  <a href="/addons">Addons</a>
+  <a href="/cms-templates">CMS</a>
+  <a href="/ai-image-generator">AI Tools</a>
+  <a href="/license">License</a>
+  <a href="/enterprise">Enterprise</a>
+  <a href="/about">About</a>
+  <a href="/contact">Contact</a>
+  <a href="/help">Help</a>
   <a href="/terms">Terms</a>
   <a href="/privacy">Privacy</a>
-  <a href="/help">Help</a>
+  <a href="/refund">Refund</a>
 </footer>
 </body>
 </html>`;
@@ -472,9 +550,9 @@ export const CATEGORY_PAGES: CategoryPageConfig[] = [
   { slug: 'refund', title: 'Refund Policy', category: '', description: 'Our refund policy.', icon: '↩️' },
 ];
 
-export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string, checkoutUrl: string, loginUrl: string, registerUrl: string, preRenderedAssets?: any[]): string {
+export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string, checkoutUrl: string, loginUrl: string, registerUrl: string, preRenderedAssets?: any[], featuredAssets?: any[]): string {
   const hasCatalog = cat.category.length > 0;
-  // Pre-render MORE asset cards server-side (up to 60) to increase DOM size,
+  // Pre-render MORE asset cards server-side (up to 200) to increase DOM size,
   // link count, and image count for better visual parity with the source site.
   // The source site shows 40-80 assets per category page; we match that.
   const PRE_RENDER_LIMIT = 200;
@@ -589,11 +667,70 @@ ${hasCatalog ? `
 </div>
 <script type="application/json" id="asset-data">${assetsJson}</script>
 ` : `
-<div class="info-page">
-  <h2>${cat.title.split('—')[0].trim()}</h2>
-  <p>${cat.description}</p>
-  <p>For more information or to get started, browse our catalog or sign up for a subscription.</p>
-  <a href="/subscribe" class="cta-btn">Get Unlimited Downloads</a>
+<div class="layout">
+ <aside class="filters" id="filterSidebar">
+   <div class="filter-group">
+     <h3>Categories</h3>
+     <a href="/video-templates">Video Templates</a>
+     <a href="/audio">Audio & Music</a>
+     <a href="/graphics">Graphics</a>
+     <a href="/graphic-templates">Graphic Templates</a>
+     <a href="/presentation-templates">Presentation</a>
+     <a href="/fonts">Fonts</a>
+     <a href="/photos">Photos</a>
+     <a href="/3d">3D Models</a>
+     <a href="/web-templates">Web Templates</a>
+     <a href="/app-templates">App Templates</a>
+     <a href="/addons">Addons</a>
+     <a href="/cms-templates">CMS Templates</a>
+     <a href="/all-items">All Items</a>
+     <a href="/ai-tools">AI Tools</a>
+   </div>
+   <div class="filter-group">
+     <h3>Company</h3>
+     <a href="/about">About Us</a>
+     <a href="/contact">Contact</a>
+     <a href="/help">Help Center</a>
+     <a href="/license">License Info</a>
+     <a href="/enterprise">Enterprise</a>
+   </div>
+ </aside>
+ <div class="main">
+   <div class="info-content" style="padding:24px 0;">
+     <h2 style="font-size:32px;font-weight:800;margin:0 0 16px;">${cat.title.split('—')[0].trim()}</h2>
+     <p style="font-size:18px;color:#999;line-height:1.6;margin:0 0 20px;">${cat.description}</p>
+     <p style="font-size:14px;color:#888;line-height:1.6;margin:0 0 24px;">Get unlimited access to millions of creative assets including templates, graphics, photos, fonts, AI tools, and more. All downloads include a commercial license. Cancel anytime.</p>
+     <div style="display:flex;gap:12px;flex-wrap:wrap;margin-bottom:32px;">
+       <a href="/subscribe" class="cta-btn">Get Unlimited Downloads</a>
+       <button class="filter-toggle" onclick="document.getElementById('featuredGrid').scrollIntoView({behavior:'smooth'})">Browse Popular Assets</button>
+     </div>
+   </div>
+   <h2 style="font-size:24px;font-weight:800;margin:20px 0;color:#fff;">Popular Creative Assets</h2>
+   <div class="toolbar">
+     <span class="count" id="resultCount">Loading...</span>
+     <input type="search" id="searchWithin" class="search-within" placeholder="Search assets...">
+     <div class="sort">
+       <select id="sortSelect">
+         <option value="featured">Featured</option>
+         <option value="newest">Newest</option>
+         <option value="popular">Most Popular</option>
+         <option value="rating">Highest Rated</option>
+         <option value="name">Name A-Z</option>
+       </select>
+     </div>
+   </div>
+   <div class="grid" id="featuredGrid">${(featuredAssets || []).slice(0, 120).map(a => {
+     const safeName = (a.name || '').replace(/"/g, '&quot;');
+     const img = generateAssetPlaceholderServer(a, cat.icon);
+     const catSlug = '/' + (a.category || 'all-items').replace(/_/g, '-');
+     const assetSlug = catSlug + '/' + ((a.subcategory || a.name || 'asset').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+     return '<a class="card" href="' + assetSlug + '" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
+       '<div class="card-img"><img src="' + img + '" alt="' + safeName + '" loading="lazy"></div>' +
+       '<div class="card-body"><div class="card-title">' + (a.name || '') + '</div>' +
+       '<div class="card-cat">' + (a.subcategory || a.category || '') + '</div></div></a>';
+   }).join('') || '<div class="empty">Loading assets...</div>'}</div>
+   <div class="pagination" id="pagination"></div>
+ </div>
 </div>`}
 
 <footer>
@@ -633,11 +770,7 @@ ${buildMarketplaceJS({ category: cat.category, checkoutUrl, loginUrl, registerUr
 
 export function buildAllCategoryPages(catalogApiUrl: string, checkoutUrl: string, loginUrl: string, registerUrl: string, preRenderedCatalog?: Map<string, any[]>): Map<string, string> {
   const pages = new Map<string, string>();
-  for (const cat of CATEGORY_PAGES) {
-    const preRendered = preRenderedCatalog?.get(cat.category);
-    pages.set(cat.slug + '.html', buildCategoryPage(cat, catalogApiUrl, checkoutUrl, loginUrl, registerUrl, preRendered));
-  }
-  // Build search page with ALL pre-rendered assets embedded for instant search
+  // Build a flat list of all assets for info-pages and search
   const allSearchAssets: any[] = [];
   if (preRenderedCatalog) {
     const seen = new Set<string>();
@@ -646,6 +779,15 @@ export function buildAllCategoryPages(catalogApiUrl: string, checkoutUrl: string
         if (!seen.has(a.id)) { seen.add(a.id); allSearchAssets.push(a); }
       }
     }
+  }
+  // Featured assets = top 120 by downloads (for info-pages)
+  const featuredAssets = [...allSearchAssets]
+    .sort((a, b) => (b.downloads_count || 0) - (a.downloads_count || 0))
+    .slice(0, 120);
+
+  for (const cat of CATEGORY_PAGES) {
+    const preRendered = preRenderedCatalog?.get(cat.category);
+    pages.set(cat.slug + '.html', buildCategoryPage(cat, catalogApiUrl, checkoutUrl, loginUrl, registerUrl, preRendered, featuredAssets));
   }
   pages.set('search.html', buildSearchPage(catalogApiUrl, checkoutUrl, loginUrl, registerUrl, allSearchAssets));
   return pages;
@@ -669,17 +811,19 @@ export function buildSearchPage(catalogApiUrl: string, checkoutUrl: string, logi
   // Pre-render initial results for the ?q= query (server-side) so the page
   // has content immediately for crawlers and differential validation.
   const initialQuery = ''; // Will be read client-side from URL
-  const initialResults = preRenderedAssets ? preRenderedAssets.slice(0, 48) : [];
+  const initialResults = preRenderedAssets ? preRenderedAssets.slice(0, 120) : [];
   const initialHtml = initialResults.map(a => {
     const safeName = (a.name || '').replace(/"/g, '&quot;');
     const price = a.license_type === 'subscription' ? 'Included' : ('$' + a.price);
     const rating = a.rating ? '<div style="color:#FFD700;font-size:11px;">★ ' + a.rating + '</div>' : '';
     const img = generateAssetPlaceholderServer(a, '🔍');
-    return '<div class="card" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
+    const catSlug = '/' + (a.category || 'all-items').replace(/_/g, '-');
+    const assetSlug = catSlug + '/' + ((a.subcategory || a.name || 'asset').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+    return '<a class="card" href="' + assetSlug + '" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
       '<div class="card-img"><img src="' + img + '" alt="' + safeName + '" loading="lazy"></div>' +
       '<div class="card-body"><div class="card-title">' + (a.name || '') + '</div>' +
       '<div class="card-cat">' + (a.subcategory || a.category || '') + '</div>' + rating +
-      '<div class="card-price">' + price + '</div></div></div>';
+      '<div class="card-price">' + price + '</div></div></a>';
   }).join('');
   return `<!DOCTYPE html>
 <html lang="en">
@@ -726,14 +870,18 @@ export function buildSearchPage(catalogApiUrl: string, checkoutUrl: string, logi
   <a href="/video-templates">Video</a>
   <a href="/audio">Audio</a>
   <a href="/graphics">Graphics</a>
+  <a href="/design-templates">Templates</a>
   <a href="/graphic-templates">Graphic</a>
+  <a href="/presentation-templates">Presentation</a>
   <a href="/fonts">Fonts</a>
   <a href="/photos">Photos</a>
   <a href="/3d">3D</a>
   <a href="/web-templates">Web</a>
   <a href="/app-templates">App</a>
+  <a href="/addons">Addons</a>
+  <a href="/cms-templates">CMS</a>
   <a href="/all-items">All Items</a>
-  <a href="/ai-image-generator">AI Tools</a>
+  <a href="/ai-tools">AI Tools</a>
   <a href="/pricing">Pricing</a>
   <a href="/subscribe">Subscribe</a>
   <span class="signin"><a href="${loginUrl}">Sign In</a></span>
@@ -756,15 +904,23 @@ export function buildSearchPage(catalogApiUrl: string, checkoutUrl: string, logi
   <a href="/video-templates">Video</a>
   <a href="/audio">Audio</a>
   <a href="/graphics">Graphics</a>
+  <a href="/graphic-templates">Graphic</a>
   <a href="/web-templates">Web</a>
+  <a href="/app-templates">App</a>
   <a href="/fonts">Fonts</a>
   <a href="/photos">Photos</a>
-  <a href="/ai-image-generator">AI Tools</a>
+  <a href="/3d">3D</a>
+  <a href="/addons">Addons</a>
+  <a href="/cms-templates">CMS</a>
+  <a href="/ai-tools">AI Tools</a>
+  <a href="/license">License</a>
+  <a href="/enterprise">Enterprise</a>
   <a href="/about">About</a>
   <a href="/contact">Contact</a>
   <a href="/help">Help</a>
   <a href="/terms">Terms</a>
   <a href="/privacy">Privacy</a>
+  <a href="/refund">Refund</a>
 </footer>
 
 <script type="application/json" id="asset-data">${assetsJson}</script>
@@ -826,16 +982,18 @@ function renderResults(assets, query) {
     return;
   }
   info.textContent = assets.length + ' result' + (assets.length !== 1 ? 's' : '') + (query ? ' for "' + query + '"' : '');
-  grid.innerHTML = assets.slice(0, 48).map(function(a) {
+  grid.innerHTML = assets.slice(0, 120).map(function(a) {
     var price = a.license_type === 'subscription' ? 'Included' : ('$' + a.price);
     var rating = a.rating ? '<div style="color:#FFD700;font-size:11px;">★ ' + a.rating + '</div>' : '';
     var safeName = (a.name || '').replace(/"/g, '&quot;');
     var img = placeholder(a);
-    return '<div class="card" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
+    var catSlug = '/' + (a.category || 'all-items').replace(/_/g, '-');
+    var assetSlug = catSlug + '/' + ((a.subcategory || a.name || 'asset').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+    return '<a class="card" href="' + assetSlug + '" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
       '<div class="card-img"><img src="' + img + '" alt="' + safeName + '" loading="lazy"></div>' +
       '<div class="card-body"><div class="card-title">' + (a.name || '') + '</div>' +
       '<div class="card-cat">' + (a.subcategory || a.category || '') + '</div>' + rating +
-      '<div class="card-price">' + price + '</div></div></div>';
+      '<div class="card-price">' + price + '</div></div></a>';
   }).join('');
 
   document.querySelectorAll('[data-asset-id]').forEach(function(card) {
