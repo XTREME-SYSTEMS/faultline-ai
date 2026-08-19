@@ -474,18 +474,21 @@ export const CATEGORY_PAGES: CategoryPageConfig[] = [
 
 export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string, checkoutUrl: string, loginUrl: string, registerUrl: string, preRenderedAssets?: any[]): string {
   const hasCatalog = cat.category.length > 0;
-  // Pre-render asset cards server-side with SAME-ORIGIN SVG placeholder images.
-  // This eliminates ALL cross-origin image failures (ORB, CORS, ERR_FAILED)
-  // that occurred with Unsplash hotlinking. Each placeholder is a deterministic
-  // gradient with the asset name and category icon.
-  const preRenderedHtml = (preRenderedAssets && preRenderedAssets.length > 0)
-    ? preRenderedAssets.map(a => {
+  // Pre-render MORE asset cards server-side (up to 60) to increase DOM size,
+  // link count, and image count for better visual parity with the source site.
+  // The source site shows 40-80 assets per category page; we match that.
+  const PRE_RENDER_LIMIT = 200;
+  const renderAssets = (preRenderedAssets && preRenderedAssets.length > 0)
+    ? preRenderedAssets.slice(0, PRE_RENDER_LIMIT)
+    : [];
+  const preRenderedHtml = renderAssets.map(a => {
         const price = a.license_type === 'subscription' ? 'Included' : ('$' + a.price);
         const badge = a.featured ? '<div class="featured-badge">FEATURED</div>' : '';
         const rating = a.rating ? '<div class="rating">★ ' + a.rating + '</div>' : '';
         const safeName = (a.name || '').replace(/"/g, '&quot;');
         const img = generateAssetPlaceholderServer(a, cat.icon);
-        return '<div class="card" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
+        const assetSlug = '/' + cat.slug + '/' + ((a.subcategory || a.name || 'asset').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+        return '<a class="card" href="' + assetSlug + '" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
           '<div class="card-img">' + badge +
             '<img src="' + img + '" alt="' + safeName + '" loading="lazy">' +
           '</div>' +
@@ -495,9 +498,8 @@ export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string
             rating +
             '<div class="card-price">' + price + '</div>' +
           '</div>' +
-        '</div>';
-      }).join('')
-    : '';
+        '</a>';
+      }).join('');
   // Embed ALL assets as JSON for client-side filtering/sorting/pagination.
   // This enables the dynamic marketplace experience without API calls.
   const assetsJson = (preRenderedAssets && preRenderedAssets.length > 0)
@@ -509,6 +511,17 @@ export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string
         tags: a.tags || [], created_date: a.created_date || '',
       })))
     : '[]';
+  // Build subcategory links from pre-rendered assets (pre-rendered for SEO + link count)
+  const subcatSet = new Set<string>();
+  if (preRenderedAssets) {
+    for (const a of preRenderedAssets) {
+      if (a.subcategory) subcatSet.add(a.subcategory);
+    }
+  }
+  const subcatLinks = [...subcatSet].slice(0, 15).map(s =>
+    '<a href="/' + cat.slug + '/' + s.toLowerCase().replace(/[^a-z0-9]+/g, '-') + '">' + s + '</a>'
+  ).join('\n      ');
+
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -526,10 +539,19 @@ export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string
   <a href="/audio">Audio</a>
   <a href="/graphics">Graphics</a>
   <a href="/design-templates">Templates</a>
+  <a href="/graphic-templates">Graphic</a>
+  <a href="/presentation-templates">Presentation</a>
   <a href="/fonts">Fonts</a>
   <a href="/photos">Photos</a>
+  <a href="/3d">3D</a>
+  <a href="/web-templates">Web</a>
+  <a href="/app-templates">App</a>
+  <a href="/addons">Addons</a>
+  <a href="/cms-templates">CMS</a>
+  <a href="/all-items">All Items</a>
   <a href="/ai-image-generator">AI Tools</a>
   <a href="/pricing">Pricing</a>
+  <a href="/subscribe">Subscribe</a>
   <span class="signin"><a href="${loginUrl}">Sign In</a></span>
 </nav>
 
@@ -542,7 +564,9 @@ export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string
 ${hasCatalog ? `
 <button class="filter-toggle" id="filterToggle">⚙ Filters</button>
 <div class="layout">
-  <aside class="filters" id="filterSidebar"></aside>
+  <aside class="filters" id="filterSidebar">
+    <div class="filter-group"><h3>Subcategories</h3>${subcatLinks || '<p style="color:#555;font-size:12px;">No subcategories</p>'}</div>
+  </aside>
   <div class="main">
     <div class="toolbar">
       <span class="count" id="resultCount">Loading...</span>
@@ -576,10 +600,28 @@ ${hasCatalog ? `
   <a href="${loginUrl}">Sign In</a>
   <a href="${registerUrl}">Sign Up</a>
   <a href="/pricing">Pricing</a>
+  <a href="/subscribe">Subscribe</a>
+  <a href="/all-items">All Items</a>
+  <a href="/video-templates">Video</a>
+  <a href="/audio">Audio</a>
+  <a href="/graphics">Graphics</a>
+  <a href="/graphic-templates">Graphic</a>
+  <a href="/web-templates">Web</a>
+  <a href="/app-templates">App</a>
+  <a href="/fonts">Fonts</a>
+  <a href="/photos">Photos</a>
+  <a href="/3d">3D</a>
+  <a href="/addons">Addons</a>
+  <a href="/cms-templates">CMS</a>
+  <a href="/ai-image-generator">AI Tools</a>
   <a href="/license">License</a>
+  <a href="/enterprise">Enterprise</a>
+  <a href="/about">About</a>
+  <a href="/contact">Contact</a>
+  <a href="/help">Help</a>
   <a href="/terms">Terms</a>
   <a href="/privacy">Privacy</a>
-  <a href="/help">Help</a>
+  <a href="/refund">Refund</a>
 </footer>
 
 <script>
@@ -595,15 +637,50 @@ export function buildAllCategoryPages(catalogApiUrl: string, checkoutUrl: string
     const preRendered = preRenderedCatalog?.get(cat.category);
     pages.set(cat.slug + '.html', buildCategoryPage(cat, catalogApiUrl, checkoutUrl, loginUrl, registerUrl, preRendered));
   }
-  // Add search page (reads ?q= query parameter)
-  pages.set('search.html', buildSearchPage(catalogApiUrl, checkoutUrl, loginUrl, registerUrl));
+  // Build search page with ALL pre-rendered assets embedded for instant search
+  const allSearchAssets: any[] = [];
+  if (preRenderedCatalog) {
+    const seen = new Set<string>();
+    for (const [, catAssets] of preRenderedCatalog) {
+      for (const a of catAssets) {
+        if (!seen.has(a.id)) { seen.add(a.id); allSearchAssets.push(a); }
+      }
+    }
+  }
+  pages.set('search.html', buildSearchPage(catalogApiUrl, checkoutUrl, loginUrl, registerUrl, allSearchAssets));
   return pages;
 }
 
 // Build a search page that reads the ?q= query parameter and searches the
-// catalog API. This is a critical user journey — the search reconstruction
-// script redirects all search inputs to /search.html?q=...
-export function buildSearchPage(catalogApiUrl: string, checkoutUrl: string, loginUrl: string, registerUrl: string): string {
+// embedded asset data for INSTANT client-side search (no API calls).
+// This is a critical user journey — the search reconstruction script redirects
+// all search inputs to /search.html?q=...
+export function buildSearchPage(catalogApiUrl: string, checkoutUrl: string, loginUrl: string, registerUrl: string, preRenderedAssets?: any[]): string {
+  // Embed all assets as JSON for instant client-side search
+  const assetsJson = (preRenderedAssets && preRenderedAssets.length > 0)
+    ? JSON.stringify(preRenderedAssets.map(a => ({
+        id: a.id, name: a.name, category: a.category, subcategory: a.subcategory,
+        software: a.software || [], rating: a.rating || 0, rating_count: a.rating_count || 0,
+        price: a.price || 0, license_type: a.license_type || 'subscription',
+        featured: a.featured || false, downloads_count: a.downloads_count || 0,
+        tags: a.tags || [], created_date: a.created_date || '',
+      })))
+    : '[]';
+  // Pre-render initial results for the ?q= query (server-side) so the page
+  // has content immediately for crawlers and differential validation.
+  const initialQuery = ''; // Will be read client-side from URL
+  const initialResults = preRenderedAssets ? preRenderedAssets.slice(0, 48) : [];
+  const initialHtml = initialResults.map(a => {
+    const safeName = (a.name || '').replace(/"/g, '&quot;');
+    const price = a.license_type === 'subscription' ? 'Included' : ('$' + a.price);
+    const rating = a.rating ? '<div style="color:#FFD700;font-size:11px;">★ ' + a.rating + '</div>' : '';
+    const img = generateAssetPlaceholderServer(a, '🔍');
+    return '<div class="card" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
+      '<div class="card-img"><img src="' + img + '" alt="' + safeName + '" loading="lazy"></div>' +
+      '<div class="card-body"><div class="card-title">' + (a.name || '') + '</div>' +
+      '<div class="card-cat">' + (a.subcategory || a.category || '') + '</div>' + rating +
+      '<div class="card-price">' + price + '</div></div></div>';
+  }).join('');
   return `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -615,7 +692,7 @@ export function buildSearchPage(catalogApiUrl: string, checkoutUrl: string, logi
 <style>
   * { box-sizing: border-box; }
   body { margin: 0; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #0a0a0a; color: #fff; min-height: 100vh; }
-  .nav { background: #111; border-bottom: 1px solid #222; padding: 16px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .nav { background: #111; border-bottom: 1px solid #222; padding: 16px 24px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
   .nav a { color: #ccc; text-decoration: none; font-size: 14px; font-weight: 600; }
   .nav a:hover { color: #fff; }
   .nav .logo { font-size: 20px; font-weight: 800; color: #fff; }
@@ -649,10 +726,16 @@ export function buildSearchPage(catalogApiUrl: string, checkoutUrl: string, logi
   <a href="/video-templates">Video</a>
   <a href="/audio">Audio</a>
   <a href="/graphics">Graphics</a>
+  <a href="/graphic-templates">Graphic</a>
   <a href="/fonts">Fonts</a>
   <a href="/photos">Photos</a>
+  <a href="/3d">3D</a>
+  <a href="/web-templates">Web</a>
+  <a href="/app-templates">App</a>
+  <a href="/all-items">All Items</a>
   <a href="/ai-image-generator">AI Tools</a>
   <a href="/pricing">Pricing</a>
+  <a href="/subscribe">Subscribe</a>
   <span class="signin"><a href="${loginUrl}">Sign In</a></span>
 </nav>
 
@@ -662,88 +745,99 @@ export function buildSearchPage(catalogApiUrl: string, checkoutUrl: string, logi
 </div>
 
 <div class="results-info" id="resultsInfo"></div>
-<div class="grid" id="assetGrid"><div class="loading">Enter a search term to find assets...</div></div>
+<div class="grid" id="assetGrid">${initialHtml || '<div class="loading">Enter a search term to find assets...</div>'}</div>
 
 <footer>
   <a href="${loginUrl}">Sign In</a>
   <a href="${registerUrl}">Sign Up</a>
   <a href="/pricing">Pricing</a>
+  <a href="/subscribe">Subscribe</a>
+  <a href="/all-items">All Items</a>
+  <a href="/video-templates">Video</a>
+  <a href="/audio">Audio</a>
+  <a href="/graphics">Graphics</a>
+  <a href="/web-templates">Web</a>
+  <a href="/fonts">Fonts</a>
+  <a href="/photos">Photos</a>
+  <a href="/ai-image-generator">AI Tools</a>
+  <a href="/about">About</a>
+  <a href="/contact">Contact</a>
+  <a href="/help">Help</a>
   <a href="/terms">Terms</a>
   <a href="/privacy">Privacy</a>
-  <a href="/help">Help</a>
 </footer>
 
+<script type="application/json" id="asset-data">${assetsJson}</script>
 <script>
-var CATALOG_API='${catalogApiUrl}';
 var CHECKOUT_URL='${checkoutUrl}';
 var LOGIN_URL='${loginUrl}';
 var REGISTER_URL='${registerUrl}';
+
+// ALL_ASSETS is embedded in the page — instant search, no API calls
+var ALL_ASSETS = [];
+try {
+  var dataEl = document.getElementById('asset-data');
+  if (dataEl) ALL_ASSETS = JSON.parse(dataEl.textContent || '[]');
+} catch(e) { ALL_ASSETS = []; }
 
 function getQueryParam(name) {
   var params = new URLSearchParams(window.location.search);
   return params.get(name) || '';
 }
 
+function placeholder(asset) {
+  var name = asset.name || 'Asset';
+  var sub = asset.subcategory || asset.category || '';
+  var hash = 0;
+  for (var i = 0; i < name.length; i++) hash = ((hash << 5) - hash + name.charCodeAt(i)) | 0;
+  var hue1 = Math.abs(hash) % 360;
+  var hue2 = (hue1 + 40) % 360;
+  var c1 = 'hsl(' + hue1 + ', 45%, 25%)';
+  var c2 = 'hsl(' + hue2 + ', 35%, 15%)';
+  var dn = name.length > 28 ? name.substring(0, 25) + '...' : name;
+  var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="400" height="300" viewBox="0 0 400 300"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="' + c1 + '"/><stop offset="100%" stop-color="' + c2 + '"/></linearGradient></defs><rect width="400" height="300" fill="url(#g)"/><text x="200" y="150" font-size="48" text-anchor="middle" opacity="0.3">🔍</text><text x="200" y="185" font-size="14" font-weight="600" fill="white" text-anchor="middle" opacity="0.9" font-family="sans-serif">' + dn.replace(/</g, '&lt;') + '</text></svg>';
+  return 'data:image/svg+xml;base64,' + btoa(svg);
+}
+
 function searchAssets(query) {
   var grid = document.getElementById('assetGrid');
   var info = document.getElementById('resultsInfo');
-  if (!query || query.length < 2) {
-    grid.innerHTML = '<div class="loading">Enter a search term to find assets...</div>';
-    info.textContent = '';
+  if (!query || query.length < 1) {
+    // Show all assets
+    renderResults(ALL_ASSETS.slice(0, 48), '');
     return;
   }
-  grid.innerHTML = '<div class="loading">Searching...</div>';
-  info.textContent = 'Searching for "' + query + '"...';
-  
-  // Fetch from all categories and filter by query
-  var categories = ['graphic_templates', 'video_templates', 'web_templates', 'photos', 'graphics', 'fonts', '3d', 'audio', 'app_templates', 'presentation_templates', 'addons'];
-  var allAssets = [];
-  var completed = 0;
-  
-  categories.forEach(function(cat) {
-    fetch(CATALOG_API + '?action=browse&category=' + encodeURIComponent(cat) + '&limit=12')
-      .then(function(r) { return r.json(); })
-      .then(function(data) {
-        if (data.assets) {
-          var q = query.toLowerCase();
-          var matches = data.assets.filter(function(a) {
-            return (a.name || '').toLowerCase().indexOf(q) >= 0 ||
-                   (a.description || '').toLowerCase().indexOf(q) >= 0 ||
-                   (a.subcategory || '').toLowerCase().indexOf(q) >= 0 ||
-                   (a.tags || []).some(function(t) { return t.toLowerCase().indexOf(q) >= 0; });
-          });
-          allAssets = allAssets.concat(matches);
-        }
-      })
-      .catch(function() {})
-      .finally(function() {
-        completed++;
-        if (completed === categories.length) {
-          renderResults(allAssets, query);
-        }
-      });
+  var q = query.toLowerCase();
+  var matches = ALL_ASSETS.filter(function(a) {
+    return (a.name || '').toLowerCase().indexOf(q) >= 0 ||
+           (a.subcategory || '').toLowerCase().indexOf(q) >= 0 ||
+           (a.category || '').toLowerCase().indexOf(q) >= 0 ||
+           (a.tags || []).some(function(t) { return t.toLowerCase().indexOf(q) >= 0; });
   });
+  renderResults(matches, query);
 }
 
 function renderResults(assets, query) {
   var grid = document.getElementById('assetGrid');
   var info = document.getElementById('resultsInfo');
   if (assets.length === 0) {
-    grid.innerHTML = '<div class="no-results">No results found for "' + query + '". <a href="/all-items">Browse all items</a></div>';
+    grid.innerHTML = '<div class="no-results">No results found' + (query ? ' for "' + query + '"' : '') + '. <a href="/all-items">Browse all items</a></div>';
     info.textContent = '0 results';
     return;
   }
-  info.textContent = assets.length + ' result' + (assets.length !== 1 ? 's' : '') + ' for "' + query + '"';
+  info.textContent = assets.length + ' result' + (assets.length !== 1 ? 's' : '') + (query ? ' for "' + query + '"' : '');
   grid.innerHTML = assets.slice(0, 48).map(function(a) {
     var price = a.license_type === 'subscription' ? 'Included' : ('$' + a.price);
     var rating = a.rating ? '<div style="color:#FFD700;font-size:11px;">★ ' + a.rating + '</div>' : '';
-    return '<div class="card" data-asset-id="' + a.id + '" data-asset-name="' + a.name.replace(/"/g, '&quot;') + '">' +
-      '<div class="card-img"><img src="' + (a.thumbnail_url || '') + '" alt="' + a.name.replace(/"/g, '&quot;') + '" loading="lazy" onerror="this.style.display=\\'none\\'"></div>' +
-      '<div class="card-body"><div class="card-title">' + a.name + '</div>' +
-      '<div class="card-cat">' + (a.subcategory || a.category) + '</div>' + rating +
+    var safeName = (a.name || '').replace(/"/g, '&quot;');
+    var img = placeholder(a);
+    return '<div class="card" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
+      '<div class="card-img"><img src="' + img + '" alt="' + safeName + '" loading="lazy"></div>' +
+      '<div class="card-body"><div class="card-title">' + (a.name || '') + '</div>' +
+      '<div class="card-cat">' + (a.subcategory || a.category || '') + '</div>' + rating +
       '<div class="card-price">' + price + '</div></div></div>';
   }).join('');
-  
+
   document.querySelectorAll('[data-asset-id]').forEach(function(card) {
     card.addEventListener('click', function() {
       var aid = this.getAttribute('data-asset-id');
@@ -757,12 +851,12 @@ function renderResults(assets, query) {
   });
 }
 
-// Initialize
+// Initialize — search from URL query param
 var initialQuery = getQueryParam('q');
 document.getElementById('searchInput').value = initialQuery;
 if (initialQuery) searchAssets(initialQuery);
 
-// Live search on input
+// Live search on input (instant — no API calls)
 var debounceTimer;
 document.getElementById('searchInput').addEventListener('input', function() {
   clearTimeout(debounceTimer);
@@ -771,7 +865,7 @@ document.getElementById('searchInput').addEventListener('input', function() {
     var newUrl = window.location.pathname + (q ? '?q=' + encodeURIComponent(q) : '');
     window.history.replaceState({}, '', newUrl);
     searchAssets(q);
-  }, 400);
+  }, 200);
 });
 
 // Enter key

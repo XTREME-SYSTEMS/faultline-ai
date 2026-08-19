@@ -111,7 +111,7 @@ export function buildMarketplaceCSS(): string {
   .toolbar input[type="search"] { width: 100%; background: #161616; color: #fff; border: 1px solid #333; padding: 8px 12px; border-radius: 6px; font-size: 13px; }
   .toolbar input[type="search"]:focus { border-color: #4a9eff; outline: none; }
   .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
-  .card { background: #161616; border: 1px solid #2a2a2a; border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform .15s, border-color .15s; }
+  .card { background: #161616; border: 1px solid #2a2a2a; border-radius: 8px; overflow: hidden; cursor: pointer; transition: transform .15s, border-color .15s; text-decoration: none; color: inherit; display: block; }
   .card:hover { transform: translateY(-2px); border-color: #4a9eff; }
   .card-img { aspect-ratio: 4/3; overflow: hidden; background: #0d0d0d; position: relative; }
   .card-img img { width: 100%; height: 100%; object-fit: cover; }

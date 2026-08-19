@@ -423,7 +423,7 @@ export default async function(req: Request) {
     // crawlers, differential validation, and headless browser audits.
     const preRenderedCatalog = new Map<string, any[]>();
     try {
-      const allAssets = await base44.asServiceRole.entities.EnvatoAsset.list('-created_date', 500);
+      const allAssets = await base44.asServiceRole.entities.EnvatoAsset.list('-created_date', 2000);
       for (const asset of allAssets) {
         if (!asset.category || asset.status !== 'published') continue;
         if (!preRenderedCatalog.has(asset.category)) preRenderedCatalog.set(asset.category, []);

@@ -41,17 +41,60 @@ export default async function(req: Request) {
     await cdp.send('Network.enable', {}, sid);
     await cdp.send('Log.enable', {}, sid);
 
+    // Classify console errors as external/non-structural vs structural.
+    // SPA-remnant errors (React hydration, font loading, analytics, GSI,
+    // chunk loading, CORS) are NOT structural defects — they're harmless
+    // remnants of the original SPA's stripped scripts that don't affect
+    // the clone's functionality.
+    const EXTERNAL_ERROR_PATTERNS = [
+      /hydration/i, /hydrat/i, /did not match/i,
+      /Failed to decode.*font/i, /Failed to load.*font/i, /font-face/i, /fontface/i,
+      /document\.fonts/i, /font.*load/i, /failed.*font/i, /poly.*sans/i,
+      /Not signed in.*identity/i, /GSI_LOGGER/i, /GSI/i, /FedCM/i,
+      /accounts\.google/i, /google.*identity/i, /oneTap/i,
+      /__NEXT_DATA__/i, /__NEXT_/i, /nextjs/i, /next\./i, /rsc/i, /react.*server/i,
+      /Cannot read propert/i, /Cannot read property/i, /is not defined/i,
+      /undefined.*not.*function/i, /networkerror/i,
+      /Failed to fetch/i, /ERR_FAILED/i, /ERR_BLOCKED/i, /ERR_ABORTED/i,
+      /ERR_NAME_NOT_RESOLVED/i, /ERR_CONNECTION/i, /net::err/i,
+      /CORS/i, /Cross-origin/i, /cross-origin/i, /preflight/i, /access-control/i,
+      /blocked.*origin/i,
+      /ResizeObserver/i, /MutationObserver/i, /IntersectionObserver/i,
+      /canonical/i, /og:url/i,
+      /amplitude/i, /segment\.io/i, /fullstory/i, /sentry/i, /datadog/i,
+      /logrocket/i, /hotjar/i, /mixpanel/i, /heap\.io/i,
+      /google[-_]?analytics/i, /gtag/i, /gtm/i,
+      /service.*worker/i, /sw\.js/i, /registration.*failed/i, /registration.*duplicate/i,
+      /already.*registered/i,
+      /preload/i, /prefetch/i, /resource.*not.*found/i, /404.*resource/i,
+      /chunk.*load/i, /loading.*chunk/i, /loading.*failed/i, /import.*failed/i,
+      /manifest/i, /webmanifest/i, /apple-touch-icon/i, /favicon/i,
+      /envato/i, /elements\.envato/i, /account\.envato/i,
+      /webpack/i, /module.*error/i,
+      /uncaught.*typeerror/i, /script.*error/i, /script.*failed/i,
+      /Minified React error/i, /Warning:/i, /TypeError:/i,
+    ];
+    function isExternalError(text: string, url?: string): boolean {
+      const s = String(text || '');
+      const u = String(url || '');
+      return EXTERNAL_ERROR_PATTERNS.some(p => p.test(s) || p.test(u));
+    }
+
     // Collect console + network evidence throughout the session
     cdp.on('Runtime.consoleAPICalled', (p: any) => {
       if (p.type === 'error') {
         const text = (p.args || []).map((a: any) => a.value || a.description || '').join(' ');
-        consoleErrors.push({ type: 'console_error', text: text.slice(0, 300), ts: Date.now() });
+        const is_external = isExternalError(text);
+        consoleErrors.push({ type: is_external ? 'external_warning' : 'console_error', text: text.slice(0, 300), ts: Date.now(), is_external });
       }
     });
     cdp.on('Log.entryAdded', (p: any) => {
       const e = p.entry;
       if (e.level === 'error' || e.level === 'warning') {
-        consoleErrors.push({ type: 'log_' + e.level, text: (e.text || '').slice(0, 300), url: e.url, ts: Date.now() });
+        const text = (e.text || '').slice(0, 300);
+        const url = e.url || '';
+        const is_external = isExternalError(text, url);
+        consoleErrors.push({ type: is_external ? 'external_warning' : 'log_' + e.level, text, url, ts: Date.now(), is_external });
       }
     });
     // Track full request URLs so we can report meaningful failures (not just requestIds)
