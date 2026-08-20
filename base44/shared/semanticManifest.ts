@@ -45,7 +45,7 @@ export type SourcePageType =
 // Lite manifest script — returns only type counts and totals, not the
 // full components array. This avoids CDP returnByValue size limits.
 export function buildComponentManifestLiteScript(): string {
-  return `var types=[];var selectors=['nav','header','footer','main','aside','[role="navigation"]','[role="search"]','[role="button"]','[role="menu"]','[role="menuitem"]','[role="tab"]','[role="dialog"]','button','a[href]','input','select','textarea','form','details','summary','[class*="dropdown"]','[class*="filter"]','[class*="sort"]','[class*="pagination"]','[class*="card"]','[class*="pricing"]','[class*="cta"]','[class*="modal"]','[class*="tab"]','h1','h2','h3','img','video','svg'];var seen=new Set();var nodes=document.querySelectorAll(selectors.join(','));for(var i=0;i<nodes.length&&types.length<200;i++){var el=nodes[i];if(seen.has(el))continue;seen.add(el);var rect=el.getBoundingClientRect();if(rect.width===0&&rect.height===0)continue;var tag=el.tagName.toLowerCase();var role=el.getAttribute('role')||'';var text=(el.innerText||el.getAttribute('aria-label')||'').trim().slice(0,80);var href=el.getAttribute('href')||'';var st='unknown';if(tag==='nav'||role==='navigation')st='navigation';else if(tag==='header')st='header';else if(tag==='footer')st='footer';else if(role==='search'||(tag==='input'&&el.type==='search'))st='search';else if(role==='button'||tag==='button'){st='button';var bt=text.toLowerCase();var bc=(el.className||'').toLowerCase();if(bc.includes('filter')||bt.includes('filter'))st='filter';else if(bc.includes('sort')||bt.includes('sort'))st='sort';else if(bc.includes('pagination')||/^[0-9]+$/.test(bt))st='pagination';else if(bc.includes('cta')||bt.includes('subscribe')||bt.includes('download'))st='cta';else if(bc.includes('menu')||bc.includes('dropdown'))st='menu';}else if(tag==='a'&&href){st='link';var lc=(el.className||'').toLowerCase();if(lc.includes('card')||el.closest('[class*="card"]'))st='card';else if(lc.includes('cta')||text.toLowerCase().includes('subscribe'))st='cta';}else if(role==='menu'||role==='menuitem')st='menu';else if(role==='tab')st='tab';else if(role==='dialog')st='modal';else if(tag==='details'||tag==='summary')st='accordion';else if(tag==='form')st='form';else if(tag==='select')st='select';else if(tag==='input'||tag==='textarea')st='input';else if(tag==='img'||tag==='video'||tag==='svg')st='media';else if(tag==='h1'||tag==='h2'||tag==='h3')st='heading';types.push(st);}var tc={};for(var j=0;j<types.length;j++){var t=types[j];tc[t]=(tc[t]||0)+1;}JSON.stringify({url:window.location.href,title:document.title,semantic_type_counts:tc,total_components:types.length});`;
+  return `var types=[];var selectors=['nav','header','footer','main','aside','[role="navigation"]','[role="search"]','[role="button"]','[role="menu"]','[role="menuitem"]','[role="tab"]','[role="dialog"]','button','a[href]','input','select','textarea','form','details','summary','[class*="dropdown"]','[class*="filter"]','[class*="sort"]','[class*="pagination"]','[class*="card"]','[class*="pricing"]','[class*="cta"]','[class*="modal"]','[class*="tab"]','h1','h2','h3','img','video','svg'];var seen=new Set();var nodes=document.querySelectorAll(selectors.join(','));for(var i=0;i<nodes.length&&types.length<200;i++){var el=nodes[i];if(seen.has(el))continue;seen.add(el);var rect=el.getBoundingClientRect();if(rect.width===0&&rect.height===0)continue;var tag=el.tagName.toLowerCase();var role=el.getAttribute('role')||'';var text=(el.innerText||el.getAttribute('aria-label')||'').trim().slice(0,80);var href=el.getAttribute('href')||'';var st='unknown';if(tag==='nav'||role==='navigation')st='navigation';else if(tag==='header')st='header';else if(tag==='footer')st='footer';else if(role==='search'||(tag==='input'&&el.type==='search'))st='search';else if(role==='button'||tag==='button'){st='button';var bt=text.toLowerCase();var bc=(el.className||'').toLowerCase();if(bc.includes('filter')||bt.includes('filter'))st='filter';else if(bc.includes('sort')||bt.includes('sort'))st='sort';else if(bc.includes('pagination')||/^[0-9]+$/.test(bt))st='pagination';else if(bc.includes('cta')||bt.includes('subscribe')||bt.includes('download'))st='cta';else if(bc.includes('menu')||bc.includes('dropdown'))st='menu';}else if(tag==='a'&&href){st='link';var lc=(el.className||'').toLowerCase();if(lc.includes('card')||el.closest('[class*="card"]'))st='card';else if(lc.includes('cta')||text.toLowerCase().includes('subscribe'))st='cta';}else if(role==='menu'||role==='menuitem')st='menu';else if(role==='tab')st='tab';else if(role==='dialog')st='modal';else if(tag==='details'||tag==='summary')st='accordion';else if(tag==='form')st='form';else if(tag==='select')st='select';else if(tag==='input'||tag==='textarea')st='input';else if(tag==='img'||tag==='video'||tag==='svg')st='media';else if(tag==='h1'||tag==='h2'||tag==='h3')st='heading';else{var fc=(el.className||'').toLowerCase();if(fc.includes('card'))st='card';else if(fc.includes('pricing'))st='pricing';else if(fc.includes('hero')||fc.includes('banner'))st='hero';else if(fc.includes('filter'))st='filter';else if(fc.includes('sort'))st='sort';else if(fc.includes('pagination'))st='pagination';else if(fc.includes('dropdown'))st='menu';else if(fc.includes('modal'))st='modal';else if(fc.includes('tab'))st='tab';else if(fc.includes('accordion'))st='accordion';else if(fc.includes('carousel'))st='carousel';else if(fc.includes('testimonial'))st='testimonial';else if(fc.includes('cta'))st='cta';else if(tag==='div'||tag==='section'||tag==='article'||tag==='span'||tag==='li'||tag==='ul'||tag==='ol')st='container';}types.push(st);}var tc={};for(var j=0;j<types.length;j++){var t=types[j];tc[t]=(tc[t]||0)+1;}JSON.stringify({url:window.location.href,title:document.title,semantic_type_counts:tc,total_components:types.length});`;
 }
 
 // Browser-side evaluate script that extracts semantic components.
@@ -275,31 +275,64 @@ export function compareManifests(
     }
   }
 
-  // Semantic parity = matched types / total source types
-  // Missing required types reduce the score; extra types don't penalize
+  // Quantity-weighted semantic parity — a type only counts as fully matched
+  // if the clone has >= 50% of the source's count for that type. Types present
+  // but with low quantity count as partial (0.5 weight). This prevents a
+  // clone with 1 card from scoring 100% against a source with 40 cards.
   const totalSourceTypes = sourceTypes.size;
-  const matchedCount = matched.length;
+  let weightedScore = 0;
+  const partialTypes: string[] = [];
+  const underweightTypes: string[] = [];
+
+  for (const type of sourceTypes) {
+    const sourceCount = source.semantic_type_counts[type] || 0;
+    const cloneCount = clone.semantic_type_counts[type] || 0;
+    if (cloneCount === 0) {
+      // completely missing — 0 weight
+      continue;
+    }
+    if (sourceCount === 0) {
+      weightedScore += 1;
+      continue;
+    }
+    const ratio = cloneCount / sourceCount;
+    if (ratio >= 0.5) {
+      weightedScore += 1; // full match
+    } else if (ratio >= 0.15) {
+      weightedScore += 0.5; // partial match
+      partialTypes.push(`${type}(${cloneCount}/${sourceCount})`);
+    } else {
+      underweightTypes.push(`${type}(${cloneCount}/${sourceCount})`);
+    }
+  }
+
   const semanticParityScore = totalSourceTypes > 0
-    ? Math.round((matchedCount / totalSourceTypes) * 100)
+    ? Math.round((weightedScore / totalSourceTypes) * 100)
     : 100;
 
   const differences: string[] = [];
   if (missing.length > 0) {
     differences.push(`Missing required semantic types: ${missing.join(', ')}`);
   }
+  if (partialTypes.length > 0) {
+    differences.push(`Partial coverage (clone/source): ${partialTypes.join(', ')}`);
+  }
+  if (underweightTypes.length > 0) {
+    differences.push(`Underweight coverage (clone/source): ${underweightTypes.join(', ')}`);
+  }
   if (extra.length > 0 && extra.length > 5) {
     differences.push(`Extra clone types (informational): ${extra.join(', ')}`);
   }
 
   // Check for critical missing types
-  const criticalTypes = ['navigation', 'search', 'card', 'cta', 'footer'];
+  const criticalTypes = ['navigation', 'search', 'card', 'cta', 'footer', 'form', 'header'];
   const missingCritical = missing.filter(t => criticalTypes.includes(t));
   if (missingCritical.length > 0) {
     differences.push(`Missing CRITICAL types: ${missingCritical.join(', ')}`);
   }
 
   let status: 'pass' | 'fail' | 'partial';
-  if (semanticParityScore >= 90 && missingCritical.length === 0) status = 'pass';
+  if (semanticParityScore >= 90 && missingCritical.length === 0 && partialTypes.length === 0) status = 'pass';
   else if (semanticParityScore >= 70) status = 'partial';
   else status = 'fail';
 
