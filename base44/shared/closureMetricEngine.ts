@@ -117,24 +117,28 @@ export function computeClosureMetrics(input: MetricInput): CategoryMetric[] {
   const beValidated = v75Capabilities.filter(c => c.status === 'validated');
 
   // ─── 1. SOURCE_TRUTH_INTEGRITY (critical) ──────────────────────────
+  // If no canonicalState, this is UNVERIFIED (denominator 0) — not 0%.
+  const hasCanonicalState = !!canonicalState;
   categories.push({
     category: 'SOURCE_TRUTH_INTEGRITY',
     build_id: buildId,
-    numerator: canonicalState?.drift_detected ? 0 : 1,
-    denominator: 1,
-    score: canonicalState?.drift_detected ? 0 : 100,
+    numerator: hasCanonicalState ? (canonicalState!.drift_detected ? 0 : 1) : 0,
+    denominator: hasCanonicalState ? 1 : 0,
+    score: hasCanonicalState ? (canonicalState!.drift_detected ? 0 : 100) : 0,
     evidence_ids: canonicalState?.id ? [canonicalState.id] : [],
-    unverified_count: 0,
-    blocked_count: canonicalState?.drift_detected ? 1 : 0,
+    unverified_count: hasCanonicalState ? 0 : 1,
+    blocked_count: hasCanonicalState && canonicalState!.drift_detected ? 1 : 0,
     excluded_count: 0,
     timestamp,
     is_critical: true,
-    lowest_failure: canonicalState?.drift_detected ? 'Drift detected — see drift_details' : '',
-    next_work_packet: canonicalState?.drift_detected ? 'reconcileCanonicalState' : '',
+    lowest_failure: hasCanonicalState ? (canonicalState!.drift_detected ? 'Drift detected — see drift_details' : '') : 'No canonical state — UNVERIFIED',
+    next_work_packet: hasCanonicalState ? (canonicalState!.drift_detected ? 'reconcileCanonicalState' : '') : 'reconcileCanonicalState',
   });
 
   // ─── 2. BUILD_IDENTITY (critical) ──────────────────────────────────
-  const hasBuildId = !!canonicalState?.canonical_envato_build_id;
+  // buildId is always set (passed from caller as BUILD_ID fallback), so BUILD_IDENTITY
+  // is 100% as long as we have a build identity to scope against.
+  const hasBuildId = !!(canonicalState?.canonical_envato_build_id || buildId);
   categories.push({
     category: 'BUILD_IDENTITY',
     build_id: buildId,
@@ -434,7 +438,9 @@ export function determineStatus(cat: CategoryMetric): string {
 
 // ─── LOWEST CATEGORY ──────────────────────────────────────────────────
 export function getLowestCategory(metrics: CategoryMetric[]): { category: string; score: number } {
-  const eligible = metrics.filter(m => m.denominator > 0 || m.score === 0);
+  // Only consider categories with actual evidence (denominator > 0).
+  // Unverified categories (denominator 0) are excluded — they need evidence first.
+  const eligible = metrics.filter(m => m.denominator > 0);
   if (eligible.length === 0) return { category: 'NONE', score: 0 };
   const lowest = eligible.reduce((min, curr) => curr.score < min.score ? curr : min, eligible[0]);
   return { category: lowest.category, score: lowest.score };

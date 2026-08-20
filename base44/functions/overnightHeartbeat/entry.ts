@@ -136,7 +136,11 @@ export default async function(req: Request) {
     const matchedRoutes = contentRoutes.filter(r => r.taxonomy_validation_status === 'matched');
     const unmatchedRoutes = contentRoutes.filter(r => r.taxonomy_validation_status === 'no_taxonomy_match');
 
-    const canonicalStateEntity = canonical[0] || canonicalState;
+    // Reconcile result has canonical_build_id; entity has canonical_envato_build_id — normalize
+    const canonicalStateEntity = canonical[0] || (canonicalState ? {
+      ...canonicalState,
+      canonical_envato_build_id: canonicalState.canonical_build_id || canonicalState.canonical_envato_build_id,
+    } : null);
     const sharedBuildId = canonicalStateEntity?.canonical_envato_build_id || BUILD_ID;
 
     const categoryMetrics = computeClosureMetrics({
