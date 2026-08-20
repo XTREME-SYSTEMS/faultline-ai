@@ -96,30 +96,44 @@ export default async function(req: Request) {
       }
     }));
 
-    // ─── DEFINE ALL EXPECTED CAPABILITIES ──────────────────────────
+    // ─── DEFINE ALL EXPECTED CAPABILITIES (P0-10: FULL DENOMINATOR) ──
     const capabilities = [
+      { id: 'IDENTITY', name: 'Identity Management', category: 'identity', desc: 'User identity creation and management' },
+      { id: 'AUTHENTICATION', name: 'Authentication', category: 'authentication', desc: 'User login and registration' },
+      { id: 'SESSIONS', name: 'Session Management', category: 'sessions', desc: 'Session creation, persistence, and logout' },
+      { id: 'PROFILE', name: 'User Profile', category: 'profile', desc: 'User profile display and editing' },
+      { id: 'ACCOUNT_STATE', name: 'Account State', category: 'account_state', desc: 'User account profile and settings management' },
       { id: 'CATALOG', name: 'Asset Catalog', category: 'catalog', desc: 'Browse and display all marketplace assets in a grid' },
       { id: 'CATEGORY_BROWSE', name: 'Category Browsing', category: 'category', desc: 'Browse assets by top-level category (video-templates, graphics, etc.)' },
       { id: 'SUBCATEGORY_BROWSE', name: 'Subcategory Browsing', category: 'subcategory', desc: 'Browse assets by subcategory within a category' },
+      { id: 'TAXONOMY', name: 'Taxonomy Navigation', category: 'category', desc: 'Hierarchical taxonomy navigation and breadcrumbs' },
+      { id: 'TAGGING', name: 'Tagging', category: 'tagging', desc: 'Tag-based asset discovery and display' },
+      { id: 'FACETS', name: 'Faceted Navigation', category: 'facets', desc: 'Faceted search and navigation interface' },
       { id: 'SEARCH', name: 'Full-Text Search', category: 'search', desc: 'Search assets by keyword across name, description, tags' },
       { id: 'FILTER', name: 'Filtering', category: 'filter', desc: 'Filter assets by tags, software, format, style' },
       { id: 'SORT', name: 'Sort', category: 'sort', desc: 'Sort assets by relevance, popularity, date, price' },
       { id: 'PAGINATION', name: 'Pagination', category: 'pagination', desc: 'Paginate through large result sets' },
       { id: 'ITEM_DETAIL', name: 'Item Detail Page', category: 'item_detail', desc: 'Individual asset detail page with preview, description, download' },
-      { id: 'AUTH', name: 'Authentication', category: 'authentication', desc: 'User login and registration' },
-      { id: 'CHECKOUT', name: 'Stripe Checkout', category: 'subscriptions', desc: 'Process payments via Stripe for subscriptions and one-time purchases' },
-      { id: 'SUBSCRIPTION', name: 'Subscription Management', category: 'subscriptions', desc: 'Manage subscription plans (Growth, Operating)' },
-      { id: 'DOWNLOAD', name: 'Asset Download', category: 'downloads', desc: 'Download purchased assets with license tracking' },
-      { id: 'LICENSE', name: 'License Management', category: 'license_records', desc: 'Generate and track license keys for purchased assets' },
-      { id: 'AI_TOOLS', name: 'AI Tool Suite', category: 'ai_tools', desc: 'Functional AI generation tools (image, video, voice, etc.)' },
-      { id: 'FORM_PROCESSING', name: 'Lead Form Processing', category: 'form_processing', desc: 'Capture and store lead form submissions' },
-      { id: 'AUTHORS', name: 'Author Profiles', category: 'authors', desc: 'Browse assets by author/creator' },
-      { id: 'COLLECTIONS', name: 'Collections/Favorites', category: 'collections', desc: 'Save assets to collections or favorites' },
       { id: 'RELATED_CONTENT', name: 'Related Items', category: 'related_content', desc: 'Show related/similar items on detail pages' },
-      { id: 'MEDIA_UPLOAD', name: 'Media Upload', category: 'media_processing', desc: 'Upload and process user-generated media' },
-      { id: 'DOWNLOAD_HISTORY', name: 'Download History', category: 'download_history', desc: 'Track user download history' },
+      { id: 'AUTHORS', name: 'Author Profiles', category: 'authors', desc: 'Browse assets by author/creator' },
+      { id: 'MEDIA', name: 'Media Display', category: 'media', desc: 'Display images, video previews, and audio players' },
+      { id: 'FAVORITES', name: 'Favorites', category: 'favorites', desc: 'Mark assets as favorites' },
+      { id: 'COLLECTIONS', name: 'Collections', category: 'collections', desc: 'Save assets to named collections' },
+      { id: 'LIBRARY', name: 'User Library', category: 'library', desc: 'Personal library of purchased/saved assets' },
+      { id: 'SUBSCRIPTIONS', name: 'Subscription Management', category: 'subscriptions', desc: 'Manage subscription plans (Growth, Operating)' },
       { id: 'ENTITLEMENTS', name: 'Entitlements', category: 'entitlements', desc: 'Check user entitlements for gated content' },
-      { id: 'ACCOUNT_STATE', name: 'Account State', category: 'account_state', desc: 'User account profile and settings management' },
+      { id: 'DOWNLOADS', name: 'Asset Download', category: 'downloads', desc: 'Download purchased assets with license tracking' },
+      { id: 'DOWNLOAD_HISTORY', name: 'Download History', category: 'download_history', desc: 'Track user download history' },
+      { id: 'LICENSE_RECORDS', name: 'License Management', category: 'license_records', desc: 'Generate and track license keys for purchased assets' },
+      { id: 'FORM_PROCESSING', name: 'Lead Form Processing', category: 'form_processing', desc: 'Capture and store lead form submissions' },
+      { id: 'AI_TOOLS', name: 'AI Tool Suite', category: 'ai_tools', desc: 'Functional AI generation tools (image, video, voice, etc.)' },
+      { id: 'AI_USAGE', name: 'AI Usage Tracking', category: 'ai_tools', desc: 'Track and limit AI tool usage per user' },
+      { id: 'ADMIN_CATALOG', name: 'Admin Catalog Management', category: 'admin_catalog', desc: 'Admin interface for managing catalog items' },
+      { id: 'CONTENT_INGESTION', name: 'Content Ingestion', category: 'content_ingestion', desc: 'Ingest and process new content into the catalog' },
+      { id: 'MEDIA_PROCESSING', name: 'Media Processing', category: 'media_processing', desc: 'Upload and process user-generated media' },
+      { id: 'AUDIT', name: 'Audit Logging', category: 'audit', desc: 'Audit trail of user and system actions' },
+      { id: 'RATE_CONTROL', name: 'Rate Control', category: 'audit', desc: 'Rate limiting and abuse prevention' },
+      { id: 'ERROR_RECOVERY', name: 'Error Recovery', category: 'error_recovery', desc: 'Graceful error handling and recovery' },
     ];
 
     // ─── CHECK EACH CAPABILITY AGAINST CLONE SIGNATURES ────────────
@@ -158,7 +172,7 @@ export default async function(req: Request) {
         score: isImplemented ? 100 : 0,
         defects: isImplemented ? [] : [`Capability ${cap.id} not found in clone`],
         last_validated: new Date().toISOString(),
-        build_id: 'v74',
+        build_id: body.build_id || 'v75-taxonomy-closure-001',
       };
 
       if (existingCap) {

@@ -176,7 +176,25 @@ export default async function(req: Request) {
     // INTERACTION_COVERAGE
     const interactionCoverage = latestScore?.browser_interaction_score || 0;
     const visualScore = latestScore?.visual_parity_score || 0;
-    const currentLowest = latestScore?.overall_score || 0;
+
+    // P0-5: current_lowest_score must be MIN of all applicable required fresh closure
+    // category scores. Do NOT use legacy MasterQualityScore.overall_score if its matrix
+    // is incomplete.
+    const clonedRoutes = validRoutes.filter((r: any) => r.clone_status === 'validated' || r.clone_status === 'exists');
+    const routeFidelity = validRoutes.length > 0 ? Math.round((clonedRoutes.length / validRoutes.length) * 100) : 0;
+
+    const closureCategoryScores = [
+      { category: 'CONTENT_FAMILY_COVERAGE', score: contentFamilyCoverage },
+      { category: 'TAXONOMY_ROUTE_COVERAGE', score: taxonomyRouteCoverage },
+      { category: 'ROUTE_FIDELITY', score: routeFidelity },
+      { category: 'ROUTE_DISCOVERY', score: routeDiscoveryCoverage },
+      { category: 'BACKEND_CAPABILITY_COVERAGE', score: backendCapabilityCoverage },
+      { category: 'ROUTE_TO_TAXONOMY_MATCH', score: routeToTaxonomyMatch },
+      { category: 'TAXONOMY_NODE_VALIDATION', score: taxonomyNodeValidation },
+    ];
+    const currentLowestCategoryObj = closureCategoryScores.reduce((min, curr) => curr.score < min.score ? curr : min, closureCategoryScores[0]);
+    const currentLowest = currentLowestCategoryObj.score;
+    const currentLowestCategoryName = currentLowestCategoryObj.category;
 
     // ─── 8. COMPUTE TAXONOMY NODE CLASSIFICATIONS (P3) ───────────────
     const orphanNodes = taxonomy.filter(t => t.orphan_classification && t.orphan_classification !== 'not_orphan');
@@ -211,21 +229,59 @@ export default async function(req: Request) {
     // Priority: drive the LOWEST scoring category first (anti-subset-optimization)
     // Gap queue provides the packet, but if it's stuck on already-processed items,
     // fall back to phase-based progression targeting the lowest score
-    const lowestScores = [
-      { category: 'CONTENT_FAMILY_COVERAGE', score: contentFamilyCoverage, function: 'autonomousMarketplaceStocker', phase: 'catalog' },
-      { category: 'TAXONOMY_ROUTE_COVERAGE', score: taxonomyRouteCoverage, function: 'discoverTaxonomy', phase: 'taxonomy' },
-      { category: 'ROUTE_DISCOVERY', score: routeDiscoveryCoverage, function: 'discoverPublicSurface', phase: 'discovery' },
-      { category: 'BACKEND_CAPABILITY_COVERAGE', score: backendCapabilityCoverage, function: 'buildBackendCapabilityLedger', phase: 'backend' },
-      { category: 'ROUTE_TO_TAXONOMY_MATCH', score: routeToTaxonomyMatch, function: 'classifyUnmatchedRoutes', phase: 'taxonomy' },
-    ].sort((a, b) => a.score - b.score);
+    // P0-4: The LOWEST required MQG category MUST control work selection.
+    // Gap queue can only override if it's working on the SAME category or a
+    // proven prerequisite. Unrelated 92% route matching must not monopolize the
+    // worker while 0% content family exists.
+    const CATEGORY_WORKER_MAP: Record<string, { function: string; phase: string }> = {
+      CONTENT_FAMILY_COVERAGE: { function: 'autonomousMarketplaceStocker', phase: 'catalog' },
+      TAXONOMY_ROUTE_COVERAGE: { function: 'discoverTaxonomy', phase: 'taxonomy' },
+      ROUTE_FIDELITY: { function: 'autonomousFullSiteClone', phase: 'repair' },
+      ROUTE_DISCOVERY: { function: 'discoverPublicSurface', phase: 'discovery' },
+      BACKEND_CAPABILITY_COVERAGE: { function: 'buildBackendCapabilityLedger', phase: 'backend' },
+      ROUTE_TO_TAXONOMY_MATCH: { function: 'classifyUnmatchedRoutes', phase: 'taxonomy' },
+      TAXONOMY_NODE_VALIDATION: { function: 'classifyOrphanTaxonomy', phase: 'taxonomy' },
+    };
 
-    const lowestCategory = lowestScores[0];
+    // P0-4: CATEGORY_BLOCKER_GRAPH — prerequisites that must be resolved first
+    const CATEGORY_PREREQUISITES: Record<string, string[]> = {
+      CONTENT_FAMILY_COVERAGE: ['TAXONOMY_ROUTE_COVERAGE'], // need valid taxonomy nodes before content
+      TAXONOMY_ROUTE_COVERAGE: ['ROUTE_DISCOVERY'], // need discovered routes
+      ROUTE_FIDELITY: ['ROUTE_DISCOVERY', 'TAXONOMY_ROUTE_COVERAGE'],
+    };
+
+    const lowestCatName = currentLowestCategoryName;
+    const lowestCatWorker = CATEGORY_WORKER_MAP[lowestCatName] || { function: 'autonomousMarketplaceStocker', phase: 'catalog' };
     const gapQueueNext = gapQueueResult?.next_work_packet;
 
-    // Use gap queue packet if it's a real gap (not stuck on invalid_taxonomy)
-    // Otherwise, drive the lowest-scoring category directly
+    // P0-11: STALLED CONVERGENCE DETECTION — if same category + same target objects +
+    // same score for >=2 consecutive completed attempts, stop re-dispatching
+    let stalledConvergence = false;
+    if (lastHeartbeat && lastHeartbeat.next_work_packet) {
+      const lastTarget = lastHeartbeat.next_work_packet?.target_id || lastHeartbeat.next_work_packet?.gap_type;
+      const currTarget = gapQueueNext?.target_id || gapQueueNext?.gap_type;
+      const sameCategory = lastHeartbeat.phase === lowestCatWorker.phase;
+      const sameTarget = lastTarget && currTarget && lastTarget === currTarget;
+      const sameScore = lastHeartbeat[currentLowestCategoryName.toLowerCase().replace(/-/g, '_')] === currentLowest;
+      if (sameCategory && sameTarget && sameScore && lastHeartbeat.completed_since_last > 0) {
+        stalledConvergence = true;
+        console.log(`[overnightHeartbeat] STALLED_CONVERGENCE detected: ${lowestCatName} at ${currentLowest}% with same target ${currTarget}`);
+      }
+    }
+
+    // Check if gap queue is working on the lowest category or its prerequisite
+    const gapQueueMatchesLowest = gapQueueNext && (
+      gapQueueNext.gap_type === lowestCatName.toLowerCase() ||
+      (CATEGORY_PREREQUISITES[lowestCatName] || []).some(prereq =>
+        gapQueueNext.gap_type === prereq.toLowerCase() ||
+        gapQueueNext.gap_type === 'missing_route_for_valid_node' && prereq === 'TAXONOMY_ROUTE_COVERAGE' ||
+        gapQueueNext.gap_type === 'missing_content_family' && prereq === 'CONTENT_FAMILY_COVERAGE'
+      )
+    );
+
     let workPacket;
-    if (gapQueueNext && gapQueueNext.gap_type !== 'invalid_taxonomy' && gapQueueNext.target_function) {
+    if (!stalledConvergence && gapQueueMatchesLowest && gapQueueNext?.target_function) {
+      // Gap queue is working on the lowest category or its prerequisite — use it
       workPacket = determineWorkPacket({
         routeDiscoveryCoverage, routeToTaxonomyMatch, taxonomyNodeValidation,
         taxonomyRouteCoverage, contentFamilyCoverage, backendCapabilityCoverage,
@@ -235,17 +291,22 @@ export default async function(req: Request) {
         missingContentCount: missingContentNodes.length, gapQueueNext,
       });
     } else {
-      // Drive the lowest-scoring category directly
+      // P0-4: Drive the lowest-scoring category directly
+      // If stalled, try a different approach for the same category
+      const taskMsg = stalledConvergence
+        ? `STALLED_CONVERGENCE on ${lowestCatName} — trying alternate approach`
+        : `Drive ${lowestCatName} from ${currentLowest}% toward 99%`;
       workPacket = {
-        phase: lowestCategory.phase,
-        function: lowestCategory.function,
-        task: `Drive ${lowestCategory.category} from ${lowestCategory.score}% toward 99%`,
+        phase: lowestCatWorker.phase,
+        function: lowestCatWorker.function,
+        task: taskMsg,
         safe: true,
         queueDepth: 0,
-        gap_type: lowestCategory.category.toLowerCase(),
+        gap_type: lowestCatName.toLowerCase(),
         gap_priority: 3,
+        stalled: stalledConvergence,
       };
-      console.log(`[overnightHeartbeat] Gap queue stuck — driving lowest category: ${lowestCategory.category} at ${lowestCategory.score}%`);
+      console.log(`[overnightHeartbeat] Driving lowest category: ${lowestCatName} at ${currentLowest}%${stalledConvergence ? ' (STALLED)' : ''}`);
     }
 
     // ─── 11. DISPATCH WORK PACKET VIA DURABLE JOB QUEUE ─────────────
@@ -375,6 +436,7 @@ export default async function(req: Request) {
       new_defects: criticalDefects,
       closed_defects: 0,
       current_lowest_score: currentLowest,
+      current_lowest_category: currentLowestCategoryName,
       // Legacy fields (backward compat)
       route_coverage: routeDiscoveryCoverage,
       taxonomy_coverage: taxonomyNodeValidation,
@@ -420,6 +482,7 @@ export default async function(req: Request) {
       heartbeat_time: heartbeat.heartbeat_time,
       build_id: BUILD_ID,
       current_lowest_score: currentLowest,
+      current_lowest_category: currentLowestCategoryName,
       // P6: Independent scores — NO blended headline
       coverage: {
         route_discovery: routeDiscoveryCoverage,

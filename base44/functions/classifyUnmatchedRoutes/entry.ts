@@ -195,8 +195,23 @@ async function inspectAndClassify(cdp: CDPClient, sessionId: string, url: string
   }
 
   // DYNAMIC_ITEM_DETAIL — product/item detail pages
-  if (data.hasItemDetail || (/\/[a-z0-9]{10,}$/i.test(path) && !data.hasCategoryGrid)) {
-    return { classification: 'dynamic_item_detail', evidence: `Item detail page: hasItemDetail=${data.hasItemDetail}, path=${path}`, route_type_override: 'content' };
+  // P0-2: Require STRONG item-detail evidence. Category pages naturally contain
+  // item/card elements ([data-testid*="item"], [class*="item"]). Do NOT classify
+  // a route as item detail merely because generic item selectors exist.
+  // Require: known item-detail route pattern + single-item metadata + absence of
+  // multi-result category grid + detail-specific breadcrumb or download/license CTA.
+  const hasStrongItemDetailEvidence =
+    data.hasItemDetail &&
+    !data.hasCategoryGrid &&  // item detail pages do NOT have a multi-result grid
+    (
+      /\/[a-z0-9]{10,}$/i.test(path) ||  // known item-detail URL pattern (long slug)
+      breadcrumbs.length > 0 && breadcrumbs[breadcrumbs.length - 1]?.length < 30  // detail-specific breadcrumb
+    );
+
+  // P0-2: If manifest.page_type is already CATEGORY from trusted discovery,
+  // item-detail inference must NOT override it without stronger contradictory evidence
+  if (hasStrongItemDetailEvidence && route.page_type !== 'category' && route.page_type !== 'subcategory') {
+    return { classification: 'dynamic_item_detail', evidence: `Strong item-detail evidence: hasItemDetail=${data.hasItemDetail}, no category grid, path=${path}, breadcrumbs=${breadcrumbs.join('>')}`, route_type_override: 'content' };
   }
 
   // FILTER_STATE — category page with active filters
