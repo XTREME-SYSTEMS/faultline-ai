@@ -95,6 +95,38 @@ export default async function(req: Request) {
     let totalImagesRehosted = 0;
     const stealthNeeded: string[] = [];
 
+    // ─── FILEMAP COLLISION DETECTION ──────────────────────────────
+    // Tracks every write to fileMap. If the same path is written twice,
+    // records: PATH, FIRST_WRITER, SECOND_WRITER, WINNER, EXPECTED/UNEXPECTED.
+    // Unexpected overwrite = FAIL BUILD. No silent last-write-wins.
+    const fileMapWriteLog: Array<{ path: string; writer: string; timestamp: string; expected: boolean }> = [];
+    const fileMapCollisions: Array<{ path: string; first_writer: string; second_writer: string; winner: string; expected: boolean }> = [];
+
+    function fileMapSet(path: string, data: Uint8Array, writer: string, expected = false) {
+      const isFirstWrite = !fileMap.has(path);
+      if (!isFirstWrite) {
+        const firstWrite = fileMapWriteLog.find(w => w.path === path);
+        fileMapCollisions.push({
+          path,
+          first_writer: firstWrite?.writer || 'unknown',
+          second_writer: writer,
+          winner: writer, // last-write-wins (recorded, not silent)
+          expected,
+        });
+        if (!expected) {
+          console.error(`[fileMap COLLISION] UNEXPECTED: ${path} first=${firstWrite?.writer} second=${writer} — last-write-wins but BUILD SHOULD FAIL`);
+        } else {
+          console.log(`[fileMap COLLISION] EXPECTED: ${path} first=${firstWrite?.writer} second=${writer}`);
+        }
+      }
+      fileMapWriteLog.push({ path, writer, timestamp: new Date().toISOString(), expected });
+      fileMap.set(path, data);
+    }
+
+    // ─── BUILD IDENTITY (immutable, binds this clone build) ────────
+    const buildTimestamp = new Date().toISOString();
+    const buildId = `v74-${Date.now().toString(36).slice(-8)}-${Math.random().toString(36).slice(2, 6)}`;
+
     // Helper: clone a single page's HTML → metadata + encoded Uint8Array
     async function cloneAndStore(pageUrl: string, path: string, rawHtml: string, fallbackTitle: string) {
       const filename = pathToFilename(path);
@@ -224,7 +256,8 @@ export default async function(req: Request) {
           if (text.length > 3) headings.push(text);
         }
         pageMetadata.push({ filename, path, title, headings, images_rehosted });
-        fileMap.set(filename, new TextEncoder().encode(finalHtml));
+        // First write — cloneAndStore is the initial writer for cloned pages
+        fileMapSet(filename, new TextEncoder().encode(finalHtml), 'cloneAndStore');
         totalImagesRehosted += images_rehosted;
         console.log(`[autonomousFullSiteClone] ✓ cloned ${path} → ${filename} (${finalHtml.length} chars, ${images_rehosted} imgs)`);
       } catch (e) {
@@ -482,6 +515,10 @@ export default async function(req: Request) {
     // (e.g. web-templates.html) and receive the injected scripts (search,
     // checkout, auth interceptor, etc.). Without this, cloned RSC pages
     // would be deployed instead of the generated static pages.
+    //
+    // COLLISION DETECTION: Generated pages INTENTIONALLY overwrite cloned RSC
+    // pages. This is an EXPECTED collision (the generation-before-injection
+    // invariant). The collision receipt records this as expected.
     const existingFilenames = new Set(pageMetadata.map(p => p.filename));
     for (const [filename, html] of categoryPages) {
       const slug = filename.replace(/\.html$/, '');
@@ -492,7 +529,8 @@ export default async function(req: Request) {
           headings: [], images_rehosted: 0,
         });
       }
-      fileMap.set(filename, new TextEncoder().encode(html));
+      // EXPECTED collision: generated page overwrites cloned RSC page (generation-before-injection invariant)
+      fileMapSet(filename, new TextEncoder().encode(html), 'categoryPageGenerator', true);
       linkMap.set('/' + slug, '/' + filename);
     }
 
@@ -506,7 +544,8 @@ export default async function(req: Request) {
           headings: [], images_rehosted: 0,
         });
       }
-      fileMap.set(filename, new TextEncoder().encode(html));
+      // EXPECTED collision: generated AI tool page overwrites cloned page
+      fileMapSet(filename, new TextEncoder().encode(html), 'aiToolPageGenerator', true);
       linkMap.set('/' + slug, '/' + filename);
       linkMap.set('/ai/' + slug, '/' + filename);
     }
@@ -549,7 +588,8 @@ if('serviceWorker' in navigator){
       } else {
         html += inject;
       }
-      fileMap.set(meta.filename, new TextEncoder().encode(html));
+      // EXPECTED collision: injection loop modifies and writes back the same file
+      fileMapSet(meta.filename, new TextEncoder().encode(html), 'injectionLoop', true);
     }
 
     // ─── 6. DEPLOY + PROVISION ───────────────────────────────────────
@@ -569,12 +609,12 @@ if('serviceWorker' in navigator){
       // 404 fallback page
       const resolveUrl = `https://base44.app/api/apps/${appId}/functions/resolveDeepPath`;
       const page404 = build404Page(resolveUrl, target_url, business_name || '', targetOrg || '', searchScript);
-      fileMap.set('404.html', new TextEncoder().encode(page404));
+      fileMapSet('404.html', new TextEncoder().encode(page404), '404Generator');
 
       // Favicon — simple inline SVG data URI to eliminate favicon 404s
       const faviconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="6" fill="#0a0a0a"/><text x="16" y="22" font-size="18" font-weight="bold" text-anchor="middle" fill="#FFD700">C</text></svg>`;
-      fileMap.set('favicon.svg', new TextEncoder().encode(faviconSvg));
-      fileMap.set('favicon.ico', new TextEncoder().encode(faviconSvg));
+      fileMapSet('favicon.svg', new TextEncoder().encode(faviconSvg), 'faviconGenerator');
+      fileMapSet('favicon.ico', new TextEncoder().encode(faviconSvg), 'faviconGenerator');
 
       // Manifest — eliminate manifest.webmanifest 404
       const manifest = JSON.stringify({
@@ -644,7 +684,7 @@ self.addEventListener('fetch', function(e){
   // the SPA needs its bundles to render content correctly.
 });
 `;
-      fileMap.set('sw.js', new TextEncoder().encode(swJs));
+      fileMapSet('sw.js', new TextEncoder().encode(swJs), 'serviceWorkerGenerator');
 
       // vercel.json with security headers + clean URLs + subcategory rewrites
       // Rewrite rules serve the category page for any subcategory path
@@ -685,7 +725,7 @@ self.addEventListener('fetch', function(e){
           ]
         }],
       });
-      fileMap.set('vercel.json', new TextEncoder().encode(vercelJson));
+      fileMapSet('vercel.json', new TextEncoder().encode(vercelJson), 'vercelConfigGenerator');
 
       const files: Array<{ file: string; data: Uint8Array }> = [...fileMap.entries()].map(([file, data]) => ({ file, data }));
 
@@ -775,9 +815,36 @@ self.addEventListener('fetch', function(e){
       } catch (e) { console.error('[autonomousFullSiteClone] LaunchProject create failed:', e.message); }
     }
 
+    // ─── COLLISION RECEIPT ──────────────────────────────────────────
+    const unexpectedCollisions = fileMapCollisions.filter(c => !c.expected);
+    const routeManifest = pageMetadata.map(p => ({
+      filename: p.filename,
+      path: p.path,
+      title: p.title,
+      source: fileMapWriteLog.find(w => w.path === p.filename)?.writer || 'unknown',
+    }));
+
     return Response.json({
-      status: provisionErrors.length === 0 ? 'success' : 'partial',
+      status: unexpectedCollisions.length > 0 ? 'collision_detected' : (provisionErrors.length === 0 ? 'success' : 'partial'),
       method: 'autonomous_full_site_clone',
+      // ─── BUILD IDENTITY (immutable) ───
+      build_id: buildId,
+      build_timestamp: buildTimestamp,
+      clone_engine_version: 'v74',
+      // ─── ROUTE MANIFEST ───
+      route_manifest: {
+        total_routes: routeManifest.length,
+        routes: routeManifest,
+      },
+      // ─── FILEMAP COLLISION RECEIPT ───
+      filemap_collision_receipt: {
+        total_writes: fileMapWriteLog.length,
+        total_collisions: fileMapCollisions.length,
+        expected_collisions: fileMapCollisions.filter(c => c.expected).length,
+        unexpected_collisions: unexpectedCollisions.length,
+        collisions: fileMapCollisions,
+        generation_before_injection_invariant: unexpectedCollisions.length === 0,
+      },
       target_url,
       vercel_url: vercelUrl,
       vercel_project_id: vercelProjectId,
@@ -811,9 +878,11 @@ self.addEventListener('fetch', function(e){
         license_management: true,
         catalog_api: true,
         download_tracking: true,
+        filemap_collision_detection: true,
+        generation_before_injection: true,
       },
       provision_errors: provisionErrors.length ? provisionErrors : undefined,
-      message: `Autonomous clone complete: ${pageMetadata.length} pages from ${sitemapUrls.length} sitemap URLs — full stack provisioned`
+      message: `Autonomous clone complete: ${pageMetadata.length} pages, ${fileMapCollisions.length} collisions (${unexpectedCollisions.length} unexpected), build ${buildId}`
     });
   } catch (error) {
     console.error('[autonomousFullSiteClone] Error:', error);

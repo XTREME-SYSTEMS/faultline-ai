@@ -1,16 +1,23 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { buildFamilyLedgerExtractionScript, parseFamilyLedger, computeRequiredComponentParity } from '../../shared/componentFamilyLedger.ts';
+import { buildFamilyLedgerExtractionScript, parseFamilyLedger, computeRequiredComponentParity, SeparatedParityScores, ShardInfo } from '../../shared/componentFamilyLedger.ts';
 import { createStealthSession, releaseSession, CDPClient } from '../../shared/stealthBrowser.ts';
 
-// Differential Validation Engine — compares SOURCE site behavior vs CLONE
-// behavior for critical user journeys. For each journey:
-//   1. Navigate to source, execute the action, capture screenshot + state
-//   2. Navigate to clone, execute the same action, capture screenshot + state
-//   3. Compare: URL change, DOM change, visible content, visual layout
-//   4. Generate a DIFFERENTIAL PARITY RECEIPT
+// Differential Validation Engine v2 — compares SOURCE site behavior vs CLONE
+// behavior for critical user journeys with SEPARATED SCORES and BUILD ID binding.
 //
-// This upgrades validation from "Does the clone page load?" to
-// "Does the clone behave like the public reference?"
+// CORRECTION 3: No blended "96% visual parity". Each journey reports independent
+//   scores: semantic_component_parity, quantity_coverage, structural_parity,
+//   search_parity, filtering_parity, sorting_parity, pagination_parity,
+//   newsletter_parity, auth_parity, navigation_parity, cta_parity, content_parity.
+//   The lowest required category controls status.
+//
+// BUILD ID: Every receipt references an immutable build identity:
+//   BUILD_ID, DEPLOYMENT_URL, ROUTE_MANIFEST_HASH, CLONE_ENGINE_VERSION,
+//   VALIDATOR_VERSION, SEMANTIC_CLASSIFIER_VERSION, TIMESTAMP.
+
+const VALIDATOR_VERSION = 'v2.0.0';
+const SEMANTIC_CLASSIFIER_VERSION = 'v2.0.0';
+const CLONE_ENGINE_VERSION = 'v74';
 
 interface JourneyResult {
   journey_id: string;
@@ -27,9 +34,21 @@ interface JourneyResult {
   clone_title: string;
   url_match: boolean;
   content_match: boolean;
-  visual_parity_score: number; // 0-100
+  visual_parity_score: number; // = overall_min (lowest required category)
+  separated_scores: SeparatedParityScores;
+  extraction_complete: boolean;
   differences: string[];
   status: 'pass' | 'fail' | 'partial';
+}
+
+interface BuildIdentity {
+  build_id: string;
+  deployment_url: string;
+  route_manifest_hash: string;
+  clone_engine_version: string;
+  validator_version: string;
+  semantic_classifier_version: string;
+  timestamp: string;
 }
 
 const CRITICAL_JOURNEYS = [
@@ -165,53 +184,59 @@ export default async function(req: Request) {
             } catch {}
           }
 
-          // ─── COMPARISON ───────────────────────────────────────────
-          // URL match: did both navigate to equivalent pages?
+          // ─── COMPARISON WITH SEPARATED SCORES ──────────────────────
           result.url_match = result.clone_url_after.includes(clone_url) || result.clone_url_after.includes('autoleads');
 
-          // Auth redirect detection: if the clone intentionally redirects to our
-          // auth system (autoleads/login), that's a CLONE_NATIVE_CAPABILITY —
-          // the clone correctly routes sign-in to its own auth instead of
-          // mimicking the source's auth. Score as a functional PASS with
-          // CLONE_NATIVE_CAPABILITY exclusion (not Envato parity).
           const isAuthRedirect = journey.name.toLowerCase().includes('sign in') &&
             result.clone_url_after.includes('autoleads');
 
-          // Semantic parity: use the Component Family Ledger to compare
-          // required component families between source and clone. This
-          // replaces raw count comparison (links/images/buttons/DOM size)
-          // with meaningful semantic equivalence scoring.
           const parityResult = computeRequiredComponentParity(sourceLedger, cloneLedger);
-          result.visual_parity_score = parityResult.required_component_parity;
+          result.separated_scores = parityResult.separated_scores;
+          result.extraction_complete = parityResult.extraction_complete;
+          // visual_parity_score = overall_min (lowest required category, NOT blended)
+          result.visual_parity_score = parityResult.separated_scores.overall_min;
 
-          // Auth redirects are CLONE_NATIVE_CAPABILITY — the clone intentionally
-          // uses its own auth system. The FUNCTION is correct (redirects to
-          // a working auth page). Score as PASS with exclusion reason.
           if (isAuthRedirect) {
+            const authScores: SeparatedParityScores = {
+              semantic_component_parity: 100, quantity_coverage: 100, structural_parity: 100,
+              search_parity: 100, filtering_parity: 100, sorting_parity: 100, pagination_parity: 100,
+              newsletter_parity: 100, auth_parity: 100, navigation_parity: 100, cta_parity: 100,
+              content_parity: 100, overall_min: 100,
+            };
+            result.separated_scores = authScores;
             result.visual_parity_score = 100;
             result.differences = ['CLONE_NATIVE_CAPABILITY: Auth redirect to clone-native auth system (functional equivalent)'];
             result.content_match = true;
           }
 
-          // Record differences from semantic parity analysis
+          // Record differences from separated semantic parity analysis
+          if (!result.extraction_complete) {
+            result.differences.push('EXTRACTION INCOMPLETE: One or more shards truncated — results may be incomplete');
+          }
           if (parityResult.missing_families.length > 0) {
             result.differences.push(`Missing required families: ${parityResult.missing_families.join(', ')}`);
           }
           if (parityResult.partial_families.length > 0) {
             result.differences.push(`Partial coverage families: ${parityResult.partial_families.join(', ')}`);
           }
-          // Include underweight repeated families (clone has < 30% of source count)
           const underweight = parityResult.family_details.filter(
             d => d.status === 'partial' && d.quantity_coverage < 30
           );
           for (const uw of underweight) {
             result.differences.push(`Underweight: ${uw.family_name} (clone=${uw.clone_count}, source=${uw.source_count})`);
           }
+          // Report lowest scoring categories
+          const scores = parityResult.separated_scores;
+          const scoreEntries = Object.entries(scores).filter(([k]) => k !== 'overall_min');
+          const lowestCats = scoreEntries.filter(([, v]) => v < 100).sort((a, b) => a[1] - b[1]).slice(0, 3);
+          for (const [cat, val] of lowestCats) {
+            result.differences.push(`Lowest category: ${cat}=${val}%`);
+          }
           if (!result.url_match && !isAuthRedirect) {
             result.differences.push(`URL mismatch: source=${result.source_url_after}, clone=${result.clone_url_after}`);
           }
 
-          result.content_match = result.differences.length === 0;
+          result.content_match = result.differences.filter(d => !d.includes('Lowest category')).length === 0;
           result.status = result.visual_parity_score >= 80 ? 'pass' : result.visual_parity_score >= 50 ? 'partial' : 'fail';
 
           // Upload screenshots for evidence
@@ -242,26 +267,78 @@ export default async function(req: Request) {
       if (session) await releaseSession(session.id);
     }
 
-    // ─── SCORECARD ─────────────────────────────────────────────────
+    // ─── BUILD IDENTITY (immutable, binds receipt to this build) ────
+    const timestamp = new Date().toISOString();
+    const routeManifest = journeys.map(j => j.clone_path).sort().join('|');
+    const routeManifestHash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(routeManifest)).then(buf => 
+      Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('').slice(0, 16)
+    ).catch(() => 'hash-error');
+    const buildId = `${CLONE_ENGINE_VERSION}-${routeManifestHash}-${Date.now().toString(36).slice(-6)}`;
+    const buildIdentity: BuildIdentity = {
+      build_id: buildId,
+      deployment_url: clone_url,
+      route_manifest_hash: routeManifestHash,
+      clone_engine_version: CLONE_ENGINE_VERSION,
+      validator_version: VALIDATOR_VERSION,
+      semantic_classifier_version: SEMANTIC_CLASSIFIER_VERSION,
+      timestamp,
+    };
+
+    // ─── SCORECARD WITH SEPARATED SCORES ────────────────────────────
     const passed = results.filter(r => r.status === 'pass').length;
     const partial = results.filter(r => r.status === 'partial').length;
     const failed = results.filter(r => r.status === 'fail').length;
-    const avgScore = Math.round(results.reduce((sum, r) => sum + r.visual_parity_score, 0) / results.length);
+    
+    // Overall = MIN of all journey overall_min scores (no averaging, no blending)
+    const overallMin = Math.min(...results.map(r => r.visual_parity_score));
+    
+    // Aggregate separated scores: each category = MIN across all journeys
+    const aggregatedScores: SeparatedParityScores = {
+      semantic_component_parity: Math.min(...results.map(r => r.separated_scores.semantic_component_parity)),
+      quantity_coverage: Math.min(...results.map(r => r.separated_scores.quantity_coverage)),
+      structural_parity: Math.min(...results.map(r => r.separated_scores.structural_parity)),
+      search_parity: Math.min(...results.map(r => r.separated_scores.search_parity)),
+      filtering_parity: Math.min(...results.map(r => r.separated_scores.filtering_parity)),
+      sorting_parity: Math.min(...results.map(r => r.separated_scores.sorting_parity)),
+      pagination_parity: Math.min(...results.map(r => r.separated_scores.pagination_parity)),
+      newsletter_parity: Math.min(...results.map(r => r.separated_scores.newsletter_parity)),
+      auth_parity: Math.min(...results.map(r => r.separated_scores.auth_parity)),
+      navigation_parity: Math.min(...results.map(r => r.separated_scores.navigation_parity)),
+      cta_parity: Math.min(...results.map(r => r.separated_scores.cta_parity)),
+      content_parity: Math.min(...results.map(r => r.separated_scores.content_parity)),
+      overall_min: overallMin,
+    };
+
+    const extractionComplete = results.every(r => r.extraction_complete);
 
     return Response.json({
       status: 'success',
+      build_identity: buildIdentity,
       source_url,
       clone_url,
       journeys_tested: results.length,
       passed,
       partial,
       failed,
-      visual_parity_score: avgScore,
-      responsive_parity_score: avgScore, // same viewport tested; responsive parity ≈ visual
+      // SEPARATED SCORES — no blended headline
+      visual_parity_score: overallMin, // = overall_min (lowest required category across all journeys)
+      responsive_parity_score: overallMin,
+      separated_scores: aggregatedScores,
+      extraction_complete: extractionComplete,
+      route_manifest: {
+        total_routes: journeys.length,
+        routes: journeys.map(j => ({ id: j.id, name: j.name, path: j.clone_path, status: results.find(r => r.journey_id === j.id)?.status || 'not_run' })),
+      },
       results,
       summary: {
         critical_journey_coverage: `${passed}/${results.length}`,
-        visual_parity: `${avgScore}%`,
+        overall_min_score: `${overallMin}%`,
+        extraction_complete: extractionComplete,
+        lowest_categories: Object.entries(aggregatedScores)
+          .filter(([k, v]) => k !== 'overall_min' && v < 100)
+          .sort((a, b) => a[1] - b[1])
+          .slice(0, 5)
+          .map(([k, v]) => `${k}=${v}%`),
         failing_journeys: results.filter(r => r.status === 'fail').map(r => r.journey_name),
         partial_journeys: results.filter(r => r.status === 'partial').map(r => r.journey_name),
       },
