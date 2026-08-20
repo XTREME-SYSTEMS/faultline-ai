@@ -42,6 +42,12 @@ export type SourcePageType =
   | 'redirect'
   | 'blocked';
 
+// Lite manifest script — returns only type counts and totals, not the
+// full components array. This avoids CDP returnByValue size limits.
+export function buildComponentManifestLiteScript(): string {
+  return `var types=[];var selectors=['nav','header','footer','main','aside','[role="navigation"]','[role="search"]','[role="button"]','[role="menu"]','[role="menuitem"]','[role="tab"]','[role="dialog"]','button','a[href]','input','select','textarea','form','details','summary','[class*="dropdown"]','[class*="filter"]','[class*="sort"]','[class*="pagination"]','[class*="card"]','[class*="pricing"]','[class*="cta"]','[class*="modal"]','[class*="tab"]','h1','h2','h3','img','video','svg'];var seen=new Set();var nodes=document.querySelectorAll(selectors.join(','));for(var i=0;i<nodes.length&&types.length<200;i++){var el=nodes[i];if(seen.has(el))continue;seen.add(el);var rect=el.getBoundingClientRect();if(rect.width===0&&rect.height===0)continue;var tag=el.tagName.toLowerCase();var role=el.getAttribute('role')||'';var text=(el.innerText||el.getAttribute('aria-label')||'').trim().slice(0,80);var href=el.getAttribute('href')||'';var st='unknown';if(tag==='nav'||role==='navigation')st='navigation';else if(tag==='header')st='header';else if(tag==='footer')st='footer';else if(role==='search'||(tag==='input'&&el.type==='search'))st='search';else if(role==='button'||tag==='button'){st='button';var bt=text.toLowerCase();var bc=(el.className||'').toLowerCase();if(bc.includes('filter')||bt.includes('filter'))st='filter';else if(bc.includes('sort')||bt.includes('sort'))st='sort';else if(bc.includes('pagination')||/^[0-9]+$/.test(bt))st='pagination';else if(bc.includes('cta')||bt.includes('subscribe')||bt.includes('download'))st='cta';else if(bc.includes('menu')||bc.includes('dropdown'))st='menu';}else if(tag==='a'&&href){st='link';var lc=(el.className||'').toLowerCase();if(lc.includes('card')||el.closest('[class*="card"]'))st='card';else if(lc.includes('cta')||text.toLowerCase().includes('subscribe'))st='cta';}else if(role==='menu'||role==='menuitem')st='menu';else if(role==='tab')st='tab';else if(role==='dialog')st='modal';else if(tag==='details'||tag==='summary')st='accordion';else if(tag==='form')st='form';else if(tag==='select')st='select';else if(tag==='input'||tag==='textarea')st='input';else if(tag==='img'||tag==='video'||tag==='svg')st='media';else if(tag==='h1'||tag==='h2'||tag==='h3')st='heading';types.push(st);}var tc={};for(var j=0;j<types.length;j++){var t=types[j];tc[t]=(tc[t]||0)+1;}JSON.stringify({url:window.location.href,title:document.title,semantic_type_counts:tc,total_components:types.length});`;
+}
+
 // Browser-side evaluate script that extracts semantic components.
 // Runs in the browser via CDP Runtime.evaluate or CloudBrowser execute.
 export function buildComponentManifestScript(): string {
@@ -249,8 +255,8 @@ export function compareManifests(
     };
   }
 
-  const sourceTypes = new Set(Object.keys(source.semantic_type_counts));
-  const cloneTypes = new Set(Object.keys(clone.semantic_type_counts));
+  const sourceTypes = new Set(Object.keys(source.semantic_type_counts || {}));
+  const cloneTypes = new Set(Object.keys(clone.semantic_type_counts || {}));
 
   const matched: string[] = [];
   const missing: string[] = [];
