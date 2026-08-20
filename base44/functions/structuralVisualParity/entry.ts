@@ -17,6 +17,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { createStealthSession, releaseSession, CDPClient } from '../../shared/stealthBrowser.ts';
+import { navigateAndWait, scrollPage } from '../../shared/browserValidationHelpers.ts';
 
 type Viewport = 'desktop_1440' | 'tablet_768' | 'mobile_390';
 
@@ -333,29 +334,7 @@ export default async function(req: Request) {
   }
 }
 
-// ─── HELPER FUNCTIONS ──────────────────────────────────────────────────
-
-async function navigateAndWait(cdp: CDPClient, sessionId: string, url: string, timeout: number) {
-  try {
-    await cdp.send('Page.navigate', { url }, sessionId, timeout);
-  } catch {}
-  await new Promise<void>((resolve) => {
-    let done = false;
-    const finish = () => { if (!done) { done = true; resolve(); } };
-    cdp!.on('Page.loadEventFired', finish);
-    setTimeout(finish, Math.min(timeout, 8000));
-  });
-  await new Promise(r => setTimeout(r, 2000));
-}
-
-async function scrollPage(cdp: CDPClient, sessionId: string) {
-  try {
-    await cdp.send('Runtime.evaluate', {
-      expression: `(async()=>{var h=document.body.scrollHeight;for(var y=0;y<Math.min(h,3000);y+=600){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,100));}window.scrollTo(0,0);})()`,
-      returnByValue: true, awaitPromise: true,
-    }, sessionId, 5000);
-  } catch {}
-}
+// ─── HELPER FUNCTIONS (navigateAndWait and scrollPage imported from shared) ─
 
 async function extractRegionGeometry(cdp: CDPClient, sessionId: string): Promise<Record<string, any>> {
   const result = await cdp.send('Runtime.evaluate', {

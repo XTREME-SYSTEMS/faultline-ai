@@ -25,6 +25,7 @@
 
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { createStealthSession, releaseSession, CDPClient } from '../../shared/stealthBrowser.ts';
+import { navigateAndWait, scrollPage } from '../../shared/browserValidationHelpers.ts';
 
 type RouteClass =
   | 'UNCHANGED_REQUIRED'
@@ -393,25 +394,7 @@ async function discoverSourceRoutes(sourceUrl: string): Promise<DiscoveredRoute[
   }
 }
 
-async function navigateAndWait(cdp: CDPClient, sessionId: string, url: string, timeout: number) {
-  await cdp.send('Page.navigate', { url }, sessionId, timeout);
-  await new Promise<void>((resolve) => {
-    let done = false;
-    const finish = () => { if (!done) { done = true; resolve(); } };
-    cdp!.on('Page.loadEventFired', finish);
-    setTimeout(finish, Math.min(timeout, 8000));
-  });
-  await new Promise(r => setTimeout(r, 2000));
-}
-
-async function scrollPage(cdp: CDPClient, sessionId: string) {
-  try {
-    await cdp.send('Runtime.evaluate', {
-      expression: `(async()=>{var h=document.body.scrollHeight;for(var y=0;y<Math.min(h,4000);y+=800){window.scrollTo(0,y);await new Promise(r=>setTimeout(r,150));}window.scrollTo(0,0);})()`,
-      returnByValue: true, awaitPromise: true,
-    }, sessionId, 5000);
-  } catch {}
-}
+// navigateAndWait and scrollPage are imported from '../../shared/browserValidationHelpers.ts'
 
 async function extractAllLinks(cdp: CDPClient, sessionId: string, baseUrl: string): Promise<DiscoveredRoute[]> {
   const result = await cdp.send('Runtime.evaluate', {
