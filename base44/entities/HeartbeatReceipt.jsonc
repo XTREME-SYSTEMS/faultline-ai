@@ -56,6 +56,72 @@
       "type": "number",
       "description": "Percentage of discovered content routes cross-referenced and confirmed against the EnvatoTaxonomyLedger"
     },
+    "route_discovery_coverage": {
+      "type": "number",
+      "description": "P6: Percentage of expected public surface routes discovered"
+    },
+    "route_to_taxonomy_match": {
+      "type": "number",
+      "description": "P6: Percentage of content routes matched to taxonomy nodes (post-normalization)"
+    },
+    "taxonomy_node_validation": {
+      "type": "number",
+      "description": "P6: Percentage of taxonomy nodes validated against source evidence"
+    },
+    "taxonomy_route_coverage": {
+      "type": "number",
+      "description": "P6: Percentage of valid taxonomy nodes with a corresponding route"
+    },
+    "content_family_coverage": {
+      "type": "number",
+      "description": "P6: Percentage of taxonomy leaf nodes with sufficient content"
+    },
+    "backend_capability_coverage": {
+      "type": "number",
+      "description": "P6: Percentage of backend capabilities implemented"
+    },
+    "pre_normalization_match_rate": {
+      "type": "number",
+      "description": "Route-to-taxonomy match rate before URL normalization"
+    },
+    "post_normalization_match_rate": {
+      "type": "number",
+      "description": "Route-to-taxonomy match rate after URL normalization"
+    },
+    "discovered_routes": {
+      "type": "number"
+    },
+    "valid_routes": {
+      "type": "number"
+    },
+    "matched_routes": {
+      "type": "number"
+    },
+    "unmatched_routes": {
+      "type": "number"
+    },
+    "total_taxonomy_nodes": {
+      "type": "number"
+    },
+    "validated_taxonomy_nodes": {
+      "type": "number"
+    },
+    "orphan_nodes": {
+      "type": "number"
+    },
+    "invalid_nodes": {
+      "type": "number"
+    },
+    "missing_route_nodes": {
+      "type": "number"
+    },
+    "missing_content_nodes": {
+      "type": "number"
+    },
+    "delta_from_previous": {
+      "type": "object",
+      "description": "P13: Delta of key metrics from previous heartbeat \u2014 regression detection"
+    },
     "security_status": {
       "type": "string",
       "enum": [
@@ -74,10 +140,15 @@
     "next_task": {
       "type": "string"
     },
+    "next_work_packet": {
+      "type": "object",
+      "description": "P11: Highest-priority safe unresolved gap from the taxonomy gap queue"
+    },
     "phase": {
       "type": "string",
       "enum": [
         "discovery",
+        "normalization",
         "taxonomy",
         "backend",
         "catalog",
