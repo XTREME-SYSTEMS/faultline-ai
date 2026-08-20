@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { buildFamilyLedgerExtractionScript, parseFamilyLedger, computeRequiredComponentParity } from '../../shared/componentFamilyLedger.ts';
 import { createStealthSession, releaseSession, CDPClient } from '../../shared/stealthBrowser.ts';
 
 // Differential Validation Engine — compares SOURCE site behavior vs CLONE
@@ -111,13 +112,14 @@ export default async function(req: Request) {
           } catch {}
 
           const sourceState = await cdp.send('Runtime.evaluate', {
-            expression: `JSON.stringify({url:window.location.href,title:document.title,domSize:document.body?document.body.innerHTML.length:0,h1:document.querySelector('h1')?document.querySelector('h1').textContent:'',links:document.querySelectorAll('a').length,buttons:document.querySelectorAll('button').length,imgs:document.querySelectorAll('img').length})`,
+            expression: buildFamilyLedgerExtractionScript(),
             returnByValue: true,
           }, cdpSessionId);
-          const sourceData = JSON.parse(sourceState?.result?.value || '{}');
-          result.source_url_after = sourceData.url || '';
-          result.source_dom_size = sourceData.domSize || 0;
-          result.source_title = sourceData.title || '';
+          const sourceLedgerRaw = sourceState?.result?.value || '{}';
+          const sourceLedger = parseFamilyLedger(sourceLedgerRaw);
+          result.source_url_after = sourceLedger.url || '';
+          result.source_dom_size = sourceLedger.total_components || 0;
+          result.source_title = sourceLedger.title || '';
 
           let sourceScreenshot = '';
           if (capture_screenshots) {
@@ -146,13 +148,14 @@ export default async function(req: Request) {
           } catch {}
 
           const cloneState = await cdp.send('Runtime.evaluate', {
-            expression: `JSON.stringify({url:window.location.href,title:document.title,domSize:document.body?document.body.innerHTML.length:0,h1:document.querySelector('h1')?document.querySelector('h1').textContent:'',links:document.querySelectorAll('a').length,buttons:document.querySelectorAll('button').length,imgs:document.querySelectorAll('img').length})`,
+            expression: buildFamilyLedgerExtractionScript(),
             returnByValue: true,
           }, cdpSessionId);
-          const cloneData = JSON.parse(cloneState?.result?.value || '{}');
-          result.clone_url_after = cloneData.url || '';
-          result.clone_dom_size = cloneData.domSize || 0;
-          result.clone_title = cloneData.title || '';
+          const cloneLedgerRaw = cloneState?.result?.value || '{}';
+          const cloneLedger = parseFamilyLedger(cloneLedgerRaw);
+          result.clone_url_after = cloneLedger.url || '';
+          result.clone_dom_size = cloneLedger.total_components || 0;
+          result.clone_title = cloneLedger.title || '';
 
           let cloneScreenshot = '';
           if (capture_screenshots) {
@@ -172,21 +175,12 @@ export default async function(req: Request) {
           const isAuthRedirect = journey.name.toLowerCase().includes('sign in') &&
             result.clone_url_after.includes('autoleads');
 
-          // Content match: compare structural elements
-          const sourceLinks = sourceData.links || 0;
-          const cloneLinks = cloneData.links || 0;
-          const sourceImgs = sourceData.imgs || 0;
-          const cloneImgs = cloneData.imgs || 0;
-          const sourceButtons = sourceData.buttons || 0;
-          const cloneButtons = cloneData.buttons || 0;
-
-          // Calculate content parity score
-          const linkRatio = sourceLinks > 0 ? Math.min(cloneLinks / sourceLinks, 1) : 1;
-          const imgRatio = sourceImgs > 0 ? Math.min(cloneImgs / sourceImgs, 1) : 1;
-          const buttonRatio = sourceButtons > 0 ? Math.min(cloneButtons / sourceButtons, 1) : 1;
-          const domRatio = sourceData.domSize > 0 ? Math.min(cloneData.domSize / sourceData.domSize, 1) : 0;
-
-          result.visual_parity_score = Math.round((linkRatio * 25 + imgRatio * 25 + buttonRatio * 25 + domRatio * 25));
+          // Semantic parity: use the Component Family Ledger to compare
+          // required component families between source and clone. This
+          // replaces raw count comparison (links/images/buttons/DOM size)
+          // with meaningful semantic equivalence scoring.
+          const parityResult = computeRequiredComponentParity(sourceLedger, cloneLedger);
+          result.visual_parity_score = parityResult.required_component_parity;
 
           // Auth redirects get a functional floor — the clone IS working correctly
           // by redirecting to our auth system. Visual parity is low because our
@@ -195,13 +189,23 @@ export default async function(req: Request) {
             result.visual_parity_score = Math.max(result.visual_parity_score, 75);
           }
 
-          // Record differences
-          if (linkRatio < 0.8) result.differences.push(`Link count: source=${sourceLinks}, clone=${cloneLinks}`);
-          if (imgRatio < 0.8) result.differences.push(`Image count: source=${sourceImgs}, clone=${cloneImgs}`);
-          if (buttonRatio < 0.8) result.differences.push(`Button count: source=${sourceButtons}, clone=${cloneButtons}`);
-          if (domRatio < 0.5) result.differences.push(`DOM size: source=${sourceData.domSize}, clone=${cloneData.domSize}`);
-          if (sourceData.h1 && !cloneData.h1) result.differences.push('Missing H1 heading on clone');
-          if (!result.url_match) result.differences.push(`URL mismatch: source=${result.source_url_after}, clone=${result.clone_url_after}`);
+          // Record differences from semantic parity analysis
+          if (parityResult.missing_families.length > 0) {
+            result.differences.push(`Missing required families: ${parityResult.missing_families.join(', ')}`);
+          }
+          if (parityResult.partial_families.length > 0) {
+            result.differences.push(`Partial coverage families: ${parityResult.partial_families.join(', ')}`);
+          }
+          // Include underweight repeated families (clone has < 30% of source count)
+          const underweight = parityResult.family_details.filter(
+            d => d.status === 'partial' && d.quantity_coverage < 30
+          );
+          for (const uw of underweight) {
+            result.differences.push(`Underweight: ${uw.family_name} (clone=${uw.clone_count}, source=${uw.source_count})`);
+          }
+          if (!result.url_match && !isAuthRedirect) {
+            result.differences.push(`URL mismatch: source=${result.source_url_after}, clone=${result.clone_url_after}`);
+          }
 
           result.content_match = result.differences.length === 0;
           result.status = result.visual_parity_score >= 80 ? 'pass' : result.visual_parity_score >= 50 ? 'partial' : 'fail';

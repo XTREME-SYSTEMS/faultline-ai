@@ -147,6 +147,7 @@ export function buildAiToolPage(tool: AiToolConfig, invokeUrl: string, checkoutU
 </style>
 </head>
 <body>
+<header>
 <nav class="nav">
   <a href="/" class="logo">⚡ Creative AI</a>
   <a href="/ai-video-generator">AI Video</a>
@@ -155,6 +156,7 @@ export function buildAiToolPage(tool: AiToolConfig, invokeUrl: string, checkoutU
   <a href="/ai-music-generator">AI Music</a>
   <a href="/ai-image-generator" style="margin-left:auto;color:#4a9eff;">Try All Tools →</a>
 </nav>
+</header>
 
 <section class="hero">
   <div style="font-size: 64px; margin-bottom: 16px;">${tool.icon}</div>
@@ -301,6 +303,7 @@ export function buildAiToolsIndexPage(loginUrl?: string, registerUrl?: string, f
 <style>${buildMarketplaceCSS()}</style>
 </head>
 <body>
+<header>
 <nav class="nav">
   <a href="/" class="logo">⚡ Creative Assets</a>
   <a href="/video-templates">Video</a>
@@ -322,6 +325,7 @@ export function buildAiToolsIndexPage(loginUrl?: string, registerUrl?: string, f
   <a href="/subscribe">Subscribe</a>
   <span class="signin"><a href="${login}">Sign In</a></span>
 </nav>
+</header>
 
 <section class="hero">
   <div style="font-size: 56px; margin-bottom: 12px;">🤖</div>
@@ -900,6 +904,7 @@ export function buildSearchPage(catalogApiUrl: string, checkoutUrl: string, logi
 </style>
 </head>
 <body>
+<header>
 <nav class="nav">
   <a href="/" class="logo">⚡ Creative Assets</a>
   <a href="/video-templates">Video</a>
@@ -921,6 +926,7 @@ export function buildSearchPage(catalogApiUrl: string, checkoutUrl: string, logi
   <a href="/subscribe">Subscribe</a>
   <span class="signin"><a href="${loginUrl}">Sign In</a></span>
 </nav>
+</header>
 
 <div class="search-bar">
   <h1>Search Creative Assets</h1>

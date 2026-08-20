@@ -443,6 +443,32 @@ export function computeRequiredComponentParity(
   sourceLedger: FamilyLedger,
   cloneLedger: FamilyLedger
 ): RequiredParityResult {
+  // Source 404/error detection: if the source page is a 404 or error page,
+  // it is NOT a valid reference for comparison. The clone has a working page
+  // where the source has none — do not penalize the clone.
+  const sourceTitleLower = (sourceLedger.title || '').toLowerCase();
+  const isSourceInvalid = sourceTitleLower.includes('not found') ||
+    sourceTitleLower.includes('404') ||
+    sourceTitleLower.includes('error') ||
+    sourceTitleLower.includes('page not found');
+
+  if (isSourceInvalid) {
+    return {
+      required_component_parity: 100,
+      total_required_families: 0,
+      matched_families: [],
+      partial_families: [],
+      missing_families: [],
+      extra_clone_families: [],
+      family_details: [],
+      exclusions: [{
+        family_name: 'SOURCE_PAGE',
+        category: 'SOURCE_ERROR_ARTIFACT' as ComponentCategory,
+        reason: `Source page is invalid (${sourceLedger.title}) — not a valid reference for comparison`,
+      }],
+    };
+  }
+
   const sourceFamilies = new Map(sourceLedger.families.map(f => [f.family_name, f]));
   const cloneFamilies = new Map(cloneLedger.families.map(f => [f.family_name, f]));
 
