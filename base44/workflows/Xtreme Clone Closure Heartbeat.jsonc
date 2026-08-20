@@ -1,0 +1,45 @@
+{
+  "name": "Xtreme Clone Closure Heartbeat",
+  "description": "AUTHORITATIVE 5-minute closure heartbeat for the Xtreme Clone Systems autonomous closure directive. Executes the full P0-P14 closure cycle: LOAD CANONICAL STATE \u2192 NORMALIZE \u2192 CLASSIFY ORPHANS \u2192 BUILD TAXONOMY GRAPH \u2192 VALIDATE ROUTES AGAINST TAXONOMY \u2192 COMPUTE INDEPENDENT COVERAGE SCORES \u2192 BUILD GAP QUEUE \u2192 SKIP COMPLETED/PROVEN EXCLUSIONS \u2192 SELECT LOWEST FAILING MQG CATEGORY \u2192 SELECT HIGHEST SAFE WORK PACKET \u2192 DISPATCH VIA DURABLE JOB QUEUE \u2192 UPDATE CLOSURE BOARD \u2192 AUDIT INVALID TAXONOMY \u2192 COMPUTE DELTA/REGRESSION \u2192 WRITE HEARTBEAT RECEIPT. The overnightHeartbeat function handles all dispatching internally via the JobQueue \u2014 no external switch needed. This is the ONE authoritative closure heartbeat. Legacy workflows (Continuous Improvement Heartbeat, Nightly Autonomous Operations) are separate and must not be confused with this one.",
+  "trigger": {
+    "condition": null,
+    "config": {
+      "trigger_type": "scheduled",
+      "events": [],
+      "schedule_mode": "interval",
+      "cron_expression": null,
+      "one_time_date": null,
+      "timezone": "America/New_York",
+      "interval_value": 5,
+      "interval_unit": "minutes",
+      "interval_anchor": null,
+      "ends_type": "never",
+      "ends_on_date": null,
+      "ends_after_count": null
+    }
+  },
+  "definition": {
+    "document": {
+      "dsl": "1.0.0",
+      "name": "xtreme_clone_closure_heartbeat",
+      "version": "2.0",
+      "namespace": "base44"
+    },
+    "do": [
+      {
+        "run_closure_heartbeat": {
+          "call": "invoke_backend_function",
+          "with": {
+            "function_name": "overnightHeartbeat",
+            "args": {}
+          },
+          "then": "end",
+          "x-base44": {
+            "title": "Run Closure Heartbeat",
+            "description": "Full P0-P14 closure cycle: reconcile, normalize, classify, validate, gap queue, dispatch, receipt"
+          }
+        }
+      }
+    ]
+  }
+}

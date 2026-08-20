@@ -1,0 +1,107 @@
+{
+  "name": "BrowserProviderRegistry",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "provider_name": {
+      "type": "string",
+      "enum": [
+        "browserbase",
+        "cloud_browser",
+        "stealth_local",
+        "external"
+      ],
+      "description": "Browser provider identifier"
+    },
+    "provider_role": {
+      "type": "string",
+      "enum": [
+        "primary_discovery",
+        "primary_validation",
+        "shadow",
+        "fallback",
+        "inactive"
+      ],
+      "description": "Role in the closure system"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "healthy",
+        "degraded",
+        "failed",
+        "unknown"
+      ],
+      "default": "unknown"
+    },
+    "api_key_configured": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether the provider API key is set in app secrets"
+    },
+    "last_successful_session": {
+      "type": "string",
+      "format": "date-time",
+      "description": "Timestamp of the last successful browser session"
+    },
+    "session_receipt": {
+      "type": "string",
+      "description": "Evidence receipt ID or session ID from the last successful session"
+    },
+    "session_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Total sessions executed by this provider"
+    },
+    "failed_session_count": {
+      "type": "number",
+      "default": 0,
+      "description": "Total failed sessions"
+    },
+    "last_error": {
+      "type": "string",
+      "description": "Last error message if status is failed/degraded"
+    },
+    "last_check": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the provider status was last checked"
+    },
+    "functions_using_provider": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Backend functions that use this provider"
+    },
+    "degraded_mode_enabled": {
+      "type": "boolean",
+      "default": true,
+      "description": "If true, system continues with fallback provider when primary is down"
+    }
+  },
+  "required": [
+    "organization_id",
+    "provider_name",
+    "provider_role",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
