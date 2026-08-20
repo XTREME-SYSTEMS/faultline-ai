@@ -775,6 +775,16 @@ ${hasCatalog ? `
  </div>
 </div>`}
 
+<div style="max-width:1400px;margin:0 auto;padding:0 24px 32px;">
+  <form style="max-width:500px;margin:0 auto 32px;text-align:center;" onsubmit="event.preventDefault();alert('Thanks for subscribing!');">
+    <h3 style="font-size:18px;font-weight:700;color:#fff;margin:0 0 8px;">Get the latest creative assets</h3>
+    <p style="font-size:13px;color:#888;margin:0 0 16px;">Join our newsletter for weekly updates on new assets and AI tools.</p>
+    <div style="display:flex;gap:8px;">
+      <input type="email" placeholder="Enter your email" style="flex:1;padding:12px 16px;background:#161616;color:#fff;border:1px solid #333;border-radius:8px;font-size:14px;">
+      <button type="submit" style="background:linear-gradient(135deg,#4a9eff,#2563eb);color:#fff;border:none;padding:12px 24px;border-radius:8px;font-size:14px;font-weight:700;cursor:pointer;">Sign me up</button>
+    </div>
+  </form>
+</div>
 <footer>
   <a href="${loginUrl}">Sign In</a>
   <a href="${registerUrl}">Sign Up</a>

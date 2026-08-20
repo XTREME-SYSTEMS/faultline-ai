@@ -477,7 +477,41 @@ export default async function(req: Request) {
       ? buildSupabaseFormScript(ibeamSupabaseUrl, ibeamSupabaseAnonKey)
       : '';
 
-    // Inject scripts into each cloned page — decode from fileMap, rewrite, re-encode
+    // Add category pages (dedicated pages for each Envato category) — MUST be
+    // added BEFORE the injection loop so they overwrite any cloned RSC pages
+    // (e.g. web-templates.html) and receive the injected scripts (search,
+    // checkout, auth interceptor, etc.). Without this, cloned RSC pages
+    // would be deployed instead of the generated static pages.
+    const existingFilenames = new Set(pageMetadata.map(p => p.filename));
+    for (const [filename, html] of categoryPages) {
+      const slug = filename.replace(/\.html$/, '');
+      if (!existingFilenames.has(filename)) {
+        pageMetadata.push({
+          filename, path: '/' + slug,
+          title: CATEGORY_PAGES.find(c => c.slug === slug)?.title || slug,
+          headings: [], images_rehosted: 0,
+        });
+      }
+      fileMap.set(filename, new TextEncoder().encode(html));
+      linkMap.set('/' + slug, '/' + filename);
+    }
+
+    // Add AI tool pages — also before injection loop for the same reason
+    for (const [filename, html] of aiToolPages) {
+      const slug = filename.replace(/\.html$/, '');
+      if (!existingFilenames.has(filename)) {
+        pageMetadata.push({
+          filename, path: '/' + slug,
+          title: AI_TOOLS.find(t => t.slug === slug)?.title || slug,
+          headings: [], images_rehosted: 0,
+        });
+      }
+      fileMap.set(filename, new TextEncoder().encode(html));
+      linkMap.set('/' + slug, '/' + filename);
+      linkMap.set('/ai/' + slug, '/' + filename);
+    }
+
+    // Inject scripts into each page (generated + cloned) — decode from fileMap, rewrite, re-encode
     for (const meta of pageMetadata) {
       let html = new TextDecoder().decode(fileMap.get(meta.filename)!);
       html = rewriteAiToolLinks(html);
@@ -516,31 +550,6 @@ if('serviceWorker' in navigator){
         html += inject;
       }
       fileMap.set(meta.filename, new TextEncoder().encode(html));
-    }
-
-    // Add category pages (dedicated pages for each Envato category)
-    for (const [filename, html] of categoryPages) {
-      const slug = filename.replace(/\.html$/, '');
-      pageMetadata.push({
-        filename, path: '/' + slug,
-        title: CATEGORY_PAGES.find(c => c.slug === slug)?.title || slug,
-        headings: [], images_rehosted: 0,
-      });
-      fileMap.set(filename, new TextEncoder().encode(html));
-      linkMap.set('/' + slug, '/' + filename);
-    }
-
-    // Add AI tool pages
-    for (const [filename, html] of aiToolPages) {
-      const slug = filename.replace(/\.html$/, '');
-      pageMetadata.push({
-        filename, path: '/' + slug,
-        title: AI_TOOLS.find(t => t.slug === slug)?.title || slug,
-        headings: [], images_rehosted: 0,
-      });
-      fileMap.set(filename, new TextEncoder().encode(html));
-      linkMap.set('/' + slug, '/' + filename);
-      linkMap.set('/ai/' + slug, '/' + filename);
     }
 
     // ─── 6. DEPLOY + PROVISION ───────────────────────────────────────

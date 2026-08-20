@@ -79,8 +79,8 @@ export function buildFamilyLedgerExtractionScript(): string {
   var seen = new Set();
   // Pass 0b: Capture structural landmarks FIRST (footer, nav, pagination, filter
   // inputs) so they aren't crowded out by hundreds of card elements in later passes.
-  var structuralLinkNodes = document.querySelectorAll('footer, footer a[href], nav, nav a[href], .pagination button, .pagination a, .page-btn, input[type="text"], input[type="search"], input[placeholder*="filter" i], .filter-btn, .sort-btn');
-  for (var si = 0; si < structuralLinkNodes.length && comps.length < 100; si++) {
+  var structuralLinkNodes = document.querySelectorAll('footer, footer a[href], nav, nav a[href], .pagination button, .pagination a, .page-btn, input, .filter-btn, .sort-btn, h1, h2, h3, form');
+  for (var si = 0; si < structuralLinkNodes.length && comps.length < 150; si++) {
     var sel = structuralLinkNodes[si];
     if (seen.has(sel)) continue;
     seen.add(sel);
@@ -142,7 +142,7 @@ export function buildFamilyLedgerExtractionScript(): string {
   // Pass 1: Capture ALL img/video/svg elements first (up to 200) so card images
   // aren't crowded out by hundreds of card <a> elements.
   var mediaNodes = document.querySelectorAll('img,video,svg');
-  for (var mi = 0; mi < mediaNodes.length && comps.length < 200; mi++) {
+  for (var mi = 0; mi < mediaNodes.length && comps.length < 500; mi++) {
     var mel = mediaNodes[mi];
     if (seen.has(mel)) continue;
     seen.add(mel);
