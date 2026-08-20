@@ -119,6 +119,13 @@ export function buildMarketplaceCSS(): string {
   .card-title { font-size: 13px; font-weight: 600; color: #fff; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .card-cat { font-size: 11px; color: #888; margin-bottom: 4px; }
   .card-price { font-size: 12px; color: #4a9eff; font-weight: 600; }
+  .card-download-btn { position: absolute; bottom: 8px; right: 8px; background: linear-gradient(135deg, #4a9eff, #2563eb); color: #fff; border: none; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 700; cursor: pointer; opacity: 0; transition: opacity .15s; }
+  .card:hover .card-download-btn { opacity: 1; }
+  .card-download-btn:hover { transform: scale(1.05); }
+  .search-form { display: flex; gap: 8px; flex: 1; min-width: 200px; }
+  .search-submit-btn { background: linear-gradient(135deg, #4a9eff, #2563eb); color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-size: 13px; font-weight: 700; cursor: pointer; white-space: nowrap; }
+  .search-submit-btn:hover { transform: translateY(-1px); }
+  header .nav { position: sticky; top: 0; z-index: 50; }
   .featured-badge { position: absolute; top: 8px; left: 8px; background: #FFD700; color: #111; padding: 3px 8px; border-radius: 4px; font-size: 9px; font-weight: 700; }
   .rating { color: #FFD700; font-size: 11px; }
   .empty { text-align: center; padding: 60px; color: #555; }
@@ -337,16 +344,21 @@ export function buildMarketplaceJS(config: {
       var rating = a.rating ? '<div class="rating">★ ' + a.rating + (a.rating_count ? ' (' + a.rating_count + ')' : '') + '</div>' : '';
       var img = placeholder(a);
       var safeName = (a.name || '').replace(/"/g, '&quot;');
-      return '<div class="card" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
+      var catSlug = '/' + (a.category || 'all-items').replace(/_/g, '-');
+      var assetSlug = catSlug + '/' + ((a.subcategory || a.name || 'asset').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
+      return '<a class="card" href="' + assetSlug + '" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
         '<div class="card-img">' + badge + '<img src="' + img + '" alt="' + safeName + '" loading="lazy">' +
+        '<button type="button" class="card-download-btn" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">Download</button>' +
         '</div><div class="card-body"><div class="card-title">' + (a.name || '') + '</div>' +
         '<div class="card-cat">' + (a.subcategory || a.category || '') + '</div>' + rating +
-        '<div class="card-price">' + price + '</div></div></div>';
+        '<div class="card-price">' + price + '</div></div></a>';
     }).join('');
 
-    // Wire checkout clicks
-    grid.querySelectorAll('[data-asset-id]').forEach(function(card) {
-      card.addEventListener('click', function() {
+    // Wire download button clicks (trigger checkout, stop propagation)
+    grid.querySelectorAll('.card-download-btn').forEach(function(btn) {
+      btn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
         var aid = this.getAttribute('data-asset-id');
         var aname = this.getAttribute('data-asset-name');
         if (window.self !== window.top) { alert('Checkout works only from the published app. Please open this site in a new tab.'); return; }
@@ -395,6 +407,21 @@ export function buildMarketplaceJS(config: {
     var sortSel = document.getElementById('sortSelect');
     if (sortSel) sortSel.value = currentSort;
   }
+
+  // Global download button handler (event delegation for pre-rendered + JS-rendered)
+  document.addEventListener('click', function(e) {
+    var btn = e.target.closest('.card-download-btn');
+    if (!btn) return;
+    e.preventDefault();
+    e.stopPropagation();
+    var aid = btn.getAttribute('data-asset-id');
+    var aname = btn.getAttribute('data-asset-name');
+    if (window.self !== window.top) { alert('Checkout works only from the published app. Please open this site in a new tab.'); return; }
+    fetch(CHECKOUT_URL, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ items: [{ name: aname, amount: 29, quantity: 1, type: 'ai_tool', asset_id: aid }] }) })
+      .then(function(r) { return r.json(); })
+      .then(function(j) { if (j.url) window.location.href = j.url; else alert('Could not start checkout.'); })
+      .catch(function() { alert('Checkout error.'); });
+  });
 
   // Initialize
   if (ALL_ASSETS.length > 0) {

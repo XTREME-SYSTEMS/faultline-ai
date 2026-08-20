@@ -569,6 +569,7 @@ export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string
         return '<a class="card" href="' + assetSlug + '" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
           '<div class="card-img">' + badge +
             '<img src="' + img + '" alt="' + safeName + '" loading="lazy">' +
+            '<button type="button" class="card-download-btn" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">Download</button>' +
           '</div>' +
           '<div class="card-body">' +
             '<div class="card-title">' + (a.name || '') + '</div>' +
@@ -632,6 +633,7 @@ export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string
 <style>${buildMarketplaceCSS()}</style>
 </head>
 <body>
+<header>
 <nav class="nav">
   <a href="/" class="logo">⚡ Creative Assets</a>
   <a href="/video-templates">Video</a>
@@ -653,6 +655,7 @@ export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string
   <a href="/subscribe">Subscribe</a>
   <span class="signin"><a href="${loginUrl}">Sign In</a></span>
 </nav>
+</header>
 
 <section class="hero">
   <div style="font-size: 56px; margin-bottom: 12px;">${cat.icon}</div>
@@ -675,7 +678,10 @@ ${hasCatalog ? `
   <div class="main">
     <div class="toolbar">
       <span class="count" id="resultCount">Loading...</span>
-      <input type="search" id="searchWithin" class="search-within" placeholder="Search within ${cat.title.split('—')[0].trim()}...">
+      <form id="searchForm" class="search-form" onsubmit="event.preventDefault();document.getElementById('searchWithin').dispatchEvent(new Event('input'));">
+        <input type="search" id="searchWithin" class="search-within" placeholder="Search within ${cat.title.split('—')[0].trim()}...">
+        <button type="submit" class="search-submit-btn">Search</button>
+      </form>
       <div class="sort">
         <select id="sortSelect">
           <option value="featured">Featured</option>
