@@ -113,6 +113,29 @@ export default async function(req: Request) {
       ? Math.round((updatedTaxonomy.filter((t: any) => t.status === 'implemented' || t.status === 'validated').length / updatedTaxonomy.length) * 100)
       : 0;
 
+    // ─── CROSS-REFERENCE ROUTES AGAINST TAXONOMY ────────────────────
+    // Every discovered product path is validated against the taxonomy ledger.
+    // Runs inline (fast — pure DB lookup, no browser) on every heartbeat to
+    // keep the route↔taxonomy mapping current as new routes are discovered.
+    let routeTaxonomyValidationRate = 0;
+    if (routes.length > 0 && taxonomy.length > 0) {
+      try {
+        const appId = Deno.env.get('BASE44_APP_ID');
+        const validateUrl = `https://base44.app/api/apps/${appId}/functions/validateRoutesAgainstTaxonomy`;
+        const validateRes = await fetch(validateUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ organization_id: orgId }),
+          signal: AbortSignal.timeout(15000),
+        }).catch((e: any) => { console.log(`[overnightHeartbeat] Taxonomy validation skipped: ${e.message}`); return null; });
+        if (validateRes && validateRes.ok) {
+          const vData = await validateRes.json();
+          routeTaxonomyValidationRate = vData.validation_rate || 0;
+          console.log(`[overnightHeartbeat] Route-taxonomy validation: ${vData.validation_rate}% (${vData.routes_matched} matched, ${vData.routes_no_match} no match)`);
+        }
+      } catch (e) { console.log(`[overnightHeartbeat] Taxonomy validation error: ${e.message}`); }
+    }
+
     // Backend coverage: % of capabilities that are 'implemented' or 'validated'
     const backendCoverage = capabilities.length > 0
       ? Math.round((capabilities.filter(c => c.status === 'implemented' || c.status === 'validated').length / capabilities.length) * 100)
@@ -188,6 +211,7 @@ export default async function(req: Request) {
     if (routeCoverage < 50 && routes.length < 100) blockers.push('Route discovery incomplete — fewer than 100 routes discovered');
     if (backendCoverage < 80) blockers.push(`Backend coverage at ${backendCoverage}% — below 80% threshold`);
     if (criticalDefects > 0) blockers.push(`${criticalDefects} open critical defects`);
+    if (routeTaxonomyValidationRate > 0 && routeTaxonomyValidationRate < 100) blockers.push(`${routeTaxonomyValidationRate}% of routes validated against taxonomy — ${100 - routeTaxonomyValidationRate}% gap`);
 
     // ─── 7. RECORD HEARTBEAT RECEIPT ────────────────────────────────
     const heartbeat = await base44.asServiceRole.entities.HeartbeatReceipt.create({
@@ -206,6 +230,7 @@ export default async function(req: Request) {
       content_coverage: contentCoverage,
       interaction_coverage: interactionCoverage,
       visual_score: visualScore,
+      route_taxonomy_validation: routeTaxonomyValidationRate,
       security_status: criticalDefects > 0 ? 'critical' : highDefects > 0 ? 'warning' : 'secure',
       blockers,
       next_task: workPacket.task,

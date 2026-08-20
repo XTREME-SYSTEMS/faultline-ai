@@ -52,6 +52,10 @@
     "visual_score": {
       "type": "number"
     },
+    "route_taxonomy_validation": {
+      "type": "number",
+      "description": "Percentage of discovered content routes cross-referenced and confirmed against the EnvatoTaxonomyLedger"
+    },
     "security_status": {
       "type": "string",
       "enum": [

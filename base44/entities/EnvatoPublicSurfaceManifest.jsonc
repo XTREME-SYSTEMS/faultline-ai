@@ -104,6 +104,29 @@
       ],
       "default": "missing"
     },
+    "taxonomy_validated": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when this route has been cross-referenced and confirmed against the EnvatoTaxonomyLedger"
+    },
+    "matched_taxonomy_node": {
+      "type": "string",
+      "description": "The taxonomy_node_id this route was matched against"
+    },
+    "taxonomy_validation_status": {
+      "type": "string",
+      "enum": [
+        "unvalidated",
+        "matched",
+        "no_taxonomy_match",
+        "non_content_route"
+      ],
+      "default": "unvalidated"
+    },
+    "validated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
     "discovered_at": {
       "type": "string",
       "format": "date-time"
