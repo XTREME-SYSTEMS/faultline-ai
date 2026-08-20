@@ -1,4 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
+import { computeClosureMetrics, getLowestCategory, getValidOfficialNavigableNodes } from '../../shared/closureMetricEngine.ts';
 
 // Overnight Heartbeat — the autonomous operating loop's central pulse.
 // Runs every 5 minutes via the Continuous Improvement Heartbeat workflow.
@@ -58,12 +59,14 @@ export default async function(req: Request) {
     const cloneUrl = passedClone?.vercel_deployment_url || latestProjects[0]?.vercel_deployment_url || '';
 
     // ─── 2. FETCH ALL DATA ───────────────────────────────────────────
-    const [routes, taxonomy, capabilities, scores, heartbeats] = await Promise.all([
+    const [routes, taxonomy, capabilities, scores, heartbeats, exclusions, canonical] = await Promise.all([
       base44.asServiceRole.entities.EnvatoPublicSurfaceManifest.filter({ organization_id: orgId }).catch(() => []),
       base44.asServiceRole.entities.EnvatoTaxonomyLedger.filter({ organization_id: orgId }).catch(() => []),
       base44.asServiceRole.entities.BackendCapabilityLedger.filter({ organization_id: orgId }).catch(() => []),
       base44.asServiceRole.entities.MasterQualityScore.filter({ organization_id: orgId }).catch(() => []),
       base44.asServiceRole.entities.HeartbeatReceipt.filter({ organization_id: orgId }).catch(() => []),
+      base44.asServiceRole.entities.ExclusionRecord.filter({ organization_id: orgId }).catch(() => []),
+      base44.asServiceRole.entities.CanonicalState.filter({ organization_id: orgId }).catch(() => []),
     ]);
 
     const latestScore = scores.sort((a, b) => new Date(b.run_at || b.created_date).getTime() - new Date(a.run_at || a.created_date).getTime())[0];
@@ -126,78 +129,49 @@ export default async function(req: Request) {
       } catch (e) { console.log(`[overnightHeartbeat] Taxonomy validation error: ${e.message}`); }
     }
 
-    // ─── 7. COMPUTE SEPARATE COVERAGE SCORES (P6) ───────────────────
+    // ─── 7. COMPUTE COVERAGE SCORES VIA SHARED CLOSURE_METRIC_ENGINE ───
+    // Single scoring engine shared with updateClosureBoard — no duplicated formulas.
     const validRoutes = routes.filter(r => r.valid !== false);
     const contentRoutes = validRoutes.filter(r => !NON_CONTENT_TYPES.has(r.page_type) && r.route_type === 'content');
     const matchedRoutes = contentRoutes.filter(r => r.taxonomy_validation_status === 'matched');
     const unmatchedRoutes = contentRoutes.filter(r => r.taxonomy_validation_status === 'no_taxonomy_match');
 
-    // ROUTE_DISCOVERY_COVERAGE: % of expected surface discovered (proxy: valid routes / max(expected, discovered))
-    const routeDiscoveryCoverage = validRoutes.length > 0 ? Math.min(100, Math.round((validRoutes.length / 160) * 100)) : 0;
+    const canonicalStateEntity = canonical[0] || canonicalState;
+    const sharedBuildId = canonicalStateEntity?.canonical_envato_build_id || BUILD_ID;
 
-    // ROUTE_TO_TAXONOMY_MATCH: % of content routes matched to taxonomy
+    const categoryMetrics = computeClosureMetrics({
+      routes, taxonomy, capabilities, latestScore, lastHeartbeat, canonicalStateEntity, exclusions, buildId: sharedBuildId,
+    });
+
+    // Extract metric values by category name
+    const metricByCat = (name: string) => categoryMetrics.find(m => m.category === name);
+    const routeDiscoveryMetric = metricByCat('ROUTE_DISCOVERY')!;
+    const taxonomyRouteMetric = metricByCat('TAXONOMY_ROUTE_COVERAGE')!;
+    const contentFamilyMetric = metricByCat('CONTENT_FAMILY_COVERAGE')!;
+    const backendImplMetric = metricByCat('BACKEND_IMPLEMENTATION_COVERAGE')!;
+    const backendValMetric = metricByCat('BACKEND_VALIDATION_COVERAGE')!;
+
+    const routeDiscoveryCoverage = routeDiscoveryMetric.score;
+    const taxonomyRouteCoverage = taxonomyRouteMetric.score;
+    const contentFamilyCoverage = contentFamilyMetric.score;
+    const backendCapabilityCoverage = backendImplMetric.score;  // implementation for worker selection
+    const interactionCoverage = latestScore?.browser_interaction_score || 0;
+    const visualScore = latestScore?.visual_parity_score || 0;
+
+    // ROUTE_TO_TAXONOMY_MATCH and TAXONOMY_NODE_VALIDATION are not in the shared engine
+    // (they are heartbeat-specific intermediate metrics, not MQG categories)
     const routeToTaxonomyMatch = contentRoutes.length > 0
       ? Math.round((matchedRoutes.length / contentRoutes.length) * 100) : 0;
-
-    // TAXONOMY_NODE_VALIDATION: % of taxonomy nodes with source evidence or route match
     const validatedTaxonomyNodes = taxonomy.filter(t =>
-      t.orphan_classification === 'not_orphan' ||
-      t.orphan_classification === 'valid_parent_group' ||
-      t.orphan_classification === 'filter_only_dimension' ||
-      t.orphan_classification === 'invalid' ||
-      t.orphan_classification === 'duplicate' ||
-      t.orphan_classification === 'stale' ||
-      t.orphan_classification === 'out_of_scope'
+      t.orphan_classification && t.orphan_classification !== '' && t.orphan_classification !== 'missing_crawl_evidence'
     );
     const taxonomyNodeValidation = taxonomy.length > 0
       ? Math.round((validatedTaxonomyNodes.length / taxonomy.length) * 100) : 0;
 
-    // P0-4: TAXONOMY_ROUTE_COVERAGE denominator = official_navigable_taxonomy truth class
-    // Only nodes with taxonomy_truth_class = 'official_navigable_taxonomy' participate.
-    // filter_dimension scored under FACETS/FILTERING.
-    // search_term_landing, seo_landing, tag_landing scored as route/search states.
-    // item_detail scored under item experience.
-    // invalid_garbage excluded only with evidence.
-    const officialNavigableNodes = taxonomy.filter(t =>
-      t.taxonomy_truth_class === 'official_navigable_taxonomy'
-    );
-    const navigableWithRoute = officialNavigableNodes.filter(t =>
-      t.orphan_classification === 'not_orphan' || t.orphan_classification === 'missing_content'
-    );
-    const taxonomyRouteCoverage = officialNavigableNodes.length > 0
-      ? Math.round((navigableWithRoute.length / officialNavigableNodes.length) * 100) : 0;
-
-    // P0-4: CONTENT_FAMILY_COVERAGE denominator = official_navigable_taxonomy truth class
-    const nodesWithContent = officialNavigableNodes.filter(t => t.content_count > 0 || t.content_available);
-    const contentFamilyCoverage = officialNavigableNodes.length > 0
-      ? Math.round((nodesWithContent.length / officialNavigableNodes.length) * 100) : 0;
-
-    // BACKEND_CAPABILITY_COVERAGE
-    const backendCapabilityCoverage = capabilities.length > 0
-      ? Math.round((capabilities.filter(c => c.status === 'implemented' || c.status === 'validated').length / capabilities.length) * 100) : 0;
-
-    // INTERACTION_COVERAGE
-    const interactionCoverage = latestScore?.browser_interaction_score || 0;
-    const visualScore = latestScore?.visual_parity_score || 0;
-
-    // P0-5: current_lowest_score must be MIN of all applicable required fresh closure
-    // category scores. Do NOT use legacy MasterQualityScore.overall_score if its matrix
-    // is incomplete.
-    const clonedRoutes = validRoutes.filter((r: any) => r.clone_status === 'validated' || r.clone_status === 'exists');
-    const routeFidelity = validRoutes.length > 0 ? Math.round((clonedRoutes.length / validRoutes.length) * 100) : 0;
-
-    const closureCategoryScores = [
-      { category: 'CONTENT_FAMILY_COVERAGE', score: contentFamilyCoverage },
-      { category: 'TAXONOMY_ROUTE_COVERAGE', score: taxonomyRouteCoverage },
-      { category: 'ROUTE_FIDELITY', score: routeFidelity },
-      { category: 'ROUTE_DISCOVERY', score: routeDiscoveryCoverage },
-      { category: 'BACKEND_CAPABILITY_COVERAGE', score: backendCapabilityCoverage },
-      { category: 'ROUTE_TO_TAXONOMY_MATCH', score: routeToTaxonomyMatch },
-      { category: 'TAXONOMY_NODE_VALIDATION', score: taxonomyNodeValidation },
-    ];
-    const currentLowestCategoryObj = closureCategoryScores.reduce((min, curr) => curr.score < min.score ? curr : min, closureCategoryScores[0]);
-    const currentLowest = currentLowestCategoryObj.score;
-    const currentLowestCategoryName = currentLowestCategoryObj.category;
+    // P0-5: current_lowest_score = MIN of all category scores with denominator > 0
+    const lowestInfo = getLowestCategory(categoryMetrics);
+    const currentLowest = lowestInfo.score;
+    const currentLowestCategoryName = lowestInfo.category;
 
     // ─── 8. COMPUTE TAXONOMY NODE CLASSIFICATIONS (P3) ───────────────
     const orphanNodes = taxonomy.filter(t => t.orphan_classification && t.orphan_classification !== 'not_orphan');
