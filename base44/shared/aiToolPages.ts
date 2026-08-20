@@ -282,7 +282,7 @@ export function buildAiToolsIndexPage(loginUrl?: string, registerUrl?: string, f
     const catSlug = '/' + (a.category || 'all-items').replace(/_/g, '-');
     const assetSlug = catSlug + '/' + ((a.subcategory || a.name || 'asset').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
     return '<a class="card" href="' + assetSlug + '" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
-      '<div class="card-img"><img src="' + img + '" alt="' + safeName + '" loading="lazy"></div>' +
+      '<div class="card-img"><img src="' + img + '" alt="' + safeName + '" ></div>' +
       '<div class="card-body"><div class="card-title">' + (a.name || '') + '</div>' +
       '<div class="card-cat">' + (a.subcategory || a.category || '') + '</div></div></a>';
   }).join('');
@@ -568,7 +568,7 @@ export function buildCategoryPage(cat: CategoryPageConfig, catalogApiUrl: string
         const assetSlug = '/' + cat.slug + '/' + ((a.subcategory || a.name || 'asset').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
         return '<a class="card" href="' + assetSlug + '" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
           '<div class="card-img">' + badge +
-            '<img src="' + img + '" alt="' + safeName + '" loading="lazy">' +
+            '<img src="' + img + '" alt="' + safeName + '" >' +
             '<button type="button" class="card-download-btn" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">Download</button>' +
           '</div>' +
           '<div class="card-body">' +
@@ -760,7 +760,7 @@ ${hasCatalog ? `
      const catSlug = '/' + (a.category || 'all-items').replace(/_/g, '-');
      const assetSlug = catSlug + '/' + ((a.subcategory || a.name || 'asset').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
      return '<a class="card" href="' + assetSlug + '" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
-       '<div class="card-img"><img src="' + img + '" alt="' + safeName + '" loading="lazy"></div>' +
+       '<div class="card-img"><img src="' + img + '" alt="' + safeName + '" ></div>' +
        '<div class="card-body"><div class="card-title">' + (a.name || '') + '</div>' +
        '<div class="card-cat">' + (a.subcategory || a.category || '') + '</div></div></a>';
    }).join('') || '<div class="empty">Loading assets...</div>'}</div>
@@ -855,7 +855,7 @@ export function buildSearchPage(catalogApiUrl: string, checkoutUrl: string, logi
     const catSlug = '/' + (a.category || 'all-items').replace(/_/g, '-');
     const assetSlug = catSlug + '/' + ((a.subcategory || a.name || 'asset').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
     return '<a class="card" href="' + assetSlug + '" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
-      '<div class="card-img"><img src="' + img + '" alt="' + safeName + '" loading="lazy"></div>' +
+      '<div class="card-img"><img src="' + img + '" alt="' + safeName + '" ></div>' +
       '<div class="card-body"><div class="card-title">' + (a.name || '') + '</div>' +
       '<div class="card-cat">' + (a.subcategory || a.category || '') + '</div>' + rating +
       '<div class="card-price">' + price + '</div></div></a>';
@@ -1025,7 +1025,7 @@ function renderResults(assets, query) {
     var catSlug = '/' + (a.category || 'all-items').replace(/_/g, '-');
     var assetSlug = catSlug + '/' + ((a.subcategory || a.name || 'asset').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''));
     return '<a class="card" href="' + assetSlug + '" data-asset-id="' + a.id + '" data-asset-name="' + safeName + '">' +
-      '<div class="card-img"><img src="' + img + '" alt="' + safeName + '" loading="lazy"></div>' +
+      '<div class="card-img"><img src="' + img + '" alt="' + safeName + '" ></div>' +
       '<div class="card-body"><div class="card-title">' + (a.name || '') + '</div>' +
       '<div class="card-cat">' + (a.subcategory || a.category || '') + '</div>' + rating +
       '<div class="card-price">' + price + '</div></div></a>';

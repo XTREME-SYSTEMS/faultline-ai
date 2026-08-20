@@ -77,14 +77,37 @@ export function buildFamilyLedgerExtractionScript(): string {
     'h1','h2','h3','img','video','svg'
   ];
   var seen = new Set();
+  // Pass 1: Capture ALL img/video/svg elements first (up to 200) so card images
+  // aren't crowded out by hundreds of card <a> elements.
+  var mediaNodes = document.querySelectorAll('img,video,svg');
+  for (var mi = 0; mi < mediaNodes.length && comps.length < 200; mi++) {
+    var mel = mediaNodes[mi];
+    if (seen.has(mel)) continue;
+    seen.add(mel);
+    var mrect = mel.getBoundingClientRect();
+    if (mrect.width === 0 && mrect.height === 0 && mel.parentElement) {
+      var mprect = mel.parentElement.getBoundingClientRect();
+      if (mprect.width > 0 && mprect.height > 0) { mrect = mprect; }
+      else continue;
+    } else if (mrect.width === 0 && mrect.height === 0) continue;
+    var mtag = mel.tagName.toLowerCase();
+    comps.push({
+      t: mtag, r: '', n: '', x: '', h: '', c: (mel.className||'').toString().toLowerCase().slice(0,80),
+      b: [Math.round(mrect.x), Math.round(mrect.y), Math.round(mrect.width), Math.round(mrect.height)],
+      st: 'media', ai: 'none',
+      rg: mrect.y < 120 ? 'header' : (mrect.y > document.body.scrollHeight - 200 ? 'footer' : 'main'),
+      v: true, e: true
+    });
+  }
+  // Pass 2: Capture all other semantic elements (up to 400 total)
   var nodes = document.querySelectorAll(selectors.join(','));
-  for (var i = 0; i < nodes.length && comps.length < 250; i++) {
+  for (var i = 0; i < nodes.length && comps.length < 400; i++) {
     var el = nodes[i];
     if (seen.has(el)) continue;
     seen.add(el);
+    var tag = el.tagName.toLowerCase();
     var rect = el.getBoundingClientRect();
     if (rect.width === 0 && rect.height === 0) continue;
-    var tag = el.tagName.toLowerCase();
     var role = el.getAttribute('role') || '';
     var text = (el.innerText || el.getAttribute('aria-label') || el.getAttribute('title') || '').trim().slice(0, 60);
     var href = (el.getAttribute('href') || '').slice(0, 120);
