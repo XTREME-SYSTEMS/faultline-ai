@@ -1,0 +1,104 @@
+{
+  "name": "CanonicalState",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "canonical_base44_app": {
+      "type": "string",
+      "description": "Base44 app ID"
+    },
+    "canonical_project_id": {
+      "type": "string",
+      "description": "LaunchProject ID of the canonical clone"
+    },
+    "canonical_envato_build_id": {
+      "type": "string",
+      "description": "Current build ID for the Envato clone"
+    },
+    "canonical_clone_engine_version": {
+      "type": "string",
+      "description": "Version of autonomousFullSiteClone engine"
+    },
+    "canonical_repo": {
+      "type": "string",
+      "description": "GitHub repo URL"
+    },
+    "canonical_branch": {
+      "type": "string",
+      "description": "Git branch"
+    },
+    "canonical_commit_sha": {
+      "type": "string",
+      "description": "Latest commit SHA"
+    },
+    "canonical_preview_url": {
+      "type": "string",
+      "description": "Vercel deployment URL"
+    },
+    "canonical_validator_version": {
+      "type": "string",
+      "description": "MasterQualityGate version"
+    },
+    "canonical_semantic_classifier_version": {
+      "type": "string",
+      "description": "Component family classifier version"
+    },
+    "canonical_route_manifest_hash": {
+      "type": "string",
+      "description": "Hash of all canonical routes"
+    },
+    "canonical_taxonomy_manifest_hash": {
+      "type": "string",
+      "description": "Hash of taxonomy graph"
+    },
+    "last_verified_heartbeat": {
+      "type": "string",
+      "description": "HeartbeatReceipt ID"
+    },
+    "last_verified_timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "drift_detected": {
+      "type": "boolean",
+      "default": false,
+      "description": "True when source-truth drift detected"
+    },
+    "drift_details": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of drift conflicts"
+    },
+    "quarantined_records": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Record IDs quarantined due to drift"
+    }
+  },
+  "required": [
+    "organization_id",
+    "canonical_base44_app"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "name": "ClosureBoard",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "category": {
+      "type": "string",
+      "description": "MQG category name (e.g. ROUTE_DISCOVERY, TAXONOMY_CLASSIFICATION)"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "unverified",
+        "failing",
+        "partial",
+        "passing",
+        "blocked",
+        "certified"
+      ],
+      "default": "unverified"
+    },
+    "score": {
+      "type": "number",
+      "description": "Current score 0-100"
+    },
+    "target_score": {
+      "type": "number",
+      "default": 99,
+      "description": "Required threshold"
+    },
+    "is_critical": {
+      "type": "boolean",
+      "default": false,
+      "description": "Critical categories require 100%"
+    },
+    "denominator": {
+      "type": "number",
+      "description": "Total applicable items"
+    },
+    "numerator": {
+      "type": "number",
+      "description": "Passing items"
+    },
+    "build_id": {
+      "type": "string"
+    },
+    "evidence_timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "evidence_id": {
+      "type": "string",
+      "description": "Receipt/record ID proving the score"
+    },
+    "lowest_failure": {
+      "type": "string",
+      "description": "Specific failing item keeping score below target"
+    },
+    "blocker": {
+      "type": "string"
+    },
+    "next_work_packet": {
+      "type": "string",
+      "description": "What needs to happen to improve this category"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "organization_id",
+    "category",
+    "status",
+    "score"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

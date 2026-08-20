@@ -32,6 +32,23 @@ export default async function(req: Request) {
 
     console.log(`[overnightHeartbeat] Beat at ${new Date().toISOString()} for org ${orgId}`);
 
+    // ─── 0. RECONCILE CANONICAL SOURCE TRUTH (P0) ───────────────────
+    let canonicalState: any = null;
+    try {
+      const appId = Deno.env.get('BASE44_APP_ID');
+      const reconcileRes = await fetch(`https://base44.app/api/apps/${appId}/functions/reconcileCanonicalState`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ organization_id: orgId }),
+        signal: AbortSignal.timeout(10000),
+      }).catch((e: any) => { console.log(`[overnightHeartbeat] Canonical reconcile skipped: ${e.message}`); return null; });
+      if (reconcileRes && reconcileRes.ok) {
+        const rData = await reconcileRes.json();
+        canonicalState = rData;
+        console.log(`[overnightHeartbeat] Canonical state: build=${rData.canonical_build_id}, drift=${rData.drift_detected}`);
+      }
+    } catch (e) { console.log(`[overnightHeartbeat] Canonical reconcile error: ${e.message}`); }
+
     // ─── 1. FETCH LATEST CLONE URL ──────────────────────────────────
     const latestProjects = await base44.asServiceRole.entities.LaunchProject.filter(
       { organization_id: orgId }, '-created_date', 5
@@ -210,17 +227,79 @@ export default async function(req: Request) {
       gapQueueNext: gapQueueResult?.next_work_packet,
     });
 
-    // ─── 11. DISPATCH WORK PACKET ────────────────────────────────────
+    // ─── 11. DISPATCH WORK PACKET VIA DURABLE JOB QUEUE ─────────────
     let workResult = 'skipped';
     if (workPacket.safe && workPacket.function) {
-      await dispatchFunction(workPacket.function, {
+      // Create a job in the durable queue (idempotent)
+      const jobId = `job-${workPacket.function}-${orgId.slice(-6)}-${Date.now()}`;
+      const idempotencyKey = `${workPacket.function}-${orgId}-${new Date().getMinutes()}`;
+      try {
+        await base44.asServiceRole.entities.JobQueue.create({
+          organization_id: orgId,
+          job_id: jobId,
+          job_type: workPacket.function,
+          owner_agent: 'overnightHeartbeat',
+          build_id: BUILD_ID,
+          scope: workPacket.task,
+          priority: workPacket.gap_priority || 5,
+          risk_class: 'safe',
+          status: 'queued',
+          idempotency_key: idempotencyKey,
+          attempt: 0,
+          max_retries: 3,
+          timeout_seconds: 120,
+          backoff_seconds: 30,
+          validation_plan: workPacket.task,
+          rollback_plan: '',
+          receipt_destination: 'HeartbeatReceipt',
+          approval_required: false,
+          payload: {
+            organization_id: orgId,
+            triggered_by: 'overnightHeartbeat',
+            clone_url: cloneUrl,
+            source_url: SOURCE_URL,
+          },
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        console.log(`[overnightHeartbeat] Created job ${jobId} for ${workPacket.function}`);
+      } catch (e) {
+        console.log(`[overnightHeartbeat] Job create failed (may be duplicate): ${e.message}`);
+      }
+
+      // Process the job queue (claim + execute)
+      await dispatchFunction('processJobQueue', {
         organization_id: orgId,
-        triggered_by: 'overnightHeartbeat',
-        clone_url: cloneUrl,
-        source_url: SOURCE_URL,
+        lease_owner: `heartbeat-${Date.now()}`,
       });
       workResult = 'dispatched';
-      console.log(`[overnightHeartbeat] Dispatched ${workPacket.function} for phase: ${workPacket.phase}`);
+      console.log(`[overnightHeartbeat] Dispatched ${workPacket.function} via job queue for phase: ${workPacket.phase}`);
+    }
+
+    // ─── 11b. UPDATE CLOSURE BOARD ──────────────────────────────────
+    try {
+      const appId = Deno.env.get('BASE44_APP_ID');
+      await fetch(`https://base44.app/api/apps/${appId}/functions/updateClosureBoard`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ organization_id: orgId }),
+        signal: AbortSignal.timeout(10000),
+      }).catch(() => {});
+      console.log(`[overnightHeartbeat] Closure board updated`);
+    } catch (e) { console.log(`[overnightHeartbeat] Closure board update skipped: ${e.message}`); }
+
+    // ─── 11c. AUDIT INVALID TAXONOMY (P0) ────────────────────────────
+    if (invalidNodes.length > 0) {
+      try {
+        const appId = Deno.env.get('BASE44_APP_ID');
+        await fetch(`https://base44.app/api/apps/${appId}/functions/auditInvalidTaxonomy`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ organization_id: orgId }),
+          signal: AbortSignal.timeout(10000),
+        }).catch(() => {});
+        console.log(`[overnightHeartbeat] Invalid taxonomy audit dispatched`);
+      } catch (e) { console.log(`[overnightHeartbeat] Invalid taxonomy audit skipped: ${e.message}`); }
     }
 
     // ─── 12. COMPUTE DELTA FROM PREVIOUS HEARTBEAT (P13) ─────────────

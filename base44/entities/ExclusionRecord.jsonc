@@ -1,0 +1,99 @@
+{
+  "name": "ExclusionRecord",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "exclusion_id": {
+      "type": "string",
+      "description": "Unique exclusion ID"
+    },
+    "object_type": {
+      "type": "string",
+      "enum": [
+        "route",
+        "taxonomy_node",
+        "content_family",
+        "interaction",
+        "backend_capability"
+      ],
+      "description": "What was excluded"
+    },
+    "object_id": {
+      "type": "string",
+      "description": "ID of excluded object"
+    },
+    "object_name": {
+      "type": "string"
+    },
+    "reason_code": {
+      "type": "string",
+      "enum": [
+        "source_404",
+        "invalid_route",
+        "utility_route",
+        "auth_route",
+        "pricing_route",
+        "invalid_taxonomy",
+        "duplicate",
+        "filter_only",
+        "stale",
+        "out_of_scope",
+        "exclusion_pending_proof",
+        "alias",
+        "redirect"
+      ],
+      "description": "Why this was excluded"
+    },
+    "source_evidence": {
+      "type": "string",
+      "description": "Evidence from source justifying exclusion"
+    },
+    "browser_evidence": {
+      "type": "string",
+      "description": "Browserbase session/evidence ID if applicable"
+    },
+    "review_timestamp": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "confidence": {
+      "type": "number",
+      "description": "0-1 confidence in exclusion",
+      "default": 0.5
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "active",
+        "pending_proof",
+        "reversed"
+      ],
+      "default": "active"
+    }
+  },
+  "required": [
+    "organization_id",
+    "exclusion_id",
+    "object_type",
+    "object_id",
+    "reason_code"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

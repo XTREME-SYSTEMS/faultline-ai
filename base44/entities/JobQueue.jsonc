@@ -1,0 +1,166 @@
+{
+  "name": "JobQueue",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "job_id": {
+      "type": "string",
+      "description": "Unique job identifier"
+    },
+    "job_type": {
+      "type": "string",
+      "description": "discover, normalize, classify, validate, repair, populate, harden, etc."
+    },
+    "owner_agent": {
+      "type": "string",
+      "description": "Agent or heartbeat that owns this job"
+    },
+    "build_id": {
+      "type": "string",
+      "description": "Build ID this job is bound to"
+    },
+    "scope": {
+      "type": "string",
+      "description": "What this job covers"
+    },
+    "priority": {
+      "type": "number",
+      "description": "0-8, lower = higher priority",
+      "default": 5
+    },
+    "risk_class": {
+      "type": "string",
+      "enum": [
+        "safe",
+        "protected",
+        "destructive"
+      ],
+      "default": "safe"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "queued",
+        "claimed",
+        "running",
+        "validating",
+        "passed",
+        "failed",
+        "blocked",
+        "quarantined",
+        "superseded"
+      ],
+      "default": "queued"
+    },
+    "idempotency_key": {
+      "type": "string",
+      "description": "Prevents duplicate execution"
+    },
+    "lease_owner": {
+      "type": "string",
+      "description": "Heartbeat instance that claimed this job"
+    },
+    "lease_expires_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "attempt": {
+      "type": "number",
+      "default": 0
+    },
+    "max_retries": {
+      "type": "number",
+      "default": 3
+    },
+    "timeout_seconds": {
+      "type": "number",
+      "default": 120
+    },
+    "backoff_seconds": {
+      "type": "number",
+      "default": 30
+    },
+    "dependencies": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Job IDs that must complete first"
+    },
+    "validation_plan": {
+      "type": "string",
+      "description": "How to validate this job succeeded"
+    },
+    "rollback_plan": {
+      "type": "string",
+      "description": "How to undo this job if it fails"
+    },
+    "receipt_destination": {
+      "type": "string",
+      "description": "Entity to write receipt to"
+    },
+    "approval_required": {
+      "type": "boolean",
+      "default": false
+    },
+    "blocker": {
+      "type": "string",
+      "description": "Why this job is blocked"
+    },
+    "payload": {
+      "type": "object",
+      "description": "Job-specific parameters"
+    },
+    "result": {
+      "type": "object",
+      "description": "Execution result"
+    },
+    "error": {
+      "type": "string"
+    },
+    "failure_pattern_id": {
+      "type": "string",
+      "description": "Pattern ID if this job hit a known failure pattern"
+    },
+    "created_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "updated_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "claimed_at": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "organization_id",
+    "job_id",
+    "job_type",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
