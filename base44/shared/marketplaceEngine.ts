@@ -176,7 +176,7 @@ export function buildMarketplaceJS(config: {
   var REGISTER_URL='${registerUrl}';
   var CATEGORY='${category}';
   var CATEGORY_ICON='${categoryIcon}';
-  var PAGE_SIZE = 24;
+  var PAGE_SIZE = 120;
   var currentPage = 1;
   var currentSort = 'featured';
   var currentSearch = '';

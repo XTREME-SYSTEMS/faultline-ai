@@ -77,6 +77,68 @@ export function buildFamilyLedgerExtractionScript(): string {
     'h1','h2','h3','img','video','svg'
   ];
   var seen = new Set();
+  // Pass 0b: Capture structural landmarks FIRST (footer, nav, pagination, filter
+  // inputs) so they aren't crowded out by hundreds of card elements in later passes.
+  var structuralLinkNodes = document.querySelectorAll('footer, footer a[href], nav, nav a[href], .pagination button, .pagination a, .page-btn, input[type="text"], input[type="search"], input[placeholder*="filter" i], .filter-btn, .sort-btn');
+  for (var si = 0; si < structuralLinkNodes.length && comps.length < 100; si++) {
+    var sel = structuralLinkNodes[si];
+    if (seen.has(sel)) continue;
+    seen.add(sel);
+    var stag = sel.tagName.toLowerCase();
+    var srect = sel.getBoundingClientRect();
+    if (srect.width === 0 && srect.height === 0) continue;
+    var srole = sel.getAttribute('role') || '';
+    var stext = (sel.innerText || sel.getAttribute('aria-label') || sel.getAttribute('title') || '').trim().slice(0, 60);
+    var shref = (sel.getAttribute('href') || '').slice(0, 120);
+    var scls = (sel.className || '').toString().toLowerCase().slice(0, 100);
+    var sdisabled = sel.hasAttribute('disabled') || sel.getAttribute('aria-disabled') === 'true';
+
+    var sst = 'unknown';
+    if (stag === 'footer') sst = 'footer';
+    else if (stag === 'nav' || srole === 'navigation') sst = 'navigation';
+    else if (stag === 'a' && shref) {
+      sst = 'link';
+      if (scls.includes('card') || sel.closest('[class*="card"]')) sst = 'card';
+      else if (scls.includes('cta') || stext.toLowerCase().includes('subscribe') || stext.toLowerCase().includes('download') || stext.toLowerCase().includes('sign up') || stext.toLowerCase().includes('buy') || stext.toLowerCase().includes('get started')) sst = 'cta';
+    }
+    else if (stag === 'button') {
+      sst = 'button';
+      var sbt = stext.toLowerCase();
+      if (scls.includes('filter') || sbt.includes('filter') || scls.includes('filter-btn')) sst = 'filter';
+      else if (scls.includes('sort') || sbt.includes('sort')) sst = 'sort';
+      else if (scls.includes('pagination') || scls.includes('page-btn') || /^[0-9]+$/.test(sbt) || sbt.includes('prev') || sbt.includes('next')) sst = 'pagination';
+      else if (scls.includes('cta') || sbt.includes('subscribe') || sbt.includes('download')) sst = 'cta';
+    }
+    else if (stag === 'input') {
+      var sit = (sel.type || '').toLowerCase();
+      if (sit === 'search' || (sel.getAttribute('placeholder') || '').toLowerCase().includes('search')) sst = 'search';
+      else sst = 'input';
+    }
+
+    // Region
+    var srg = 'main';
+    if (sel.closest('header') || srect.y < 120) srg = 'header';
+    else if (sel.closest('footer') || srect.y > document.body.scrollHeight - 200) srg = 'footer';
+    else if (sel.closest('nav')) srg = 'nav';
+    else if (sel.closest('aside') || (srect.x < 280 && srect.width < 300)) srg = 'sidebar';
+
+    // Action intent
+    var sai = 'none';
+    if (stag === 'a' && shref) sai = 'navigate';
+    else if (sst === 'filter') sai = 'filter';
+    else if (sst === 'sort') sai = 'sort';
+    else if (sst === 'pagination') sai = 'navigate';
+    else if (sst === 'cta') sai = 'navigate';
+    else if (stag === 'button') sai = 'click';
+    else if (stag === 'input') sai = 'input';
+
+    comps.push({
+      t: stag, r: srole, n: (sel.getAttribute('aria-label') || stext).slice(0, 60),
+      x: stext, h: shref, c: scls,
+      b: [Math.round(srect.x), Math.round(srect.y), Math.round(srect.width), Math.round(srect.height)],
+      st: sst, ai: sai, rg: srg, v: true, e: !sdisabled
+    });
+  }
   // Pass 1: Capture ALL img/video/svg elements first (up to 200) so card images
   // aren't crowded out by hundreds of card <a> elements.
   var mediaNodes = document.querySelectorAll('img,video,svg');
@@ -99,9 +161,9 @@ export function buildFamilyLedgerExtractionScript(): string {
       v: true, e: true
     });
   }
-  // Pass 2: Capture all other semantic elements (up to 400 total)
+  // Pass 2: Capture all other semantic elements (up to 800 total)
   var nodes = document.querySelectorAll(selectors.join(','));
-  for (var i = 0; i < nodes.length && comps.length < 400; i++) {
+  for (var i = 0; i < nodes.length && comps.length < 800; i++) {
     var el = nodes[i];
     if (seen.has(el)) continue;
     seen.add(el);

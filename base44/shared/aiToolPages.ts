@@ -671,7 +671,10 @@ ${hasCatalog ? `
 <button class="filter-toggle" id="filterToggle">⚙ Filters</button>
 <div class="layout">
   <aside class="filters" id="filterSidebar">
+    <nav aria-label="Subcategory navigation">
     <div class="filter-group"><h3>Subcategories</h3>${subcatLinks || '<p style="color:#555;font-size:12px;">No subcategories</p>'}</div>
+    </nav>
+    <div class="filter-group"><h3>Filter by name</h3><input type="text" id="filterByName" placeholder="Filter by name..." style="width:100%;padding:6px 8px;background:#161616;color:#fff;border:1px solid #333;border-radius:4px;font-size:13px;"></div>
     <div class="filter-group"><h3>Filter by Subcategory</h3>${subcatButtons || '<p style="color:#555;font-size:12px;">No filters</p>'}</div>
     <div class="filter-group"><h3>Filter by Software</h3>${softwareButtons || '<p style="color:#555;font-size:12px;">No software filters</p>'}</div>
     <div class="filter-group"><h3>Actions</h3>
