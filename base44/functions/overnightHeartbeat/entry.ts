@@ -243,10 +243,13 @@ export default async function(req: Request) {
       TAXONOMY_NODE_VALIDATION: { function: 'classifyOrphanTaxonomy', phase: 'taxonomy' },
     };
 
-    // P0-4: CATEGORY_BLOCKER_GRAPH — prerequisites that must be resolved first
+    // P0-4: Object-level prerequisites — do NOT require global TAXONOMY_ROUTE_COVERAGE >=99
+    // before content-family progress. Each missing content family is evaluated individually:
+    // TAXONOMY_NODE_VALID? ROUTE_REQUIRED? ROUTE_AVAILABLE? SOURCE_FAMILY_PROVEN? CONTENT_ALLOWED?
+    // This allows content coverage to rise while unrelated taxonomy routes are still being discovered.
     const CATEGORY_PREREQUISITES: Record<string, string[]> = {
-      CONTENT_FAMILY_COVERAGE: ['TAXONOMY_ROUTE_COVERAGE'], // need valid taxonomy nodes before content
-      TAXONOMY_ROUTE_COVERAGE: ['ROUTE_DISCOVERY'], // need discovered routes
+      // CONTENT_FAMILY_COVERAGE: no global prerequisite — use object-level checks when selecting node
+      TAXONOMY_ROUTE_COVERAGE: ['ROUTE_DISCOVERY'],
       ROUTE_FIDELITY: ['ROUTE_DISCOVERY', 'TAXONOMY_ROUTE_COVERAGE'],
     };
 
@@ -296,6 +299,30 @@ export default async function(req: Request) {
       const taskMsg = stalledConvergence
         ? `STALLED_CONVERGENCE on ${lowestCatName} — trying alternate approach`
         : `Drive ${lowestCatName} from ${currentLowest}% toward 99%`;
+
+      // P0-3: For CONTENT_FAMILY_COVERAGE, select a specific eligible missing-content taxonomy node
+      // P0-4: Object-level prerequisites — find a node that is individually ready:
+      //   TAXONOMY_NODE_VALID? (orphan_classification is not_orphan or missing_content)
+      //   ROUTE_REQUIRED? (not necessarily — content can be populated without a route)
+      //   SOURCE_FAMILY_PROVEN? (source_present = true)
+      //   CONTENT_ALLOWED? (node_type is category or subcategory)
+      let taxonomyNodeId = null;
+      let contentFamilyName = null;
+      if (lowestCatName === 'CONTENT_FAMILY_COVERAGE') {
+        const eligibleNode = missingContentNodes.find((n: any) =>
+          (n.orphan_classification === 'not_orphan' || n.orphan_classification === 'missing_content') &&
+          (n.node_type === 'category' || n.node_type === 'subcategory') &&
+          n.source_present !== false
+        );
+        if (eligibleNode) {
+          taxonomyNodeId = eligibleNode.taxonomy_node_id;
+          contentFamilyName = eligibleNode.node_name;
+          console.log(`[overnightHeartbeat] Selected content family: ${contentFamilyName} (${taxonomyNodeId})`);
+        } else {
+          console.log(`[overnightHeartbeat] No eligible content family nodes ready — all missing content nodes have unmet object-level prerequisites`);
+        }
+      }
+
       workPacket = {
         phase: lowestCatWorker.phase,
         function: lowestCatWorker.function,
@@ -305,6 +332,9 @@ export default async function(req: Request) {
         gap_type: lowestCatName.toLowerCase(),
         gap_priority: 3,
         stalled: stalledConvergence,
+        taxonomy_node_id: taxonomyNodeId,
+        content_family: contentFamilyName,
+        required_count: 10,
       };
       console.log(`[overnightHeartbeat] Driving lowest category: ${lowestCatName} at ${currentLowest}%${stalledConvergence ? ' (STALLED)' : ''}`);
     }
@@ -340,6 +370,12 @@ export default async function(req: Request) {
             triggered_by: 'overnightHeartbeat',
             clone_url: cloneUrl,
             source_url: SOURCE_URL,
+            ...(workPacket.taxonomy_node_id ? {
+              taxonomy_node_id: workPacket.taxonomy_node_id,
+              content_family: workPacket.content_family,
+              required_count: workPacket.required_count || 10,
+              build_id: BUILD_ID,
+            } : {}),
           },
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -349,11 +385,21 @@ export default async function(req: Request) {
         console.log(`[overnightHeartbeat] Job create failed (may be duplicate): ${e.message}`);
       }
 
-      // Process the job queue (claim + execute)
-      await dispatchFunction('processJobQueue', {
-        organization_id: orgId,
-        lease_owner: `heartbeat-${Date.now()}`,
-      });
+      // Process the job queue (claim + execute) — use longer timeout since this runs jobs
+      // P0-2: The default dispatchFunction has a 5s timeout which is too short for
+      // processJobQueue which claims and executes jobs (30-60s). Use a 90s timeout.
+      try {
+        const appId = Deno.env.get('BASE44_APP_ID');
+        await fetch(`https://base44.app/api/apps/${appId}/functions/processJobQueue`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            organization_id: orgId,
+            lease_owner: `heartbeat-${Date.now()}`,
+          }),
+          signal: AbortSignal.timeout(90000),
+        }).catch((e: any) => console.log(`[overnightHeartbeat] processJobQueue dispatch: ${e.message}`));
+      } catch (e) { console.log(`[overnightHeartbeat] processJobQueue error: ${e.message}`); }
       workResult = 'dispatched';
       console.log(`[overnightHeartbeat] Dispatched ${workPacket.function} via job queue for phase: ${workPacket.phase}`);
     }

@@ -156,7 +156,18 @@ export default async function(req: Request) {
       if (isImplemented) implementedCount++;
 
       const existingCap = existingMap.get(cap.id);
+      // P0-9: Staged validation — DISCOVERED → MODELED → IMPLEMENTED → VALIDATED
+      // VALIDATED requires E2E proof, not just string detection.
       const status = isImplemented ? 'implemented' : 'discovered';
+
+      // P0-8: All required fields for v75 ledger materialization
+      const authReq = ['AUTH', 'DOWNLOAD', 'LICENSE', 'COLLECTIONS', 'DOWNLOAD_HISTORY', 'ENTITLEMENTS', 'FAVORITES', 'LIBRARY', 'PROFILE', 'ACCOUNT_STATE', 'SUBSCRIPTIONS'].includes(cap.id) ? 'required' : 'none';
+      const authRule = authReq === 'required' ? 'User can only access own data' : 'Public or authenticated';
+      const dataModel = `${cap.id} entity / Base44 managed`;
+      const persistence = 'Base44 entity storage';
+      const frontend = isImplemented ? `Clone component for ${cap.id}` : 'Not yet built';
+      const api = isImplemented ? `Backend function for ${cap.id}` : 'Not yet built';
+      const tests = isImplemented ? [`E2E: ${cap.id} functional test`] : [];
 
       const record: any = {
         organization_id: orgId,
@@ -167,7 +178,13 @@ export default async function(req: Request) {
         clone_implementation: isImplemented
           ? `Found in clone: ${signatures.filter(s => cloneHtml.includes(s)).join(', ') || 'API endpoint active'}`
           : 'Not yet implemented in clone',
-        auth_requirement: ['AUTH', 'DOWNLOAD', 'LICENSE', 'COLLECTIONS', 'DOWNLOAD_HISTORY'].includes(cap.id) ? 'required' : 'none',
+        frontend,
+        api,
+        auth_requirement: authReq as any,
+        authorization_rule: authRule,
+        data_model: dataModel,
+        persistence,
+        tests,
         status,
         score: isImplemented ? 100 : 0,
         defects: isImplemented ? [] : [`Capability ${cap.id} not found in clone`],

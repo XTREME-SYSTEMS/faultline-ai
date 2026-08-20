@@ -43,16 +43,42 @@ export default async function(req: Request) {
     const discoveredNodes: TaxonomyNode[] = [];
     const seenNodeIds = new Set<string>();
 
+    // P0-5: Taxonomy truth class — determines whether a node participates in
+    // TAXONOMY_ROUTE_COVERAGE and CONTENT_FAMILY_COVERAGE.
+    // Only OFFICIAL_NAVIGABLE_TAXONOMY participates in those metrics.
+    function getTruthClass(node_type: string, evidence: string, name: string): string {
+      if (node_type === 'category') return 'official_navigable_taxonomy';
+      if (node_type === 'subcategory') {
+        // P0-6: Require strong taxonomy evidence for subcategories.
+        // A unique URL alone is not enough — must have navigation/menu/breadcrumb evidence.
+        if (evidence.includes('navigation') || evidence.includes('breadcrumb') || evidence.includes('menu') || evidence.includes('sidebar')) {
+          return 'official_navigable_taxonomy';
+        }
+        // Check for free-form slug patterns (like "rosyz", "abc123") — likely SEO/search landings
+        if (name.length < 3 || /^[a-z0-9]{1,5}$/i.test(name) || /similar\s*to/i.test(name)) {
+          return 'search_term_landing';
+        }
+        return 'search_term_landing'; // default for subcategories without nav evidence
+      }
+      if (node_type === 'filter_family') return 'filter_dimension';
+      if (node_type === 'tag') return 'tag_landing';
+      if (node_type === 'sort_mode') return 'dynamic_state';
+      if (node_type === 'software') return 'filter_dimension';
+      return 'other_with_evidence';
+    }
+
     function addNode(node_type: string, node_name: string, parent_node: string, evidence: string) {
       const nodeId = `${node_type}:${node_name.toLowerCase().replace(/\s+/g, '-')}`;
       if (seenNodeIds.has(nodeId) || existingIds.has(nodeId)) return;
       seenNodeIds.add(nodeId);
+      const truthClass = getTruthClass(node_type, evidence, node_name);
       discoveredNodes.push({
         taxonomy_node_id: nodeId,
         node_type,
         node_name,
         parent_node,
         source_evidence: evidence,
+        taxonomy_truth_class: truthClass,
       });
     }
 
@@ -100,20 +126,33 @@ export default async function(req: Request) {
             }, cdpSessionId, 5000);
           } catch {}
 
-          // Extract subcategories, tags, software, formats from the page
+          // P0-6: Extract subcategories ONLY from navigation/menu/breadcrumb context.
+          // A unique URL alone is not enough — must have strong source evidence.
           const extractResult = await cdp.send('Runtime.evaluate', {
             expression: `(function(){
               var nodes = [];
               
-              // Subcategory links — typically in sidebar or filter section
-              var subcatLinks = document.querySelectorAll('a[href*="${catPath}/"]');
+              // P0-6: Subcategory links — ONLY from navigation/sidebar/breadcrumb/menu context
+              // Do not accept arbitrary links from card content or footer
+              var navLinks = document.querySelectorAll(
+                'nav a[href*="${catPath}/"], ' +
+                '[class*="sidebar"] a[href*="${catPath}/"], ' +
+                '[class*="breadcrumb"] a[href*="${catPath}/"], ' +
+                '[class*="menu"] a[href*="${catPath}/"], ' +
+                '[class*="navigation"] a[href*="${catPath}/"], ' +
+                '[data-testid*="navigation"] a[href*="${catPath}/"], ' +
+                '[class*="filter"] a[href*="${catPath}/"]'
+              );
               var seenSub = new Set();
-              subcatLinks.forEach(function(a){
+              navLinks.forEach(function(a){
                 var href = a.getAttribute('href') || '';
                 var match = href.match(/${catPath.replace(/\//g, '\\/')}\\/([a-z0-9-]+)/i);
                 if (match && !seenSub.has(match[1])) {
                   seenSub.add(match[1]);
-                  nodes.push({ type: 'subcategory', name: match[1].replace(/-/g,' ').replace(/\\+/g,' '), evidence: 'Link: ' + href });
+                  // Determine evidence context
+                  var parentEl = a.closest('nav, [class*="sidebar"], [class*="breadcrumb"], [class*="menu"], [class*="navigation"], [class*="filter"]');
+                  var context = parentEl ? (parentEl.className || parentEl.tagName).toLowerCase() : 'unknown';
+                  nodes.push({ type: 'subcategory', name: match[1].replace(/-/g,' ').replace(/\\+/g,' '), evidence: 'Navigation link in ' + context + ': ' + href });
                 }
               });
               
@@ -185,6 +224,7 @@ export default async function(req: Request) {
           content_available: false,
           status: 'discovered',
           source_evidence: node.source_evidence,
+          taxonomy_truth_class: (node as any).taxonomy_truth_class || 'other_with_evidence',
         }));
         await base44.asServiceRole.entities.EnvatoTaxonomyLedger.bulkCreate(records);
         created = records.length;

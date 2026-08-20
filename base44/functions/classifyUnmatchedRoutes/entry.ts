@@ -224,11 +224,14 @@ async function inspectAndClassify(cdp: CDPClient, sessionId: string, url: string
     return { classification: 'pagination_state', evidence: `Pagination state: path=${path}`, route_type_override: 'pagination_state' };
   }
 
-  // MISSING_TAXONOMY_MAPPING — has category grid and breadcrumbs but no taxonomy match
-  if (data.hasCategoryGrid && breadcrumbs.length > 0) {
+  // MISSING_TAXONOMY_MAPPING — category page with grid (breadcrumbs optional for SPA pages)
+  // P0-1: Do NOT shrink the content-route denominator by reclassifying category pages
+  // as other_with_evidence. Category pages with a grid are content routes that need
+  // taxonomy mapping, even if breadcrumbs aren't detected by the selector.
+  if (data.hasCategoryGrid && (breadcrumbs.length > 0 || route.page_type === 'category' || route.page_type === 'subcategory')) {
     return {
       classification: 'missing_taxonomy_mapping',
-      evidence: `Category page with grid and breadcrumbs. Title: "${data.title}", H1: "${data.h1}", Breadcrumbs: ${breadcrumbs.join(' > ')}. Outbound: ${data.outboundLinks?.slice(0, 5).join(', ')}`,
+      evidence: `Category page with grid. Title: "${data.title}", H1: "${data.h1}", Breadcrumbs: ${breadcrumbs.join(' > ') || '(not detected)'}. Page type: ${route.page_type}. Outbound: ${data.outboundLinks?.slice(0, 5).join(', ')}`,
       route_type_override: 'content',
       breadcrumbs,
       outbound_links: data.outboundLinks,
@@ -240,10 +243,14 @@ async function inspectAndClassify(cdp: CDPClient, sessionId: string, url: string
     return { classification: 'redirect', evidence: `Redirected from ${url} to ${data.url}`, route_type_override: 'redirect' };
   }
 
-  // OTHER_WITH_EVIDENCE
+  // OTHER_WITH_EVIDENCE — do NOT override route_type. Preserve the original route_type
+  // to avoid shrinking the content-route denominator. The classification is for
+  // taxonomy matching purposes only, not for reclassifying the route type.
+  // P0-1: Previously this set route_type_override: 'other_with_evidence' which removed
+  // content routes from the denominator and inflated the match rate.
   return {
     classification: 'other_with_evidence',
     evidence: `Unclassified. Title: "${data.title}", H1: "${data.h1}", Body: "${data.bodyText?.slice(0, 200)}", Path: ${path}`,
-    route_type_override: 'other_with_evidence',
+    // No route_type_override — preserve original route_type
   };
 }

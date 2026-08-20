@@ -139,6 +139,31 @@
     "completed_at": {
       "type": "string",
       "format": "date-time"
+    },
+    "closure_status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "closure_passed",
+        "no_progress",
+        "stalled_convergence",
+        "failed"
+      ],
+      "default": "pending",
+      "description": "P0-10: CLOSURE_PASSED when score improved or target closed; NO_PROGRESS when no improvement; STALLED_CONVERGENCE after 2 consecutive NO_PROGRESS"
+    },
+    "convergence_delta": {
+      "type": "number",
+      "default": 0,
+      "description": "P0-10: Score change from this job's execution"
+    },
+    "pre_execution_score": {
+      "type": "number",
+      "description": "P0-10: Score before job execution"
+    },
+    "post_execution_score": {
+      "type": "number",
+      "description": "P0-10: Score after job execution"
     }
   },
   "required": [

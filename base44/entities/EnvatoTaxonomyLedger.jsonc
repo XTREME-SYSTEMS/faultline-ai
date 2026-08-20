@@ -144,6 +144,28 @@
         "validated"
       ],
       "default": "missing"
+    },
+    "taxonomy_truth_class": {
+      "type": "string",
+      "enum": [
+        "official_navigable_taxonomy",
+        "filter_dimension",
+        "search_term_landing",
+        "seo_landing",
+        "tag_landing",
+        "item_detail",
+        "similar_item_route",
+        "dynamic_state",
+        "alias",
+        "invalid_garbage",
+        "other_with_evidence"
+      ],
+      "description": "P0-5: Truth class \u2014 only official_navigable_taxonomy participates in TAXONOMY_ROUTE_COVERAGE and CONTENT_FAMILY_COVERAGE",
+      "default": "other_with_evidence"
+    },
+    "content_family": {
+      "type": "string",
+      "description": "Content family name for this taxonomy node"
     }
   },
   "required": [

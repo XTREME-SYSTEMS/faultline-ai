@@ -164,16 +164,82 @@ export default async function(req: Request) {
       console.error(`[processJobQueue] Job ${claimableJob.job_id} execution error: ${e.message}`);
     }
 
-    // ─── 6. UPDATE JOB STATUS ───────────────────────────────────────
+    // ─── 6. CONVERGENCE TRACKING (P0-10) ────────────────────────────
+    // A job is EXECUTION_PASSED when the function completed.
+    // It is CLOSURE_PASSED only when: score improved OR target object closed OR
+    // new valid prerequisite/blocker was discovered.
+    // Otherwise: NO_PROGRESS. Two consecutive NO_PROGRESS on same target → STALLED_CONVERGENCE.
+    const JOB_CATEGORY_MAP: Record<string, string> = {
+      autonomousMarketplaceStocker: 'CONTENT_FAMILY_COVERAGE',
+      discoverTaxonomy: 'TAXONOMY_ROUTE_COVERAGE',
+      autonomousFullSiteClone: 'ROUTE_FIDELITY',
+      discoverPublicSurface: 'ROUTE_DISCOVERY',
+      buildBackendCapabilityLedger: 'BACKEND_CAPABILITY_COVERAGE',
+      classifyUnmatchedRoutes: 'ROUTE_TO_TAXONOMY_MATCH',
+      classifyOrphanTaxonomy: 'TAXONOMY_NODE_VALIDATION',
+    };
+
+    const targetCategory = JOB_CATEGORY_MAP[claimableJob.job_type] || '';
+    let preExecutionScore: number | null = null;
+    let postExecutionScore: number | null = null;
+    let closureStatus = 'pending';
+
+    if (targetCategory && executionResult && !executionError) {
+      try {
+        const preBoard = await base44.asServiceRole.entities.ClosureBoard
+          .filter({ organization_id: orgId, category: targetCategory }).catch(() => []);
+        preExecutionScore = preBoard[0]?.score ?? null;
+
+        const postBoard = await base44.asServiceRole.entities.ClosureBoard
+          .filter({ organization_id: orgId, category: targetCategory }).catch(() => []);
+        postExecutionScore = postBoard[0]?.score ?? null;
+
+        if (postExecutionScore !== null && preExecutionScore !== null && postExecutionScore > preExecutionScore) {
+          closureStatus = 'closure_passed';
+        } else {
+          const hasProgress = (executionResult?.created > 0) || (executionResult?.nodes_created > 0) ||
+            (executionResult?.total > 0) || (executionResult?.classified > 0) ||
+            (executionResult?.implemented > 0);
+          closureStatus = hasProgress ? 'closure_passed' : 'no_progress';
+        }
+      } catch (e) {
+        console.log(`[processJobQueue] Convergence tracking error: ${e.message}`);
+        closureStatus = 'no_progress';
+      }
+    }
+
+    // Check for STALLED_CONVERGENCE — two consecutive NO_PROGRESS on same target
+    if (closureStatus === 'no_progress') {
+      try {
+        const recentJobs = await base44.asServiceRole.entities.JobQueue
+          .filter({ organization_id: orgId, job_type: claimableJob.job_type }).catch(() => []);
+        const recentNoProgress = recentJobs
+          .filter((j: any) => j.closure_status === 'no_progress' && j.id !== claimableJob.id)
+          .sort((a: any, b: any) => new Date(b.completed_at || b.created_at).getTime() - new Date(a.completed_at || a.created_at).getTime());
+        if (recentNoProgress.length >= 1) {
+          closureStatus = 'stalled_convergence';
+          console.log(`[processJobQueue] STALLED_CONVERGENCE detected for ${claimableJob.job_type}`);
+        }
+      } catch (e) {}
+    }
+
+    // ─── 7. UPDATE JOB STATUS ───────────────────────────────────────
     const completedAt = new Date().toISOString();
+    const convergenceDelta = (postExecutionScore !== null && preExecutionScore !== null)
+      ? postExecutionScore - preExecutionScore : 0;
+
     if (executionResult && !executionError) {
       await base44.asServiceRole.entities.JobQueue.update(claimableJob.id, {
         status: 'passed',
         result: executionResult,
         completed_at: completedAt,
         updated_at: completedAt,
+        closure_status: closureStatus,
+        convergence_delta: convergenceDelta,
+        pre_execution_score: preExecutionScore,
+        post_execution_score: postExecutionScore,
       });
-      console.log(`[processJobQueue] Job ${claimableJob.job_id} PASSED`);
+      console.log(`[processJobQueue] Job ${claimableJob.job_id} EXECUTION_PASSED, CLOSURE_${closureStatus.toUpperCase()}, delta=${convergenceDelta}`);
     } else {
       await base44.asServiceRole.entities.JobQueue.update(claimableJob.id, {
         status: 'failed',
@@ -181,6 +247,8 @@ export default async function(req: Request) {
         result: executionResult,
         completed_at: completedAt,
         updated_at: completedAt,
+        closure_status: 'failed',
+        convergence_delta: 0,
       });
       console.log(`[processJobQueue] Job ${claimableJob.job_id} FAILED (attempt ${claimableJob.attempt + 1}/${claimableJob.max_retries})`);
     }

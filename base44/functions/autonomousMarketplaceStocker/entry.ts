@@ -37,9 +37,12 @@ export default async function(req) {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
+    // P0-2: Use canonical org_id throughout the service-role execution chain.
+    // Do not depend on interactive user authentication — JobQueue dispatches
+    // via internal fetch which does not carry the auth token.
+    const CANONICAL_ORG_ID = '6a6e5e9f67ea91cec3298cee';
     const user = await base44.auth.me().catch(() => null);
-    const orgId = body.organization_id || user?.data?.organization_id;
-    if (!orgId) return Response.json({ error: 'No organization found' }, { status: 400 });
+    const orgId = body.organization_id || user?.data?.organization_id || CANONICAL_ORG_ID;
 
     const maxPerRun = body.max_per_run || 20; // limit per run to avoid timeout
 
