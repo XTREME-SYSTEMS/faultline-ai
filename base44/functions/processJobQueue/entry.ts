@@ -199,11 +199,16 @@ export default async function(req: Request) {
         },
       };
 
-      console.log(`[processJobQueue] Dispatching to ${functionUrl} (APP_ID=${SOURCE_APP_ID})`);
+      // P0-1: Forward auth header so target function can authenticate and resolve org
+      const authHeader = req.headers.get('Authorization') || '';
+      console.log(`[processJobQueue] Dispatching to ${functionUrl} (APP_ID=${SOURCE_APP_ID}, auth=${authHeader ? 'yes' : 'no'})`);
 
       const execRes = await fetch(functionUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authHeader ? { 'Authorization': authHeader } : {}),
+        },
         body: JSON.stringify(dispatchBody),
         signal: AbortSignal.timeout((claimableJob.timeout_seconds || 120) * 1000),
       });

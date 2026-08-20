@@ -29,6 +29,7 @@ export default async function(req: Request) {
     const user = await base44.auth.me().catch(() => null);
     const body = await req.json().catch(() => ({}));
     const orgId = body.organization_id || user?.data?.organization_id || 'default';
+    const authHeader = req.headers.get('Authorization') || '';
 
     console.log(`[overnightHeartbeat] Beat at ${new Date().toISOString()} for org ${orgId}`);
 
@@ -76,7 +77,7 @@ export default async function(req: Request) {
 
     if (unnormalizedRoutes.length > 0) {
       console.log(`[overnightHeartbeat] ${unnormalizedRoutes.length} routes need normalization — dispatching normalizeRoutes`);
-      await dispatchFunction('normalizeRoutes', { organization_id: orgId });
+      await dispatchFunction('normalizeRoutes', { organization_id: orgId }, authHeader);
       // Re-fetch after normalization
       const refetchedRoutes = await base44.asServiceRole.entities.EnvatoPublicSurfaceManifest.filter({ organization_id: orgId }).catch(() => []);
       routes.length = 0;
@@ -87,7 +88,7 @@ export default async function(req: Request) {
     const unclassifiedOrphans = taxonomy.filter(t => !t.orphan_classification || t.orphan_classification === '');
     if (unclassifiedOrphans.length > 0) {
       console.log(`[overnightHeartbeat] ${unclassifiedOrphans.length} orphan nodes need classification — dispatching classifyOrphanTaxonomy`);
-      await dispatchFunction('classifyOrphanTaxonomy', { organization_id: orgId });
+      await dispatchFunction('classifyOrphanTaxonomy', { organization_id: orgId }, authHeader);
       const refetchedTaxonomy = await base44.asServiceRole.entities.EnvatoTaxonomyLedger.filter({ organization_id: orgId }).catch(() => []);
       taxonomy.length = 0;
       taxonomy.push(...refetchedTaxonomy);
@@ -97,7 +98,7 @@ export default async function(req: Request) {
     const ungraphedNodes = taxonomy.filter(t => !t.children || !t.ancestors);
     if (ungraphedNodes.length > 0) {
       console.log(`[overnightHeartbeat] ${ungraphedNodes.length} taxonomy nodes need graph building — dispatching buildTaxonomyGraph`);
-      await dispatchFunction('buildTaxonomyGraph', { organization_id: orgId });
+      await dispatchFunction('buildTaxonomyGraph', { organization_id: orgId }, authHeader);
       const refetchedTaxonomy = await base44.asServiceRole.entities.EnvatoTaxonomyLedger.filter({ organization_id: orgId }).catch(() => []);
       taxonomy.length = 0;
       taxonomy.push(...refetchedTaxonomy);
@@ -395,7 +396,7 @@ export default async function(req: Request) {
         const appId = Deno.env.get('BASE44_APP_ID');
         await fetch(`https://base44.app/api/apps/${appId}/functions/processJobQueue`, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: { 'Content-Type': 'application/json', ...(authHeader ? { 'Authorization': authHeader } : {}) },
           body: JSON.stringify({
             organization_id: orgId,
             lease_owner: `heartbeat-${Date.now()}`,
@@ -579,13 +580,16 @@ export default async function(req: Request) {
 }
 
 // ─── DISPATCH HELPER ─────────────────────────────────────────────────
-async function dispatchFunction(functionName: string, payload: any): Promise<void> {
+async function dispatchFunction(functionName: string, payload: any, authHeader?: string): Promise<void> {
   try {
     const appId = Deno.env.get('BASE44_APP_ID');
     const functionUrl = `https://base44.app/api/apps/${appId}/functions/${functionName}`;
     await fetch(functionUrl, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(authHeader ? { 'Authorization': authHeader } : {}),
+      },
       body: JSON.stringify(payload),
       signal: AbortSignal.timeout(5000),
     }).catch(() => {}); // fire-and-forget
