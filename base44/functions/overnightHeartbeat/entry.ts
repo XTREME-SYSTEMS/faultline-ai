@@ -179,11 +179,11 @@ export default async function(req: Request) {
     const missingRouteNodes = taxonomy.filter(t =>
       t.orphan_classification === 'valid_leaf_not_discovered' || t.orphan_classification === 'missing_route'
     );
-    // P0-4: missingContentNodes uses official_navigable_taxonomy truth class
-    const missingContentNodes = taxonomy.filter(t =>
-      t.taxonomy_truth_class === 'official_navigable_taxonomy' &&
-      (t.orphan_classification === 'missing_content' ||
-       (t.orphan_classification === 'not_orphan' && !t.content_available && t.content_count === 0))
+    // P0-4: missingContentNodes uses valid official_navigable_taxonomy (truth-class + not invalid/duplicate/stale/out_of_scope)
+    const validOfficialNodes = getValidOfficialNavigableNodes(taxonomy);
+    const missingContentNodes = validOfficialNodes.filter(t =>
+      t.orphan_classification === 'missing_content' ||
+      (t.orphan_classification === 'not_orphan' && !t.content_available && t.content_count === 0)
     );
 
     // ─── 9. BUILD GAP QUEUE (P11) ────────────────────────────────────
@@ -216,7 +216,8 @@ export default async function(req: Request) {
       TAXONOMY_ROUTE_COVERAGE: { function: 'discoverTaxonomy', phase: 'taxonomy' },
       ROUTE_FIDELITY: { function: 'autonomousFullSiteClone', phase: 'repair' },
       ROUTE_DISCOVERY: { function: 'discoverPublicSurface', phase: 'discovery' },
-      BACKEND_CAPABILITY_COVERAGE: { function: 'buildBackendCapabilityLedger', phase: 'backend' },
+      BACKEND_IMPLEMENTATION_COVERAGE: { function: 'buildBackendCapabilityLedger', phase: 'backend' },
+      BACKEND_VALIDATION_COVERAGE: { function: 'proveFullStackChains', phase: 'validation' },
       ROUTE_TO_TAXONOMY_MATCH: { function: 'classifyUnmatchedRoutes', phase: 'taxonomy' },
       TAXONOMY_NODE_VALIDATION: { function: 'classifyOrphanTaxonomy', phase: 'taxonomy' },
     };
@@ -386,11 +387,11 @@ export default async function(req: Request) {
     try {
       const appId = Deno.env.get('BASE44_APP_ID');
       await fetch(`https://base44.app/api/apps/${appId}/functions/updateClosureBoard`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ organization_id: orgId }),
-        signal: AbortSignal.timeout(10000),
-      }).catch(() => {});
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', ...(authHeader ? { 'Authorization': authHeader } : {}) },
+          body: JSON.stringify({ organization_id: orgId }),
+          signal: AbortSignal.timeout(10000),
+        }).catch(() => {});
       console.log(`[overnightHeartbeat] Closure board updated`);
     } catch (e) { console.log(`[overnightHeartbeat] Closure board update skipped: ${e.message}`); }
 
@@ -445,7 +446,8 @@ export default async function(req: Request) {
     if (taxonomyNodeValidation < 99) blockers.push(`Taxonomy node validation at ${taxonomyNodeValidation}% — ${orphanNodes.length} unclassified orphan nodes`);
     if (taxonomyRouteCoverage < 99) blockers.push(`Taxonomy route coverage at ${taxonomyRouteCoverage}% — ${missingRouteNodes.length} valid nodes missing routes`);
     if (contentFamilyCoverage < 99) blockers.push(`Content family coverage at ${contentFamilyCoverage}% — ${missingContentNodes.length} nodes missing content`);
-    if (backendCapabilityCoverage < 99) blockers.push(`Backend capability coverage at ${backendCapabilityCoverage}%`);
+    if (backendImplMetric.score < 99) blockers.push(`Backend implementation coverage at ${backendImplMetric.score}% (${backendImplMetric.numerator}/${backendImplMetric.denominator})`);
+    if (backendValMetric.score < 100) blockers.push(`Backend validation coverage at ${backendValMetric.score}% (${backendValMetric.numerator}/${backendValMetric.denominator}) — release gated`);
     if (criticalDefects > 0) blockers.push(`${criticalDefects} open critical defects`);
     if (regressions.length > 0) blockers.push(...regressions);
 
@@ -464,18 +466,20 @@ export default async function(req: Request) {
       // Legacy fields (backward compat)
       route_coverage: routeDiscoveryCoverage,
       taxonomy_coverage: taxonomyNodeValidation,
-      backend_coverage: backendCapabilityCoverage,
+      backend_coverage: backendImplMetric.score,
       content_coverage: contentFamilyCoverage,
       interaction_coverage: interactionCoverage,
       visual_score: visualScore,
       route_taxonomy_validation: routeToTaxonomyMatch,
-      // P6: Separate independent coverage scores
+      // P6: Separate independent coverage scores (shared engine)
       route_discovery_coverage: routeDiscoveryCoverage,
       route_to_taxonomy_match: routeToTaxonomyMatch,
       taxonomy_node_validation: taxonomyNodeValidation,
       taxonomy_route_coverage: taxonomyRouteCoverage,
       content_family_coverage: contentFamilyCoverage,
-      backend_capability_coverage: backendCapabilityCoverage,
+      backend_capability_coverage: backendImplMetric.score,
+      backend_implementation_coverage: backendImplMetric.score,
+      backend_validation_coverage: backendValMetric.score,
       // P1: Normalization rates
       pre_normalization_match_rate: preNormMatchRate,
       post_normalization_match_rate: postNormMatchRate,
@@ -514,7 +518,8 @@ export default async function(req: Request) {
         taxonomy_node_validation: taxonomyNodeValidation,
         taxonomy_route_coverage: taxonomyRouteCoverage,
         content_family: contentFamilyCoverage,
-        backend_capability: backendCapabilityCoverage,
+        backend_implementation: backendImplMetric.score,
+        backend_validation: backendValMetric.score,
         interaction: interactionCoverage,
         visual: visualScore,
       },
