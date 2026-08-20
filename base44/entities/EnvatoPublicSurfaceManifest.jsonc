@@ -9,6 +9,32 @@
       "type": "string",
       "description": "Canonical route path on source site"
     },
+    "raw_url": {
+      "type": "string",
+      "description": "Original un-normalized URL before canonicalization"
+    },
+    "canonical_url": {
+      "type": "string",
+      "description": "Normalized canonical URL after trailing slash, query, tracking, locale, encoding, case normalization"
+    },
+    "route_type": {
+      "type": "string",
+      "enum": [
+        "content",
+        "search_state",
+        "filter_state",
+        "pagination_state",
+        "alias",
+        "redirect",
+        "utility",
+        "auth",
+        "pricing",
+        "source_404",
+        "invalid",
+        "other_with_evidence"
+      ],
+      "default": "content"
+    },
     "page_type": {
       "type": "string",
       "enum": [
@@ -33,6 +59,10 @@
     "parent_route": {
       "type": "string"
     },
+    "redirect_target": {
+      "type": "string",
+      "description": "Final destination URL if this route redirects"
+    },
     "discovery_source": {
       "type": "string",
       "enum": [
@@ -48,7 +78,8 @@
         "footer",
         "pricing",
         "auth",
-        "manual"
+        "manual",
+        "normalization"
       ]
     },
     "semantic_category": {
@@ -57,6 +88,18 @@
     "valid": {
       "type": "boolean",
       "default": true
+    },
+    "source_status": {
+      "type": "string",
+      "enum": [
+        "ok",
+        "redirect",
+        "not_found",
+        "blocked",
+        "error",
+        "unknown"
+      ],
+      "default": "ok"
     },
     "http_state": {
       "type": "number",
@@ -122,6 +165,34 @@
         "non_content_route"
       ],
       "default": "unvalidated"
+    },
+    "unmatched_classification": {
+      "type": "string",
+      "enum": [
+        "missing_taxonomy_mapping",
+        "dynamic_item_detail",
+        "search_state",
+        "filter_state",
+        "pagination_state",
+        "alias",
+        "redirect",
+        "utility_route",
+        "auth_route",
+        "pricing_route",
+        "source_404",
+        "invalid_route",
+        "other_with_evidence"
+      ],
+      "description": "Classification for unmatched routes \u2014 only missing_taxonomy_mapping creates a new taxonomy mapping"
+    },
+    "classification_evidence": {
+      "type": "string",
+      "description": "Evidence supporting the unmatched classification (title, H1, breadcrumbs, etc.)"
+    },
+    "normalized": {
+      "type": "boolean",
+      "default": false,
+      "description": "True after route has been through canonical normalization"
     },
     "validated_at": {
       "type": "string",

@@ -12,6 +12,7 @@
     "node_type": {
       "type": "string",
       "enum": [
+        "root",
         "category",
         "subcategory",
         "asset_class",
@@ -19,7 +20,6 @@
         "software",
         "format",
         "style",
-        "theme",
         "use_case",
         "filter_family",
         "sort_mode",
@@ -29,9 +29,50 @@
     "node_name": {
       "type": "string"
     },
+    "slug": {
+      "type": "string",
+      "description": "URL-safe slug derived from node_name, used for route matching"
+    },
     "parent_node": {
       "type": "string",
       "description": "Parent taxonomy node ID"
+    },
+    "parent_id": {
+      "type": "string",
+      "description": "Parent taxonomy node ID (graph field \u2014 alias of parent_node)"
+    },
+    "ancestors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Ordered list of ancestor taxonomy node IDs from root to parent"
+    },
+    "children": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "List of direct child taxonomy node IDs"
+    },
+    "source_route": {
+      "type": "string",
+      "description": "Canonical source route that maps to this taxonomy node"
+    },
+    "clone_route": {
+      "type": "string",
+      "description": "Corresponding clone route"
+    },
+    "filter_dimensions": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "Filter dimension node IDs applicable to this node"
+    },
+    "content_count": {
+      "type": "number",
+      "default": 0
     },
     "source_present": {
       "type": "boolean",
@@ -48,10 +89,6 @@
     "content_available": {
       "type": "boolean",
       "default": false
-    },
-    "content_count": {
-      "type": "number",
-      "default": 0
     },
     "searchable": {
       "type": "boolean",
@@ -70,6 +107,33 @@
     },
     "clone_implementation": {
       "type": "string"
+    },
+    "confidence": {
+      "type": "number",
+      "description": "0-1 confidence score for this node's classification",
+      "default": 0.5
+    },
+    "orphan_classification": {
+      "type": "string",
+      "enum": [
+        "valid_leaf_not_discovered",
+        "valid_parent_group",
+        "filter_only_dimension",
+        "alias",
+        "duplicate",
+        "stale",
+        "invalid",
+        "out_of_scope",
+        "missing_content",
+        "missing_route",
+        "missing_crawl_evidence",
+        "not_orphan"
+      ],
+      "description": "Classification for orphan taxonomy nodes \u2014 determines whether the node requires a standalone page"
+    },
+    "classification_evidence": {
+      "type": "string",
+      "description": "Evidence supporting the orphan classification"
     },
     "status": {
       "type": "string",
