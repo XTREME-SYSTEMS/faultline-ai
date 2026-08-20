@@ -14,6 +14,15 @@ import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 // 2. Checking the clone's injected scripts and API endpoints for each
 // 3. Recording the implementation status in BackendCapabilityLedger
 
+// P0-6: ID alias map — canonical capability IDs map to signature keys
+// AUTHENTICATION ↔ AUTH, DOWNLOADS ↔ DOWNLOAD, SUBSCRIPTIONS ↔ SUBSCRIPTION, LICENSE_RECORDS ↔ LICENSE
+const CAPABILITY_SIG_ALIAS: Record<string, string> = {
+  AUTHENTICATION: 'AUTH',
+  DOWNLOADS: 'DOWNLOAD',
+  SUBSCRIPTIONS: 'SUBSCRIPTION',
+  LICENSE_RECORDS: 'LICENSE',
+};
+
 const CLONE_SCRIPT_SIGNATURES: Record<string, string[]> = {
   CATALOG: ['getEnvatoCatalog', 'catalogScript', 'asset-card', 'marketplace-grid', 'all-items'],
   CATEGORY_BROWSE: ['graphic-templates', 'video-templates', 'web-templates', 'categoryPage', 'CATEGORY_PAGES', '/photos', '/graphics', '/fonts', '/audio', '/3d'],
@@ -121,6 +130,7 @@ export default async function(req: Request) {
       { id: 'COLLECTIONS', name: 'Collections', category: 'collections', desc: 'Save assets to named collections' },
       { id: 'LIBRARY', name: 'User Library', category: 'library', desc: 'Personal library of purchased/saved assets' },
       { id: 'SUBSCRIPTIONS', name: 'Subscription Management', category: 'subscriptions', desc: 'Manage subscription plans (Growth, Operating)' },
+      { id: 'CHECKOUT', name: 'Stripe Checkout', category: 'form_processing', desc: 'Stripe-based checkout and payment processing' },
       { id: 'ENTITLEMENTS', name: 'Entitlements', category: 'entitlements', desc: 'Check user entitlements for gated content' },
       { id: 'DOWNLOADS', name: 'Asset Download', category: 'downloads', desc: 'Download purchased assets with license tracking' },
       { id: 'DOWNLOAD_HISTORY', name: 'Download History', category: 'download_history', desc: 'Track user download history' },
@@ -141,27 +151,31 @@ export default async function(req: Request) {
     let implementedCount = 0;
 
     for (const cap of capabilities) {
-      const signatures = CLONE_SCRIPT_SIGNATURES[cap.id] || [];
+      // P0-6: Use alias map for signature lookup (AUTHENTICATION→AUTH, DOWNLOADS→DOWNLOAD, etc.)
+      const sigKey = CAPABILITY_SIG_ALIAS[cap.id] || cap.id;
+      const signatures = CLONE_SCRIPT_SIGNATURES[sigKey] || [];
       const foundInClone = signatures.some(sig => cloneHtml.includes(sig));
-      const apiEndpointExists = endpointStatus[`getEnvatoCatalog`] && cap.id === 'CATALOG' ||
-        endpointStatus[`createStoreCheckout`] && cap.id === 'CHECKOUT' ||
-        endpointStatus[`invokeAiTool`] && cap.id === 'AI_TOOLS' ||
-        endpointStatus[`ingestCloneLead`] && cap.id === 'FORM_PROCESSING' ||
-        endpointStatus[`downloadAsset`] && cap.id === 'DOWNLOAD' ||
-        endpointStatus[`grantAssetAccess`] && cap.id === 'LICENSE' ||
-        endpointStatus[`getAssetDownload`] && cap.id === 'DOWNLOAD' ||
-        endpointStatus[`resolveDeepPath`] && cap.id === 'ITEM_DETAIL';
+      // P0-6: Fix ID aliases in endpoint checks
+      const apiEndpointExists = (endpointStatus[`getEnvatoCatalog`] && cap.id === 'CATALOG') ||
+        (endpointStatus[`createStoreCheckout`] && cap.id === 'CHECKOUT') ||
+        (endpointStatus[`invokeAiTool`] && cap.id === 'AI_TOOLS') ||
+        (endpointStatus[`ingestCloneLead`] && cap.id === 'FORM_PROCESSING') ||
+        (endpointStatus[`downloadAsset`] && (cap.id === 'DOWNLOADS' || cap.id === 'DOWNLOAD')) ||
+        (endpointStatus[`grantAssetAccess`] && (cap.id === 'LICENSE_RECORDS' || cap.id === 'LICENSE')) ||
+        (endpointStatus[`getAssetDownload`] && (cap.id === 'DOWNLOADS' || cap.id === 'DOWNLOAD')) ||
+        (endpointStatus[`resolveDeepPath`] && cap.id === 'ITEM_DETAIL');
 
       const isImplemented = foundInClone || apiEndpointExists;
       if (isImplemented) implementedCount++;
 
       const existingCap = existingMap.get(cap.id);
-      // P0-9: Staged validation — DISCOVERED → MODELED → IMPLEMENTED → VALIDATED
-      // VALIDATED requires E2E proof, not just string detection.
+      // P0-6/P0-9: Staged validation — DISCOVERED → MODELED → IMPLEMENTED → VALIDATED
+      // VALIDATED requires E2E proof, NOT source-string detection.
+      // String detection only awards IMPLEMENTED, never VALIDATED.
       const status = isImplemented ? 'implemented' : 'discovered';
 
-      // P0-8: All required fields for v75 ledger materialization
-      const authReq = ['AUTH', 'DOWNLOAD', 'LICENSE', 'COLLECTIONS', 'DOWNLOAD_HISTORY', 'ENTITLEMENTS', 'FAVORITES', 'LIBRARY', 'PROFILE', 'ACCOUNT_STATE', 'SUBSCRIPTIONS'].includes(cap.id) ? 'required' : 'none';
+      // P0-6: Fix auth_requirement to use canonical capability IDs
+      const authReq = ['AUTHENTICATION', 'DOWNLOADS', 'LICENSE_RECORDS', 'COLLECTIONS', 'DOWNLOAD_HISTORY', 'ENTITLEMENTS', 'FAVORITES', 'LIBRARY', 'PROFILE', 'ACCOUNT_STATE', 'SUBSCRIPTIONS'].includes(cap.id) ? 'required' : 'none';
       const authRule = authReq === 'required' ? 'User can only access own data' : 'Public or authenticated';
       const dataModel = `${cap.id} entity / Base44 managed`;
       const persistence = 'Base44 entity storage';
@@ -217,24 +231,41 @@ export default async function(req: Request) {
     const totalCapabilities = capabilities.length;
     const coverage = Math.round((implementedCount / totalCapabilities) * 100);
 
+    // P0-6: Output separate staged counts — DISCOVERED, MODELED, IMPLEMENTED, VALIDATED
+    // VALIDATED requires E2E proof, not string detection. Currently 0 VALIDATED.
+    const discoveredCount = totalCapabilities - implementedCount;
+    const modeledCount = 0; // No capabilities are modeled yet
+    const validatedCount = 0; // P0-6: VALIDATED requires E2E proof, not string detection
+
     return Response.json({
       status: 'success',
+      build_id: body.build_id || 'v75-taxonomy-closure-001',
       total_capabilities: totalCapabilities,
+      // P0-6: Separate staged counts
+      discovered: discoveredCount,
+      modeled: modeledCount,
       implemented: implementedCount,
-      discovered: totalCapabilities - implementedCount,
+      validated: validatedCount,
       coverage_percent: coverage,
+      // P0-6: Certification coverage based on VALIDATED, with IMPLEMENTED shown separately
+      certification_coverage: Math.round((validatedCount / totalCapabilities) * 100),
+      implemented_coverage: coverage,
       clone_url_checked: targetCloneUrl,
       api_endpoints_active: Object.entries(endpointStatus).filter(([, v]) => v).map(([k]) => k),
-      capabilities: capabilities.map(c => ({
-        id: c.id,
-        name: c.name,
-        implemented: CLONE_SCRIPT_SIGNATURES[c.id]?.some(s => cloneHtml.includes(s)) ||
-          (c.id === 'CATALOG' && endpointStatus['getEnvatoCatalog']) ||
-          (c.id === 'CHECKOUT' && endpointStatus['createStoreCheckout']) ||
-          (c.id === 'AI_TOOLS' && endpointStatus['invokeAiTool']) ||
-          (c.id === 'FORM_PROCESSING' && endpointStatus['ingestCloneLead']) ||
-          (c.id === 'DOWNLOAD' && endpointStatus['downloadAsset']),
-      })),
+      capabilities: capabilities.map(c => {
+        const sigKey = CAPABILITY_SIG_ALIAS[c.id] || c.id;
+        return {
+          id: c.id,
+          name: c.name,
+          status: (CLONE_SCRIPT_SIGNATURES[sigKey]?.some(s => cloneHtml.includes(s)) ||
+            (c.id === 'CATALOG' && endpointStatus['getEnvatoCatalog']) ||
+            (c.id === 'CHECKOUT' && endpointStatus['createStoreCheckout']) ||
+            (c.id === 'AI_TOOLS' && endpointStatus['invokeAiTool']) ||
+            (c.id === 'FORM_PROCESSING' && endpointStatus['ingestCloneLead']) ||
+            ((c.id === 'DOWNLOADS' || c.id === 'DOWNLOAD') && endpointStatus['downloadAsset']))
+            ? 'implemented' : 'discovered',
+        };
+      }),
     });
   } catch (error) {
     console.error('[buildBackendCapabilityLedger] Error:', error);

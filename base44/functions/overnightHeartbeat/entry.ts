@@ -151,23 +151,25 @@ export default async function(req: Request) {
     const taxonomyNodeValidation = taxonomy.length > 0
       ? Math.round((validatedTaxonomyNodes.length / taxonomy.length) * 100) : 0;
 
-    // TAXONOMY_ROUTE_COVERAGE: % of valid navigable nodes with a route
-    const navigableNodes = taxonomy.filter(t =>
-      (t.node_type === 'category' || t.node_type === 'subcategory') &&
-      t.orphan_classification !== 'invalid' &&
-      t.orphan_classification !== 'duplicate' &&
-      t.orphan_classification !== 'stale'
+    // P0-4: TAXONOMY_ROUTE_COVERAGE denominator = official_navigable_taxonomy truth class
+    // Only nodes with taxonomy_truth_class = 'official_navigable_taxonomy' participate.
+    // filter_dimension scored under FACETS/FILTERING.
+    // search_term_landing, seo_landing, tag_landing scored as route/search states.
+    // item_detail scored under item experience.
+    // invalid_garbage excluded only with evidence.
+    const officialNavigableNodes = taxonomy.filter(t =>
+      t.taxonomy_truth_class === 'official_navigable_taxonomy'
     );
-    const navigableWithRoute = navigableNodes.filter(t =>
+    const navigableWithRoute = officialNavigableNodes.filter(t =>
       t.orphan_classification === 'not_orphan' || t.orphan_classification === 'missing_content'
     );
-    const taxonomyRouteCoverage = navigableNodes.length > 0
-      ? Math.round((navigableWithRoute.length / navigableNodes.length) * 100) : 0;
+    const taxonomyRouteCoverage = officialNavigableNodes.length > 0
+      ? Math.round((navigableWithRoute.length / officialNavigableNodes.length) * 100) : 0;
 
-    // CONTENT_FAMILY_COVERAGE: % of navigable nodes with content
-    const nodesWithContent = navigableNodes.filter(t => t.content_count > 0 || t.content_available);
-    const contentFamilyCoverage = navigableNodes.length > 0
-      ? Math.round((nodesWithContent.length / navigableNodes.length) * 100) : 0;
+    // P0-4: CONTENT_FAMILY_COVERAGE denominator = official_navigable_taxonomy truth class
+    const nodesWithContent = officialNavigableNodes.filter(t => t.content_count > 0 || t.content_available);
+    const contentFamilyCoverage = officialNavigableNodes.length > 0
+      ? Math.round((nodesWithContent.length / officialNavigableNodes.length) * 100) : 0;
 
     // BACKEND_CAPABILITY_COVERAGE
     const backendCapabilityCoverage = capabilities.length > 0
@@ -202,10 +204,11 @@ export default async function(req: Request) {
     const missingRouteNodes = taxonomy.filter(t =>
       t.orphan_classification === 'valid_leaf_not_discovered' || t.orphan_classification === 'missing_route'
     );
+    // P0-4: missingContentNodes uses official_navigable_taxonomy truth class
     const missingContentNodes = taxonomy.filter(t =>
-      t.orphan_classification === 'missing_content' ||
-      (t.orphan_classification === 'not_orphan' && !t.content_available && t.content_count === 0 &&
-       (t.node_type === 'category' || t.node_type === 'subcategory'))
+      t.taxonomy_truth_class === 'official_navigable_taxonomy' &&
+      (t.orphan_classification === 'missing_content' ||
+       (t.orphan_classification === 'not_orphan' && !t.content_available && t.content_count === 0))
     );
 
     // ─── 9. BUILD GAP QUEUE (P11) ────────────────────────────────────
@@ -482,7 +485,7 @@ export default async function(req: Request) {
       new_defects: criticalDefects,
       closed_defects: 0,
       current_lowest_score: currentLowest,
-      current_lowest_category: currentLowestCategoryName,
+      // P0-7: current_lowest_category not in HeartbeatReceipt schema — persist in delta_from_previous
       // Legacy fields (backward compat)
       route_coverage: routeDiscoveryCoverage,
       taxonomy_coverage: taxonomyNodeValidation,
@@ -512,7 +515,7 @@ export default async function(req: Request) {
       invalid_nodes: invalidNodes.length,
       missing_route_nodes: missingRouteNodes.length,
       missing_content_nodes: missingContentNodes.length,
-      delta_from_previous: delta,
+      delta_from_previous: { ...delta, current_lowest_category: currentLowestCategoryName },
       security_status: criticalDefects > 0 ? 'critical' : highDefects > 0 ? 'warning' : 'secure',
       blockers,
       next_task: workPacket.task,
