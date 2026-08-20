@@ -40,20 +40,32 @@ export default async function(req: Request) {
     console.log(`[buildTaxonomyGapQueue] Starting for org ${orgId}`);
 
     // ─── 1. FETCH ALL DATA ──────────────────────────────────────────
-    const [routes, taxonomy, capabilities, scores] = await Promise.all([
+    const [routes, taxonomy, capabilities, scores, exclusions, jobs] = await Promise.all([
       base44.asServiceRole.entities.EnvatoPublicSurfaceManifest.filter({ organization_id: orgId }).catch(() => []),
       base44.asServiceRole.entities.EnvatoTaxonomyLedger.filter({ organization_id: orgId }).catch(() => []),
       base44.asServiceRole.entities.BackendCapabilityLedger.filter({ organization_id: orgId }).catch(() => []),
       base44.asServiceRole.entities.MasterQualityScore.filter({ organization_id: orgId }).catch(() => []),
+      base44.asServiceRole.entities.ExclusionRecord.filter({ organization_id: orgId }).catch(() => []),
+      base44.asServiceRole.entities.JobQueue.filter({ organization_id: orgId }).catch(() => []),
     ]);
 
-    console.log(`[buildTaxonomyGapQueue] ${routes.length} routes, ${taxonomy.length} taxonomy, ${capabilities.length} capabilities`);
+    console.log(`[buildTaxonomyGapQueue] ${routes.length} routes, ${taxonomy.length} taxonomy, ${capabilities.length} capabilities, ${exclusions.length} exclusions, ${jobs.length} jobs`);
+
+    // Build set of already-excluded object IDs (skip these — they have evidence)
+    const excludedObjectIds = new Set(exclusions.map((e: any) => e.object_id));
+    // Build set of already-queued/running job types (skip duplicates)
+    const activeJobTypes = new Set(jobs
+      .filter((j: any) => j.status === 'queued' || j.status === 'claimed' || j.status === 'running')
+      .map((j: any) => j.job_type));
 
     const gapQueue: GapItem[] = [];
 
     // ─── 2. P1: INVALID/CORRUPT TAXONOMY ────────────────────────────
-    const invalidNodes = taxonomy.filter(t => t.orphan_classification === 'invalid');
-    for (const node of invalidNodes.slice(0, 10)) {
+    // Skip invalid nodes that already have exclusion records — they're audited
+    const invalidNodes = taxonomy.filter(t =>
+      t.orphan_classification === 'invalid' && !excludedObjectIds.has(t.id)
+    );
+    for (const node of invalidNodes.slice(0, 5)) {
       gapQueue.push({
         priority: 1,
         gap_type: 'invalid_taxonomy',
@@ -194,7 +206,8 @@ export default async function(req: Request) {
     gapQueue.sort((a, b) => a.priority - b.priority);
 
     // ─── 11. SELECT HIGHEST SAFE WORK PACKET ────────────────────────
-    const nextPacket = gapQueue.find(g => g.safe) || null;
+    // Skip gap items whose target_function is already active in the job queue
+    const nextPacket = gapQueue.find(g => g.safe && !activeJobTypes.has(g.target_function)) || null;
 
     // ─── 12. COMPUTE QUEUE STATS ───────────────────────────────────
     const queueStats: Record<string, number> = {};

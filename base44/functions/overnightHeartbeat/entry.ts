@@ -208,24 +208,45 @@ export default async function(req: Request) {
     } catch (e) { console.log(`[overnightHeartbeat] Gap queue error: ${e.message}`); }
 
     // ─── 10. DETERMINE NEXT WORK PACKET (P11/P12) ────────────────────
-    const workPacket = determineWorkPacket({
-      routeDiscoveryCoverage,
-      routeToTaxonomyMatch,
-      taxonomyNodeValidation,
-      taxonomyRouteCoverage,
-      contentFamilyCoverage,
-      backendCapabilityCoverage,
-      interactionCoverage,
-      visualScore,
-      currentLowest,
-      routesCount: routes.length,
-      taxonomyCount: taxonomy.length,
-      capabilitiesCount: capabilities.length,
-      unmatchedCount: unmatchedRoutes.length,
-      missingRouteCount: missingRouteNodes.length,
-      missingContentCount: missingContentNodes.length,
-      gapQueueNext: gapQueueResult?.next_work_packet,
-    });
+    // Priority: drive the LOWEST scoring category first (anti-subset-optimization)
+    // Gap queue provides the packet, but if it's stuck on already-processed items,
+    // fall back to phase-based progression targeting the lowest score
+    const lowestScores = [
+      { category: 'CONTENT_FAMILY_COVERAGE', score: contentFamilyCoverage, function: 'autonomousMarketplaceStocker', phase: 'catalog' },
+      { category: 'TAXONOMY_ROUTE_COVERAGE', score: taxonomyRouteCoverage, function: 'discoverTaxonomy', phase: 'taxonomy' },
+      { category: 'ROUTE_DISCOVERY', score: routeDiscoveryCoverage, function: 'discoverPublicSurface', phase: 'discovery' },
+      { category: 'BACKEND_CAPABILITY_COVERAGE', score: backendCapabilityCoverage, function: 'buildBackendCapabilityLedger', phase: 'backend' },
+      { category: 'ROUTE_TO_TAXONOMY_MATCH', score: routeToTaxonomyMatch, function: 'classifyUnmatchedRoutes', phase: 'taxonomy' },
+    ].sort((a, b) => a.score - b.score);
+
+    const lowestCategory = lowestScores[0];
+    const gapQueueNext = gapQueueResult?.next_work_packet;
+
+    // Use gap queue packet if it's a real gap (not stuck on invalid_taxonomy)
+    // Otherwise, drive the lowest-scoring category directly
+    let workPacket;
+    if (gapQueueNext && gapQueueNext.gap_type !== 'invalid_taxonomy' && gapQueueNext.target_function) {
+      workPacket = determineWorkPacket({
+        routeDiscoveryCoverage, routeToTaxonomyMatch, taxonomyNodeValidation,
+        taxonomyRouteCoverage, contentFamilyCoverage, backendCapabilityCoverage,
+        interactionCoverage, visualScore, currentLowest,
+        routesCount: routes.length, taxonomyCount: taxonomy.length, capabilitiesCount: capabilities.length,
+        unmatchedCount: unmatchedRoutes.length, missingRouteCount: missingRouteNodes.length,
+        missingContentCount: missingContentNodes.length, gapQueueNext,
+      });
+    } else {
+      // Drive the lowest-scoring category directly
+      workPacket = {
+        phase: lowestCategory.phase,
+        function: lowestCategory.function,
+        task: `Drive ${lowestCategory.category} from ${lowestCategory.score}% toward 99%`,
+        safe: true,
+        queueDepth: 0,
+        gap_type: lowestCategory.category.toLowerCase(),
+        gap_priority: 3,
+      };
+      console.log(`[overnightHeartbeat] Gap queue stuck — driving lowest category: ${lowestCategory.category} at ${lowestCategory.score}%`);
+    }
 
     // ─── 11. DISPATCH WORK PACKET VIA DURABLE JOB QUEUE ─────────────
     let workResult = 'skipped';
