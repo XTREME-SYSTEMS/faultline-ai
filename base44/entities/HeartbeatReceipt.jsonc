@@ -1,0 +1,108 @@
+{
+  "name": "HeartbeatReceipt",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "heartbeat_time": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "build_id": {
+      "type": "string"
+    },
+    "queue_depth": {
+      "type": "number",
+      "default": 0
+    },
+    "current_task": {
+      "type": "string"
+    },
+    "completed_since_last": {
+      "type": "number",
+      "default": 0
+    },
+    "new_defects": {
+      "type": "number",
+      "default": 0
+    },
+    "closed_defects": {
+      "type": "number",
+      "default": 0
+    },
+    "current_lowest_score": {
+      "type": "number"
+    },
+    "route_coverage": {
+      "type": "number"
+    },
+    "taxonomy_coverage": {
+      "type": "number"
+    },
+    "backend_coverage": {
+      "type": "number"
+    },
+    "content_coverage": {
+      "type": "number"
+    },
+    "interaction_coverage": {
+      "type": "number"
+    },
+    "visual_score": {
+      "type": "number"
+    },
+    "security_status": {
+      "type": "string",
+      "enum": [
+        "secure",
+        "warning",
+        "critical"
+      ],
+      "default": "secure"
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "next_task": {
+      "type": "string"
+    },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "discovery",
+        "taxonomy",
+        "backend",
+        "catalog",
+        "validation",
+        "repair",
+        "harden",
+        "complete"
+      ],
+      "default": "discovery"
+    }
+  },
+  "required": [
+    "organization_id",
+    "heartbeat_time"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

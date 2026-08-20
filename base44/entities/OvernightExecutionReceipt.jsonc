@@ -1,0 +1,109 @@
+{
+  "name": "OvernightExecutionReceipt",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "session_start": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "session_end": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "starting_build_id": {
+      "type": "string"
+    },
+    "ending_build_id": {
+      "type": "string"
+    },
+    "starting_state": {
+      "type": "object"
+    },
+    "ending_state": {
+      "type": "object"
+    },
+    "builds_created": {
+      "type": "number",
+      "default": 0
+    },
+    "routes_discovered": {
+      "type": "number",
+      "default": 0
+    },
+    "taxonomy_discovered": {
+      "type": "number",
+      "default": 0
+    },
+    "backend_capabilities_implemented": {
+      "type": "number",
+      "default": 0
+    },
+    "content_added": {
+      "type": "number",
+      "default": 0
+    },
+    "defects_found": {
+      "type": "number",
+      "default": 0
+    },
+    "defects_fixed": {
+      "type": "number",
+      "default": 0
+    },
+    "regressions": {
+      "type": "number",
+      "default": 0
+    },
+    "validation_scores": {
+      "type": "object"
+    },
+    "blockers": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "approval_requests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "current_build": {
+      "type": "string"
+    },
+    "best_preview_url": {
+      "type": "string"
+    },
+    "exact_next_action": {
+      "type": "string"
+    },
+    "heartbeats_run": {
+      "type": "number",
+      "default": 0
+    }
+  },
+  "required": [
+    "organization_id",
+    "session_start"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}

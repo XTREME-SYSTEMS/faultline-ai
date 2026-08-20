@@ -1,0 +1,158 @@
+{
+  "name": "BackendCapabilityLedger",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "capability_id": {
+      "type": "string",
+      "description": "e.g. CATALOG, SEARCH, AUTH, DOWNLOAD, SUBSCRIPTION"
+    },
+    "capability_name": {
+      "type": "string",
+      "description": "Human-readable name"
+    },
+    "capability_category": {
+      "type": "string",
+      "enum": [
+        "identity",
+        "authentication",
+        "sessions",
+        "profile",
+        "catalog",
+        "category",
+        "subcategory",
+        "tagging",
+        "facets",
+        "search",
+        "filter",
+        "sort",
+        "pagination",
+        "item_detail",
+        "related_content",
+        "authors",
+        "media",
+        "favorites",
+        "collections",
+        "library",
+        "subscriptions",
+        "entitlements",
+        "downloads",
+        "download_history",
+        "license_records",
+        "account_state",
+        "form_processing",
+        "ai_tools",
+        "admin_catalog",
+        "content_ingestion",
+        "media_processing",
+        "audit",
+        "error_recovery"
+      ]
+    },
+    "source_observable_behavior": {
+      "type": "string",
+      "description": "What the source site does for this capability"
+    },
+    "clone_implementation": {
+      "type": "string",
+      "description": "How the clone implements this (route, function, entity)"
+    },
+    "frontend": {
+      "type": "string",
+      "description": "Frontend component/page that uses this"
+    },
+    "api": {
+      "type": "string",
+      "description": "Backend function or API endpoint"
+    },
+    "auth_requirement": {
+      "type": "string",
+      "enum": [
+        "none",
+        "optional",
+        "required",
+        "admin"
+      ]
+    },
+    "authorization_rule": {
+      "type": "string",
+      "description": "Who can access this"
+    },
+    "data_model": {
+      "type": "string",
+      "description": "Entity or table used"
+    },
+    "persistence": {
+      "type": "string",
+      "description": "How data is stored"
+    },
+    "expected_states": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "tests": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "not_discovered",
+        "discovered",
+        "modeled",
+        "implemented",
+        "partial",
+        "validated",
+        "blocked",
+        "not_applicable_with_proof"
+      ],
+      "default": "not_discovered"
+    },
+    "score": {
+      "type": "number",
+      "default": 0
+    },
+    "defects": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "last_validated": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "build_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "organization_id",
+    "capability_id",
+    "capability_name",
+    "capability_category",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
