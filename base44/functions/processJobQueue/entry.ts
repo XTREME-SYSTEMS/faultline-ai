@@ -139,9 +139,13 @@ export default async function(req: Request) {
       discoverTaxonomy: 'TAXONOMY_ROUTE_COVERAGE',
       autonomousFullSiteClone: 'ROUTE_FIDELITY',
       discoverPublicSurface: 'ROUTE_DISCOVERY',
-      buildBackendCapabilityLedger: 'BACKEND_CAPABILITY_COVERAGE',
+      buildBackendCapabilityLedger: 'BACKEND_IMPLEMENTATION_COVERAGE',
       classifyUnmatchedRoutes: 'ROUTE_TO_TAXONOMY_MATCH',
       classifyOrphanTaxonomy: 'TAXONOMY_NODE_VALIDATION',
+      // P0-1: proveFullStackChains and targeted validators map to BACKEND_VALIDATION_COVERAGE
+      proveFullStackChains: 'BACKEND_VALIDATION_COVERAGE',
+      repairBackendChain: 'BACKEND_IMPLEMENTATION_COVERAGE',
+      validateFullStack: 'BACKEND_VALIDATION_COVERAGE',
     };
 
     const targetCategory = JOB_CATEGORY_MAP[claimableJob.job_type] || '';
@@ -278,22 +282,26 @@ export default async function(req: Request) {
     }
 
     // P0-3: STALLED_CONVERGENCE only if:
-    //   same job_type AND same target object AND same category AND no score increase
+    //   same job_type AND same target object/chain AND same category AND no score increase
+    // P0-1: For proveFullStackChains, two identical NO_PROGRESS attempts = STALLED
     if (closureStatus === 'no_progress') {
       try {
         const recentJobs = await base44.asServiceRole.entities.JobQueue
           .filter({ organization_id: orgId, job_type: claimableJob.job_type }).catch(() => []);
         const targetId = claimableJob.payload?.taxonomy_node_id;
+        const targetChain = claimableJob.payload?.target_chain || claimableJob.payload?.chain_id;
         const recentNoProgress = recentJobs
           .filter((j: any) =>
             j.closure_status === 'no_progress' &&
             j.id !== claimableJob.id &&
-            (targetId ? j.payload?.taxonomy_node_id === targetId : true)
+            (targetId ? j.payload?.taxonomy_node_id === targetId : true) &&
+            (targetChain ? (j.payload?.target_chain || j.payload?.chain_id) === targetChain : true)
           )
           .sort((a: any, b: any) => new Date(b.completed_at || b.created_at).getTime() - new Date(a.completed_at || a.created_at).getTime());
+        // P0-1: Two identical NO_PROGRESS = STALLED_CONVERGENCE
         if (recentNoProgress.length >= 1) {
           closureStatus = 'stalled_convergence';
-          console.log(`[processJobQueue] STALLED_CONVERGENCE for ${claimableJob.job_type} target=${targetId || 'none'}`);
+          console.log(`[processJobQueue] STALLED_CONVERGENCE for ${claimableJob.job_type} target=${targetId || targetChain || 'none'}`);
         }
       } catch (e) {}
     }

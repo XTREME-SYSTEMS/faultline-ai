@@ -343,25 +343,24 @@ export function computeClosureMetrics(input: MetricInput): CategoryMetric[] {
     { category: 'DATA_PERSISTENCE', scoreField: 'data_persistence_score', worker: 'proveFullStackChains', critical: false },
   ];
 
+  // P0-10: When denominator = 0, score MUST be 0 — do not preserve legacy 100 values.
+  // These categories need real test-count denominators before they can score above 0.
   for (const ebc of evidenceBackedCategories) {
-    const rawScore = latestScore?.[ebc.scoreField];
-    const hasEvidence = rawScore !== undefined && rawScore !== null && typeof rawScore === 'number';
-    const score = hasEvidence ? rawScore : 0;
     const target = ebc.critical ? 100 : 99;
     categories.push({
       category: ebc.category,
       build_id: buildId,
       numerator: 0,  // No denominator evidence — these need real test counts
       denominator: 0,
-      score: hasEvidence ? score : 0,
-      evidence_ids: latestScore?.id ? [latestScore.id] : [],
-      unverified_count: hasEvidence ? 0 : 1,
+      score: 0,  // P0-10: Always 0 when denominator is 0 — no fake 100%
+      evidence_ids: [],
+      unverified_count: 1,  // P0-10: Always unverified when denominator is 0
       blocked_count: 0,
       excluded_count: 0,
       timestamp,
       is_critical: ebc.critical,
-      lowest_failure: hasEvidence && score < target ? `${ebc.category} below ${target}%` : (hasEvidence ? '' : 'No denominator evidence — UNVERIFIED'),
-      next_work_packet: (!hasEvidence || score < target) ? ebc.worker : '',
+      lowest_failure: 'No denominator evidence — UNVERIFIED (needs test-count establishment)',
+      next_work_packet: ebc.worker,  // Always schedule — these need evidence establishment
     });
   }
 
@@ -426,11 +425,16 @@ export function computeClosureMetrics(input: MetricInput): CategoryMetric[] {
   return categories;
 }
 
-// ─── STATUS DETERMINATION ─────────────────────────────────────────────
+// ─── STATUS DETERMINATION (P0-9) ──────────────────────────────────────
+// A known category with DENOMINATOR > 0 AND evidence exists AND NUMERATOR = 0
+// is FAILING, not UNVERIFIED.
+// UNVERIFIED means: denominator/evidence contract has not yet been established.
 export function determineStatus(cat: CategoryMetric): string {
   const target = cat.is_critical ? 100 : 99;
-  // UNVERIFIED: denominator is 0 or score is 0 with no evidence
-  if (cat.denominator === 0 || (cat.score === 0 && cat.unverified_count > 0)) return 'unverified';
+  // UNVERIFIED: denominator is 0 (evidence contract not established)
+  if (cat.denominator === 0) return 'unverified';
+  // FAILING: denominator > 0 but score is 0 (evidence exists, nothing passes)
+  if (cat.score === 0) return 'failing';
   if (cat.score >= target) return 'passing';
   if (cat.score >= target * 0.5) return 'partial';
   return 'failing';
@@ -444,4 +448,27 @@ export function getLowestCategory(metrics: CategoryMetric[]): { category: string
   if (eligible.length === 0) return { category: 'NONE', score: 0 };
   const lowest = eligible.reduce((min, curr) => curr.score < min.score ? curr : min, eligible[0]);
   return { category: lowest.category, score: lowest.score };
+}
+
+// ─── SUPERSEDED CATEGORIES (P0-11) ────────────────────────────────────
+// Legacy categories that must NOT participate in active MQG calculations.
+// Active backend categories are: BACKEND_IMPLEMENTATION_COVERAGE, BACKEND_VALIDATION_COVERAGE.
+export const SUPERSEDED_CATEGORIES = new Set([
+  'BACKEND_CAPABILITY_COVERAGE',
+]);
+
+export function isSuperseded(category: string): boolean {
+  return SUPERSEDED_CATEGORIES.has(category);
+}
+
+// ─── UNVERIFIED REQUIRED QUEUE (P0-10) ────────────────────────────────
+// Categories with denominator = 0 that are REQUIRED for certification.
+// These must not be ignored — they need evidence/denominator establishment.
+export function getUnverifiedRequiredQueue(metrics: CategoryMetric[]): CategoryMetric[] {
+  return metrics.filter(m =>
+    m.denominator === 0 &&
+    m.unverified_count > 0 &&
+    !isSuperseded(m.category) &&
+    m.next_work_packet !== ''  // Has a worker assigned — can be established
+  );
 }

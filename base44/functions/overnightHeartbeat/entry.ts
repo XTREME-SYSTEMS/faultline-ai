@@ -144,7 +144,7 @@ export default async function(req: Request) {
     const sharedBuildId = canonicalStateEntity?.canonical_envato_build_id || BUILD_ID;
 
     const categoryMetrics = computeClosureMetrics({
-      routes, taxonomy, capabilities, latestScore, lastHeartbeat, canonicalStateEntity, exclusions, buildId: sharedBuildId,
+      routes, taxonomy, capabilities, latestScore, latestHeartbeat: lastHeartbeat, canonicalState: canonicalStateEntity, exclusions, buildId: sharedBuildId,
     });
 
     // Extract metric values by category name
@@ -279,7 +279,7 @@ export default async function(req: Request) {
     } else {
       // P0-4: Drive the lowest-scoring category directly
       // If stalled, try a different approach for the same category
-      const taskMsg = stalledConvergence
+      let taskMsg = stalledConvergence
         ? `STALLED_CONVERGENCE on ${lowestCatName} — trying alternate approach`
         : `Drive ${lowestCatName} from ${currentLowest}% toward 99%`;
 
@@ -306,6 +306,49 @@ export default async function(req: Request) {
         }
       }
 
+      // P0-1/P0-3: VALIDATE→DEFECT→REPAIR→RETEST loop for BACKEND_VALIDATION_COVERAGE
+      // When the lowest category is BACKEND_VALIDATION_COVERAGE:
+      //   1. Check for pending defects from previous proveFullStackChains runs
+      //   2. If defects exist → dispatch repairBackendChain (not another validator run)
+      //   3. If no defects → dispatch proveFullStackChains (full or targeted)
+      //   4. If stalled → dispatch targeted chain only (not full validator)
+      let targetChain = null;
+      let repairDefectId = null;
+      if (lowestCatName === 'BACKEND_VALIDATION_COVERAGE') {
+        try {
+          // Check for pending repair tasks (defects from previous validation)
+          // RepairTask uses status='identified' for new defects
+          const pendingDefects = await base44.asServiceRole.entities.RepairTask
+            .filter({ organization_id: orgId, status: 'identified' })
+            .catch(() => []);
+          if (pendingDefects.length > 0) {
+            // Dispatch repair for the first pending defect
+            const firstDefect = pendingDefects[0];
+            // Parse chain_id from description format: "[CHAIN-XXX] step: actual"
+            const chainMatch = (firstDefect.description || '').match(/\[(CHAIN-[A-Z-]+)\]/);
+            targetChain = chainMatch ? chainMatch[1] : 'CHAIN-AUTH';
+            repairDefectId = firstDefect.id;
+            // Mark defect as in_progress
+            try {
+              await base44.asServiceRole.entities.RepairTask.update(firstDefect.id, { status: 'in_progress' });
+            } catch {}
+            lowestCatWorker.function = 'repairBackendChain';
+            lowestCatWorker.phase = 'repair';
+            taskMsg = `REPAIR ${targetChain} defect ${repairDefectId} → then targeted retest`;
+            console.log(`[overnightHeartbeat] Pending defect found: ${repairDefectId} for ${targetChain} — dispatching repair instead of re-validating`);
+          } else if (stalledConvergence) {
+            // P0-1: Don't rerun the same unchanged full validator — run targeted chain
+            // Find which chain is failing from the last heartbeat
+            const lastFailedChains = lastHeartbeat?.next_work_packet?.failed_chains || [];
+            targetChain = lastFailedChains[0] || 'CHAIN-AUTH';
+            taskMsg = `STALLED — targeted retest of ${targetChain} only (not full validator)`;
+            console.log(`[overnightHeartbeat] STALLED — dispatching targeted ${targetChain} validation only`);
+          }
+        } catch (e) {
+          console.log(`[overnightHeartbeat] Defect check error: ${e.message}`);
+        }
+      }
+
       workPacket = {
         phase: lowestCatWorker.phase,
         function: lowestCatWorker.function,
@@ -318,8 +361,10 @@ export default async function(req: Request) {
         taxonomy_node_id: taxonomyNodeId,
         content_family: contentFamilyName,
         required_count: 10,
+        target_chain: targetChain,
+        defect_id: repairDefectId,
       };
-      console.log(`[overnightHeartbeat] Driving lowest category: ${lowestCatName} at ${currentLowest}%${stalledConvergence ? ' (STALLED)' : ''}`);
+      console.log(`[overnightHeartbeat] Driving lowest category: ${lowestCatName} at ${currentLowest}%${stalledConvergence ? ' (STALLED)' : ''}${targetChain ? ` chain=${targetChain}` : ''}${repairDefectId ? ` defect=${repairDefectId}` : ''}`);
     }
 
     // ─── 11. DISPATCH WORK PACKET VIA DURABLE JOB QUEUE ─────────────
@@ -359,6 +404,13 @@ export default async function(req: Request) {
               required_count: workPacket.required_count || 10,
               build_id: BUILD_ID,
             } : {}),
+            ...(workPacket.target_chain ? {
+              target_chain: workPacket.target_chain,
+              chain_id: workPacket.target_chain,
+            } : {}),
+            ...(workPacket.defect_id ? {
+              defect_id: workPacket.defect_id,
+            } : {}),
           },
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
@@ -385,6 +437,57 @@ export default async function(req: Request) {
       } catch (e) { console.log(`[overnightHeartbeat] processJobQueue error: ${e.message}`); }
       workResult = 'dispatched';
       console.log(`[overnightHeartbeat] Dispatched ${workPacket.function} via job queue for phase: ${workPacket.phase}`);
+
+      // P0-12: MAINTAIN CONTENT PROGRESS IN PARALLEL
+      // If the main worker is doing backend validation/repair, dispatch a bounded
+      // safe content/taxonomy worker in parallel so catalog work doesn't freeze.
+      if (['BACKEND_VALIDATION_COVERAGE', 'BACKEND_IMPLEMENTATION_COVERAGE'].includes(lowestCatName)) {
+        if (missingContentNodes.length > 0) {
+          const parallelJobId = `job-autonomousMarketplaceStocker-${orgId.slice(-6)}-${Date.now()}`;
+          try {
+            const eligibleNode = missingContentNodes.find((n: any) =>
+              (n.orphan_classification === 'not_orphan' || n.orphan_classification === 'missing_content') &&
+              (n.node_type === 'category' || n.node_type === 'subcategory') &&
+              n.source_present !== false
+            );
+            if (eligibleNode) {
+              await base44.asServiceRole.entities.JobQueue.create({
+                organization_id: orgId,
+                job_id: parallelJobId,
+                job_type: 'autonomousMarketplaceStocker',
+                owner_agent: 'overnightHeartbeat-parallel',
+                build_id: BUILD_ID,
+                scope: `Parallel content stocking: ${eligibleNode.node_name}`,
+                priority: 5,
+                risk_class: 'safe',
+                status: 'queued',
+                idempotency_key: `parallel-stocker-${orgId}-${eligibleNode.taxonomy_node_id}-${new Date().getMinutes()}`,
+                attempt: 0,
+                max_retries: 2,
+                timeout_seconds: 120,
+                backoff_seconds: 30,
+                validation_plan: `Stock ${eligibleNode.node_name}`,
+                rollback_plan: '',
+                receipt_destination: 'HeartbeatReceipt',
+                approval_required: false,
+                payload: {
+                  organization_id: orgId,
+                  triggered_by: 'overnightHeartbeat-parallel',
+                  taxonomy_node_id: eligibleNode.taxonomy_node_id,
+                  content_family: eligibleNode.node_name,
+                  required_count: 10,
+                  build_id: BUILD_ID,
+                },
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString(),
+              });
+              console.log(`[overnightHeartbeat] Parallel content worker dispatched for ${eligibleNode.node_name}`);
+            }
+          } catch (e) {
+            console.log(`[overnightHeartbeat] Parallel content worker skipped: ${e.message}`);
+          }
+        }
+      }
     }
 
     // ─── 11b. UPDATE CLOSURE BOARD ──────────────────────────────────

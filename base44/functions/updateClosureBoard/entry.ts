@@ -1,5 +1,5 @@
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
-import { computeClosureMetrics, determineStatus, getLowestCategory, getValidOfficialNavigableNodes, getContradictoryOfficialNodes } from '../../shared/closureMetricEngine.ts';
+import { computeClosureMetrics, determineStatus, getLowestCategory, getValidOfficialNavigableNodes, getContradictoryOfficialNodes, isSuperseded, getUnverifiedRequiredQueue } from '../../shared/closureMetricEngine.ts';
 
 // Update Closure Board — P12
 //
@@ -90,6 +90,31 @@ export default async function(req: Request) {
       catch (e) { console.error(`[updateClosureBoard] Update failed for ${u.category}: ${e.message}`); }
     }
 
+    // P0-11: Mark superseded categories (e.g. legacy BACKEND_CAPABILITY_COVERAGE)
+    // These must NOT participate in active MQG calculations.
+    const activeCategories = new Set(categoryMetrics.map(m => m.category));
+    for (const existing of existingBoard) {
+      if (!activeCategories.has(existing.category) || isSuperseded(existing.category)) {
+        try {
+          await base44.asServiceRole.entities.ClosureBoard.update(existing.id, {
+            status: 'blocked',  // Use 'blocked' to indicate superseded/inactive
+            score: 0,
+            numerator: 0,
+            denominator: 0,
+            blocker: 'SUPERSEDED — not participating in active MQG calculations',
+            next_work_packet: '',
+            updated_at: new Date().toISOString(),
+          });
+          console.log(`[updateClosureBoard] Marked ${existing.category} as SUPERSEDED`);
+        } catch (e) {
+          console.log(`[updateClosureBoard] Failed to supersede ${existing.category}: ${e.message}`);
+        }
+      }
+    }
+
+    // P0-10: Build UNVERIFIED_REQUIRED_QUEUE — categories with denominator=0 that need evidence
+    const unverifiedRequired = getUnverifiedRequiredQueue(categoryMetrics);
+
     // ─── 4. COMPUTE SUMMARY ────────────────────────────────────────
     const passing = categoryMetrics.filter(c => c.score >= (c.is_critical ? 100 : 99) && c.denominator > 0).length;
     const failing = categoryMetrics.filter(c => c.score > 0 && c.score < (c.is_critical ? 100 : 99)).length;
@@ -115,6 +140,11 @@ export default async function(req: Request) {
         valid_official_navigable_denominator: validOfficial.length,
         contradictory_official_records: contradictory.length,
       },
+      unverified_required_queue: unverifiedRequired.map(m => ({
+        category: m.category,
+        critical: m.is_critical,
+        next_work: m.next_work_packet,
+      })),
       categories: categoryMetrics.map(m => ({
         category: m.category,
         score: m.score,
