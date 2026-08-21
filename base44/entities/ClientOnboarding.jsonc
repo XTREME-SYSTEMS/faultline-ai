@@ -27,6 +27,128 @@
     "email": {
       "type": "string"
     },
+    "questionnaire_answers": {
+      "type": "object",
+      "description": "Full discovery questionnaire responses \u2014 drives pack generation",
+      "properties": {
+        "years_in_business": {
+          "type": "string"
+        },
+        "target_customer": {
+          "type": "string"
+        },
+        "style_preference": {
+          "type": "string"
+        },
+        "color_preference": {
+          "type": "string"
+        },
+        "differentiator": {
+          "type": "string"
+        },
+        "competitor_urls": {
+          "type": "string"
+        },
+        "preferred_font": {
+          "type": "string"
+        },
+        "service_offering": {
+          "type": "string"
+        }
+      }
+    },
+    "logo_packs": {
+      "type": "array",
+      "description": "AI-generated logo concepts",
+      "items": {
+        "type": "object",
+        "properties": {
+          "url": {
+            "type": "string"
+          },
+          "style": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "brand_packs": {
+      "type": "array",
+      "description": "AI-generated brand pack options",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "colors": {
+            "type": "object",
+            "properties": {
+              "primary": {
+                "type": "string"
+              },
+              "secondary": {
+                "type": "string"
+              },
+              "accent": {
+                "type": "string"
+              }
+            }
+          },
+          "fonts": {
+            "type": "object",
+            "properties": {
+              "heading": {
+                "type": "string"
+              },
+              "body": {
+                "type": "string"
+              }
+            }
+          },
+          "description": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "selected_brand_pack": {
+      "type": "object",
+      "description": "Chosen brand pack",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "colors": {
+          "type": "object",
+          "properties": {
+            "primary": {
+              "type": "string"
+            },
+            "secondary": {
+              "type": "string"
+            },
+            "accent": {
+              "type": "string"
+            }
+          }
+        },
+        "fonts": {
+          "type": "object",
+          "properties": {
+            "heading": {
+              "type": "string"
+            },
+            "body": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
     "current_step": {
       "type": "number",
       "default": 1,
@@ -38,7 +160,7 @@
     },
     "selected_template_url": {
       "type": "string",
-      "description": "Chosen epoxy template Vercel URL"
+      "description": "Chosen template Vercel URL"
     },
     "selected_template_name": {
       "type": "string"

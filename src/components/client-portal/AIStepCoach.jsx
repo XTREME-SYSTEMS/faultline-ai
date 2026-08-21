@@ -3,12 +3,12 @@ import { base44 } from '@/api/base44Client';
 import { Send, Sparkles } from 'lucide-react';
 
 const STEP_CONTEXT = {
-  1: { title: 'Business Profile', focus: 'Collecting business name, service area, phone, and email to customize the website.' },
-  2: { title: 'Choose Template', focus: 'Selecting a proven epoxy contractor website design from the clone gallery.' },
-  3: { title: 'Brand Setup', focus: 'Choosing brand color, uploading a logo, and writing a tagline.' },
-  4: { title: 'Content Review', focus: 'Reviewing and editing AI-generated website copy (headlines, about, services, CTA).' },
-  5: { title: 'Domain Setup', focus: 'Entering a custom domain name or using a provided subdomain.' },
-  6: { title: 'Launch', focus: 'Reviewing all choices and launching the website.' },
+  1: { title: 'Discovery Questionnaire', focus: 'Answering questions about your business, style, and audience so the AI can generate custom packs.' },
+  2: { title: 'Logo Pack', focus: 'Choosing from 3 AI-generated logo concepts based on your questionnaire answers.' },
+  3: { title: 'Brand Pack', focus: 'Selecting a color palette and font pairing from 3 AI-generated brand pack options.' },
+  4: { title: 'Web Pack', focus: 'Choosing a proven website template with your brand colors applied in real-time.' },
+  5: { title: 'Content Review', focus: 'Reviewing and editing AI-generated website copy (headlines, about, services, CTA).' },
+  6: { title: 'Domain & Launch', focus: 'Connecting your domain and launching your website with everything built together.' },
 };
 
 export function AIStepCoach({ step, onboarding, onSuggest }) {
@@ -173,10 +173,7 @@ Return as JSON with these fields:
 
       {/* Quick actions */}
       <div style={{ padding: '8px 14px', display: 'flex', gap: 6, flexWrap: 'wrap', borderTop: '1px solid #f0ede7' }}>
-        {step === 3 && (
-          <button onClick={suggestTagline} disabled={loading} style={quickBtnStyle}>✍️ Suggest taglines</button>
-        )}
-        {step === 4 && (
+        {step === 5 && (
           <button onClick={suggestCopy} disabled={loading} style={quickBtnStyle}>✨ Generate copy</button>
         )}
       </div>
