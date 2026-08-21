@@ -2,7 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { AIStepCoach } from '@/components/client-portal/AIStepCoach';
-import { CheckCircle2, ChevronRight, ChevronLeft, ExternalLink, Upload, Rocket, Palette, FileText, Globe, Building2, Layout, Loader2 } from 'lucide-react';
+import { CheckCircle2, ChevronRight, ChevronLeft, ExternalLink, Upload, Rocket, Palette, FileText, Globe, Building2, Layout, Loader2, Star } from 'lucide-react';
+import { WEB_PACKS, assignTemplatesToPacks } from '@/components/client-portal/webPacks';
 
 const TOTAL_STEPS = 6;
 const STEP_META = [
@@ -271,39 +272,86 @@ function StepBusinessProfile({ onboarding, saving, onComplete, onBack }) {
 
 // ─── STEP 2: CHOOSE TEMPLATE ─────────────────────────────────────────
 function StepChooseTemplate({ onboarding, templates, saving, onComplete, onBack }) {
-  const [selected, setSelected] = useState(onboarding?.selected_template_url || '');
+  const packs = assignTemplatesToPacks(WEB_PACKS, templates);
+  const [selectedId, setSelectedId] = useState(onboarding?.selected_template_name || '');
+
+  const selectedPack = packs.find(p => p.id === selectedId);
 
   return (
-    <StepShell title="Choose Your Website Template" subtitle="Each design is a proven, 100%-parity clone of a top-performing epoxy contractor site. Click Preview to see it live.">
+    <StepShell title="Choose Your Web Pack" subtitle="Each pack is a pre-configured website with branding, colors, and layout ready to go. Pick the style that fits your business.">
       {templates.length === 0 ? (
         <div style={{ padding: 40, textAlign: 'center', color: '#888' }}>
           <p>No epoxy templates found. Contact your account manager to get templates added.</p>
         </div>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
-          {templates.map(t => {
-            const isSelected = selected === t.vercel_deployment_url;
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 18 }}>
+          {packs.map(pack => {
+            const isSelected = selectedId === pack.id;
+            const hasTemplate = !!pack.template;
             return (
-              <div key={t.id} onClick={() => setSelected(t.vercel_deployment_url)} style={{
-                border: `2px solid ${isSelected ? '#C89B3C' : '#e5e1da'}`, borderRadius: 12, overflow: 'hidden', cursor: 'pointer',
-                background: '#fff', transition: 'border-color .15s',
+              <div key={pack.id} onClick={() => hasTemplate && setSelectedId(pack.id)} style={{
+                border: `2px solid ${isSelected ? pack.colors.primary : '#e5e1da'}`, borderRadius: 14, overflow: 'hidden',
+                cursor: hasTemplate ? 'pointer' : 'not-allowed', background: '#fff',
+                transition: 'all .2s ease', opacity: hasTemplate ? 1 : .5,
+                boxShadow: isSelected ? `0 8px 24px ${pack.colors.primary}30` : '0 1px 4px rgba(0,0,0,.06)',
+                transform: isSelected ? 'translateY(-2px)' : 'none',
               }}>
-                <div style={{ height: 140, background: '#f0ede7', position: 'relative', overflow: 'hidden' }}>
-                  <TemplateThumbnail url={t.vercel_deployment_url} name={t.business_name} />
+                {/* Screenshot */}
+                <div style={{ height: 160, background: '#f0ede7', position: 'relative', overflow: 'hidden' }}>
+                  {hasTemplate ? (
+                    <TemplateThumbnail url={pack.template.vercel_deployment_url} name={pack.name} />
+                  ) : (
+                    <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#aaa', fontSize: 12 }}>Template coming soon</div>
+                  )}
+                  {/* Badge */}
+                  {pack.badge && (
+                    <div style={{ position: 'absolute', top: 8, left: 8, background: pack.colors.primary, color: '#fff', fontSize: 9, fontWeight: 700, padding: '3px 8px', borderRadius: 4, letterSpacing: '.08em' }}>{pack.badge}</div>
+                  )}
+                  {/* Selected check */}
                   {isSelected && (
-                    <div style={{ position: 'absolute', top: 8, right: 8, background: '#C89B3C', color: '#fff', borderRadius: '50%', width: 24, height: 24, display: 'grid', placeItems: 'center' }}>
-                      <CheckCircle2 size={14} />
+                    <div style={{ position: 'absolute', top: 8, right: 8, background: pack.colors.primary, color: '#fff', borderRadius: '50%', width: 26, height: 26, display: 'grid', placeItems: 'center' }}>
+                      <CheckCircle2 size={15} />
                     </div>
                   )}
+                  {/* Color palette dots */}
+                  <div style={{ position: 'absolute', bottom: 8, right: 8, display: 'flex', gap: 4 }}>
+                    {[pack.colors.primary, pack.colors.secondary, pack.colors.accent].map((c, i) => (
+                      <div key={i} style={{ width: 16, height: 16, borderRadius: '50%', background: c, border: '2px solid #fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)' }} />
+                    ))}
+                  </div>
                 </div>
-                <div style={{ padding: '12px 14px' }}>
-                  <b style={{ fontSize: 13, display: 'block' }}>{t.business_name || t.project_name}</b>
-                  <p style={{ fontSize: 11, color: '#888', margin: '4px 0 8px' }}>{t.industry || 'Epoxy Contractor'}</p>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                    <a href={t.vercel_deployment_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 11, color: '#C89B3C', display: 'flex', alignItems: 'center', gap: 3, textDecoration: 'none' }}>
-                      <ExternalLink size={12} /> Preview
-                    </a>
-                    {isSelected && <span style={{ fontSize: 11, color: '#237A4B', fontWeight: 600, marginLeft: 'auto' }}>✓ Selected</span>}
+
+                {/* Pack info */}
+                <div style={{ padding: '14px 16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                    <b style={{ fontSize: 14, fontFamily: "'Libre Caslon Display', serif" }}>{pack.name}</b>
+                    <span style={{ fontSize: 9, fontWeight: 700, color: pack.colors.primary, textTransform: 'uppercase', letterSpacing: '.1em' }}>{pack.style}</span>
+                  </div>
+                  <p style={{ fontSize: 11, color: '#777', lineHeight: 1.5, margin: '0 0 10px' }}>{pack.description}</p>
+
+                  {/* Features */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 12 }}>
+                    {pack.features.slice(0, 3).map((f, i) => (
+                      <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, color: '#555' }}>
+                        <CheckCircle2 size={12} color={pack.colors.primary} /> {f}
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Actions */}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, paddingTop: 10, borderTop: '1px solid #f0ede7' }}>
+                    {hasTemplate && (
+                      <a href={pack.template.vercel_deployment_url} target="_blank" rel="noopener noreferrer" onClick={e => e.stopPropagation()} style={{ fontSize: 11, color: pack.colors.primary, display: 'flex', alignItems: 'center', gap: 3, textDecoration: 'none', fontWeight: 600 }}>
+                        <ExternalLink size={12} /> Live Preview
+                      </a>
+                    )}
+                    {isSelected ? (
+                      <span style={{ fontSize: 11, color: '#237A4B', fontWeight: 700, marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: 3 }}>
+                        <Star size={12} fill="#237A4B" /> Selected
+                      </span>
+                    ) : hasTemplate ? (
+                      <span style={{ fontSize: 11, color: '#888', marginLeft: 'auto', fontWeight: 600 }}>Click to select →</span>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -311,11 +359,19 @@ function StepChooseTemplate({ onboarding, templates, saving, onComplete, onBack 
           })}
         </div>
       )}
-      <StepNav onBack={onBack} onNext={() => onComplete({
-        selected_template_url: selected,
-        selected_template_name: templates.find(t => t.vercel_deployment_url === selected)?.business_name || '',
-        selected_template_source: templates.find(t => t.vercel_deployment_url === selected)?.benchmark_url || '',
-      })} disabled={!selected} saving={saving} nextLabel="Continue to Branding" />
+      <StepNav
+        onBack={onBack}
+        onNext={() => selectedPack && onComplete({
+          selected_template_url: selectedPack.template?.vercel_deployment_url || '',
+          selected_template_name: selectedPack.name,
+          selected_template_source: selectedPack.template?.benchmark_url || '',
+          brand_color: selectedPack.colors.primary,
+          tagline: selectedPack.tagline,
+        })}
+        disabled={!selectedId}
+        saving={saving}
+        nextLabel="Continue to Branding"
+      />
     </StepShell>
   );
 }
