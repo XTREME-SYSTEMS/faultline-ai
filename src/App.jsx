@@ -80,6 +80,7 @@ const PCUControlCenter = lazy(() => import('@/pages/PCUControlCenter'));
 const EnhancementEngine = lazy(() => import('@/pages/EnhancementEngine'));
 const ClientProjects = lazy(() => import('@/pages/ClientProjects'));
 const ClientPortal = lazy(() => import('@/pages/ClientPortal'));
+const ClientOnboardingPortal = lazy(() => import('@/pages/ClientOnboardingPortal'));
 const ClientFunnel = lazy(() => import('@/pages/ClientFunnel'));
 const Projects = lazy(() => import('@/pages/Projects'));
 const UniversalDatabase = lazy(() => import('@/pages/UniversalDatabase'));
@@ -233,6 +234,7 @@ const AuthenticatedApp = () => {
         <Route path="/app/enhancement-engine" element={<EnhancementEngine />} />
         <Route path="/app/client-projects" element={<ClientProjects />} />
         <Route path="/app/client-portal" element={<ClientPortal />} />
+      <Route path="/app/client-onboarding" element={<ClientOnboardingPortal />} />
         <Route path="/app/projects" element={<Projects />} />
         <Route path="/app/database" element={<UniversalDatabase />} />
         <Route path="/app/niche-websites" element={<NicheWebsiteStudio />} />

@@ -1,0 +1,129 @@
+{
+  "name": "ClientOnboarding",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "business_name": {
+      "type": "string",
+      "description": "Client's business name"
+    },
+    "industry": {
+      "type": "string",
+      "description": "Industry niche"
+    },
+    "service_area": {
+      "type": "string",
+      "description": "Cities / regions served"
+    },
+    "primary_service": {
+      "type": "string",
+      "description": "Main service offering"
+    },
+    "phone": {
+      "type": "string"
+    },
+    "email": {
+      "type": "string"
+    },
+    "current_step": {
+      "type": "number",
+      "default": 1,
+      "description": "1-based current step index"
+    },
+    "total_steps": {
+      "type": "number",
+      "default": 6
+    },
+    "selected_template_url": {
+      "type": "string",
+      "description": "Chosen epoxy template Vercel URL"
+    },
+    "selected_template_name": {
+      "type": "string"
+    },
+    "selected_template_source": {
+      "type": "string",
+      "description": "Original source site URL"
+    },
+    "brand_color": {
+      "type": "string",
+      "description": "Hex accent color"
+    },
+    "logo_url": {
+      "type": "string"
+    },
+    "tagline": {
+      "type": "string",
+      "description": "Hero tagline / headline"
+    },
+    "hero_headline": {
+      "type": "string"
+    },
+    "about_text": {
+      "type": "string"
+    },
+    "services_list": {
+      "type": "string",
+      "description": "Comma-separated service offerings"
+    },
+    "cta_text": {
+      "type": "string",
+      "description": "Call-to-action button text"
+    },
+    "domain_name": {
+      "type": "string"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "not_started",
+        "in_progress",
+        "completed"
+      ],
+      "default": "not_started"
+    },
+    "completed_at": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "organization_id"
+  ],
+  "rls": {
+    "read": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "update": {
+      "$or": [
+        {
+          "created_by_id": "{{user.id}}"
+        },
+        {
+          "user_condition": {
+            "role": "admin"
+          }
+        }
+      ]
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
