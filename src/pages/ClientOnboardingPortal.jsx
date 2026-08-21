@@ -16,6 +16,44 @@ const STEP_META = [
 
 const COLOR_PRESETS = ['#C89B3C', '#1a56DB', '#059669', '#DC2626', '#7C3AED', '#EA580C', '#0EA5E9', '#111111'];
 
+// ─── COLOR HELPERS (live template preview) ──────────────────────────
+function hexToHue(hex) {
+  const r = parseInt(hex.slice(1, 3), 16) / 255;
+  const g = parseInt(hex.slice(3, 5), 16) / 255;
+  const b = parseInt(hex.slice(5, 7), 16) / 255;
+  const max = Math.max(r, g, b), min = Math.min(r, g, b);
+  if (max === min) return 0;
+  let h;
+  if (max === r) h = ((g - b) / (max - min) + (g < b ? 6 : 0)) * 60;
+  else if (max === g) h = ((b - r) / (max - min) + 2) * 60;
+  else h = ((r - g) / (max - min) + 4) * 60;
+  return h;
+}
+
+function getColorFilter(targetHex) {
+  const defaultHue = 41; // #C89B3C ≈ 41deg
+  const targetHue = hexToHue(targetHex);
+  const rotation = targetHue - defaultHue;
+  return `hue-rotate(${rotation}deg) saturate(1.15)`;
+}
+
+function TemplateThumbnail({ url, name }) {
+  const [imgError, setImgError] = useState(false);
+  if (imgError) {
+    return (
+      <iframe src={url} style={{ width: '1200px', height: '700px', transform: 'scale(0.22)', transformOrigin: 'top left', border: 0, pointerEvents: 'none' }} title={name} />
+    );
+  }
+  return (
+    <img
+      src={`https://image.thum.io/get/width/600/crop/400/${url}`}
+      alt={name}
+      onError={() => setImgError(true)}
+      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+    />
+  );
+}
+
 export default function ClientOnboardingPortal() {
   const [user, setUser] = useState(null);
   const [onboarding, setOnboarding] = useState(null);
@@ -251,7 +289,7 @@ function StepChooseTemplate({ onboarding, templates, saving, onComplete, onBack 
                 background: '#fff', transition: 'border-color .15s',
               }}>
                 <div style={{ height: 140, background: '#f0ede7', position: 'relative', overflow: 'hidden' }}>
-                  <iframe src={t.vercel_deployment_url} style={{ width: '1200px', height: '700px', transform: 'scale(0.22)', transformOrigin: 'top left', border: 0, pointerEvents: 'none' }} title={t.business_name} />
+                  <TemplateThumbnail url={t.vercel_deployment_url} name={t.business_name} />
                   {isSelected && (
                     <div style={{ position: 'absolute', top: 8, right: 8, background: '#C89B3C', color: '#fff', borderRadius: '50%', width: 24, height: 24, display: 'grid', placeItems: 'center' }}>
                       <CheckCircle2 size={14} />
@@ -305,29 +343,59 @@ function StepBrandSetup({ onboarding, suggestions, saving, onComplete, onBack, o
     setUploading(false);
   };
 
+  const colorFilter = getColorFilter(color);
+
   return (
-    <StepShell title="Make It Yours — Brand Setup" subtitle="Choose your brand color, upload your logo, and write a tagline. The AI coach can suggest taglines.">
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 28, maxWidth: 600 }}>
-        {/* Color */}
+    <StepShell title="Make It Yours — Brand Setup" subtitle="Toggle colors below and watch your template change in real-time. Then upload your logo and write a tagline.">
+      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: 28 }}>
+        {/* Left: Live template preview + color swatches */}
         <div>
-          <Field label="Brand Color">
-            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-              {COLOR_PRESETS.map(c => (
-                <button key={c} onClick={() => setColor(c)} style={{
-                  width: 32, height: 32, borderRadius: 8, border: `2px solid ${color === c ? '#111' : 'transparent'}`, background: c, cursor: 'pointer',
-                }} />
-              ))}
-              <input type="color" value={color} onChange={e => setColor(e.target.value)} style={{ width: 32, height: 32, border: '2px solid #e5e1da', borderRadius: 8, cursor: 'pointer', padding: 0 }} />
+          <Field label="Live Template Preview">
+            <div style={{ borderRadius: 10, overflow: 'hidden', border: '1px solid #e5e1da', height: 320, position: 'relative', background: '#f0ede7' }}>
+              {onboarding?.selected_template_url ? (
+                <iframe
+                  src={onboarding.selected_template_url}
+                  style={{ width: '100%', height: '100%', border: 0, filter: colorFilter, transition: 'filter .25s ease' }}
+                  title="Template Preview"
+                />
+              ) : (
+                <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#888', fontSize: 13 }}>
+                  Select a template in Step 2 first
+                </div>
+              )}
+              {/* Color indicator badge */}
+              <div style={{ position: 'absolute', top: 10, right: 10, background: 'rgba(255,255,255,.95)', borderRadius: 6, padding: '4px 10px', display: 'flex', alignItems: 'center', gap: 6, fontSize: 11, fontWeight: 600 }}>
+                <div style={{ width: 14, height: 14, borderRadius: 4, background: color, border: '1px solid #ddd' }} />
+                {color}
+              </div>
             </div>
           </Field>
-          {/* Preview */}
-          <div style={{ marginTop: 16, padding: 20, borderRadius: 10, background: color, color: '#fff', textAlign: 'center' }}>
-            <b style={{ fontSize: 18, fontFamily: "'Libre Caslon Display', serif" }}>{onboarding?.business_name || 'Your Business'}</b>
-            <p style={{ fontSize: 12, opacity: .85, margin: '4px 0 0' }}>{tagline || 'Your tagline here'}</p>
+
+          {/* Color swatches — prominent, toggleable */}
+          <div style={{ marginTop: 16 }}>
+            <Field label="Toggle Brand Color">
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                {COLOR_PRESETS.map(c => (
+                  <button key={c} onClick={() => setColor(c)} style={{
+                    width: 42, height: 42, borderRadius: 10,
+                    border: `3px solid ${color === c ? '#111' : 'transparent'}`,
+                    background: c, cursor: 'pointer',
+                    boxShadow: color === c ? '0 3px 10px rgba(0,0,0,.2)' : '0 1px 3px rgba(0,0,0,.1)',
+                    transition: 'all .15s ease',
+                    transform: color === c ? 'scale(1.1)' : 'scale(1)',
+                  }} />
+                ))}
+                <div style={{ width: 1, height: 30, background: '#e5e1da', margin: '0 4px' }} />
+                <label style={{ position: 'relative', cursor: 'pointer' }}>
+                  <div style={{ width: 42, height: 42, borderRadius: 10, border: `3px solid ${color !== '#C89B3C' && !COLOR_PRESETS.includes(color) ? '#111' : 'transparent'}`, background: 'conic-gradient(red, orange, yellow, green, blue, indigo, violet, red)', cursor: 'pointer' }} />
+                  <input type="color" value={color} onChange={e => setColor(e.target.value)} style={{ position: 'absolute', inset: 0, opacity: 0, cursor: 'pointer' }} />
+                </label>
+              </div>
+            </Field>
           </div>
         </div>
 
-        {/* Logo + Tagline */}
+        {/* Right: Logo + Tagline */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
           <Field label="Logo Upload">
             {logoUrl ? (
