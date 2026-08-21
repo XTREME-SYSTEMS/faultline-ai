@@ -58,12 +58,19 @@ export default async function(req: Request) {
   try {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
-    const {
-      source_url = 'https://elements.envato.com',
-      clone_url = 'https://creative-assets-clone-v74-newsletter-0pbts-7cc1iyslj.vercel.app',
-      pages = INTERACTION_PAGES,
-      max_interactions_per_page = 30,
-    } = body;
+    const orgId = body.organization_id || (await base44.auth.me().catch(() => null))?.data?.organization_id || 'default';
+    // P0-FIX: Dynamically fetch the latest passed clone URL
+    let clone_url = body.clone_url;
+    if (!clone_url) {
+      const projects = await base44.asServiceRole.entities.LaunchProject.filter(
+        { organization_id: orgId, status: 'passed' }, '-created_date', 10
+      ).catch(() => []);
+      const envatoClone = projects.find(p => p.benchmark_url?.includes('envato') && p.vercel_deployment_url);
+      clone_url = envatoClone?.vercel_deployment_url || '';
+    }
+    const source_url = body.source_url || 'https://elements.envato.com';
+    const pages = body.pages || INTERACTION_PAGES;
+    const max_interactions_per_page = body.max_interactions_per_page || 30;
 
     console.log(`[interactionDiscovery] Source: ${source_url}, Clone: ${clone_url}`);
 
@@ -125,7 +132,7 @@ export default async function(req: Request) {
               ci.component_region === interaction.component_region
             );
             await base44.entities.InteractionGraph.create({
-              organization_id: 'faultline-ai',
+              organization_id: orgId,
               source_url: sourceFullUrl,
               clone_url: cloneFullUrl,
               page_url: page.path,

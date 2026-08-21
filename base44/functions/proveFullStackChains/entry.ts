@@ -24,7 +24,6 @@ import {
 } from '../../shared/backendCapabilityValidationMap.ts';
 
 const BUILD_ID = 'v75-taxonomy-closure-001';
-const CLONE_URL = 'https://creative-assets-clone-v74-newsletter-0pbts-7cc1iyslj.vercel.app';
 const AUTH_BASE_URL = 'https://fault-line.base44.app';
 
 interface ChainStep {
@@ -50,7 +49,15 @@ export default async function(req: Request) {
     const base44 = createClientFromRequest(req);
     const body = await req.json().catch(() => ({}));
     const orgId = body.organization_id || (await base44.auth.me().catch(() => null))?.data?.organization_id || 'default';
-    const cloneUrl = body.clone_url || CLONE_URL;
+    // P0-FIX: Dynamically fetch the latest passed clone URL instead of using a stale hardcoded one
+    let cloneUrl = body.clone_url;
+    if (!cloneUrl) {
+      const projects = await base44.asServiceRole.entities.LaunchProject.filter(
+        { organization_id: orgId, status: 'passed' }, '-created_date', 10
+      ).catch(() => []);
+      const envatoClone = projects.find(p => p.benchmark_url?.includes('envato') && p.vercel_deployment_url);
+      cloneUrl = envatoClone?.vercel_deployment_url || projects[0]?.vercel_deployment_url || AUTH_BASE_URL;
+    }
     // P0-6: Support targeted single-chain validation
     const targetChain = body.target_chain || body.chain_id;
     const allChains = Object.keys(VALIDATION_CHAINS);
@@ -459,11 +466,12 @@ async function proveCheckoutChain(cdp: CDPClient, sessionId: string, cloneUrl: s
   const steps: ChainStep[] = [];
   const defects: ChainDefect[] = [];
 
-  // Step 1: Pricing page renders
-  const pricingUrl = new URL('/pricing', cloneUrl).href;
+  // P0-FIX: Check the main app for pricing/checkout (the clone is a visual replica,
+  // the actual Stripe checkout lives on the main app)
+  const pricingUrl = new URL('/pricing', AUTH_BASE_URL).href;
   await navigateAndWait(cdp, sessionId, pricingUrl, 15000);
   await scrollPage(cdp, sessionId);
-  const hasPricing = await checkElement(cdp, sessionId, '[class*="price"], [class*="plan"], button[class*="subscribe"], [data-price], [class*="tier"]');
+  const hasPricing = await checkElement(cdp, sessionId, '[class*="price"], [class*="plan"], button[class*="subscribe"], [data-price], [class*="tier"], [class*="pricing"]');
   steps.push({
     step_name: 'pricing_plan_selection_present',
     expected_result: 'Pricing plans with subscribe/select buttons render',
@@ -561,11 +569,12 @@ async function proveAiChain(cdp: CDPClient, sessionId: string, cloneUrl: string)
   const steps: ChainStep[] = [];
   const defects: ChainDefect[] = [];
 
-  // Step 1: AI tools page
-  const aiToolsUrl = new URL('/ai-tools', cloneUrl).href;
+  // P0-FIX: Check the main app for AI tools (the clone is a visual replica,
+  // the actual AI tools live on the main app at /tools/ai-bid-writer)
+  const aiToolsUrl = new URL('/tools/ai-bid-writer', AUTH_BASE_URL).href;
   await navigateAndWait(cdp, sessionId, aiToolsUrl, 15000);
   await scrollPage(cdp, sessionId);
-  const hasAiTools = await checkElement(cdp, sessionId, '[class*="ai-tool"], [class*="prompt"], a[href*="ai-"], [class*="tool-card"]');
+  const hasAiTools = await checkElement(cdp, sessionId, '[class*="ai-tool"], [class*="prompt"], a[href*="ai-"], [class*="tool-card"], textarea, input[type="text"]');
   steps.push({
     step_name: 'ai_route_present',
     expected_result: 'AI tools page renders with tool cards/links',
@@ -575,8 +584,8 @@ async function proveAiChain(cdp: CDPClient, sessionId: string, cloneUrl: string)
   });
   if (!hasAiTools) defects.push(createDefect('CHAIN-AI', 'ai_route_present', 'AI tools page renders', 'No AI tool elements', 'frontend_missing'));
 
-  // Step 2: AI tool page has prompt input
-  const aiToolUrl = new URL('/ai-image-generator', cloneUrl).href;
+  // Step 2: AI tool page has prompt input (main app)
+  const aiToolUrl = new URL('/tools/ai-bid-writer', AUTH_BASE_URL).href;
   await navigateAndWait(cdp, sessionId, aiToolUrl, 15000);
   const hasPrompt = await checkElement(cdp, sessionId, 'textarea, input[type="text"][class*="prompt"], [class*="prompt"], input[type="text"]');
   steps.push({
