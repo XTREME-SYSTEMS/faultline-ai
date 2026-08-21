@@ -38,20 +38,85 @@ function getColorFilter(targetHex) {
   return `hue-rotate(${rotation}deg) saturate(1.15)`;
 }
 
-function TemplateThumbnail({ url, name }) {
-  const [imgError, setImgError] = useState(false);
-  if (imgError) {
+function TemplateThumbnail({ url, benchmarkUrl, name, filter }) {
+  const [srcIndex, setSrcIndex] = useState(0);
+  const [loaded, setLoaded] = useState(false);
+
+  // Use benchmark URL (original source) for screenshots — more accessible to screenshot services.
+  // The clone matches the source visually, so this shows the actual design.
+  const screenshotTarget = benchmarkUrl || url;
+  const sources = [
+    `https://s.wordpress.com/mshots/v1/${encodeURIComponent(screenshotTarget)}?w=600&h=400`,
+    `https://image.thum.io/get/width/600/crop/400/${screenshotTarget}`,
+    `https://api.microlink.io/?url=${encodeURIComponent(screenshotTarget)}&screenshot=true&embed=screenshot.url`,
+  ];
+
+  const imgStyle = {
+    width: '100%', height: '100%', objectFit: 'cover',
+    filter: filter || 'none',
+    transition: 'filter .25s ease, opacity .3s ease',
+    opacity: loaded ? 1 : 0,
+  };
+
+  if (srcIndex >= sources.length) {
+    // Final fallback: scaled iframe (always works for live sites)
     return (
-      <iframe src={url} style={{ width: '1200px', height: '700px', transform: 'scale(0.22)', transformOrigin: 'top left', border: 0, pointerEvents: 'none' }} title={name} />
+      <div style={{ width: '100%', height: '100%', overflow: 'hidden', position: 'relative' }}>
+        <iframe
+          src={url}
+          style={{ width: '1200px', height: '700px', transform: 'scale(0.5)', transformOrigin: 'top left', border: 0, pointerEvents: 'none', filter: filter || 'none' }}
+          title={name}
+        />
+      </div>
     );
   }
+
   return (
-    <img
-      src={`https://image.thum.io/get/width/600/crop/400/${url}`}
-      alt={name}
-      onError={() => setImgError(true)}
-      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-    />
+    <>
+      {!loaded && <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', background: '#f0ede7' }}><Loader2 size={20} className="animate-spin" color="#C89B3C" /></div>}
+      <img
+        src={sources[srcIndex]}
+        alt={name}
+        onLoad={() => setLoaded(true)}
+        onError={() => { setSrcIndex(prev => prev + 1); setLoaded(false); }}
+        style={imgStyle}
+      />
+    </>
+  );
+}
+
+// Small color-variation preview row — shows the template screenshot in different color filters
+function ColorVariationThumbs({ url, benchmarkUrl, name, packColors }) {
+  const [activeColor, setActiveColor] = useState(0);
+  const variations = [
+    { color: packColors.primary, label: 'Default' },
+    { color: '#1a56DB', label: 'Blue' },
+    { color: '#DC2626', label: 'Red' },
+    { color: '#059669', label: 'Green' },
+    { color: '#7C3AED', label: 'Purple' },
+  ];
+  const current = variations[activeColor];
+
+  return (
+    <div>
+      <div style={{ borderRadius: 8, overflow: 'hidden', border: '1px solid #e5e1da', height: 100, position: 'relative', background: '#f0ede7' }}>
+        <TemplateThumbnail url={url} benchmarkUrl={benchmarkUrl} name={name} filter={getColorFilter(current.color)} />
+      </div>
+      <div style={{ display: 'flex', gap: 4, marginTop: 6, justifyContent: 'center' }}>
+        {variations.map((v, i) => (
+          <button
+            key={i}
+            onClick={(e) => { e.stopPropagation(); setActiveColor(i); }}
+            style={{
+              width: 18, height: 18, borderRadius: '50%',
+              border: `2px solid ${activeColor === i ? '#111' : '#ddd'}`,
+              background: v.color, cursor: 'pointer', padding: 0,
+            }}
+            title={v.label}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -274,8 +339,10 @@ function StepBusinessProfile({ onboarding, saving, onComplete, onBack }) {
 function StepChooseTemplate({ onboarding, templates, saving, onComplete, onBack }) {
   const packs = assignTemplatesToPacks(WEB_PACKS, templates);
   const [selectedId, setSelectedId] = useState(onboarding?.selected_template_name || '');
+  const [colorOverrides, setColorOverrides] = useState({});
 
   const selectedPack = packs.find(p => p.id === selectedId);
+  const VARIATION_COLORS = ['#1a56DB', '#DC2626', '#059669', '#7C3AED', '#EA580C'];
 
   return (
     <StepShell title="Choose Your Web Pack" subtitle="Each pack is a pre-configured website with branding, colors, and layout ready to go. Pick the style that fits your business.">
@@ -299,7 +366,12 @@ function StepChooseTemplate({ onboarding, templates, saving, onComplete, onBack 
                 {/* Screenshot */}
                 <div style={{ height: 160, background: '#f0ede7', position: 'relative', overflow: 'hidden' }}>
                   {hasTemplate ? (
-                    <TemplateThumbnail url={pack.template.vercel_deployment_url} name={pack.name} />
+                    <TemplateThumbnail
+                      url={pack.template.vercel_deployment_url}
+                      benchmarkUrl={pack.template.benchmark_url}
+                      name={pack.name}
+                      filter={colorOverrides[pack.id] ? getColorFilter(colorOverrides[pack.id]) : 'none'}
+                    />
                   ) : (
                     <div style={{ display: 'grid', placeItems: 'center', height: '100%', color: '#aaa', fontSize: 12 }}>Template coming soon</div>
                   )}
@@ -313,12 +385,24 @@ function StepChooseTemplate({ onboarding, templates, saving, onComplete, onBack 
                       <CheckCircle2 size={15} />
                     </div>
                   )}
-                  {/* Color palette dots */}
-                  <div style={{ position: 'absolute', bottom: 8, right: 8, display: 'flex', gap: 4 }}>
-                    {[pack.colors.primary, pack.colors.secondary, pack.colors.accent].map((c, i) => (
-                      <div key={i} style={{ width: 16, height: 16, borderRadius: '50%', background: c, border: '2px solid #fff', boxShadow: '0 1px 3px rgba(0,0,0,.2)' }} />
-                    ))}
-                  </div>
+                  {/* Color variation toggles — click to preview template in different colors */}
+                  {hasTemplate && (
+                    <div style={{ position: 'absolute', bottom: 6, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 5, background: 'rgba(255,255,255,.9)', padding: '4px 8px', borderRadius: 12, backdropFilter: 'blur(4px)' }}>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); setColorOverrides(prev => ({ ...prev, [pack.id]: undefined })); }}
+                        style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${!colorOverrides[pack.id] ? '#111' : '#fff'}`, background: pack.colors.primary, cursor: 'pointer', padding: 0, boxShadow: '0 1px 3px rgba(0,0,0,.2)' }}
+                        title="Default color"
+                      />
+                      {VARIATION_COLORS.map(c => (
+                        <button
+                          key={c}
+                          onClick={(e) => { e.stopPropagation(); setColorOverrides(prev => ({ ...prev, [pack.id]: c })); }}
+                          style={{ width: 16, height: 16, borderRadius: '50%', border: `2px solid ${colorOverrides[pack.id] === c ? '#111' : '#fff'}`, background: c, cursor: 'pointer', padding: 0, boxShadow: '0 1px 3px rgba(0,0,0,.2)' }}
+                          title={`Preview in ${c}`}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Pack info */}
@@ -365,7 +449,7 @@ function StepChooseTemplate({ onboarding, templates, saving, onComplete, onBack 
           selected_template_url: selectedPack.template?.vercel_deployment_url || '',
           selected_template_name: selectedPack.name,
           selected_template_source: selectedPack.template?.benchmark_url || '',
-          brand_color: selectedPack.colors.primary,
+          brand_color: colorOverrides[selectedPack.id] || selectedPack.colors.primary,
           tagline: selectedPack.tagline,
         })}
         disabled={!selectedId}
