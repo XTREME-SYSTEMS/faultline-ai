@@ -113,7 +113,7 @@ export function computeClosureMetrics(input: MetricInput): CategoryMetric[] {
 
   // Build-scoped backend capabilities
   const v75Capabilities = capabilities.filter(c => c.build_id === buildId);
-  const beImplemented = v75Capabilities.filter(c => c.status === 'implemented');
+  const beImplemented = v75Capabilities.filter(c => c.status === 'implemented' || c.status === 'validated');
   const beValidated = v75Capabilities.filter(c => c.status === 'validated');
 
   // ─── 1. SOURCE_TRUTH_INTEGRITY (critical) ──────────────────────────
