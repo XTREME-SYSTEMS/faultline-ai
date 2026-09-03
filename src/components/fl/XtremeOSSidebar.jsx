@@ -64,6 +64,7 @@ const MODULES = [
       { to: '/app/social-media', label: 'Social Media', icon: Share2 },
       { to: '/app/seo-console', label: 'SEO Console', icon: Gauge },
       { to: '/app/agents', label: 'Agent Console', icon: Bot },
+      { to: '/app/capabilities', label: 'Capabilities Matrix', icon: Cpu },
       { to: '/app/ai-control', label: 'AI Control', icon: Cpu },
       { to: '/app/database', label: 'Database', icon: Database },
       { to: '/app/settings', label: 'Settings', icon: Settings },
