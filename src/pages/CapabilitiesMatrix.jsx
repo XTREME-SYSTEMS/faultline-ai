@@ -6,6 +6,7 @@ import XtremeOSRightPanel from '@/components/fl/XtremeOSRightPanel';
 import CapabilityRow from '@/components/capabilities/CapabilityRow';
 import PotentialCapabilitiesList from '@/components/capabilities/PotentialCapabilitiesList';
 import PromptLibraryPanel from '@/components/capabilities/PromptLibraryPanel';
+import { MultiPhaseHealButton } from '@/components/capabilities/MultiPhaseHealButton';
 import {
   Cpu, Shield, CheckCircle2, AlertTriangle, Loader2, Gauge,
   Boxes, Sparkles, Terminal, Play, Wrench, RefreshCw,
@@ -242,6 +243,10 @@ export default function CapabilitiesMatrix() {
               {bulkTesting ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />}
               {bulkTesting ? 'Testing All...' : 'Test All Capabilities'}
             </button>
+            <MultiPhaseHealButton
+              orgId={user?.data?.organization_id}
+              onComplete={load}
+            />
             <button
               onClick={handleBulkFix}
               disabled={bulkFixing}

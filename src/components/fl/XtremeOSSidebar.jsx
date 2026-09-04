@@ -4,7 +4,7 @@ import {
   LayoutDashboard, Terminal, MessageSquare, Building2, Globe, Shield, ShieldCheck,
   Search, TrendingUp, Package, DollarSign, Users, FileText, PenTool,
   Database, Video, Share2, Settings, Layers, Cpu, Zap, ChevronDown,
-  Copy, Images, ListChecks, Archive, BarChart3, Gauge, Bot
+  Copy, Images, ListChecks, Archive, BarChart3, Gauge, Bot, AlertTriangle
 } from 'lucide-react';
 
 // Three-module sidebar organization:
@@ -65,6 +65,7 @@ const MODULES = [
       { to: '/app/seo-console', label: 'SEO Console', icon: Gauge },
       { to: '/app/agents', label: 'Agent Console', icon: Bot },
       { to: '/app/capabilities', label: 'Capabilities Matrix', icon: Cpu },
+      { to: '/app/failure-board', label: 'Failure Board', icon: AlertTriangle },
       { to: '/app/ai-control', label: 'AI Control', icon: Cpu },
       { to: '/app/database', label: 'Database', icon: Database },
       { to: '/app/settings', label: 'Settings', icon: Settings },

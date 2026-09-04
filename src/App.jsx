@@ -89,6 +89,7 @@ const VideoStudio = lazy(() => import('@/pages/VideoStudio'));
 const SocialMediaManager = lazy(() => import('@/pages/SocialMediaManager'));
 const AgentConsole = lazy(() => import('@/pages/AgentConsole'));
 const CapabilitiesMatrix = lazy(() => import('@/pages/CapabilitiesMatrix'));
+const FailureSeverityBoard = lazy(() => import('@/pages/FailureSeverityBoard'));
 const AiBidWriter = lazy(() => import('@/pages/tools/AiBidWriter'));
 const CloneStudio = lazy(() => import('@/pages/CloneStudio'));
 const CloneGallery = lazy(() => import('@/pages/CloneGallery'));
@@ -243,6 +244,7 @@ const AuthenticatedApp = () => {
         <Route path="/app/social-media" element={<SocialMediaManager />} />
       <Route path="/app/agents" element={<AgentConsole />} />
       <Route path="/app/capabilities" element={<CapabilitiesMatrix />} />
+      <Route path="/app/failure-board" element={<FailureSeverityBoard />} />
       <Route path="/app/seo-console" element={<SEOConsole />} />
       <Route path="/app/template-library" element={<TemplateLibrary />} />
       <Route path="/app/rebrand-studio" element={<RebrandStudio />} />

@@ -599,6 +599,86 @@ findings critical, findings high, findings fixed, and the total open defect coun
 Stop when open defect count = 0.`,
   },
   {
+    id: 'FIX_ALL_TO_100',
+    title: 'Fix Every Failure & Bring All Categories to 100',
+    category: 'Master',
+    description: 'Invoke this to fix every current failure on the closure board and bring ALL categories to 100/100 — the definitive fix-to-100 prompt.',
+    prompt_text: `You are the definitive system fixer. Your singular mission: fix every failure on the closure board and bring ALL categories to 100/100.
+
+STEP 1 — ASSESS: Read the ClosureBoard entity for all categories. Identify every category with status "failing", "partial", "unverified", or "blocked". For each, read the lowest_failure, blocker, and next_work_packet fields.
+
+STEP 2 — PRIORITIZE BY SEVERITY:
+  - CRITICAL first: any category with is_critical=true that is failing or blocked
+  - HIGH next: failing categories below 50%
+  - MEDIUM: partial categories (50-90%)
+  - UNVERIFIED: categories with denominator 0 (need evidence establishment)
+
+STEP 3 — FIX EACH FAILURE:
+  For TAXONOMY_ROUTE_COVERAGE (43%, 16 nodes missing routes):
+    - Run discoverTaxonomy to find missing taxonomy nodes
+    - Run validateRoutesAgainstTaxonomy to match routes to nodes
+    - For each unmatched valid official node, create a clone route
+    - Re-run updateClosureBoard
+
+  For ROUTE_FIDELITY (48%, 54 routes not cloned):
+    - Read EnvatoPublicSurfaceManifest for routes with clone_status="missing"
+    - Run autonomousFullSiteClone for each missing route
+    - Update clone_status to "exists" after cloning
+    - Re-run updateClosureBoard
+
+  For ROUTE_DISCOVERY (65%, 56 routes below baseline):
+    - Run discoverPublicSurface to crawl for new routes
+    - Run normalizeRoutes to canonicalize
+    - Run classifyUnmatchedRoutes to classify
+    - Re-run updateClosureBoard
+
+  For TAXONOMY_DISCOVERY (92%, 1 seed missing):
+    - Run discoverTaxonomy with deep crawl mode
+    - Run classifyOrphanTaxonomy to classify the missing node
+    - Re-run updateClosureBoard
+
+  For each UNVERIFIED category (PERFORMANCE, SECURITY, AUTHENTICATION, INTERACTION_COVERAGE,
+  STRUCTURAL_VISUAL_PARITY, SEMANTIC_COMPONENT_PARITY, ACCESSIBILITY, DATA_PERSISTENCE):
+    - Run the appropriate evidence-establishment function:
+      PERFORMANCE + ACCESSIBILITY → aspMatrix
+      SECURITY → securityComplianceCheck + deepSecurityScan
+      AUTHENTICATION + DATA_PERSISTENCE → proveFullStackChains (CHAIN-AUTH, CHAIN-FORM)
+      INTERACTION_COVERAGE → interactionDiscovery
+      STRUCTURAL_VISUAL_PARITY → structuralVisualParity
+      SEMANTIC_COMPONENT_PARITY → differentialValidation
+    - The function creates CoverageLedger records that establish the denominator
+    - Run updateClosureBoard to re-score with the new evidence
+    - If score < 100, read the failing tests and fix each one
+
+  For BLOCKED categories:
+    - Read the blocker field
+    - If blocker is external (API key, rate limit), log and skip
+    - If blocker is internal (code issue), fix the code and unblock
+
+STEP 4 — VALIDATE: After fixing all failures, run proveFullStackChains for all 5 chains.
+  If any chain fails, run repairBackendChain, then re-test.
+
+STEP 5 — LOG: For every action taken, create a ConvergenceProofLog entry with:
+  - before_score, after_score, score_delta
+  - action_taken, function_invoked, function_result
+  - status (success/failed/converged)
+  - evidence
+
+STEP 6 — CONVERGE: Run continuousConvergenceEngine with max_iterations=10.
+  This will loop until all categories are passing or no more progress can be made.
+
+STEP 7 — VERIFY 100/100: Read the ClosureBoard one final time.
+  Every category MUST show score=100 and status="passing" or "certified".
+  If any category is below 100, repeat from STEP 3 for that category.
+
+DO NOT STOP until all 22 active categories show 100/100.
+DO NOT FAKE scores — establish real evidence for each.
+DO NOT SKIP categories — every category must be addressed.
+DO NOT MARK unverified categories as 100 without running their evidence functions.
+
+Report: starting state, each fix applied with before/after scores, final state with all categories at 100.`,
+  },
+  {
     id: 'CONTINUOUS_IMPROVEMENT_ENGINE',
     title: 'Continuous Improvement Engine — Self-Optimizing System',
     category: 'Autonomous',
