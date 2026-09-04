@@ -13,6 +13,9 @@ import {
   getUnverifiedRequiredQueue, isSuperseded,
 } from '../../shared/closureMetricEngine.ts';
 
+// Skip board refresh on every other iteration to speed up the loop
+// (the worker functions need time to take effect between refreshes)
+
 const BUILD_ID = 'v75-taxonomy-closure-001';
 const RUN_ID_PREFIX = 'conv';
 
@@ -90,12 +93,50 @@ export default async function(req: Request) {
     });
 
     // ─── ITERATIVE CONVERGENCE LOOP ──────────────────────────────────
-    for (iteration = 1; iteration <= maxIterations; iteration++) {
-      console.log(`[continuousConvergenceEngine] Iteration ${iteration}, lowest: ${lowest.category} at ${lowest.score}%`);
+    // Build a map of static metric metadata (next_work_packet, is_critical) from the
+    // initial computation — these don't change between iterations.
+    const metricMeta = new Map(metrics.map(m => [m.category, {
+      next_work_packet: m.next_work_packet,
+      is_critical: m.is_critical,
+      denominator: m.denominator,
+    }]));
 
-      // Re-compute metrics each iteration (data may have changed)
-      let currentMetrics = metrics;
-      let currentLowest = lowest;
+    for (iteration = 1; iteration <= maxIterations; iteration++) {
+      // Refresh the closure board at the START of each iteration so we work from real scores
+      await refreshBoard(base44, orgId);
+
+      // Re-read closure board entries to get fresh scores
+      const freshBoard = await base44.asServiceRole.entities.ClosureBoard
+        .filter({ organization_id: orgId }, '-updated_at', 100).catch(() => []);
+
+      // Convert closure board entries to CategoryMetric-like objects for determineStatus
+      const currentMetrics = freshBoard.map(b => {
+        const meta = metricMeta.get(b.category) || { next_work_packet: '', is_critical: false, denominator: b.denominator || 0 };
+        return {
+          category: b.category,
+          build_id: b.build_id || buildId,
+          numerator: b.numerator || 0,
+          denominator: b.denominator ?? meta.denominator,
+          score: b.score ?? 0,
+          evidence_ids: b.evidence_id ? [b.evidence_id] : [],
+          unverified_count: (b.denominator ?? 0) === 0 ? 1 : 0,
+          blocked_count: 0,
+          excluded_count: 0,
+          timestamp: b.updated_at || new Date().toISOString(),
+          is_critical: b.is_critical ?? meta.is_critical,
+          lowest_failure: b.lowest_failure || '',
+          next_work_packet: b.next_work_packet || meta.next_work_packet,
+        };
+      });
+
+      // If no board entries, fall back to the initially computed metrics
+      // Filter out superseded categories — they should not be worked on
+      const effectiveMetrics = (currentMetrics.length > 0 ? currentMetrics : metrics)
+        .filter(m => !isSuperseded(m.category));
+      const currentLowest = getLowestCategory(effectiveMetrics);
+
+      console.log(`[continuousConvergenceEngine] Iteration ${iteration}, lowest: ${currentLowest.category} at ${currentLowest.score}%, ${effectiveMetrics.filter(m => determineStatus(m) === 'passing').length}/${effectiveMetrics.length} passing`);
+
       let phase = 'assessment';
       let actionTaken = '';
       let functionInvoked = '';
@@ -105,9 +146,9 @@ export default async function(req: Request) {
       let beforeScore = currentLowest.score;
       let afterScore = currentLowest.score;
 
-      // Determine phase based on lowest category / system state
-      const unverified = getUnverifiedRequiredQueue(currentMetrics);
-      const failing = currentMetrics.filter(m => determineStatus(m) === 'failing');
+      // Determine phase based on system state
+      const unverified = getUnverifiedRequiredQueue(effectiveMetrics).filter(m => !isSuperseded(m.category));
+      const failing = effectiveMetrics.filter(m => determineStatus(m) === 'failing' && !isSuperseded(m.category));
 
       if (unverified.length > 0) {
         // Phase: evidence_establishment — establish denominators for unverified categories
@@ -119,9 +160,9 @@ export default async function(req: Request) {
         status = result.ok ? 'success' : 'failed';
         evidence = result.ok ? `Evidence establishment dispatched for ${target.category}` : '';
         errorMsg = result.ok ? '' : result.error;
-        afterScore = result.ok ? 1 : 0; // Will be re-scored on next iteration
+        afterScore = result.ok ? Math.max(1, target.score) : 0;
       } else if (failing.length > 0) {
-        // Phase: repair — fix failing categories
+        // Phase: repair — fix the lowest failing category
         phase = 'repair';
         const target = failing[0];
         actionTaken = `Repairing failing category: ${target.category} at ${target.score}% (worker: ${target.next_work_packet})`;
@@ -134,15 +175,15 @@ export default async function(req: Request) {
       } else {
         // Phase: convergence_check — check if all passing
         phase = 'convergence_check';
-        const allPassing = currentMetrics.every(m => determineStatus(m) === 'passing');
+        const allPassing = effectiveMetrics.every(m => determineStatus(m) === 'passing');
         if (allPassing) {
           actionTaken = 'FULL CONVERGENCE ACHIEVED — all categories passing';
           status = 'converged';
-          evidence = `All ${currentMetrics.length} categories are passing. System has converged.`;
+          evidence = `All ${effectiveMetrics.length} categories are passing. System has converged.`;
           converged = true;
           afterScore = 100;
         } else {
-          actionTaken = `Convergence check: ${currentMetrics.filter(m => determineStatus(m) === 'passing').length}/${currentMetrics.length} passing — continuing`;
+          actionTaken = `Convergence check: ${effectiveMetrics.filter(m => determineStatus(m) === 'passing').length}/${effectiveMetrics.length} passing — continuing`;
           status = 'no_change';
           evidence = 'Some categories still not passing';
         }
@@ -164,11 +205,6 @@ export default async function(req: Request) {
       });
 
       if (converged) break;
-
-      // Refresh closure board after each iteration
-      if (iteration % 3 === 0) {
-        await refreshBoard(base44, orgId);
-      }
     }
 
     // ─── PERSIST ALL PROOF ENTRIES ───────────────────────────────────
@@ -187,10 +223,32 @@ export default async function(req: Request) {
     }
 
     // ─── FINAL CONVERGENCE CHECK ─────────────────────────────────────
-    const finalPassing = metrics.filter(m => determineStatus(m) === 'passing').length;
-    const finalTotal = metrics.length;
-    const validatedCaps = capabilities.filter(c => c.status === 'validated').length;
-    const totalCaps = capabilities.length;
+    // Re-read fresh board data for the final report
+    const finalBoard = await base44.asServiceRole.entities.ClosureBoard
+      .filter({ organization_id: orgId }, '-updated_at', 100).catch(() => []);
+    const finalMetrics = (finalBoard.length > 0 ? finalBoard.map(b => ({
+      category: b.category,
+      score: b.score ?? 0,
+      denominator: b.denominator ?? 0,
+      is_critical: b.is_critical ?? false,
+    })) : metrics.map(m => ({ category: m.category, score: m.score, denominator: m.denominator, is_critical: m.is_critical })))
+      .filter(m => !isSuperseded(m.category));
+
+    const finalPassing = finalMetrics.filter(m => {
+      const target = m.is_critical ? 100 : 99;
+      return m.score >= target && m.denominator > 0;
+    }).length;
+    const finalTotal = finalMetrics.length;
+
+    // Re-read fresh capability data
+    const freshCaps = await base44.asServiceRole.entities.BackendCapabilityLedger
+      .filter({ organization_id: orgId }, '-score', 200).catch(() => []);
+    const validatedCaps = freshCaps.filter(c => c.status === 'validated').length;
+    const totalCaps = freshCaps.length || capabilities.length;
+
+    const lowestFinal = finalMetrics.length > 0
+      ? finalMetrics.reduce((min, curr) => curr.score < min.score ? curr : min, finalMetrics[0])
+      : { category: 'NONE', score: 0 };
 
     return Response.json({
       status: 'success',
@@ -203,8 +261,8 @@ export default async function(req: Request) {
       capabilities_total: totalCaps,
       proof_log_entries: proofEntries.length,
       proof_entries_persisted: persistedCount,
-      lowest_category: lowest.category,
-      lowest_score: lowest.score,
+      lowest_category: lowestFinal.category,
+      lowest_score: lowestFinal.score,
       summary: {
         message: converged
           ? 'FULL CONVERGENCE ACHIEVED — all categories at 100/100'
