@@ -1,0 +1,130 @@
+{
+  "name": "ConvergenceProofLog",
+  "type": "object",
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "run_id": {
+      "type": "string",
+      "description": "Unique ID for this convergence run session"
+    },
+    "iteration": {
+      "type": "number",
+      "default": 0,
+      "description": "Iteration number within the run"
+    },
+    "phase": {
+      "type": "string",
+      "enum": [
+        "assessment",
+        "discovery",
+        "taxonomy",
+        "content",
+        "evidence_establishment",
+        "validation",
+        "repair",
+        "potential_capability_implementation",
+        "convergence_check",
+        "complete"
+      ],
+      "description": "Current phase of the convergence process"
+    },
+    "action_taken": {
+      "type": "string",
+      "description": "Human-readable description of what was done"
+    },
+    "function_invoked": {
+      "type": "string",
+      "description": "Name of the backend function that was called"
+    },
+    "function_payload": {
+      "type": "object",
+      "description": "Payload sent to the function"
+    },
+    "function_result": {
+      "type": "object",
+      "description": "Result returned by the function"
+    },
+    "target_category": {
+      "type": "string",
+      "description": "Closure board category being improved"
+    },
+    "target_capability_id": {
+      "type": "string",
+      "description": "Potential capability being implemented (if applicable)"
+    },
+    "before_score": {
+      "type": "number",
+      "description": "Score before this action"
+    },
+    "after_score": {
+      "type": "number",
+      "description": "Score after this action"
+    },
+    "score_delta": {
+      "type": "number",
+      "default": 0,
+      "description": "Change in score from this action"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "started",
+        "in_progress",
+        "success",
+        "failed",
+        "skipped",
+        "no_change",
+        "converged"
+      ],
+      "default": "started"
+    },
+    "evidence": {
+      "type": "string",
+      "description": "Proof evidence \u2014 what was observed/verified"
+    },
+    "evidence_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "description": "IDs of receipts/records generated as proof"
+    },
+    "error_message": {
+      "type": "string",
+      "description": "Error message if status is failed"
+    },
+    "duration_ms": {
+      "type": "number",
+      "description": "How long this action took in milliseconds"
+    },
+    "timestamp": {
+      "type": "string",
+      "format": "date-time"
+    }
+  },
+  "required": [
+    "organization_id",
+    "run_id",
+    "phase",
+    "action_taken",
+    "status"
+  ],
+  "rls": {
+    "read": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "create": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "update": {
+      "data.organization_id": "{{user.data.organization_id}}"
+    },
+    "delete": {
+      "user_condition": {
+        "role": "admin"
+      }
+    }
+  }
+}
