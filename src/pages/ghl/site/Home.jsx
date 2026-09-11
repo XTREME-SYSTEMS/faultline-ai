@@ -45,7 +45,7 @@ const PILLARS = [
 ];
 
 const MOVEMENT = [
-  { h: 'By Operators, For Operators', p: 'AUTO LEADS was built and powered by construction industry operators focused on the traditional issues contractors face day to day. Once success was found, it was introduced to the market to help construction pros face common challenges.' },
+  { h: 'By Operators, For Operators', p: 'FaultLine AI was built and powered by construction industry operators focused on the traditional issues contractors face day to day. Once success was found, it was introduced to the market to help construction pros face common challenges.' },
   { h: 'Community Driven Development', p: 'We are committed to helping the Marketing world. We\'ve built a community-driven Ideas Board where you can share and vote on ideas to help lead the direction of development.' },
   { h: 'Network With Other Successful Marketers', p: 'Connect with other ambitious agency owners, entrepreneurs and marketing professionals who are scaling successful businesses with our platform.' },
 ];
@@ -106,7 +106,7 @@ export default function Home() {
       <section className="py-20 bg-white">
         <div className="max-w-4xl mx-auto px-5 text-center">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>We're in the business of helping you grow your business</h2>
-          <p className="mt-4 text-slate-600 text-lg">AUTO LEADS is the AI-powered construction intelligence platform built to help construction businesses capture more leads, book more jobs, and turn one-time customers into repeat referrals.</p>
+          <p className="mt-4 text-slate-600 text-lg">FaultLine AI is the AI-powered construction intelligence platform built to help construction businesses capture more leads, book more jobs, and turn one-time customers into repeat referrals.</p>
         </div>
       </section>
 
@@ -145,7 +145,7 @@ export default function Home() {
       <section className="py-20 bg-[#000000] text-white">
         <div className="max-w-4xl mx-auto px-5 text-center">
           <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>One platform. No duct tape.</h2>
-          <p className="mt-5 text-lg text-slate-300 max-w-2xl mx-auto">Stop paying for and juggling a dozen separate tools. ${' '}AUTO LEADS brings CRM, funnels, marketing, bookings, and automations together — so your whole business runs from one login.</p>
+          <p className="mt-5 text-lg text-slate-300 max-w-2xl mx-auto">Stop paying for and juggling a dozen separate tools. ${' '}FaultLine AI brings CRM, funnels, marketing, bookings, and automations together — so your whole business runs from one login.</p>
         </div>
       </section>
 
@@ -170,7 +170,7 @@ export default function Home() {
       {/* What's included */}
       <section className="py-20 bg-slate-50">
         <div className="max-w-5xl mx-auto px-5 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>What's included with AUTO LEADS</h2>
+          <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>What's included with FaultLine AI</h2>
           <div className="mt-8 grid sm:grid-cols-2 gap-6">
             <img src="https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/5fb9e359e_clone-img-msnzvgcp-5yrpln.webp" alt="Pricing Plan" className="rounded-xl w-full" />
             <img src="https://base44.app/api/apps/6a6e5a0e8a902b5e240d7633/files/mp/public/6a6e5a0e8a902b5e240d7633/c8dcca339_clone-img-msnzvgcq-dwdf87.webp" alt="Pricing Plan" className="rounded-xl w-full" />

@@ -16,7 +16,7 @@ export default function About() {
         <div className="max-w-4xl mx-auto px-5 text-center">
           <span className="text-[#FFE566] text-xs font-bold uppercase tracking-widest">About Us</span>
           <h1 className="mt-3 text-4xl md:text-6xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>We help local businesses win</h1>
-          <p className="mt-5 text-lg text-slate-300">AUTO LEADS was built to give every local service business the same growth engine the big franchises use — at a price that makes sense.</p>
+          <p className="mt-5 text-lg text-slate-300">FaultLine AI was built to give every local service business the same growth engine the big franchises use — at a price that makes sense.</p>
         </div>
       </section>
 
@@ -26,7 +26,7 @@ export default function About() {
           <div>
             <h2 className="text-3xl md:text-4xl font-bold tracking-tight" style={{ fontFamily: "'Libre Caslon Display', serif" }}>Our story</h2>
             <p className="mt-4 text-slate-600 text-lg">We watched local businesses duct-tape a dozen tools together just to keep up. So we built one platform — CRM, funnels, marketing, bookings, and automations — that replaces all of them and actually gets the phone to ring.</p>
-            <p className="mt-3 text-slate-600 text-lg">AUTO LEADS is built for local service businesses that want to capture more leads, book more jobs, and turn one-time customers into repeat referrals — without juggling a dozen separate subscriptions.</p>
+            <p className="mt-3 text-slate-600 text-lg">FaultLine AI is built for local service businesses that want to capture more leads, book more jobs, and turn one-time customers into repeat referrals — without juggling a dozen separate subscriptions.</p>
           </div>
         </div>
       </section>

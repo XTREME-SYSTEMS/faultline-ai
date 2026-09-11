@@ -44,7 +44,7 @@ export default function MarketingShell({ children }) {
       <footer className="bg-[#000000] text-slate-300 pt-16 pb-8">
         <div className="max-w-7xl mx-auto px-5 grid grid-cols-2 md:grid-cols-5 gap-10">
           <div className="col-span-2">
-            <LgnyLogo size={34} light />
+            <LgnyLogo size={34} />
             <p className="mt-4 text-sm text-slate-400 max-w-xs">The AI-powered construction intelligence platform. Capture, nurture, and close leads — all in one platform.</p>
           </div>
           {[
@@ -59,7 +59,7 @@ export default function MarketingShell({ children }) {
           ))}
         </div>
         <div className="max-w-7xl mx-auto px-5 mt-12 pt-6 border-t border-white/10 flex flex-col md:flex-row justify-between gap-3 text-xs text-slate-500">
-          <span>© {new Date().getFullYear()} AUTO LEADS · autoleads.ai</span>
+          <span>© {new Date().getFullYear()} FaultLine AI · faultline.ai</span>
           <span>Privacy · Terms · Security</span>
         </div>
       </footer>

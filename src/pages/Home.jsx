@@ -151,7 +151,7 @@ export default function Home() {
       <a className="skip-link" href="#main">Skip to main content</a>
       <header className="site-header" style={{ background: '#0B0B0D', borderBottom: '1px solid #2b2b2b', height: 72 }}>
         <div className="page-wrap header-inner">
-          <a className="brand" href="#top" aria-label="AUTO LEADS home"><div style={{ height: 52, overflow: 'hidden', display: 'flex', alignItems: 'center' }}><img src={LOGO_LIGHT} alt="AUTO LEADS" style={{ height: 52, width: 'auto' }} /></div></a>
+          <a className="brand" href="#top" aria-label="FaultLine AI home"><div style={{ height: 52, overflow: 'hidden', display: 'flex', alignItems: 'center' }}><img src={LOGO_LIGHT} alt="FaultLine AI" style={{ height: 52, width: 'auto' }} /></div></a>
           <button className="menu-button" type="button" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(v => !v)}><span style={{ background: '#fff' }} /><span style={{ background: '#fff' }} /><span style={{ background: '#fff' }} /></button>
           <nav className={`primary-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Primary navigation" style={{ color: '#fff', background: menuOpen ? '#0B0B0D' : 'transparent' }}>
             <a href="#tools" style={{ color: '#fff' }}>AI Tools</a>
@@ -169,9 +169,9 @@ export default function Home() {
         <section id="top" style={{ background: 'linear-gradient(115deg, #0B0B0D 0%, #0B0B0D 48%, #1A1A1D 48%, #1A1A1D 100%)', padding: '72px 0', borderBottom: '1px solid #2b2b2b' }}>
           <div className="page-wrap" style={{ display: 'grid', gridTemplateColumns: '1fr 1.05fr', gap: 56, alignItems: 'center' }}>
             <div style={{ color: '#fff' }}>
-              <p className="eyebrow" style={{ color: '#FFD700', margin: '0 0 14px' }}>CONSTRUCTION INTELLIGENCE</p>
+              <p className="eyebrow" style={{ color: '#FFD700', margin: '0 0 14px' }}>FAULTLINE AI</p>
               <h1 style={{ font: "400 clamp(40px, 5vw, 70px)/1 'Libre Caslon Display', serif", letterSpacing: '-.035em', margin: '0 0 18px' }}>Win More Jobs.<br /><span style={{ color: '#FFD700' }}>Scale Your Construction Business.</span></h1>
-              <p style={{ fontSize: 18, lineHeight: 1.7, color: '#c9c9cc', maxWidth: 540, margin: 0 }}>AUTO LEADS is the AI-powered construction intelligence platform. Buy AI tools, generate photoreal project visualizations, and get a custom website built for your business.</p>
+              <p style={{ fontSize: 18, lineHeight: 1.7, color: '#c9c9cc', maxWidth: 540, margin: 0 }}>FaultLine AI is the AI-powered construction intelligence platform. Buy AI tools, generate photoreal project visualizations, and get a custom website built for your business.</p>
               <div className="button-row" style={{ marginTop: 28 }}>
                 <Link to="/store" className="button button--gold">Explore AI Tools <Icon name="arrow-right" /></Link>
                 <button type="button" className="button button--dark-outline" onClick={() => navigate('/consultation')}>Get a Website <Icon name="arrow-right" /></button>
@@ -265,7 +265,7 @@ export default function Home() {
           <div className="page-wrap" style={{ display: 'grid', gridTemplateColumns: '.95fr 1.05fr', gap: 56, alignItems: 'center' }}>
             <div>
               <p className="eyebrow">Custom websites</p>
-              <h2 style={{ font: "400 clamp(34px, 3.5vw, 52px)/1.05 'Libre Caslon Display', serif", margin: '0 0 16px' }}>Get a Website Built by AUTO LEADS.</h2>
+              <h2 style={{ font: "400 clamp(34px, 3.5vw, 52px)/1.05 'Libre Caslon Display', serif", margin: '0 0 16px' }}>Get a Website Built by FaultLine AI.</h2>
               <p style={{ fontSize: 17, lineHeight: 1.7, color: '#666', margin: '0 0 22px' }}>We design and build high-converting websites for floor contractors — loaded with your floor gallery, before/after visualizer, and AI-powered lead capture. Launch-ready, mobile-first, and built to sell.</p>
               <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', display: 'grid', gap: 12 }}>
                 {['Floor-gallery & before/after showcase', 'Integrated Floor Visualizer', 'AI lead capture & CRM', 'Mobile-first, launch-ready'].map(b => (
@@ -335,7 +335,7 @@ export default function Home() {
           <div className="page-wrap closing-grid">
             <div>
               <h2>Stop Guessing.<br /><span style={{ color: '#FFD700' }}>Start Winning Construction Jobs.</span></h2>
-              <p style={{ color: '#bbb' }}>Get AI tools and a custom website built for your construction business — built by AUTO LEADS.</p>
+              <p style={{ color: '#bbb' }}>Get AI tools and a custom website built for your construction business — built by FaultLine AI.</p>
             </div>
             <div>
               <div className="button-row">
@@ -355,7 +355,7 @@ export default function Home() {
       <footer className="site-footer" id="footer">
         <div className="page-wrap footer-grid">
           <div className="footer-brand">
-            <img src={LOGO_LIGHT} alt="AUTO LEADS" style={{ height: 60, width: 'auto' }} />
+            <img src={LOGO_LIGHT} alt="FaultLine AI" style={{ height: 60, width: 'auto' }} />
             <p>Construction Intelligence — AI tools &amp; websites for construction pros.</p>
             <div className="socials"><a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">in</a><a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">◎</a><a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube">▶</a></div>
           </div>
@@ -376,7 +376,7 @@ export default function Home() {
           </div>
         </div>
         <div className="page-wrap footer-bottom">
-          <span>© 2026 AUTO LEADS. All rights reserved.</span>
+          <span>© 2026 FaultLine AI. All rights reserved.</span>
           <nav><Link to="/security">Privacy Policy</Link><Link to="/security">Terms of Service</Link><Link to="/security">Cookie Policy</Link><Link to="/security">Acceptable Use</Link></nav>
           <span className="compliance"><Icon name="shield" />Built for<br />Construction Pros</span>
         </div>

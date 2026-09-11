@@ -53,7 +53,7 @@ export default function AutoLeadsLogin() {
       <h2 className="font-[Libre_Caslon_Display,serif] text-3xl tracking-tight text-[#0B0B0D]">
         Welcome back
       </h2>
-      <p className="text-[#666] mt-1 mb-7">Log in to your AUTO LEADS account</p>
+      <p className="text-[#666] mt-1 mb-7">Log in to your FaultLine AI account</p>
 
       <button
         onClick={handleGoogle}

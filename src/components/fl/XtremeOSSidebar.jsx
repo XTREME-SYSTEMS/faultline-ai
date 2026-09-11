@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { BRAND } from '@/lib/brandIdentity';
 import {
   LayoutDashboard, Terminal, MessageSquare, Building2, Globe, Shield, ShieldCheck,
   Search, TrendingUp, Package, DollarSign, Users, FileText, PenTool,
@@ -119,15 +120,8 @@ export default function XtremeOSSidebar() {
     }}>
       {/* Brand */}
       <div style={{ padding: '20px 18px', borderBottom: '1px solid #2b2b2b' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <img src="https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/9a0697861_autoleads-logo-dark-master.png" alt="AUTO LEADS" style={{ height: 36, width: 'auto', borderRadius: 4 }} />
-          <div>
-            <b style={{ fontFamily: "'DM Sans', system-ui, sans-serif", fontSize: 15, fontWeight: 800, display: 'block', lineHeight: 1.1, color: '#fff' }}>
-              AUTO <span style={{ color: '#FFD700' }}>LEADS</span>
-            </b>
-            <small style={{ color: '#666', fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em' }}>CONSTRUCTION INTELLIGENCE</small>
-          </div>
-        </div>
+      <img src={BRAND.logoDark} alt={BRAND.name} style={{ height: 34, width: 'auto' }} />
+      <small style={{ display: 'block', color: '#777', fontSize: 9, textTransform: 'uppercase', letterSpacing: '.1em', marginTop: 8, textAlign: 'center' }}>{BRAND.tagline}</small>
       </div>
 
       {/* Module Navigation */}
