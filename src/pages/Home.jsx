@@ -1,431 +1,339 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Image } from '@/components/ui/image';
-import Icon from '@/components/fl/Icon';
-import { submitFaultLineForm } from '@/lib/faultlineForms';
-import { useAuth } from '@/lib/AuthContext';
-import {
-  Camera, FileText, Users, Mail, Calculator, Palette, Calendar,
-  Globe, Sparkles, Layout, TrendingUp, ShieldCheck
-} from 'lucide-react';
-import '@/components/fl/approved-homepage.css';
-
+import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { BRAND } from '@/lib/brandIdentity';
-const LOGO_LIGHT = BRAND.logoLight;
-const LOGO_DARK = BRAND.logoDark;
+import { publicNav, problems, capabilities, steps } from '@/components/fl/data';
+import { submitFaultLineForm } from '@/lib/faultlineForms';
+import {
+  Search, Globe, Workflow, DollarSign, Unplug, Bot,
+  ClipboardCheck, Network, TrendingDown, ShieldAlert, Cpu, Map,
+  Building2, Mail, Users, FileText, Activity, Wrench, BarChart3, Link2,
+  Check, Menu, X, ArrowRight,
+} from 'lucide-react';
+import '@/components/fl/faultline-homepage.css';
 
-const IMG = {
-  showroom: 'https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/74f654c52_generated_image.png',
-  beforeAfter: 'https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/2a0fb4607_generated_image.png',
-  warehouse: 'https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/06b87bf6c_generated_image.png',
-  epoxyCountertop: 'https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/282098d5a_generated_image.png',
-  stained: 'https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/5d52dedde_generated_image.png',
-  concreteCountertop: 'https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/2c7cb786a_generated_image.png',
-  solid: 'https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/615618a3a_generated_image.png',
-  flake: 'https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/207137c11_generated_image.png',
-};
+const PROBLEM_ICONS = [Search, Globe, Workflow, DollarSign, Unplug, Bot];
+const CAPABILITY_ICONS = [Globe, ClipboardCheck, Network, TrendingDown, ShieldAlert, Cpu, Map, Building2, Mail, Users, FileText, Activity];
+const STEP_ICONS = [Link2, Search, BarChart3, Wrench, Activity];
 
-const floorTypes = [
-  { name: 'Metallic Epoxy', img: IMG.showroom, desc: 'Showroom-grade metallic pigment floors with mirror depth.' },
-  { name: 'Flake Epoxy', img: IMG.flake, desc: 'Decorative vinyl-chip garage & patio systems.' },
-  { name: 'Solid Epoxy', img: IMG.solid, desc: 'Seamless solid-color epoxy coatings.' },
-  { name: 'Polished Concrete', img: IMG.warehouse, desc: 'High-sheen polished concrete for commercial spaces.' },
-  { name: 'Stained Concrete', img: IMG.stained, desc: 'Acid-stained decorative concrete finishes.' },
-  { name: 'Epoxy Countertops', img: IMG.epoxyCountertop, desc: 'Metallic epoxy countertop transformations.' },
-  { name: 'Concrete Countertops', img: IMG.concreteCountertop, desc: 'Cast polished concrete counters.' },
-  { name: 'Garage Floors', img: IMG.beforeAfter, desc: 'Residential garage floor makeovers.' },
+const PLANS = [
+  { name: 'Free Scan', desc: 'Start with a focused diagnostic.', price: '$0', features: ['Initial surface scan', 'Top 3 findings', 'No credit card', 'Private workspace'], cta: 'Start Free', featured: false },
+  { name: 'Diagnostic', desc: 'Paid diagnostic with evidence.', price: '$299', suffix: '/mo', features: ['Full audit scope', 'Evidence timeline', 'Revenue leak model', 'Repair roadmap', 'Email support'], cta: 'Start Diagnostic', featured: true },
+  { name: 'Operations', desc: 'Full operational audit + repair.', price: '$699', suffix: '/mo', features: ['Everything in Diagnostic', 'Continuous monitoring', 'System mapping', 'Approval gates', 'Priority support'], cta: 'Start Operations', featured: false },
+  { name: 'Enterprise', desc: 'Governance for multi-location.', price: 'Custom', features: ['Multi-org governance', 'Custom integrations', 'Dedicated support', 'SLA & security review', 'Audit logs'], cta: 'Talk to Sales', featured: false },
 ];
 
-const aiTools = [
-  { icon: Camera, name: 'Floor Visualizer', desc: 'Upload a room photo, apply finishes, generate photoreal mockups in seconds.' },
-  { icon: FileText, name: 'Bid Generator', desc: 'AI-built bids and estimates from measurements and finish profiles.' },
-  { icon: Sparkles, name: 'Lead Generator', desc: 'AI lead capture and outreach to fill your pipeline.' },
-  { icon: Users, name: 'CRM Pipeline', desc: 'Track leads, quotes, and jobs from first contact to close.' },
-  { icon: Mail, name: 'Email Templates', desc: 'Pro follow-up and nurture sequences ready to send.' },
-  { icon: Calculator, name: 'Pricing Calculator', desc: 'Material volume, cost, and margin calculators.' },
-  { icon: Palette, name: 'Color Charts', desc: 'Full epoxy & polished concrete color chart library.' },
-  { icon: Calendar, name: 'Appointments', desc: 'Book and manage consultations and installs.' },
+const INDUSTRIES = [
+  { icon: Building2, label: 'Construction' },
+  { icon: Cpu, label: 'Manufacturing' },
+  { icon: Network, label: 'Distribution' },
+  { icon: Globe, label: 'Multi-location' },
+  { icon: Users, label: 'Agencies' },
+  { icon: FileText, label: 'Professional' },
+  { icon: ShieldAlert, label: 'Compliance' },
+  { icon: Activity, label: 'Operations' },
 ];
 
-const services = [
-  { icon: Sparkles, title: 'AI Tools Marketplace', desc: 'Buy individual AI tools or the full XV suite — visualizer, bidding, CRM, leads, and more.' },
-  { icon: Globe, title: 'Custom Websites', desc: 'Get a high-converting website built for your floor business by Xtreme AI Systems.' },
-  { icon: Camera, title: 'Floor Visualizer', desc: 'Win more quotes with photoreal AI floor visualizations.' },
-  { icon: TrendingUp, title: 'Lead Generation', desc: 'AI-driven lead generation built for floor contractors.' },
-  { icon: Layout, title: 'CRM & Pipeline', desc: 'Manage leads, quotes, and jobs in one place.' },
-  { icon: ShieldCheck, title: 'Estimating & Bidding', desc: 'Accurate AI estimates and professional bids in minutes.' },
+const DELIVERABLES = [
+  { metric: '100/100', label: 'Convergence Score', dark: true },
+  { metric: '99%', label: 'Route Parity', dark: false },
+  { metric: '0', label: 'Critical Defects', dark: true },
+  { metric: '12', label: 'Workflows Repaired', dark: false },
+  { metric: '$340K', label: 'Revenue Recovered', dark: true },
+  { metric: '5min', label: 'Monitor Cadence', dark: false },
 ];
-
-const plans = [
-  { name: 'Free', audience: 'Browse the marketplace.', price: '$0', cadence: 'Free Account', features: ['Floor Visualizer trial', 'Browse AI tool catalog', 'XV community access', 'No credit card required'], cta: 'Get Started Free' },
-  { name: 'Growth', audience: 'For active floor pros.', price: '$299', suffix: '/mo', cadence: 'Billed monthly', features: ['Full XV AI tool suite', 'Floor Visualizer + Bid Generator', 'CRM + Lead Generator', 'Email support'], cta: 'Start Growth Plan' },
-  { name: 'Operating System', audience: 'For scaling contractors.', price: '$699', suffix: '/mo', cadence: 'Billed monthly', features: ['Everything in Growth', 'Custom website built for you', 'Priority support', 'Advanced reporting'], cta: 'Start OS Plan', featured: true },
-  { name: 'Enterprise', audience: 'For multi-location firms.', price: 'Custom', cadence: "Let's build the right solution.", features: ['Multi-location management', 'Custom integrations', 'Dedicated support', 'SLA & security review'], cta: 'Talk to Sales' },
-];
-
-const footerLinkMap = {
-  // AI Tools
-  'Floor Visualizer': '/store',
-  'Bid Generator': '/tools/ai-bid-writer',
-  'Lead Generator': '/store',
-  'CRM': '/store',
-  'Pricing Calculator': '/store',
-  // Services
-  'Custom Websites': '/consultation',
-  'Lead Generation': '/store',
-  'Estimating': '/tools/ai-bid-writer',
-  'CRM & Pipeline': '/store',
-  // Resources
-  'Floor Gallery': '/#floors',
-  'Before & After': '/#top',
-  'Color Charts': '/store',
-  'Pricing': '/pricing',
-  'Help Center': '/contact',
-  // Company
-  'About Us': '/about',
-  'Xtreme Polishing Systems': '/about',
-  'Polished Concrete University': '/about',
-  'Contact': '/contact',
-  'Trust Center': '/security',
-};
-
-function FooterColumn({ title, links }) {
-  return <div><h3>{title}</h3>{links.map(link => {
-    const to = footerLinkMap[link] || '/store';
-    return <Link to={to} key={link}>{link}</Link>;
-  })}</div>;
-}
 
 export default function Home() {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
-  const [activeDropdown, setActiveDropdown] = useState(null);
-  const [modal, setModal] = useState(null);
-  const [selectedPlan, setSelectedPlan] = useState('Free');
   const [notice, setNotice] = useState('');
-  const dialogRef = useRef(null);
 
-  useEffect(() => {
-    const closeMenus = () => { setMenuOpen(false); setActiveDropdown(null); };
-    window.addEventListener('resize', closeMenus);
-    return () => window.removeEventListener('resize', closeMenus);
-  }, []);
-
-  useEffect(() => {
-    if (!modal) return;
-    const previous = document.activeElement;
-    const onKey = (event) => event.key === 'Escape' && setModal(null);
-    document.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-    requestAnimationFrame(() => dialogRef.current?.querySelector('input,button')?.focus());
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
-      previous?.focus();
-    };
-  }, [modal]);
-
-  function openAudit(plan = 'Free') {
-    setSelectedPlan(plan);
-    setNotice('');
-    setModal('audit');
-  }
-
-  async function handleSubmit(event, kind) {
-    event.preventDefault();
-    const form = new FormData(event.currentTarget);
-    const payload = Object.fromEntries(form.entries());
+  async function handleNewsletter(e) {
+    e.preventDefault();
+    const form = new FormData(e.currentTarget);
     try {
-      await submitFaultLineForm(kind, payload);
-      setNotice(kind === 'newsletter' ? 'You are subscribed.' : 'Thank you. Your request has been received.');
-      event.currentTarget.reset();
-      if (kind !== 'newsletter') setTimeout(() => setModal(null), 1100);
+      await submitFaultLineForm('newsletter', Object.fromEntries(form.entries()));
+      setNotice('You are subscribed.');
+      e.currentTarget.reset();
     } catch {
       setNotice('Something went wrong. Please try again.');
     }
   }
 
   return (
-    <div className="site-shell">
-      <a className="skip-link" href="#main">Skip to main content</a>
-      <header className="site-header" style={{ background: '#0B0B0D', borderBottom: '1px solid #2b2b2b', height: 72 }}>
-        <div className="page-wrap header-inner">
-          <a className="brand" href="#top" aria-label="FaultLine AI home"><div style={{ height: 52, overflow: 'hidden', display: 'flex', alignItems: 'center' }}><img src={LOGO_LIGHT} alt="FaultLine AI" style={{ height: 52, width: 'auto' }} /></div></a>
-          <button className="menu-button" type="button" aria-label="Toggle navigation" aria-expanded={menuOpen} onClick={() => setMenuOpen(v => !v)}><span style={{ background: '#fff' }} /><span style={{ background: '#fff' }} /><span style={{ background: '#fff' }} /></button>
-          <nav className={`primary-nav ${menuOpen ? 'is-open' : ''}`} aria-label="Primary navigation" style={{ color: '#fff', background: menuOpen ? '#0B0B0D' : 'transparent' }}>
-            <a href="#tools" style={{ color: '#fff' }}>AI Tools</a>
-            <a href="#floors" style={{ color: '#fff' }}>Floor Gallery</a>
-            <a href="#websites" style={{ color: '#fff' }}>Websites</a>
-            <a href="#services" style={{ color: '#fff' }}>Services</a>
-            <Link to="/pricing" style={{ color: '#fff' }}>Pricing</Link>
+    <div className="faultline-homepage">
+      {/* Header */}
+      <header className="site-header">
+        <div className="wrap header-row">
+          <Link to="/" className="brand">
+            <img src={BRAND.logoLight} alt={BRAND.name} />
+          </Link>
+          <nav className={`nav ${menuOpen ? 'open' : ''}`}>
+            {publicNav.map(([label, path]) => (
+              <Link key={path} to={path} onClick={() => setMenuOpen(false)}>{label}</Link>
+            ))}
           </nav>
-          <div className="header-actions" style={{ color: '#fff' }}>{user ? <><Link to="/app" className="button button--gold button--small">Client Portal <Icon name="arrow-right" /></Link></> : <><Link to="/autoleads/login" style={{ color: '#fff' }}>Sign In</Link><Link to="/store" className="button button--gold button--small" style={{ display: 'inline-flex', alignItems: 'center' }}>Browse AI Tools <Icon name="arrow-right" /></Link></>}</div>
+          <div className="header-actions">
+            <Link to="/login">Sign in</Link>
+            <Link to="/checkout" className="fl-button dark" style={{ padding: '12px 20px' }}>Start free audit</Link>
+            <button className="menu" onClick={() => setMenuOpen(v => !v)} aria-label="Toggle menu">
+              {menuOpen ? <X size={18} /> : <Menu size={18} />}
+            </button>
+          </div>
         </div>
       </header>
 
-      <main id="main">
-        {/* 2-tone hero */}
-        <section id="top" style={{ background: 'linear-gradient(115deg, #0B0B0D 0%, #0B0B0D 48%, #1A1A1D 48%, #1A1A1D 100%)', padding: '72px 0', borderBottom: '1px solid #2b2b2b' }}>
-          <div className="page-wrap" style={{ display: 'grid', gridTemplateColumns: '1fr 1.05fr', gap: 56, alignItems: 'center' }}>
-            <div style={{ color: '#fff' }}>
-              <p className="eyebrow" style={{ color: '#FFD700', margin: '0 0 14px' }}>FAULTLINE AI</p>
-              <h1 style={{ font: "400 clamp(40px, 5vw, 70px)/1 'Libre Caslon Display', serif", letterSpacing: '-.035em', margin: '0 0 18px' }}>Win More Jobs.<br /><span style={{ color: '#FFD700' }}>Scale Your Construction Business.</span></h1>
-              <p style={{ fontSize: 18, lineHeight: 1.7, color: '#c9c9cc', maxWidth: 540, margin: 0 }}>FaultLine AI is the AI-powered construction intelligence platform. Buy AI tools, generate photoreal project visualizations, and get a custom website built for your business.</p>
-              <div className="button-row" style={{ marginTop: 28 }}>
-                <Link to="/store" className="button button--gold">Explore AI Tools <Icon name="arrow-right" /></Link>
-                <button type="button" className="button button--dark-outline" onClick={() => navigate('/consultation')}>Get a Website <Icon name="arrow-right" /></button>
-              </div>
-              <ul className="hero-trust" style={{ color: '#9a9a9e', marginTop: 22 }}>
-                <li><Icon name="shield" />Built for floor contractors</li>
-                <li><Icon name="evidence" />Photoreal visualizer</li>
-                <li><Icon name="invoice" />No credit card to start</li>
-              </ul>
+      {/* Hero */}
+      <section className="hero">
+        <div className="wrap hero-grid">
+          <div className="hero-copy">
+            <p className="eyebrow">FAULTLINE AI</p>
+            <h1>Expose What's <span>Broken.</span><br />Build What Works.</h1>
+            <p className="lead">The AI-driven diagnostic and operations platform that finds business inefficiencies, repairs fragmented workflows, and builds seamless, high-performance operating networks — with evidence before action.</p>
+            <div className="hero-actions">
+              <Link to="/checkout" className="fl-button dark">Start free audit</Link>
+              <Link to="/consultation" className="fl-button outline">Book a strategy call</Link>
             </div>
-            <div style={{ position: 'relative', borderRadius: 18, overflow: 'hidden', boxShadow: '0 30px 80px #00000080' }}>
-              <Image src={IMG.showroom} alt="Ultra-realistic metallic epoxy showroom floor" fittingType="fill" className="block w-full" style={{ height: 460 }} />
-              <div style={{ position: 'absolute', left: 18, bottom: 18, background: 'rgba(11,11,13,.82)', color: '#fff', padding: '10px 16px', borderRadius: 10, fontSize: 13, fontWeight: 700, backdropFilter: 'blur(6px)' }}>
-                <span style={{ color: '#FFD700' }}>●</span> Metallic epoxy showroom floor
-              </div>
+            <div className="trust-row">
+              <span><b>✓</b> Evidence-first</span>
+              <span><b>✓</b> Human-approved</span>
+              <span><b>✓</b> Private by design</span>
             </div>
           </div>
-        </section>
-
-        {/* Floor types gallery */}
-        <section className="content-section section-line" id="floors" style={{ background: '#FFFFFF' }}>
-          <div className="page-wrap">
-            <div className="center-heading">
-              <p className="eyebrow">Ultra-lifelike floor library</p>
-              <h2>Every Finish. Photoreal.</h2>
-              <p style={{ color: '#666', maxWidth: 640, margin: '8px auto 0' }}>AI-generated showroom imagery for every coating and concrete system you install — use them in your visualizer, bids, and website.</p>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 18, marginTop: 36 }}>
-              {floorTypes.map(f => (
-                <article key={f.name} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 14, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
-                  <Image src={f.img} alt={f.name} fittingType="fill" className="block w-full" style={{ height: 200 }} />
-                  <div style={{ padding: '16px 18px' }}>
-                    <h3 style={{ margin: '0 0 4px', fontSize: 16 }}>{f.name}</h3>
-                    <p style={{ margin: 0, fontSize: 13, color: '#777', lineHeight: 1.5 }}>{f.desc}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Before / after */}
-        <section className="content-section section-line" style={{ background: '#0B0B0D', color: '#fff' }}>
-          <div className="page-wrap" style={{ display: 'grid', gridTemplateColumns: '1.1fr .9fr', gap: 56, alignItems: 'center' }}>
-            <div style={{ position: 'relative', borderRadius: 18, overflow: 'hidden', boxShadow: '0 24px 60px #00000099' }}>
-              <Image src={IMG.beforeAfter} alt="Garage floor before and after flake epoxy" fittingType="fill" className="block w-full" style={{ height: 420 }} />
-              <div style={{ position: 'absolute', left: 16, top: 16, background: '#C63D34', color: '#fff', padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>BEFORE</div>
-              <div style={{ position: 'absolute', right: 16, top: 16, background: '#237A4B', color: '#fff', padding: '6px 12px', borderRadius: 8, fontSize: 12, fontWeight: 700 }}>AFTER</div>
-            </div>
-            <div>
-              <p className="eyebrow" style={{ color: '#FFD700' }}>Before &amp; after</p>
-              <h2 style={{ font: "400 clamp(34px, 3.5vw, 52px)/1.05 'Libre Caslon Display', serif", margin: '0 0 16px' }}>Show Clients the Transformation.</h2>
-              <p style={{ fontSize: 17, lineHeight: 1.7, color: '#bbb' }}>Use the Xtreme Visualizer to turn a drab, cracked slab into a flawless flake-epoxy showpiece — then drop the before/after straight into your bid or website. Clients buy the outcome when they can see it.</p>
-              <div style={{ marginTop: 26 }}>
-                <Link to="/store" className="button button--gold">Try the Visualizer <Icon name="arrow-right" /></Link>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* AI tools */}
-        <section className="content-section section-line" id="tools">
-          <div className="page-wrap">
-            <div className="center-heading">
-              <p className="eyebrow">AI tools marketplace</p>
-              <h2>Buy the AI Tools That Win Floor Jobs.</h2>
-              <p style={{ color: '#666', maxWidth: 640, margin: '8px auto 0' }}>Every tool is built for floor contractors — buy what you need, or unlock the full XV suite.</p>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 18, marginTop: 36 }}>
-              {aiTools.map(t => {
-                const I = t.icon;
-                return (
-                  <article key={t.name} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 14, padding: '24px 22px' }}>
-                    <div style={{ width: 48, height: 48, borderRadius: 12, background: 'linear-gradient(135deg, #FFD700, #FFB800)', display: 'grid', placeItems: 'center', marginBottom: 16 }}>
-                      <I size={24} color="#0B0B0D" />
-                    </div>
-                    <h3 style={{ margin: '0 0 6px', fontSize: 16 }}>{t.name}</h3>
-                    <p style={{ margin: 0, fontSize: 13, color: '#777', lineHeight: 1.55 }}>{t.desc}</p>
-                  </article>
-                );
-              })}
-            </div>
-            <div className="center-action" style={{ marginTop: 32 }}>
-              <Link to="/store" className="button button--dark">Open the XV Suite <Icon name="arrow-right" /></Link>
-            </div>
-          </div>
-        </section>
-
-        {/* Websites service */}
-        <section className="content-section section-line" id="websites" style={{ background: '#FFFFFF' }}>
-          <div className="page-wrap" style={{ display: 'grid', gridTemplateColumns: '.95fr 1.05fr', gap: 56, alignItems: 'center' }}>
-            <div>
-              <p className="eyebrow">Custom websites</p>
-              <h2 style={{ font: "400 clamp(34px, 3.5vw, 52px)/1.05 'Libre Caslon Display', serif", margin: '0 0 16px' }}>Get a Website Built by FaultLine AI.</h2>
-              <p style={{ fontSize: 17, lineHeight: 1.7, color: '#666', margin: '0 0 22px' }}>We design and build high-converting websites for floor contractors — loaded with your floor gallery, before/after visualizer, and AI-powered lead capture. Launch-ready, mobile-first, and built to sell.</p>
-              <ul style={{ listStyle: 'none', padding: 0, margin: '0 0 28px', display: 'grid', gap: 12 }}>
-                {['Floor-gallery & before/after showcase', 'Integrated Floor Visualizer', 'AI lead capture & CRM', 'Mobile-first, launch-ready'].map(b => (
-                  <li key={b} style={{ display: 'flex', gap: 10, alignItems: 'center', fontSize: 15, color: '#333' }}><span style={{ color: '#FFB800', fontWeight: 700 }}>✓</span>{b}</li>
-                ))}
-              </ul>
-              <div className="button-row">
-                <button type="button" className="button button--gold" onClick={() => navigate('/consultation')}>Request a Website <Icon name="arrow-right" /></button>
-                <Link to="/pricing" className="button button--light">See Plans <Icon name="arrow-right" /></Link>
-              </div>
-            </div>
-            <div style={{ position: 'relative', borderRadius: 18, overflow: 'hidden', boxShadow: '0 24px 60px #0000001a', border: '1px solid #e5e5e5' }}>
-              <Image src={IMG.warehouse} alt="Polished concrete commercial floor website showcase" fittingType="fill" className="block w-full" style={{ height: 380 }} />
-              <div style={{ position: 'absolute', inset: '16px', border: '1px solid rgba(255,255,255,.4)', borderRadius: 10, pointerEvents: 'none' }} />
-            </div>
-          </div>
-        </section>
-
-        {/* Services */}
-        <section className="content-section section-line" id="services">
-          <div className="page-wrap">
-            <div className="center-heading">
-              <p className="eyebrow">What we offer</p>
-              <h2>Everything You Need to Grow a Floor Business.</h2>
-            </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 18, marginTop: 32 }}>
-              {services.map(s => {
-                const I = s.icon;
-                return (
-                  <article key={s.title} style={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: 14, padding: '26px 24px' }}>
-                    <div style={{ width: 44, height: 44, borderRadius: 10, background: '#0B0B0D', display: 'grid', placeItems: 'center', marginBottom: 16 }}>
-                      <I size={22} color="#FFD700" />
-                    </div>
-                    <h3 style={{ margin: '0 0 6px', fontSize: 17 }}>{s.title}</h3>
-                    <p style={{ margin: 0, fontSize: 14, color: '#777', lineHeight: 1.6 }}>{s.desc}</p>
-                  </article>
-                );
-              })}
-            </div>
-          </div>
-        </section>
-
-        {/* Pricing */}
-        <section className="content-section pricing section-line" id="pricing" style={{ background: '#FFFFFF' }}>
-          <div className="page-wrap">
-            <div className="center-heading">
-              <p className="eyebrow">Pricing</p>
-              <h2>Choose the Right Plan for Your Floor Business</h2>
-            </div>
-            <div className="pricing-grid">{plans.map(plan => (
-              <article className={`pricing-card ${plan.featured ? 'is-featured' : ''}`} key={plan.name}>
-                {plan.featured && <div className="popular">Most Popular</div>}
-                <h3>{plan.name}</h3>
-                <p>{plan.audience}</p>
-                <div className="price">{plan.price}{plan.suffix && <small>{plan.suffix}</small>}</div>
-                <div className="cadence">{plan.cadence}</div>
-                <ul>{plan.features.map(feature => <li key={feature}><Icon name="check" />{feature}</li>)}</ul>
-                <button type="button" className={`button ${plan.featured ? 'button--gold' : plan.name === 'Enterprise' ? 'button--light' : 'button--dark'}`} onClick={() => plan.name === 'Enterprise' ? navigate('/consultation') : openAudit(plan.name)}>{plan.cta}<Icon name="arrow-right" /></button>
-              </article>
-            ))}</div>
-            <p className="plan-note">All plans include a 14-day satisfaction guarantee. Cancel anytime.</p>
-          </div>
-        </section>
-
-        {/* Closing CTA */}
-        <section className="closing-cta" style={{ background: 'linear-gradient(135deg, #0B0B0D, #1A1A1D)', color: '#fff' }}>
-          <div className="page-wrap closing-grid">
-            <div>
-              <h2>Stop Guessing.<br /><span style={{ color: '#FFD700' }}>Start Winning Construction Jobs.</span></h2>
-              <p style={{ color: '#bbb' }}>Get AI tools and a custom website built for your construction business — built by FaultLine AI.</p>
-            </div>
-            <div>
-              <div className="button-row">
-                <button type="button" className="button button--gold" onClick={() => openAudit()}>Get Started <Icon name="arrow-right" /></button>
-                <button type="button" className="button button--dark-outline" onClick={() => navigate('/consultation')}>Book a Demo <Icon name="arrow-right" /></button>
-              </div>
-              <ul style={{ color: '#9a9a9e' }}>
-                <li><Icon name="invoice" />No credit card</li>
-                <li><Icon name="shield" />Built for contractors</li>
-                <li><Icon name="evidence" />Photoreal results</li>
-              </ul>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <footer className="site-footer" id="footer">
-        <div className="page-wrap footer-grid">
-          <div className="footer-brand">
-            <img src={LOGO_LIGHT} alt="FaultLine AI" style={{ height: 60, width: 'auto' }} />
-            <p>Construction Intelligence — AI tools &amp; websites for construction pros.</p>
-            <div className="socials"><a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn">in</a><a href="https://instagram.com" target="_blank" rel="noopener noreferrer" aria-label="Instagram">◎</a><a href="https://youtube.com" target="_blank" rel="noopener noreferrer" aria-label="YouTube">▶</a></div>
-          </div>
-          <FooterColumn title="AI Tools" links={['Floor Visualizer', 'Bid Generator', 'Lead Generator', 'CRM', 'Pricing Calculator']} />
-          <FooterColumn title="Services" links={['Custom Websites', 'Floor Visualizer', 'Lead Generation', 'Estimating', 'CRM & Pipeline']} />
-          <FooterColumn title="Resources" links={['Floor Gallery', 'Before & After', 'Color Charts', 'Pricing', 'Help Center']} />
-          <FooterColumn title="Company" links={['About Us', 'Xtreme Polishing Systems', 'Polished Concrete University', 'Contact', 'Trust Center']} />
-          {/* Footer legal links — all point to real pages */}
-          <div className="newsletter">
-            <h3>Newsletter</h3>
-            <p>AI tips &amp; tools to grow your floor business.</p>
-            <form onSubmit={e => handleSubmit(e, 'newsletter')}>
-              <label className="sr-only" htmlFor="newsletter-email">Email address</label>
-              <input id="newsletter-email" name="email" type="email" placeholder="Enter your email" required />
-              <button aria-label="Subscribe"><Icon name="arrow-right" /></button>
-            </form>
-            {notice === 'You are subscribed.' && <small className="form-notice">{notice}</small>}
+          <div className="hero-art">
+            <img src="https://media.base44.com/images/public/6a6e5a0e8a902b5e240d7633/06b87bf6c_generated_image.png" alt="Polished concrete operations floor" />
+            <div className="hero-tag dark tag1">Revenue leak found</div>
+            <div className="hero-tag tag2">12 broken workflows</div>
+            <div className="hero-tag dark tag3">3 critical defects</div>
+            <div className="hero-tag tag4">99% parity</div>
+            <div className="hero-tag dark tag5">100/100 score</div>
+            <div className="hero-tag tag6">5-min monitor</div>
           </div>
         </div>
-        <div className="page-wrap footer-bottom">
-          <span>© 2026 FaultLine AI. All rights reserved.</span>
-          <nav><Link to="/security">Privacy Policy</Link><Link to="/security">Terms of Service</Link><Link to="/security">Cookie Policy</Link><Link to="/security">Acceptable Use</Link></nav>
-          <span className="compliance"><Icon name="shield" />Built for<br />Construction Pros</span>
+      </section>
+
+      {/* Logo strip */}
+      <div className="logo-strip">
+        <div className="wrap">
+          <small>Built for operationally complex businesses</small>
+          <div className="logos">
+            <strong>CONSTRUCTION</strong>
+            <strong>MANUFACTURING</strong>
+            <strong>DISTRIBUTION</strong>
+            <strong>AGENCIES</strong>
+            <strong>SERVICES</strong>
+          </div>
+        </div>
+      </div>
+
+      {/* Problems section */}
+      <section className="section">
+        <div className="wrap">
+          <div className="section-head">
+            <p className="eyebrow">The problem</p>
+            <h2>Every business has <span style={{ color: 'var(--fl-gold)' }}>fault lines</span>.</h2>
+            <p>Most inefficiencies hide between teams, tools, and handoffs — invisible until they cost you leads, margin, or customers.</p>
+          </div>
+          <div className="problem-layout">
+            <div>
+              <p style={{ fontSize: 15, color: 'var(--fl-muted)', lineHeight: 1.7 }}>FaultLine AI surfaces the cracks that matter most — the missed leads, broken workflows, and pricing leakage that quietly drain your business every day.</p>
+            </div>
+            <div className="problem-grid">
+              {problems.map(([title, desc], i) => {
+                const Icon = PROBLEM_ICONS[i] || Search;
+                return (
+                  <div className="problem-card" key={title}>
+                    <Icon size={28} style={{ color: 'var(--fl-gold)', flexShrink: 0 }} />
+                    <div>
+                      <h3>{title}</h3>
+                      <p>{desc}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Platform / Capabilities */}
+      <section className="section soft">
+        <div className="wrap">
+          <div className="section-head center">
+            <p className="eyebrow">The platform</p>
+            <h2>One operating system. <span style={{ color: 'var(--fl-gold)' }}>Every tool.</span></h2>
+            <p>Diagnose, quantify, repair, and monitor — all in one private, evidence-centered platform.</p>
+          </div>
+          <div className="platform-grid">
+            {capabilities.map((cap, i) => {
+              const Icon = CAPABILITY_ICONS[i] || Check;
+              return (
+                <div className="platform-item" key={cap}>
+                  <Icon size={22} style={{ color: 'var(--fl-gold)', flexShrink: 0 }} />
+                  <span>{cap}</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Process steps */}
+      <section className="section">
+        <div className="wrap">
+          <div className="section-head center">
+            <p className="eyebrow">How it works</p>
+            <h2>From uncertainty to an <span style={{ color: 'var(--fl-gold)' }}>accountable repair plan</span>.</h2>
+            <p>A disciplined cycle: discover, diagnose, quantify, repair, and validate.</p>
+          </div>
+          <div className="process">
+            <div className="steps">
+              {steps.map(([num, title, desc], i) => {
+                const Icon = STEP_ICONS[i] || Check;
+                return (
+                  <div className="step" key={num}>
+                    <div className="step-icon">
+                      <Icon size={28} color="#fff" />
+                    </div>
+                    <h3>{title}</h3>
+                    <p>{desc}</p>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Deliverables */}
+      <section className="section soft">
+        <div className="wrap">
+          <div className="section-head">
+            <p className="eyebrow">Deliverables</p>
+            <h2>Evidence-backed <span style={{ color: 'var(--fl-gold)' }}>outputs</span>, not consulting theater.</h2>
+            <p>Every output is sourced, confidence-scored, and built to turn insight into action.</p>
+          </div>
+          <div className="deliverables">
+            {DELIVERABLES.map(d => (
+              <div className="deliverable" key={d.label}>
+                <div className={`preview ${d.dark ? '' : 'light'}`}>
+                  <div className="metric">{d.metric}</div>
+                  <div className="preview-lines">
+                    <i style={{ width: '80%' }} />
+                    <i style={{ width: '55%' }} />
+                    <i style={{ width: '70%' }} />
+                  </div>
+                </div>
+                <h3>{d.label}</h3>
+                <p>Measured, validated, and tracked over time.</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Industries */}
+      <section className="section">
+        <div className="wrap">
+          <div className="section-head center">
+            <p className="eyebrow">Industries</p>
+            <h2>Designed for <span style={{ color: 'var(--fl-gold)' }}>operationally complex</span> businesses.</h2>
+            <p>FaultLine AI begins where handoffs, field operations, estimating, fulfillment, and fragmented systems create expensive blind spots.</p>
+          </div>
+          <div className="industries">
+            {INDUSTRIES.map(ind => (
+              <div className="industry" key={ind.label}>
+                <ind.icon size={34} style={{ color: 'var(--fl-gold)' }} />
+                <strong>{ind.label}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing */}
+      <section className="section soft">
+        <div className="wrap">
+          <div className="section-head center">
+            <p className="eyebrow">Pricing</p>
+            <h2>Start with a <span style={{ color: 'var(--fl-gold)' }}>focused diagnostic</span>.</h2>
+            <p>Launch with a small defensible engagement and expand only when the evidence supports more work.</p>
+          </div>
+          <div className="pricing">
+            {PLANS.map(plan => (
+              <div className={`plan ${plan.featured ? 'featured' : ''}`} key={plan.name}>
+                {plan.featured && <em>Most Popular</em>}
+                <h3>{plan.name}</h3>
+                <p>{plan.desc}</p>
+                <div className="price">{plan.price}{plan.suffix && <small style={{ fontSize: 14, color: '#666' }}>{plan.suffix}</small>}</div>
+                <ul>
+                  {plan.features.map(f => <li key={f}>{f}</li>)}
+                </ul>
+                <Link to={plan.name === 'Enterprise' ? '/consultation' : '/checkout'} className="fl-button dark" style={{ marginTop: 'auto' }}>
+                  {plan.cta}
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Closing CTA */}
+      <section className="closing">
+        <div className="wrap closing-row">
+          <div>
+            <h2>Stop guessing.<br /><span>Start repairing.</span></h2>
+            <p>Get a free diagnostic scan. See your top 3 fault lines — no credit card, no commitment.</p>
+          </div>
+          <div className="closing-actions">
+            <Link to="/checkout" className="fl-button gold">Start free audit</Link>
+            <Link to="/consultation" className="fl-button outline" style={{ borderColor: '#555', color: '#fff' }}>Book a strategy call</Link>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="footer">
+        <div className="wrap footer-grid">
+          <div>
+            <img className="footer-logo" src={BRAND.logoDark} alt={BRAND.name} />
+            <p style={{ marginTop: 16 }}>{BRAND.tagline}</p>
+            <p>AI-driven diagnostics, repair, and operations for businesses that can't afford to guess.</p>
+          </div>
+          <div>
+            <h4>Product</h4>
+            <Link to="/product">Overview</Link>
+            <Link to="/pricing">Pricing</Link>
+            <Link to="/security">Security</Link>
+            <Link to="/store">Store</Link>
+          </div>
+          <div>
+            <h4>Solutions</h4>
+            <Link to="/solutions">Diagnostics</Link>
+            <Link to="/industries">Industries</Link>
+            <Link to="/how-it-works">How It Works</Link>
+            <Link to="/resources">Resources</Link>
+          </div>
+          <div>
+            <h4>Company</h4>
+            <Link to="/about">About</Link>
+            <Link to="/contact">Contact</Link>
+            <Link to="/consultation">Strategy Call</Link>
+            <Link to="/login">Sign In</Link>
+          </div>
+          <div>
+            <h4>Newsletter</h4>
+            <p>AI tips & repair insights for operators.</p>
+            <form className="newsletter" onSubmit={handleNewsletter}>
+              <input name="email" type="email" placeholder="Enter your email" required />
+              <button type="submit" aria-label="Subscribe"><ArrowRight size={16} color="#fff" /></button>
+            </form>
+            {notice && <p style={{ color: 'var(--fl-gold2)' }}>{notice}</p>}
+          </div>
+        </div>
+        <div className="wrap legal">
+          <span>© {new Date().getFullYear()} {BRAND.name}. All rights reserved.</span>
+          <span>{BRAND.domain} · Private by design</span>
         </div>
       </footer>
-
-      {modal && (
-        <div className="modal-backdrop" role="presentation" onMouseDown={e => e.target === e.currentTarget && setModal(null)}>
-          <div className="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" ref={dialogRef}>
-            <button className="modal-close" type="button" onClick={() => setModal(null)} aria-label="Close dialog">×</button>
-            {modal === 'audit' && (
-              <>
-                <p className="eyebrow">Get started</p>
-                <h2 id="modal-title">Start Your {selectedPlan} Plan</h2>
-                <p>Tell us about your floor business. No credit card required to start.</p>
-                <form className="lead-form" onSubmit={e => handleSubmit(e, 'audit_lead')}>
-                  <input type="hidden" name="plan" value={selectedPlan} />
-                  <label>Full name<input name="name" required autoComplete="name" /></label>
-                  <label>Work email<input name="email" type="email" required autoComplete="email" /></label>
-                  <label>Company<input name="company" required autoComplete="organization" /></label>
-                  <label>Website<input name="website" type="url" placeholder="https://" /></label>
-                  <label>What do you need?<select name="concern" defaultValue="website">
-                    <option value="website">A custom website</option>
-                    <option value="tools">AI tools for my floor business</option>
-                    <option value="visualizer">Floor Visualizer</option>
-                    <option value="leads">Lead generation</option>
-                  </select></label>
-                  <button className="button button--gold" type="submit">Request <Icon name="arrow-right" /></button>
-                </form>
-              </>
-            )}
-            {modal === 'call' && (
-              <>
-                <p className="eyebrow">Book a demo</p>
-                <h2 id="modal-title">Get a Website or AI Tool Demo</h2>
-                <p>Share your goals and preferred time. We'll follow up to confirm.</p>
-                <form className="lead-form" onSubmit={e => handleSubmit(e, 'strategy_call')}>
-                  <label>Full name<input name="name" required autoComplete="name" /></label>
-                  <label>Work email<input name="email" type="email" required autoComplete="email" /></label>
-                  <label>Company<input name="company" required autoComplete="organization" /></label>
-                  <label>Phone<input name="phone" type="tel" autoComplete="tel" /></label>
-                  <label>Preferred date<input name="preferred_date" type="date" required /></label>
-                  <button className="button button--gold" type="submit">Request Demo <Icon name="arrow-right" /></button>
-                </form>
-              </>
-            )}
-            {notice && notice !== 'You are subscribed.' && <div className="form-notice">{notice}</div>}
-          </div>
-        </div>
-      )}
     </div>
   );
 }
