@@ -8,23 +8,38 @@ export default function PartnerPortal() {
   const [creating, setCreating] = useState(false);
   const [newPartner, setNewPartner] = useState('');
   const [newScopes, setNewScopes] = useState(['read_audits', 'read_findings']);
+  const [orgId, setOrgId] = useState(null);
+  const [error, setError] = useState('');
 
   const load = async () => {
     try {
       const list = await base44.entities.PartnerApiKey.list('-created_date', 50);
       setKeys(list);
-    } catch (e) { /* ignore */ }
+    } catch (e) { setError(e.message || 'Failed to load API keys'); }
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    (async () => {
+      try {
+        const user = await base44.auth.me();
+        const oid = user?.data?.organization_id;
+        setOrgId(oid || null);
+        if (!oid) setError('No organization found on your account. API key generation requires an organization.');
+      } catch (e) { /* me() may throw if not logged in — ProtectedRoute handles redirect */ }
+      load();
+    })();
+  }, []);
 
   const createKey = async () => {
     if (!newPartner.trim()) return;
+    if (!orgId) { setError('Cannot generate key — your account has no organization_id.'); return; }
     setCreating(true);
+    setError('');
     try {
       const apiKey = `flk_${Date.now()}_${Math.random().toString(36).substring(2, 12)}`;
       await base44.entities.PartnerApiKey.create({
+        organization_id: orgId,
         partner_name: newPartner.trim(),
         api_key: apiKey,
         scopes: newScopes,
@@ -33,7 +48,7 @@ export default function PartnerPortal() {
       });
       setNewPartner('');
       load();
-    } catch (e) { /* ignore */ }
+    } catch (e) { setError(e.message || 'Failed to generate API key. You may need admin access.'); }
     setCreating(false);
   };
 
@@ -42,13 +57,13 @@ export default function PartnerPortal() {
   };
 
   const toggleActive = async (key) => {
-    await base44.entities.PartnerApiKey.update(key.id, { active: !key.active });
-    load();
+    try { await base44.entities.PartnerApiKey.update(key.id, { active: !key.active }); load(); }
+    catch (e) { setError(e.message || 'Failed to update key'); }
   };
 
   const deleteKey = async (key) => {
-    await base44.entities.PartnerApiKey.delete(key.id);
-    load();
+    try { await base44.entities.PartnerApiKey.delete(key.id); load(); }
+    catch (e) { setError(e.message || 'Failed to delete key'); }
   };
 
   const allScopes = ['read_audits', 'read_findings', 'read_companies', 'create_leads', 'read_scores'];
@@ -68,6 +83,11 @@ export default function PartnerPortal() {
       {/* Create new key */}
       <section className="finding" style={{ marginTop: 13 }}>
         <h2 style={{ fontSize: 18, marginBottom: 15 }}>Generate New API Key</h2>
+        {error && (
+          <div style={{ background: '#f5d8d5', color: '#a52d23', padding: '10px 14px', borderRadius: 6, fontSize: 13, marginBottom: 14, fontWeight: 600 }}>
+            {error}
+          </div>
+        )}
         <div style={{ display: 'grid', gap: 14 }}>
           <label style={{ display: 'grid', gap: 6, fontSize: 12, fontWeight: 700 }}>
             Partner Name
