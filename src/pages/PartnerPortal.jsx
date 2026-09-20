@@ -132,7 +132,17 @@ export default function PartnerPortal() {
                 {keys.map(k => (
                   <tr key={k.id}>
                     <td><b>{k.partner_name}</b></td>
-                    <td><code style={{ fontSize: 11, background: '#f4f0e8', padding: '3px 6px', borderRadius: 4 }}>{k.api_key.substring(0, 20)}…</code></td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <code style={{ fontSize: 11, background: '#f4f0e8', padding: '3px 6px', borderRadius: 4 }}>{k.api_key.substring(0, 20)}…</code>
+                        <button
+                          onClick={() => { navigator.clipboard?.writeText(k.api_key); }}
+                          style={{ fontSize: 10, padding: '3px 8px', border: '1px solid #ddd', borderRadius: 4, cursor: 'pointer', background: '#fff' }}
+                        >
+                          Copy
+                        </button>
+                      </div>
+                    </td>
                     <td style={{ fontSize: 11 }}>{k.scopes?.map(s => s.replace(/_/g, ' ')).join(', ') || '—'}</td>
                     <td style={{ fontSize: 11 }}>{k.requests_this_hour || 0}/{k.rate_limit_per_hour}/hr</td>
                     <td style={{ fontSize: 11 }}>{k.last_used ? new Date(k.last_used).toLocaleDateString() : 'Never'}</td>
