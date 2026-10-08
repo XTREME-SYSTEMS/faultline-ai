@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { runMandatoryQA } from '../../shared/mandatoryQA.ts';
 
@@ -29,7 +30,7 @@ export default async function(req) {
       `${i + 1}. [${(f.severity || 'medium').toUpperCase()}] ${f.title}\n   Category: ${f.category || 'general'}\n   Impact: ${f.business_impact || 'Not quantified'}\n   Repair: ${f.recommended_repair || 'Not specified'}\n   Confidence: ${f.confidence || 0}%`
     ).join('\n\n');
 
-    const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const llmResponse = await invokeLLM({
       prompt: `You are an executive report writer for FaultLine AI. Generate a professional, board-ready executive report from the following audit data.
 
 Company: ${company?.name || 'Unknown'}

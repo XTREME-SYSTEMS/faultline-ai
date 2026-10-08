@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { extractData, fetchPage, discoverPageLinks, detectTechStack, calcHealthScore } from '../../shared/scraper.ts';
 
@@ -64,7 +65,7 @@ export default async function(req) {
     });
 
     // Phase 6: LLM analysis with all page data
-    const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const llmResponse = await invokeLLM({
       prompt: `You are a business diagnostic expert. Analyze this multi-page website crawl for ${company.name} (a ${company.industry} company).
 
 PAGES CRAWLED: ${pages.length}

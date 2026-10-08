@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { invokeLLM } from '@/lib/gatewayLLM';
 import { base44 } from '@/api/base44Client';
 import { Send, Sparkles, Loader2 } from 'lucide-react';
 
@@ -34,7 +35,7 @@ export default function CommandChat() {
     setInput('');
     setLoading(true);
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
+      const res = await invokeLLM({
         prompt: `You are the FaultLine AI Command Center assistant. You help the operator run autonomous workflows, test infrastructure provisioning, analyze system health, and plan client launches. Be concise, actionable, and specific. When the user asks to run something, tell them which button to click on the page.\n\nOperator request: ${prompt}`,
         model: MODEL,
         add_context_from_internet: false,

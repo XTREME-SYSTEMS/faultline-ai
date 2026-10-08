@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
 import { slugify, createVercelProject, disableVercelSso, deployToVercel } from '../../shared/launchInfra.ts';
@@ -65,7 +66,7 @@ ${JSON.stringify(toRewrite, null, 2)}
 
 Return JSON: { "rewrites": [ { "index": 0, "text": "..." }, ... ] } — one entry per input block, in order.`;
 
-    const llmRes = await base44.integrations.Core.InvokeLLM({
+    const llmRes = await invokeLLM({
       prompt: rewritePrompt,
       response_json_schema: {
         type: 'object',

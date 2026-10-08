@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Generates replacement assets for a RebrandProject: logo, hero/section images,
@@ -40,7 +41,7 @@ ${JSON.stringify(project.content_to_replace || [], null, 2)}
 
 Brand references that must NOT appear: ${JSON.stringify(project.brand_references || [])}`;
 
-    const content = await base44.integrations.Core.InvokeLLM({
+    const content = await invokeLLM({
       prompt: contentPrompt,
       response_json_schema: {
         type: 'object',

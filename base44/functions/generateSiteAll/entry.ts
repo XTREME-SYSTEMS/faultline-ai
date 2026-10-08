@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { buildShell, buildBatchPrompt, parseBatchSections, cleanLlmOutput } from '../../shared/packGeneration.ts';
 
@@ -43,7 +44,7 @@ export default async function(req) {
 
       let batchFrags = '';
       try {
-        const r = await base44.integrations.Core.InvokeLLM({ prompt, model: 'gemini_3_flash' });
+        const r = await invokeLLM({ prompt, model: 'gemini_3_flash' });
         batchFrags = cleanLlmOutput(r);
       } catch (e) { console.error(`batch ${bi / BATCH_SIZE} failed:`, e.message); }
 

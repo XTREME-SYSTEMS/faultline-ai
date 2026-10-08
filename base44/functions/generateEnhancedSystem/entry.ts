@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Generates an "enhanced" version of the company's system map showing what
@@ -48,7 +49,7 @@ export default async function(req) {
     ).join('\n');
 
     // LLM generates the enhanced system + revised security report
-    const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const llmResponse = await invokeLLM({
       prompt: `You are the FaultLine AI enhancement architect. You are given a company's CURRENT system map and security findings. Your job is to generate the ENHANCED version — what their systems would look like AFTER FaultLine AI applies all recommended enhancements and security fixes.
 
 COMPANY: ${company.name} (${company.industry || 'unknown industry'})

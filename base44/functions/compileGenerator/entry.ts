@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { resolvePrompt } from '../../shared/promptLibrary.ts';
 
@@ -194,7 +195,7 @@ Requirements:
 
 Start with <!DOCTYPE html> and end with </html>. Write real marketing copy tailored to the business.`
         );
-        const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
+        const res = await invokeLLM({
           prompt: webPrompt
         });
         let html = typeof res === 'string' ? res : res?.content || '';
@@ -238,7 +239,7 @@ Requirements:
 
 Start with <!DOCTYPE html> and end with </html>. Make it fully functional with real JavaScript.`
         );
-        const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
+        const res = await invokeLLM({
           prompt: appPrompt
         });
         let html = typeof res === 'string' ? res : res?.content || '';
@@ -284,7 +285,7 @@ Generate ALL of the following as a JSON object:
 
 Be specific, evidence-based, and exhaustive. Every number must be an estimate with stated assumptions.`
         );
-        const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
+        const res = await invokeLLM({
           prompt: bizPrompt,
           response_json_schema: {
             type: 'object',

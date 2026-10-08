@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Unified deliverable generator. Compiles a company's security scan results,
@@ -154,7 +155,7 @@ export default async function(req) {
     const ctx = await gatherCompanyContext(base44, orgId, company_id);
 
     const isJson = deliverable_type === 'brand' || deliverable_type === 'cost_roi';
-    const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const llmResponse = await invokeLLM({
       prompt: PROMPTS[deliverable_type](ctx),
       ...(isJson ? { response_json_schema: { type: 'object', additionalProperties: true } } : {})
     });
@@ -209,7 +210,7 @@ export default async function(req) {
     let qaResult = null;
     let qaStatus = 'passed';
     try {
-      qaResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      qaResult = await invokeLLM({
         prompt: `You are the FaultLine AI QA Validator. Rigorously double-check this generated ${deliverable_type} for problems, gaps, weaknesses, faults, and missing requirements before it is presented to the client. Be critical — assume there ARE issues until verified.
 
 TARGET TYPE: ${deliverable_type}

@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // RAG Ingestion — the knowledge compounding layer.
@@ -71,7 +72,7 @@ export default async function(req) {
     let autoTags = [];
     if (shouldSummarize && finalChunks.length > 0) {
       try {
-        const summaryRes = await base44.integrations.Core.InvokeLLM({
+        const summaryRes = await invokeLLM({
           prompt: `Analyze this content and provide:
 1. A concise summary (2-3 sentences) describing what this content is and what it does
 2. 5-10 relevant tags/keywords that would help retrieve this content in a search

@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Clone Studio — Generate 5 complete, cohesive rebrand packages.
@@ -103,7 +104,7 @@ Return exactly 5 sets in the "packages" array.`;
       },
       required: ['packages']
     };
-    const contentResult = await base44.integrations.Core.InvokeLLM({ prompt: contentPrompt, response_json_schema: contentSchema });
+    const contentResult = await invokeLLM({ prompt: contentPrompt, response_json_schema: contentSchema });
     const contentData = typeof contentResult === 'string' ? JSON.parse(contentResult) : contentResult;
     const contentPackages = contentData.packages || [];
 

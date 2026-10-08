@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { runMandatoryQA } from '../../shared/mandatoryQA.ts';
 
@@ -31,7 +32,7 @@ export default async function(req) {
     if (topFindings.length === 0) return Response.json({ error: 'No findings available to draft outreach' }, { status: 400 });
 
     // LLM drafts value-first outreach
-    const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const llmResponse = await invokeLLM({
       prompt: `Draft a value-first, evidence-based outreach email to ${company.name} (a ${company.industry || 'general'} company).
 
 TOP FINDINGS:

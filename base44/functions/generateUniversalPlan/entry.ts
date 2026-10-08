@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Universal Builder — takes a user/client idea (+ optional company context),
@@ -63,7 +64,7 @@ EXISTING COMPANY CONTEXT:
 - Key Findings: ${ctx.findingsSummary || 'none'}` : '';
 
     // STEP 1 — Research with web search
-    const research = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const research = await invokeLLM({
       prompt: `You are the FaultLine AI Universal Builder engine. A user has submitted an idea for a business, product, or system. Research it exhaustively and return a structured analysis.
 
 USER/CLIENT IDEA:
@@ -115,7 +116,7 @@ Be specific, evidence-based, and exhaustive. Use real benchmark companies.`,
     const palette = (brandRec.color_palette || ['#C89B3C', '#1a1a1a', '#ffffff']).join(', ');
 
     const [packsResponse, logoResult] = await Promise.all([
-      base44.asServiceRole.integrations.Core.InvokeLLM({
+      invokeLLM({
         prompt: `You are the FaultLine AI asset pack generator. Based on the research below, generate 8 ready-to-use asset packs as markdown documents. Each pack must be detailed, actionable, and branded for a FaultLine AI client.
 
 RESEARCH:

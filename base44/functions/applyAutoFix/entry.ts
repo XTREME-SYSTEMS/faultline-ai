@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 export default async function(req) {
@@ -16,7 +17,7 @@ export default async function(req) {
     }
 
     // Use LLM to generate structured patches for each root cause
-    const patchResult = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const patchResult = await invokeLLM({
       prompt: `You are the FaultLine AI AutoCoder. You read root-cause analyses from the Sentinel's self-reflection and generate exact code patches. For each root cause, produce a structured patch with the exact file path, the exact string to find, and the exact replacement string.
 
 ROOT CAUSES:

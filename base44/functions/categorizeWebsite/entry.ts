@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // CategorizeWebsite — takes any URL, scrapes the page, and uses LLM to
@@ -153,7 +154,7 @@ export default async function(req) {
     // Step 2: Use LLM to categorize the site into the industry taxonomy
     const taxonomyList = INDUSTRY_TAXONOMY.map(t => `${t.group} → ${t.label}`).join('\n');
 
-    const llmRes = await base44.integrations.Core.InvokeLLM({
+    const llmRes = await invokeLLM({
       prompt: `You are a business classification expert. Analyze the following website and classify it into the EXACT industry category from the taxonomy below.
 
 Website URL: ${normalizedUrl}

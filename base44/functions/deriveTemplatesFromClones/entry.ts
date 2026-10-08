@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Auto-derives reusable templates from 100/100 parity clones.
@@ -102,7 +103,7 @@ Return a JSON object with:
 - tone: the overall tone (e.g. "Professional & modern", "Bold & edgy", "Clean & minimal")
 - tags: 3-5 descriptive tags (e.g. ["dark","minimal","saas","pricing-table"])`;
 
-        const llmRes = await base44.asServiceRole.integrations.Core.InvokeLLM({
+        const llmRes = await invokeLLM({
           prompt: extractPrompt,
           response_json_schema: {
             type: 'object',

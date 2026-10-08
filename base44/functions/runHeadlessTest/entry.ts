@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Headless User-POV Testing — simulates a real user operating the entire system
@@ -66,7 +67,7 @@ export default async function(req) {
       }).join('\n');
     }
 
-    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const result = await invokeLLM({
       prompt: `You are the FaultLine AI Headless Test Engine. You simulate ${persona} operating a generated frontend + backend system END-TO-END. You can navigate through pages, fill forms, type into inputs, scroll, click buttons, and verify outcomes — exactly like a real user driving the whole system.
 
 SYSTEM UNDER TEST: ${targetTitle || 'Generated system'}

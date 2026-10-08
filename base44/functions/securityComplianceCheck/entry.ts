@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Security & Compliance Check — autonomously audits the organization's systems,
@@ -33,7 +34,7 @@ MONITORING RULES (${monitoringRules.length}): ${monitoringRules.map(m => `${m.na
 RECENT ACTIONS (${receipts.length}): ${receipts.map(r => `${r.system}/${r.action}=${r.status}`).join('; ')}
 `;
 
-    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const result = await invokeLLM({
       prompt: `You are the FaultLine AI Security & Compliance Agent. You autonomously audit the organization's systems and generated outputs to maintain compliance. Be rigorous — flag anything that could cause a compliance failure.
 
 FRAMEWORKS TO CHECK AGAINST: ${frameworks.join(', ')}

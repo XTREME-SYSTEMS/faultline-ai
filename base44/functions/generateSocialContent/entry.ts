@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Generates social media content for 5 platforms from a cloned site's info.
@@ -89,7 +90,7 @@ Return all content in the JSON schema.`;
       },
     };
 
-    const result = await base44.integrations.Core.InvokeLLM({ prompt, response_json_schema: schema });
+    const result = await invokeLLM({ prompt, response_json_schema: schema });
     const data = typeof result === 'string' ? JSON.parse(result) : result;
 
     return Response.json({

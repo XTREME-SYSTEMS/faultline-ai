@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 export default async function(req) {
@@ -40,7 +41,7 @@ export default async function(req) {
       : `General automation opportunities for the ${industry} industry.`;
 
     // Generate automation blueprints
-    const blueprintResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const blueprintResponse = await invokeLLM({
       prompt: `You are an expert automation architect. Generate detailed, deployable automation blueprints for the ${industry} industry.
 
 Context:

@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Design Pack Ingestion — reads an uploaded web/brand/logo pack IMAGE via AI vision
@@ -106,7 +107,7 @@ CRITICAL: This pack contains SAMPLE/PLACEHOLDER copy and demo data (e.g. fake bu
 Return ONLY the structured spec.`;
 
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
+      const res = await invokeLLM({
         prompt,
         model: 'gemini_3_1_pro',
         file_urls: [image_url],

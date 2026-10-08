@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Autonomous Marketplace Stocker — generates and stocks ToolProduct records
@@ -96,7 +97,7 @@ export default async function(req) {
     const batch = planned.slice(0, maxPerRun);
 
     // Generate product descriptions via LLM in one call
-    const llmRes = await base44.integrations.Core.InvokeLLM({
+    const llmRes = await invokeLLM({
       prompt: `You are the Toolio Marketplace Product Generator. Generate professional product descriptions for digital products targeting the concrete/epoxy flooring industry.
 
 Generate a product description for EACH product in this list. Return an array of objects with: tool_id, description (2-3 sentences), business_problem (what pain point it solves), benefits (array of 4-5 strings), tags (array of 4-6 strings).

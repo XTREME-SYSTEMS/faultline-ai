@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Brand Assets Generator — produces options for:
@@ -143,7 +144,7 @@ Return a JSON object with an "options" array of 10 items. Each item must have:
 Research real competitors and brands in the ${ind} industry to ensure each concept is distinctive, professional, and avoids cliché or generic approaches. Make each concept visually and tonally distinct. Use real, specific color hex codes and real Google Font names. ALL concepts must use the business name "${bizName}".`;
 
       // Using gemini_3_1_pro with web search to pull real competitor branding context
-      const llmRes = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      const llmRes = await invokeLLM({
         prompt: brandPrompt,
         model: 'gemini_3_1_pro',
         add_context_from_internet: true,

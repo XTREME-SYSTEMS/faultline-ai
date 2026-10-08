@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 export default async function(req) {
@@ -21,7 +22,7 @@ export default async function(req) {
     const company = audit.company_id ? await base44.asServiceRole.entities.Company.get(audit.company_id) : null;
 
     // LLM quantification
-    const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const llmResponse = await invokeLLM({
       prompt: `You are a revenue impact analyst. Quantify the annual dollar impact of each business finding for ${company?.name || 'this company'} (a ${company?.industry || 'general'} company).
 
 FINDINGS:

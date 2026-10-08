@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Scans the top 50 websites in a given industry group + sub-industry.
@@ -47,7 +48,7 @@ For EACH website, provide ALL of the following fields:
 Be specific and realistic with revenue and market share estimates based on publicly available data.
 Return exactly ${maxSites} sites (or as many as you can confidently identify, minimum 20).`;
 
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await invokeLLM({
       prompt,
       add_context_from_internet: true,
       model: 'gemini_3_flash',

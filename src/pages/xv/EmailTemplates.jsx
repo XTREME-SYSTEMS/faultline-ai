@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { invokeLLM } from '@/lib/gatewayLLM';
 import { base44 } from "@/api/base44Client";
 import PageHeader from "@/components/vq/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -33,7 +34,7 @@ export default function EmailTemplates() {
     setSent(false);
     try {
       const prompt = emailPrompt(lead, emailType, null);
-      const res = await base44.integrations.Core.InvokeLLM({
+      const res = await invokeLLM({
         prompt,
         response_json_schema: EMAIL_JSON_SCHEMA,
       });

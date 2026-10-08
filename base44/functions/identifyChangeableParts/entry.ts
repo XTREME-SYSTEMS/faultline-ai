@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Clone Studio — Step 4a: Identify changeable parts.
@@ -85,7 +86,7 @@ Return structured JSON with the EXACT current values found. These will be used f
       required: ['logo', 'accent_colors', 'key_images', 'trademark_content', 'contact_info']
     };
 
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await invokeLLM({
       prompt, model: 'claude_sonnet_4_6', response_json_schema: schema
     });
     const parts = typeof result === 'string' ? JSON.parse(result) : result;

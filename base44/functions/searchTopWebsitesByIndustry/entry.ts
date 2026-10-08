@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Search the top N highest-ranking real websites in a given industry.
@@ -20,7 +21,7 @@ export default async function(req) {
     const maxResults = Math.min(20, Math.max(1, body.max_results || 10));
     const industry = body.industry || 'general';
 
-    const searchRes = await base44.integrations.Core.InvokeLLM({
+    const searchRes = await invokeLLM({
       prompt: `You are a business research analyst. Find the top ${maxResults} highest-ranking, most successful REAL websites and businesses in the ${industry !== 'general' ? industry : 'most popular and trending'} industry/space.
 
 These must be REAL, well-known businesses with actual live websites. Do NOT invent fictional companies. Rank them from #1 (highest performing / most successful) down to #${maxResults}.

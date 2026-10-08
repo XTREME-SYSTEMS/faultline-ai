@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { slugify, pushGitHubFile, deployToVercel } from '../../shared/launchInfra.ts';
 import { fetchRenderedWithScreenshot } from '../../shared/browserbase.ts';
@@ -101,7 +102,7 @@ export default async function(req) {
     const packPages = packSpec?.pages || [];
     const packColors = packSpec?.brand?.colors || {};
     const packFonts = packSpec?.brand?.fonts || {};
-    const scoringRes = await base44.integrations.Core.InvokeLLM({
+    const scoringRes = await invokeLLM({
       prompt: `You are the FaultLine Autonomous Validation Engine. Score a generated website against its design pack spec and for operational readiness. 100/100 is MANDATORY to pass — only award 100 when there are zero defects.
 
 BUSINESS: ${lp.business_name || lp.project_name}

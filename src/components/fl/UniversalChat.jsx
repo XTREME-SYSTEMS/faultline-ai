@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { invokeLLM } from '@/lib/gatewayLLM';
 import { base44 } from '@/api/base44Client';
 import { Send, Loader2, Sparkles, Zap, Power, ChevronRight } from 'lucide-react';
 
@@ -94,7 +95,7 @@ export default function UniversalChat({ items, onRefresh, onRetract }) {
     setBusy(true);
     try {
       const context = items.slice(0, 50).map(i => ({ name: i.name, category: i.category, type: i.item_type, url: i.url, niche: i.niche, value: i.value_proposition, profit: i.profit_potential, validation: i.validation_status, clone: i.clone_status }));
-      const res = await base44.integrations.Core.InvokeLLM({
+      const res = await invokeLLM({
         model: 'gemini_3_flash',
         prompt: `You are the FaultLine AI autonomous database assistant. You can EITHER answer questions about the catalog OR trigger autonomous actions.
 

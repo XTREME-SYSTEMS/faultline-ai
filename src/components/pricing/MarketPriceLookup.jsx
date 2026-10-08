@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { invokeLLM } from '@/lib/gatewayLLM';
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +29,7 @@ export default function MarketPriceLookup({ onResult }) {
     setLoading(true);
     setError("");
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
+      const res = await invokeLLM({
         prompt: `You are a US construction pricing analyst. Search the web — HomeAdvisor, Angi, Thumbtack, Fixr, and local contractor websites — for the typical current pricing of "${trade}" work in ZIP code ${zip}. Return the local market price range as low, mid (typical/most common), and high in USD. Use the unit this trade is most commonly quoted in (e.g. "per sq ft", "per linear ft", "per project", "per day"). Give a short summary of what drives the range and your confidence (low/medium/high). Return JSON only.`,
         add_context_from_internet: true,
         model: "gemini_3_flash",

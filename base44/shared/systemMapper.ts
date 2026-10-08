@@ -1,3 +1,4 @@
+import { invokeLLM } from './llm.ts';
 import { fetchPage, discoverPageLinks, detectTechStack, extractData } from './scraper.ts';
 
 // Shared system mapping logic — used by both mapCompanySystems and the pipeline orchestrator.
@@ -28,7 +29,7 @@ export async function runSystemMap(base44, orgId, companyId) {
 
   const findingsSummary = existingFindings.slice(0, 10).map(f => `- ${f.title} (${f.severity}, ${f.category}): ${f.description?.substring(0, 120)}`).join('\n');
 
-  const mapResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+  const mapResponse = await invokeLLM({
     prompt: `You are a business systems architect. Based on the website crawl and findings below, infer the operational systems this company likely uses. This is the SYSTEM CLONE FOR AI ENHANCEMENT pillar — you are cloning their system map to show where AI can plug leaks and enhance operations.
 
 COMPANY: ${company.name} (${company.industry || 'unknown industry'})

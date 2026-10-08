@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from "npm:@base44/sdk";
 
 export default async function handler(request: Request) {
@@ -29,7 +30,7 @@ export default async function handler(request: Request) {
     }
 
     // Run validation checks via LLM
-    const validationResponse = await base44.integrations.Core.InvokeLLM({
+    const validationResponse = await invokeLLM({
       prompt: `You are a QA validator for generated business artifacts. Analyze the following ${artifactType} artifact and return a validation report with scores for each area (0-100) and an overall score.
 
 Artifact Name: ${artifactName}

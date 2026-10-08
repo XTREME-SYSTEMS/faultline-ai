@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { resolvePrompt } from '../../shared/promptLibrary.ts';
 
@@ -95,7 +96,7 @@ Make it premium, cohesive, and conversion-optimized. All hex codes must be real,
 
     const resolvedSpecPrompt = await resolvePrompt(base44, orgId, pType === 'logo_pack' ? 'logo-pack' : pType === 'brand_pack' ? 'brand-pack' : 'web-pack', 'GENERATE',
       { business_name, industry, description, target_audience, tone, style_preferences }, specPrompt);
-    const specRes = await base44.integrations.Core.InvokeLLM({
+    const specRes = await invokeLLM({
       prompt: resolvedSpecPrompt,
       model: 'gemini_3_1_pro',
       response_json_schema: PACK_SCHEMA

@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { extractData, fetchPage, detectTechStack, calcHealthScore } from '../../shared/scraper.ts';
 
@@ -17,7 +18,7 @@ export default async function(req) {
     if (!company || company.organization_id !== orgId) return Response.json({ error: 'Company not found' }, { status: 404 });
 
     // Phase 1: Discover competitors via web search
-    const competitorRes = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const competitorRes = await invokeLLM({
       prompt: `Find 3 real competitor companies to "${company.name}" in the ${company.industry || 'general'} industry. For each, provide the company name and their website URL. Return only companies with real, accessible websites.`,
       add_context_from_internet: true,
       response_json_schema: {
@@ -47,7 +48,7 @@ export default async function(req) {
       const techStack = detectTechStack(pageResult.html);
 
       // Quick LLM analysis for benchmark score
-      const analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      const analysis = await invokeLLM({
         prompt: `Quickly analyze this website for ${comp.name} (${comp.url}). Score it 0-100 on positioning, conversion, trust, and technical quality.
 
 Extracted data: ${JSON.stringify(extracted)}

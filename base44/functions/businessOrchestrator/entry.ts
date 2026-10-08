@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Business Orchestrator — manages business project lifecycle:
@@ -171,7 +172,7 @@ export default async function(req) {
       if (!idea) return Response.json({ error: 'idea is required' }, { status: 400 });
 
       const answered = existing_answers || {};
-      const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      const res = await invokeLLM({
         prompt: `You are a business discovery strategist. A user has submitted a business idea. Generate the NEXT most important clarifying question to ask them.
 
 BUSINESS IDEA: "${idea}"

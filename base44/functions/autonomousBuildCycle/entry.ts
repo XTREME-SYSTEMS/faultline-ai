@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { generateTemplatePackCore } from '../../shared/templateFactory.ts';
 
@@ -98,7 +99,7 @@ export default async function(req) {
 
 async function buildTemplatePhase(base44, orgId, task, log) {
   // Self-managing: derive the generation params from the logged request itself
-  const extractRes = await base44.integrations.Core.InvokeLLM({
+  const extractRes = await invokeLLM({
     prompt: `You are planning a template-pack generation job. Given this roadmap item, produce the EXACT params for a web template generator.\n\nTITLE: ${task.title}\nDESCRIPTION: ${task.description}\nACCEPTANCE CRITERIA: ${(task.acceptance_criteria || []).join('; ')}\n\nReturn JSON with: business_name (a fitting fictional brand for this category), industry, description, target_audience, tone, style_preferences (specific design direction), reference_url (a real, well-known site in this category to analyze for inspiration, or null), and accents (array of {name,color} with 5 distinct accent colors).`,
     model: 'gemini_3_1_pro',
     response_json_schema: {
@@ -144,7 +145,7 @@ async function buildOptimizationPhase(base44, orgId, task, log) {
   };
   log.push(`System state: ${JSON.stringify(state)}`);
 
-  const optRes = await base44.integrations.Core.InvokeLLM({
+  const optRes = await invokeLLM({
     prompt: `You are an autonomous site & system optimizer. Given the current system state, propose the highest-impact NEXT optimization action for this roadmap item. Be concrete and actionable.\n\nROADMAP ITEM: ${task.title} — ${task.description}\nSYSTEM STATE: ${JSON.stringify(state)}\n\nReturn JSON: { action (one concrete next step), rationale, safe_to_auto_apply (boolean), expected_impact }`,
     model: 'gemini_3_1_pro',
     response_json_schema: {
@@ -182,7 +183,7 @@ async function buildOptimizationPhase(base44, orgId, task, log) {
 }
 
 async function buildGenericPhase(base44, orgId, task, log) {
-  const res = await base44.integrations.Core.InvokeLLM({
+  const res = await invokeLLM({
     prompt: `You are an autonomous build agent. Produce a concrete implementation plan and the first deliverable for this roadmap item.\n\nTITLE: ${task.title}\nDESCRIPTION: ${task.description}\nACCEPTANCE CRITERIA: ${(task.acceptance_criteria || []).join('; ')}\n\nReturn JSON: { summary (what was built/planned), steps (array of strings), next_action }`,
     model: 'gemini_3_1_pro',
     response_json_schema: {
@@ -203,7 +204,7 @@ async function buildGenericPhase(base44, orgId, task, log) {
 
 async function validateBuild(base44, orgId, task, buildResult, log) {
   try {
-    const res = await base44.integrations.Core.InvokeLLM({
+    const res = await invokeLLM({
       prompt: `You are a strict QA validator. Decide whether this build output satisfies the acceptance criteria.\n\nROADMAP ITEM: ${task.title}\nACCEPTANCE CRITERIA:\n${(task.acceptance_criteria || []).map((c, i) => `${i + 1}. ${c}`).join('\n')}\n\nBUILD OUTPUT:\n${buildResult.summary}\n${buildResult.packs ? `Packs created: ${buildResult.packs.length}` : ''}\n${buildResult.proposal ? `Proposal: ${JSON.stringify(buildResult.proposal)}` : ''}\n\nReturn JSON: { pass (boolean), notes (which criteria met/unmet and why) }`,
       model: 'gemini_3_1_pro',
       response_json_schema: {
@@ -224,7 +225,7 @@ async function validateBuild(base44, orgId, task, buildResult, log) {
 
 async function reflectOnResult(base44, orgId, task, buildResult, validation, log) {
   try {
-    const res = await base44.integrations.Core.InvokeLLM({
+    const res = await invokeLLM({
       prompt: `You are a self-reflection agent. Given the build and its validation, reflect on what went well, what to improve next iteration, and whether the system is healthier.\n\nITEM: ${task.title}\nBUILD: ${buildResult.summary}\nVALIDATION PASS: ${validation.pass}\nVALIDATION NOTES: ${validation.notes}\n\nReturn JSON: { pass (boolean — true if this iteration moved the system forward), notes (concise reflection + next improvement) }`,
       model: 'gemini_3_flash'
     });

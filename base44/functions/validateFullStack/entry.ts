@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
 import { fetchRenderedWithScreenshot } from '../../shared/browserbase.ts';
@@ -132,7 +133,7 @@ export default async function(req) {
     const fileUrls = [cloneScreenshot, finalTargetScreenshot, mobileScreenshot].filter(Boolean);
 
     if (fileUrls.length >= 2) {
-      const scoringRes = await base44.integrations.Core.InvokeLLM({
+      const scoringRes = await invokeLLM({
         prompt: `You are the FaultLine Visual Parity Engine — STRICT MODE. Compare a cloned website screenshot against the original target site screenshot. Score how faithfully the clone reproduces the original's visual design.
 
 TARGET SITE (original): ${target_url}

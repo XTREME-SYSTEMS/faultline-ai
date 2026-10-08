@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 export default async function(req) {
@@ -17,7 +18,7 @@ export default async function(req) {
     const industryPhrase = industry ? ` in the "${industry}" industry` : '';
     const prompt = `Find 10 real, currently operating businesses${locationPhrase}${industryPhrase} that have active websites. For each business provide the company name, website domain (full URL), a one-sentence description, and the specific sub-industry or niche. Focus on businesses with operational complexity — field operations, multi-location services, distribution, or fragmented systems — that would benefit from a diagnostic audit. Only return businesses you can verify have live websites.`;
 
-    const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const llmResponse = await invokeLLM({
       prompt,
       add_context_from_internet: true,
       response_json_schema: {

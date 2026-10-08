@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { runSecurityScan } from '../../shared/securityScanner.ts';
 import { runSystemMap } from '../../shared/systemMapper.ts';
@@ -59,7 +60,7 @@ export default async function(req) {
       const findingsSummary = findings.map((f, i) =>
         `${i + 1}. [${(f.severity || 'medium').toUpperCase()}] ${f.title}\n   Impact: ${f.business_impact || 'N/A'}\n   Repair: ${f.recommended_repair || 'N/A'}`
       ).join('\n\n');
-      const reportResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      const reportResponse = await invokeLLM({
         prompt: `Generate a board-ready executive report for ${company.name} (${company.industry || 'Unknown'}). Audit: Deep Security Scan. Date: ${new Date().toLocaleDateString()}. Findings (${findings.length}): ${findingsSummary}. Include: Executive Summary, Key Findings, Business Impact, Repair Plan (30/60/90), Confidence Notes.`
       });
       const reportContent = typeof reportResponse === 'string' ? reportResponse : JSON.stringify(reportResponse);
@@ -88,7 +89,7 @@ export default async function(req) {
       ).join('\n\n');
       const findingsSummary = companyFindings.slice(0, 15).map(f => `- [${f.severity}] ${f.title}: ${f.recommended_repair}`).join('\n');
 
-      const enhancedResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      const enhancedResponse = await invokeLLM({
         prompt: `Generate the ENHANCED version of ${company.name}'s system after FaultLine AI applies all enhancements.\nCURRENT SYSTEM MAP (${nodes.length} nodes):\n${nodesSummary}\nCURRENT FINDINGS (${companyFindings.length}):\n${findingsSummary}\nCURRENT HEALTH: ${originalHealthScore}/100\nGenerate: enhanced_nodes, resolved_findings, remaining_findings, enhanced_health_score (85-98), security_improvements, enhanced_system_summary.`,
         response_json_schema: { type: 'object', properties: {
           enhanced_nodes: { type: 'array', items: { type: 'object' } },
@@ -128,7 +129,7 @@ export default async function(req) {
       const leakPointCount = nodes.reduce((sum, n) => sum + (n.leak_points?.length || 0), 0);
       const enhancementCount = nodes.filter(n => n.ai_enhancement).length;
 
-      const proposalResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      const proposalResponse = await invokeLLM({
         prompt: `Create a security and enhancement proposal for ${company.name}. Current: ${originalHealthScore}/100, ${companyFindings.length} findings (${criticalCount} critical), ${nodes.length} systems, ${leakPointCount} leaks, ${enhancementCount} enhancements. Enhanced: ${enhancedResult.enhanced_health_score}/100, ${enhancedResult.resolved_count} resolved. Generate: pricing_breakdown (security_remediation, ai_enhancements, ongoing_monitoring_monthly, implementation, training, one_time_total), total_price, recommended_plan ("Growth Plan" $299/mo if <5 findings and <4 systems, else "Operating System Plan" $699/mo), proposal_text (full markdown).`,
         response_json_schema: { type: 'object', properties: {
           pricing_breakdown: { type: 'object' }, total_price: { type: 'number' }, recommended_plan: { type: 'string' }, proposal_text: { type: 'string' }
@@ -173,7 +174,7 @@ export default async function(req) {
       const topFindings = [...companyFindings].sort((a, b) => (severityOrder[a.severity] || 4) - (severityOrder[b.severity] || 4)).slice(0, 5);
       if (topFindings.length === 0) return { skipped: true };
 
-      const outreachResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+      const outreachResponse = await invokeLLM({
         prompt: `Draft a value-first outreach email to ${company.name}. Top findings: ${JSON.stringify(topFindings.map(f => ({ title: f.title, severity: f.severity, business_impact: f.business_impact })))}. Health: ${originalHealthScore}/100 to ${enhancedResult.enhanced_health_score}/100. Investment: $${proposalResult.total_price}. Subject + body (150-250 words) + evidence_refs. Use [First Name] placeholder.`,
         response_json_schema: { type: 'object', properties: { subject: { type: 'string' }, body: { type: 'string' }, evidence_refs: { type: 'array', items: { type: 'string' } } } }
       });

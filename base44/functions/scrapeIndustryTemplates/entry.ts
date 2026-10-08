@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { fetchPage, extractData, detectTechStack } from '../../shared/scraper.ts';
 import { fetchRenderedPage } from '../../shared/browserbase.ts';
@@ -54,7 +55,7 @@ For each website provide:
 7. color_scheme: Primary brand colors they use (hex codes if visible)
 8. rating: Quality assessment (excellent/good/average)`;
 
-      const res = await base44.integrations.Core.InvokeLLM({
+      const res = await invokeLLM({
         prompt,
         add_context_from_internet: true,
         model: 'gemini_3_1_pro',
@@ -155,7 +156,7 @@ For each website provide:
 7. design_dna: 2-3 sentence summary capturing the design's distinct "feel" and what makes it effective
 8. replicate_patterns: specific actionable design patterns FaultLine's generator should replicate to match this quality`;
 
-          const res = await base44.integrations.Core.InvokeLLM({
+          const res = await invokeLLM({
             prompt,
             add_context_from_internet: true,
             model: 'gemini_3_1_pro',

@@ -1,3 +1,4 @@
+import { invokeLLM } from './llm.ts';
 import { fetchPage, extractData } from './scraper.ts';
 
 // ===== Extended Diagnostics =====
@@ -126,7 +127,7 @@ export async function quantifyRevenueLeaks(base44, orgId, auditId, company) {
   const findings = await base44.asServiceRole.entities.Finding.filter({ organization_id: orgId, audit_id: auditId });
   if (findings.length === 0) return { quantified: 0, total_impact: 0 };
 
-  const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+  const llmResponse = await invokeLLM({
     prompt: `You are a revenue impact analyst. Quantify the annual dollar impact of each finding for ${company.name} (${company.industry || 'general'}).
 FINDINGS: ${JSON.stringify(findings.map(f => ({ id: f.id, title: f.title, category: f.category, severity: f.severity, business_impact: f.business_impact })))}
 For each: annual_impact_min, annual_impact_max, confidence (0-100), category (lost_leads, pricing_leakage, churn, operational_inefficiency, conversion_gap, other).`,
@@ -143,7 +144,7 @@ For each: annual_impact_min, annual_impact_max, confidence (0-100), category (lo
 }
 
 export async function benchmarkCompetitors(base44, orgId, company) {
-  const competitorRes = await base44.asServiceRole.integrations.Core.InvokeLLM({
+  const competitorRes = await invokeLLM({
     prompt: `Find 3 real competitor companies to "${company.name}" in the ${company.industry || 'general'} industry. For each, provide the company name and website URL.`,
     add_context_from_internet: true,
     response_json_schema: { type: 'object', properties: { competitors: { type: 'array', items: { type: 'object', properties: { name: { type: 'string' }, url: { type: 'string' }}}} }}
@@ -154,7 +155,7 @@ export async function benchmarkCompetitors(base44, orgId, company) {
     const pageResult = await fetchPage(comp.url);
     if (!pageResult.ok) return { name: comp.name, url: comp.url, score: 0, tech_stack: [], notes: ['Site unreachable'] };
     const extracted = extractData(pageResult.html, comp.url);
-    const analysis = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const analysis = await invokeLLM({
       prompt: `Analyze this website for ${comp.name} (${comp.url}). Score 0-100. Data: ${JSON.stringify({ wordCount: extracted.wordCount, hasAnalytics: extracted.hasAnalytics, trustSignals: extracted.trustSignals, ctaCount: extracted.ctaCount })}. Return score and 3-5 notes.`,
       response_json_schema: { type: 'object', properties: { score: { type: 'number' }, notes: { type: 'array', items: { type: 'string' }}}}
     });

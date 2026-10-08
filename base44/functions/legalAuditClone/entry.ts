@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Scans a deployed clone for items that ABSOLUTELY MUST change due to legal risk
@@ -56,7 +57,7 @@ Produce a complete rebrand plan:
 7. images_to_replace: array of {url, reason, replacement_prompt} for each image that must be replaced (logo, branded hero, copyrighted photos). replacement_prompt should be a detailed prompt to generate a safe replacement.
 8. content_to_replace: array of {text, reason, suggested_replacement} for each piece of copy that must be changed (brand mentions, proprietary taglines, copyrighted text).`;
 
-    const llm = await base44.integrations.Core.InvokeLLM({
+    const llm = await invokeLLM({
       prompt,
       response_json_schema: {
         type: 'object',

@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
 import { slugify, createVercelProject, disableVercelSso, deployToVercel } from '../../shared/launchInfra.ts';
@@ -95,7 +96,7 @@ Return JSON with:
 - testimonials_to_replace: array of {find} — exact verbatim testimonial/review/case-study text snippets that must be replaced with original ones.
 - distinctive_copy: array of {find, reason} — any other distinctive proprietary copy that must be rewritten (not plain brand names).`;
 
-    const detected = await base44.integrations.Core.InvokeLLM({
+    const detected = await invokeLLM({
       prompt: detectPrompt,
       response_json_schema: {
         type: 'object',
@@ -182,7 +183,7 @@ Return JSON:
 - rewritten_copy: array of {find, replace} — for each distinctive copy item, exact original and neutral replacement.
 - legal: object {privacy_policy, terms_of_service, cookie_notice}.`;
 
-    const generated = await base44.integrations.Core.InvokeLLM({
+    const generated = await invokeLLM({
       prompt: genPrompt,
       response_json_schema: {
         type: 'object',

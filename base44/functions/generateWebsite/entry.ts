@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { waitUntil } from "base44:runtime";
 import { resolvePrompt } from '../../shared/promptLibrary.ts';
@@ -185,7 +186,7 @@ ${visualRef}
 
 Generate the FIRST HALF of a single-page website as ONE complete HTML document. Start with <!DOCTYPE html>. Include <head> with: charset, viewport, title, meta description, Open Graph tags, Schema.org JSON-LD (LocalBusiness), Google Fonts links, and ALL CSS inside a single <style> tag (use CSS custom properties --primary:${color} and --secondary:${color2}; fully responsive mobile-first; modern animations, gradients, shadows, glassmorphism, micro-interactions). Then open <body> and include these sections ONLY: sticky navbar with mobile hamburger toggle, hero (gradient/animated background, compelling headline, dual CTA buttons), services grid (inline SVG icons, hover lift), about (gradient image placeholder), stats with animated counters. Write REAL compelling copy tailored to ${business_name} from the description — no placeholder text, no fake stats. STOP after the stats section — do NOT output testimonials, contact, footer, </body>, or </html>.`;
 
-        const r1 = await base44.integrations.Core.InvokeLLM({ prompt: firstPrompt, model: visionModel, file_urls: visionFileUrls.length ? visionFileUrls : undefined });
+        const r1 = await invokeLLM({ prompt: firstPrompt, model: visionModel, file_urls: visionFileUrls.length ? visionFileUrls : undefined });
         let html = typeof r1 === 'string' ? r1 : r1?.content || r1?.text || JSON.stringify(r1);
         html = html.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
         return Response.json({ status: 'success', part: 'first_half', html });
@@ -204,7 +205,7 @@ ${healNote}
 
 Generate the SECOND PART of the same single-page website. Output HTML fragments — NO <!DOCTYPE>, NO <html>, NO <head>, NO <script>. You MUST include a <style> block at the top with all CSS needed for these sections (using --primary:${color} and --secondary:${color2} custom properties; fully responsive; match the visual style of the first half). Output these sections in order, each with proper CSS classes and full styling: a testimonials section (styled cards with star ratings on a themed background), a contact section (working form: name, email, message, submit button — styled inputs, not raw unstyled HTML), and a footer (multi-column layout with links, inline SVG social icons, copyright). Fully responsive. Write REAL compelling copy for ${business_name} — no placeholder text, no fake testimonials. Use ONLY real Unsplash image URLs (https://images.unsplash.com/photo-...) for any images — never use /api/placeholder or relative paths.`;
 
-        const r2 = await base44.integrations.Core.InvokeLLM({ prompt: secondPrompt, model: visionModel, file_urls: visionFileUrls.length ? visionFileUrls : undefined });
+        const r2 = await invokeLLM({ prompt: secondPrompt, model: visionModel, file_urls: visionFileUrls.length ? visionFileUrls : undefined });
         let secondHtml = typeof r2 === 'string' ? r2 : r2?.content || r2?.text || JSON.stringify(r2);
         secondHtml = secondHtml.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();
         return Response.json({ status: 'success', part: 'second_half', html: secondHtml });
@@ -407,7 +408,7 @@ REQUIREMENTS — this must be an ULTRA-AMAZING website:
 
 Generate the COMPLETE website now. Start with <!DOCTYPE html> and end with </html>. Be COMPLETE and POLISHED but EFFICIENT — every section present with tight, non-redundant copy; do not pad with filler. Every section must have real, compelling copy tailored to ${business_name} using the business description above. Do NOT copy the pack's sample/placeholder text, fake testimonials, or dummy stats — write actual marketing copy from the real business data. Do not use placeholder text.`);
 
-    const res = await base44.integrations.Core.InvokeLLM({
+    const res = await invokeLLM({
       prompt,
       model: 'gemini_3_flash'
     });

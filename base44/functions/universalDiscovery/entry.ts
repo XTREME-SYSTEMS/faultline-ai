@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Universal discovery — finds the top items (platforms, stores, tools,
@@ -47,7 +48,7 @@ export default async function(req: Request): Promise<Response> {
     const limit = Math.min(body.limit || 5, 10);
     const label = ITEM_TYPE_LABELS[itemType] || ITEM_TYPE_LABELS.other;
 
-    const res = await base44.integrations.Core.InvokeLLM({
+    const res = await invokeLLM({
       model: 'gemini_3_1_pro',
       add_context_from_internet: true,
       prompt: `You are a universal discovery engine. Research the ${limit} most successful, highest-traffic, most relevant ${label} in the category "${category}"${subcategory ? ` / ${subcategory}` : ''}${niche ? ` (niche: ${niche})` : ''}.

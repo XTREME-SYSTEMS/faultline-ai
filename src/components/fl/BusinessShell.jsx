@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { invokeLLM } from '@/lib/gatewayLLM';
 import { useParams, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/lib/AuthContext';
 import { base44 } from '@/api/base44Client';
@@ -46,7 +47,7 @@ export default function BusinessShell({ children, project, rightPanel }) {
     setChatMessages(prev => [...prev, { role: 'user', text: msg }]);
     setChatLoading(true);
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
+      const res = await invokeLLM({
         prompt: `You are the Forge AI business strategist. The user is building a business project. Respond concisely and helpfully.
 
 PROJECT: ${project?.name || 'New project'}

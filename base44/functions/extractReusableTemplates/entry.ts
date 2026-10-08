@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // The Template Extraction Engine — the value compounding layer.
@@ -39,7 +40,7 @@ export default async function(req) {
     //    to stay within the function timeout — claude_sonnet times out on 5k+ chars).
     //    Truncate HTML to 5000 chars to keep the LLM call under 30s.
     const htmlSample = html.slice(0, 5000);
-    const extractionRes = await base44.integrations.Core.InvokeLLM({
+    const extractionRes = await invokeLLM({
       prompt: `You are the FaultLine Template Extraction Engine. Decompose this website HTML into reusable components.
 
 SOURCE: ${live_url}

@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Clone Studio — Step 1: Discovery.
@@ -79,7 +80,7 @@ Return exactly 5 candidates, ordered by clone-worthiness (best first).`;
       required: ['candidates']
     };
 
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await invokeLLM({
       prompt, add_context_from_internet: true, model: 'gemini_3_1_pro', response_json_schema: schema
     });
     const data = typeof result === 'string' ? JSON.parse(result) : result;

@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { runMandatoryQA } from '../../shared/mandatoryQA.ts';
 
@@ -22,7 +23,7 @@ export default async function(req) {
     const company = audit.company_id ? await base44.asServiceRole.entities.Company.get(audit.company_id) : null;
 
     // LLM generates prioritized repair plan
-    const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const llmResponse = await invokeLLM({
       prompt: `You are an operations repair strategist. Create a prioritized repair plan for ${company?.name || 'this company'} based on these findings.
 
 FINDINGS (sorted by severity):

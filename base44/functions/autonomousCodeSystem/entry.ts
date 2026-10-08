@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // The Autonomous Coding System — RAG-powered, self-validating code generation.
@@ -63,7 +64,7 @@ export default async function(req) {
 
     // ── STEP 2: CODE GENERATION ─────────────────────────────────────────
     addLog('Step 2: Generating code with LLM...');
-    const genRes = await base44.integrations.Core.InvokeLLM({
+    const genRes = await invokeLLM({
       prompt: `You are an expert ${lang} developer. Generate production-quality code for the following task.
 
 TASK: ${task}
@@ -112,7 +113,7 @@ Return JSON with:
       addLog(`Step 3.${iteration}: Validating code (iteration ${iteration}/${maxIter})...`);
 
       // VALIDATION — LLM checks syntax, logic, generates tests, simulates execution
-      const valRes = await base44.integrations.Core.InvokeLLM({
+      const valRes = await invokeLLM({
         prompt: `You are a strict code validator. Analyze this ${lang} code and determine if it's production-ready.
 
 TASK THE CODE SOLVES: ${task}
@@ -181,7 +182,7 @@ Return JSON with:
       // AUTO-FIX — if not passed and iterations remain, fix the code
       if (iteration < maxIter) {
         addLog(`Step 4.${iteration}: Auto-fixing code based on validation failures...`);
-        const fixRes = await base44.integrations.Core.InvokeLLM({
+        const fixRes = await invokeLLM({
           prompt: `You are an expert ${lang} developer. Fix the issues in this code based on the validation report.
 
 ORIGINAL TASK: ${task}

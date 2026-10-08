@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Clone Studio — Domain name generator + availability checker.
@@ -36,7 +37,7 @@ Return as a simple array of domain strings (e.g. ["businessname.com", "getbusine
       },
       required: ['domains']
     };
-    const result = await base44.integrations.Core.InvokeLLM({ prompt, response_json_schema: schema, model: 'gemini_3_flash', add_context_from_internet: true });
+    const result = await invokeLLM({ prompt, response_json_schema: schema, model: 'gemini_3_flash', add_context_from_internet: true });
     const data = typeof result === 'string' ? JSON.parse(result) : result;
     const suggestions = (data.domains || []).slice(0, 12);
 

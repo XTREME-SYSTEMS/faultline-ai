@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // MINIMAL-CHANGE DETECTOR
@@ -64,7 +65,7 @@ Return JSON:
 - mandatory_swaps: array of {find, replace, reason, type} where type is "text" or "tagline" — specific taglines/strings needing a non-standard replacement (do NOT repeat plain brand-name occurrences here; those go in brand_terms).
 - image_swaps: array of {src, reason, replacement_prompt, is_logo} — is_logo true ONLY for the main brand logo.`;
 
-    const llm = await base44.integrations.Core.InvokeLLM({
+    const llm = await invokeLLM({
       prompt,
       response_json_schema: {
         type: 'object',

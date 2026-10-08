@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { invokeLLM } from '@/lib/gatewayLLM';
 import { base44 } from "@/api/base44Client";
 import PageHeader from "@/components/vq/PageHeader";
 import SectionCard from "@/components/vq/SectionCard";
@@ -51,7 +52,7 @@ Your salesperson's contact information is included with your proposal. Visit xtr
 
 Format as a clean, professional document with Markdown headings. Keep it under 800 words. This is a marketing document to help close deals — make it compelling but honest.`;
 
-      const result = await base44.integrations.Core.InvokeLLM({
+      const result = await invokeLLM({
         prompt,
         add_context_from_internet: true,
         model: "gemini_3_flash",

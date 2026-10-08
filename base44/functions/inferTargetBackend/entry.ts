@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Infers the highest-probability backend for a target site from its scraped DNA.
@@ -32,7 +33,7 @@ CONTACT PHONE: ${d.phone || 'none'}
 
 Infer the highest-probability backend as JSON. Be specific to THIS site's actual content — name entities after what the site actually has (e.g. for a flooring site: Service, GalleryImage, ContactSubmission, Testimonial).`;
 
-    const res = await base44.integrations.Core.InvokeLLM({
+    const res = await invokeLLM({
       prompt,
       model: 'gemini_3_flash',
       response_json_schema: {

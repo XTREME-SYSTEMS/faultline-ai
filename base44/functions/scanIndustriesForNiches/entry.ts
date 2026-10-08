@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Autonomous Industry Niche Scanner — scans all (or a focused set of) industries
@@ -32,7 +33,7 @@ export default async function(req) {
 
     const industryList = focusIndustry ? [focusIndustry] : INDUSTRIES;
 
-    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const result = await invokeLLM({
       prompt: `You are the FaultLine AI Autonomous Industry Niche Scanner. Your job is to scan industries and find the BEST business opportunities for AI automation — niches where AI can solve real, painful problems, create new demand, and deliver massive ROI. Many users don't know what to ask AI or what to search for — so YOU generate the ideas.
 
 ${focusIndustry ? `Focus industry: ${focusIndustry}` : `Scan these industries: ${INDUSTRIES.join(', ')}`}

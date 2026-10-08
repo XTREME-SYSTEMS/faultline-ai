@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Self-Reflect & Heal — the autonomous recursive perfection engine.
@@ -138,7 +139,7 @@ Return a JSON object with:
   ]
 }`;
 
-    const llmRes = await base44.integrations.Core.InvokeLLM({
+    const llmRes = await invokeLLM({
       prompt: reflectionPrompt,
       response_json_schema: {
         type: 'object',

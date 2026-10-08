@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 export default async function(req) {
@@ -16,7 +17,7 @@ export default async function(req) {
     }
 
     // Use LLM to perform root-cause analysis on the failed headless test
-    const reflection = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const reflection = await invokeLLM({
       prompt: `You are the FaultLine AI Sentinel self-reflection engine. A headless test sweep was run and produced failures. Your job is to perform root-cause analysis and produce specific, actionable fix recommendations.
 
 FLOW GOAL: ${flow_goal || 'system-wide headless sweep'}

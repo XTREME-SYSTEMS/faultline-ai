@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // LLM-powered Tool Advisor — analyzes the contractor's stage, goals, service focus,
@@ -99,7 +100,7 @@ Return a JSON object with:
 - total_monthly_cost: number
 - implementation_order: array of tool_ids in the order they should be adopted`;
 
-    const res = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const res = await invokeLLM({
       prompt,
       response_json_schema: {
         type: 'object',

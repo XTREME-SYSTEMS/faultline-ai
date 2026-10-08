@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Discover Missing Opportunities — analyzes a company's current state (findings,
@@ -49,7 +50,7 @@ export default async function(req) {
 
     const existingTitles = existingOpps.map(o => o.opportunity_title);
 
-    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const result = await invokeLLM({
       prompt: `You are the FaultLine AI Opportunity Analyst. Analyze the company below and enumerate EVERY opportunity it is missing — be exhaustive and specific. The goal is to surface every revenue leak, every manual process that should be automated, every disconnected system, every competitive gap, every AI enhancement, and every growth channel they are not exploiting.
 
 COMPANY: ${company.name}

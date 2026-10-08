@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { invokeLLM } from '@/lib/gatewayLLM';
 import { base44 } from "@/api/base44Client";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -13,7 +14,7 @@ export default function ProposalDraft({ lead, onSave }) {
 
   const generate = async () => {
     setBusy(true);
-    const draft = await base44.integrations.Core.InvokeLLM({
+    const draft = await invokeLLM({
       prompt: `Write a professional flooring proposal DRAFT for a contractor to review. Never state a final price, completion date, warranty, engineering suitability, or code compliance — describe pricing only as a preliminary range subject to site verification.
 Customer: ${lead.customer_name}
 Space: ${lead.space_type}

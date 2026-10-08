@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Customization Studio — generates a full set of rebrand options for a
@@ -99,8 +100,8 @@ Return exactly 20 palettes and 20 content packs.`;
     };
 
     const [nameResult, designResult] = await Promise.all([
-      base44.integrations.Core.InvokeLLM({ prompt: namePrompt, response_json_schema: nameSchema }),
-      base44.integrations.Core.InvokeLLM({ prompt: designPrompt, response_json_schema: designSchema }),
+      invokeLLM({ prompt: namePrompt, response_json_schema: nameSchema }),
+      invokeLLM({ prompt: designPrompt, response_json_schema: designSchema }),
     ]);
 
     const nameData = typeof nameResult === 'string' ? JSON.parse(nameResult) : nameResult;

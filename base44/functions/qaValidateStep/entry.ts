@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // QA Validation — double-checks any generated step/output for problems, gaps,
@@ -33,7 +34,7 @@ export default async function(req) {
 
     if (!targetContent.trim()) return Response.json({ error: 'No content to validate — pass content or a valid deliverable target_id' }, { status: 400 });
 
-    const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const result = await invokeLLM({
       prompt: `You are the FaultLine AI QA Validator. Your job is to rigorously double-check a generated output for problems, gaps, weaknesses, faults, and missing requirements. Be critical and thorough — assume there ARE issues until you've verified otherwise.
 
 TARGET TYPE: ${target_type}

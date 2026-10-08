@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { invokeLLM } from '@/lib/gatewayLLM';
 import { useParams, Link } from 'react-router-dom';
 import PortalShell from '@/components/fl/PortalShell';
 import { base44 } from '@/api/base44Client';
@@ -61,7 +62,7 @@ export default function ClientDemoPortal() {
       const prompt = `You are the FaultLine AI demo assistant for ${company?.name || 'this company'} (${company?.industry || 'Unknown industry'}). The client is exploring the demo portal. Be enthusiastic, specific, and reference real data: health score ${data?.snapshots?.[0]?.health_score || 'N/A'}, ${data?.nodes?.length || 0} systems mapped, ${blueprints.length} automation blueprints available. Keep responses to 2-3 sentences. End with [CHOICES]option1|option2|option3[/CHOICES] when suggesting next steps.
 
 Conversation: ${next.map(m => `${m.role}: ${m.text}`).join('\n')}`;
-      const res = await base44.integrations.Core.InvokeLLM({ prompt });
+      const res = await invokeLLM({ prompt });
       const choicesMatch = res.match(/\[CHOICES\]([^\]]+)\[\/CHOICES\]/);
       const choices = choicesMatch ? choicesMatch[1].split('|').map(s => s.trim()) : null;
       const cleanText = res.replace(/\[CHOICES\][^\]]*\[\/CHOICES\]/g, '').trim();

@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Surgical AI editor — takes generated HTML + a natural language instruction,
@@ -48,7 +49,7 @@ ${htmlForLLM}
 
 Return ONLY the JSON object.`;
 
-    const llmRes = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const llmRes = await invokeLLM({
       prompt: editPrompt,
       response_json_schema: {
         type: 'object',

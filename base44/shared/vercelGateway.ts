@@ -3,7 +3,7 @@
 const GATEWAY_URL = 'https://ai-gateway.vercel.sh/v1/chat/completions';
 
 export async function gatewayChat({ prompt, model = 'openai/gpt-4.1-mini', maxTokens = 1024, timeoutMs = 20000, system = '' }) {
-  const key = Deno.env.get('VERCEL_AI_GATEWAY_API_KEY');
+  const key = Deno.env.get('VERCEL_AI_GATEWAY_KEY');
   if (!key) throw new Error('AI_GATEWAY_NOT_CONFIGURED');
   if (typeof prompt !== 'string' || !prompt.trim()) throw new Error('INVALID_PROMPT');
   const controller = new AbortController();

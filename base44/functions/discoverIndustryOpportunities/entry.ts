@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 export default async function(req) {
@@ -13,7 +14,7 @@ export default async function(req) {
     if (!industry) return Response.json({ error: 'industry required' }, { status: 400 });
 
     // Use LLM with web search to discover automation opportunities in this industry
-    const opportunityResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const opportunityResponse = await invokeLLM({
       prompt: `You are an expert business analyst specializing in AI automation opportunities. Analyze the "${industry}" industry${location ? ` in ${location}` : ''} and identify ALL automation and AI enhancement opportunities.
 
 For each opportunity, provide:

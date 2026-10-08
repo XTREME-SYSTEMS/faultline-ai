@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { secrets } from 'base44:runtime';
 
@@ -65,7 +66,7 @@ export default async function(req: Request) {
       }
 
       case 'image_edit': {
-        const enhanced = await base44.integrations.Core.InvokeLLM({
+        const enhanced = await invokeLLM({
           prompt: `Enhance this image edit instruction into a detailed image generation prompt. Original image context: ${existing_image_urls?.[0] || 'none'}. Edit request: "${prompt}". Return only the enhanced prompt, no explanation.`,
           model: 'gemini_3_flash',
         });
@@ -100,7 +101,7 @@ export default async function(req: Request) {
       }
 
       case 'music': {
-        const lyricsRes = await base44.integrations.Core.InvokeLLM({
+        const lyricsRes = await invokeLLM({
           prompt: `Write short song lyrics (4-8 lines) based on this request: "${prompt}". Return only the lyrics, no title or explanation.`,
           model: 'gemini_3_flash',
         });

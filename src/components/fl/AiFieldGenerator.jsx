@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { invokeLLM } from '@/lib/gatewayLLM';
 import { base44 } from '@/api/base44Client';
 
 const PROMPTS = {
@@ -35,7 +36,7 @@ export default function AiFieldGenerator({ type, form, onApply, fieldLabel }) {
         const res = await base44.integrations.Core.GenerateImage({ prompt });
         setLogoUrl(res.url);
       } else if (type === 'branding') {
-        const res = await base44.integrations.Core.InvokeLLM({
+        const res = await invokeLLM({
           prompt: PROMPTS[type](form),
           response_json_schema: {
             type: 'object',
@@ -57,7 +58,7 @@ export default function AiFieldGenerator({ type, form, onApply, fieldLabel }) {
         });
         setBrandingOptions(res.options || []);
       } else {
-        const res = await base44.integrations.Core.InvokeLLM({
+        const res = await invokeLLM({
           prompt: PROMPTS[type](form, fieldLabel),
           response_json_schema: {
             type: 'object',

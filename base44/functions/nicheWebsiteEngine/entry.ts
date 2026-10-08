@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Niche Website Engine — discovers trending, high-demand niches via LLM + web search,
@@ -25,7 +26,7 @@ export default async function(req) {
     const industry = body.industry || 'general';
 
     // 1. Discover trending niches + generate website content in one LLM call
-    const discoveryRes = await base44.integrations.Core.InvokeLLM({
+    const discoveryRes = await invokeLLM({
       prompt: `You are a master digital strategist. Discover the top ${maxNiches} trending, high-demand niches that people are most drawn to right now${industry !== 'general' ? ` in the ${industry} space` : ''}.
 
 For EACH niche, generate complete, production-ready website content for a polished business website. The website must be conversion-optimized, mobile-responsive, and SEO-friendly.

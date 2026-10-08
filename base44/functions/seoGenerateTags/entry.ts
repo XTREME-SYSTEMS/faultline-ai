@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { generateSitemapXml, generateRobotsTxt, generateJsonLd, generateMetaTagsHtml } from '../../shared/seoUtils.ts';
 
@@ -26,7 +27,7 @@ Return a JSON object with:
 
 Return ONLY the JSON object, no markdown.`;
 
-    const llmRes = await base44.integrations.Core.InvokeLLM({
+    const llmRes = await invokeLLM({
       prompt: llmPrompt,
       response_json_schema: {
         type: 'object',

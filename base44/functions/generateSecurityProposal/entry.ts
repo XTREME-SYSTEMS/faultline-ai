@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { runMandatoryQA } from '../../shared/mandatoryQA.ts';
 
@@ -52,7 +53,7 @@ export default async function(req) {
     ).join('\n');
 
     // LLM generates pricing + full proposal
-    const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const llmResponse = await invokeLLM({
       prompt: `You are the FaultLine AI proposal generator. Create a complete, client-ready security and enhancement proposal with automated pricing.
 
 COMPANY: ${company.name} (${company.industry || 'unknown industry'})

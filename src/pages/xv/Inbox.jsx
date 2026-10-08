@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { invokeLLM } from '@/lib/gatewayLLM';
 import { base44 } from "@/api/base44Client";
 import PageHeader from "@/components/vq/PageHeader";
 import SectionCard from "@/components/vq/SectionCard";
@@ -60,7 +61,7 @@ export default function Inbox() {
     setDrafting(true);
     setErr("");
     try {
-      const out = await base44.integrations.Core.InvokeLLM({
+      const out = await invokeLLM({
         prompt: `A flooring contractor received this email. Draft a professional, concise reply that addresses the customer's question, offers clear next steps, and never promises a final price, fixed date, or warranty. Sign off as the contractor. Keep under 180 words.\n\nFrom: ${detail.from}\nSubject: ${detail.subject}\n\nEmail:\n${detail.body}`,
       });
       setReply(String(out));

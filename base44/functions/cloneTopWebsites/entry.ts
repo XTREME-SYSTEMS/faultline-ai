@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Clones the top 3 rated websites/systems in a given category.
@@ -35,7 +36,7 @@ Then build a "superiority strategy" — how to build a website that is EQUIVALEN
 - recommended_tone: tone recommendation
 - recommended_colors: color recommendation with hex codes`;
 
-    const res = await base44.integrations.Core.InvokeLLM({
+    const res = await invokeLLM({
       prompt,
       add_context_from_internet: true,
       response_json_schema: {

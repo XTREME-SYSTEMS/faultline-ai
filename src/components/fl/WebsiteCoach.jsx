@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { invokeLLM } from '@/lib/gatewayLLM';
 import { base44 } from '@/api/base44Client';
 
 const SYSTEM_PROMPT = `You are the FaultLine AI Website Coach. You help the operator create an amazing website by guiding them through the configuration.
@@ -76,7 +77,7 @@ Features: ${featuresRef.current.join(', ')}`;
         const prompt = `${SYSTEM_PROMPT.replace('{CONTEXT}', buildContext())}
 
 Greet the user, tell them you can help craft their website, and offer choices. Keep it to 2-3 sentences. If their business name or description is empty, suggest they start there or proactively suggest a description if they have a business name.`;
-        const res = await base44.integrations.Core.InvokeLLM({ prompt });
+        const res = await invokeLLM({ prompt });
         const choices = extractChoices(res);
         const applies = extractApplies(res);
         setMessages([{ role: 'coach', text: cleanText(res), choices, applies }]);
@@ -106,7 +107,7 @@ Conversation:
 ${conversation}
 
 Coach:`;
-      const res = await base44.integrations.Core.InvokeLLM({ prompt });
+      const res = await invokeLLM({ prompt });
       const choices = extractChoices(res);
       const applies = extractApplies(res);
       setMessages(prev => [...prev, { role: 'coach', text: cleanText(res), choices, applies }]);

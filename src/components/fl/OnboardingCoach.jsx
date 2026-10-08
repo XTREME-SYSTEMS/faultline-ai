@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { invokeLLM } from '@/lib/gatewayLLM';
 import { base44 } from '@/api/base44Client';
 
 const SYSTEM_PROMPT = `You are the FaultLine AI onboarding coach. You guide users through 5 steps to get their first business diagnostic:
@@ -82,7 +83,7 @@ export default function OnboardingCoach({ companies, audits, receipts, busy, onD
     try {
       const conversation = next.map(m => `${m.role === 'user' ? 'User' : 'Coach'}: ${m.text}`).join('\n');
       const prompt = `${SYSTEM_PROMPT}\n\n${buildContext(state)}\n\nConversation so far:\n${conversation}\n\nCoach:`;
-      const res = await base44.integrations.Core.InvokeLLM({ prompt });
+      const res = await invokeLLM({ prompt });
       const clean = res.replace(/\[ACTION:[^\]]+\]/g, '').trim();
       const action = extractAction(res);
       setMessages(prev => [...prev, { role: 'coach', text: clean, action }]);

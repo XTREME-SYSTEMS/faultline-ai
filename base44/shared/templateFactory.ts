@@ -4,6 +4,8 @@
 // renders a reference image, and produces N accent-color variants as
 // DesignPack records. Original designs inspired by public patterns only.
 
+import { invokeLLM } from './llm.ts';
+
 export const DEFAULT_ACCENTS = [
   { name: 'Gold', color: '#C89B3C' },
   { name: 'Crimson', color: '#C41E3A' },
@@ -83,7 +85,7 @@ export async function generateTemplatePackCore(base44, orgId, params) {
   let refContext = reference_notes || '';
   if (reference_url) {
     try {
-      const refRes = await base44.integrations.Core.InvokeLLM({
+      const refRes = await invokeLLM({
         prompt: `Analyze the website at ${reference_url} (a ${industry || 'contractor'} site). Describe concisely: (1) layout & section ordering, (2) color palette, (3) typography, (4) hero treatment, (5) key conversion features, (6) what makes it effective. Describe patterns, do not copy content.`,
         add_context_from_internet: true,
         model: 'gemini_3_flash'
@@ -116,7 +118,7 @@ Design the web pack with:
 
 Premium, cohesive, conversion-optimized, SEO-complete. All hex valid. All fonts real Google Fonts.`;
 
-  const specRes = await base44.integrations.Core.InvokeLLM({
+  const specRes = await invokeLLM({
     prompt: specPrompt,
     model: 'gemini_3_1_pro',
     response_json_schema: PACK_SCHEMA

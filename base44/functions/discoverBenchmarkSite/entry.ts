@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Exhaustive discovery + audit report on a benchmark (target) site.
@@ -86,7 +87,7 @@ Where exact data isn't available, provide well-reasoned estimates with methodolo
       required: ['discovery_summary', 'financial_summary', 'strategy_summary', 'niche_summary', 'target_market_summary', 'monetization_strategy', 'overall_assessment']
     };
 
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await invokeLLM({
       prompt, add_context_from_internet: true, model: 'gemini_3_1_pro', response_json_schema: schema
     });
     const report = typeof result === 'string' ? JSON.parse(result) : result;

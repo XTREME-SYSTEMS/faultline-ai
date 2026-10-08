@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // AI Bid Writer — generates a professional construction bid/proposal from
@@ -98,7 +99,7 @@ Generate the bid with these sections, using markdown formatting:
 
 Write this as a complete, professional document. Use markdown headings (##), bold text, and tables where appropriate. Make it specific to the project type and scope provided.`;
 
-    const result = await base44.integrations.Core.InvokeLLM({
+    const result = await invokeLLM({
       prompt,
       model: 'gpt_5_4'
     });

@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // RAG Query — the retrieval layer.
@@ -67,7 +68,7 @@ export default async function(req) {
 
     if (index.length <= 100) {
       // Single LLM call for small indexes
-      const rankRes = await base44.integrations.Core.InvokeLLM({
+      const rankRes = await invokeLLM({
         prompt: `You are a retrieval system. Given a query and an index of documents, select the ${topK} most relevant documents.
 
 QUERY: ${query}
@@ -105,7 +106,7 @@ Return JSON with: selected_ids (array of document IDs, most relevant first, max 
         // Fallback: use the most recent documents
         rankedIds = index.slice(0, topK).map(d => d.id);
       } else {
-        const rankRes = await base44.integrations.Core.InvokeLLM({
+        const rankRes = await invokeLLM({
           prompt: `You are a retrieval system. Given a query and an index of documents, select the ${topK} most relevant.
 
 QUERY: ${query}

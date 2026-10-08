@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Clones a SaaS/app builder platform (Wix, Squarespace, Webflow, HubSpot CMS, Shopify, etc.)
@@ -35,7 +36,7 @@ Analyze and document its COMPLETE capability set so it can be replicated by an A
 12. weaknesses: What are its limitations?
 13. replication_instructions: Detailed step-by-step instructions for how an AI website generator should replicate this platform's approach when generating a single-file HTML website — what structure, components, features, design patterns, and UX conventions to include so the output feels like it was built with this platform's builder.`;
 
-    const res = await base44.integrations.Core.InvokeLLM({
+    const res = await invokeLLM({
       prompt,
       add_context_from_internet: true,
       response_json_schema: {

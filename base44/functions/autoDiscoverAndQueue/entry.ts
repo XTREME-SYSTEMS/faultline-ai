@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { SECTOR_ONE_INDUSTRIES } from '../../shared/industriesSectorOne.ts';
 import { SECTOR_TWO_INDUSTRIES } from '../../shared/industriesSectorTwo.ts';
@@ -96,7 +97,7 @@ export default async function(req) {
       if (includeSearch && industryAdded.length < sitesPerIndustry) {
         try {
           const needed = sitesPerIndustry - industryAdded.length;
-          const searchRes = await base44.integrations.Core.InvokeLLM({
+          const searchRes = await invokeLLM({
             prompt: `You are a business research analyst. Find the top ${needed} highest-ranking, most successful REAL websites in the ${industry.label} industry (category: ${industry.group}).
 
 These must be REAL, well-known businesses with actual live websites. Do NOT invent fictional companies. Do NOT include any of these already-queued sites: ${industryAdded.join(', ') || 'none'}.

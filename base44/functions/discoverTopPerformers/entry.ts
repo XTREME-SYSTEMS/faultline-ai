@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Actively seeks the top profit- and wealth-generating websites/systems across
@@ -27,7 +28,7 @@ export default async function(req) {
 
     const scanOne = async (industry) => {
       try {
-        const res = await base44.integrations.Core.InvokeLLM({
+        const res = await invokeLLM({
           model: 'gemini_3_1_pro',
           add_context_from_internet: true,
           prompt: `You are a top-performer discovery engine. Research the ${limitPerIndustry} highest-profit, highest-traffic, most successful websites or systems in the "${industry}" space.

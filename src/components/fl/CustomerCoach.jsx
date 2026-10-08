@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { invokeLLM } from '@/lib/gatewayLLM';
 import { base44 } from '@/api/base44Client';
 
 const SYSTEM_PROMPT = `You are the FaultLine AI customer portal guide. You help the CLIENT (the business that was audited) understand their diagnostic results.
@@ -64,7 +65,7 @@ export default function CustomerCoach({ data }) {
 ${buildContext(data)}
 
 Greet the client by name, give them a one-line summary of their diagnostic status, and offer choices for what to explore first.`;
-        const res = await base44.integrations.Core.InvokeLLM({ prompt });
+        const res = await invokeLLM({ prompt });
         const choices = extractChoices(res);
         setMessages([{ role: 'coach', text: cleanText(res), choices }]);
       } catch {
@@ -95,7 +96,7 @@ Conversation so far:
 ${conversation}
 
 Coach:`;
-      const res = await base44.integrations.Core.InvokeLLM({ prompt });
+      const res = await invokeLLM({ prompt });
       const choices = extractChoices(res);
       setMessages(prev => [...prev, { role: 'coach', text: cleanText(res), choices }]);
     } catch {

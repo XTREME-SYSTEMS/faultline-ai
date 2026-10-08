@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { fetchPage, extractData } from '../../shared/scraper.ts';
 
@@ -30,7 +31,7 @@ export default async function(req) {
     if (data.ctaCount < 2) securityIssues.push(`Only ${data.ctaCount} call-to-action elements — visitors don't know what to do`);
 
     // Use LLM to generate 3 critical findings + revenue leak estimate
-    const llmResponse = await base44.asServiceRole.integrations.Core.InvokeLLM({
+    const llmResponse = await invokeLLM({
       prompt: `You are FaultLine AI's instant website diagnostic engine. A prospect just entered their website URL for a free 60-second scan. Analyze the extracted data and produce exactly 3 critical findings and a revenue leak estimate.
 
 WEBSITE: ${scanUrl}

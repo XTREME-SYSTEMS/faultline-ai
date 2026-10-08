@@ -6,13 +6,15 @@
 //
 // Returns: { status, score, issues, summary, recommendations, report_id, passed }
 
+import { invokeLLM } from './llm.ts';
+
 export async function runMandatoryQA(base44, orgId, opts) {
   const { target_type, target_id, target_title, content, auto = true } = opts;
   if (!content || !content.trim()) {
     return { status: 'skipped', score: 0, issues: [], summary: 'No content to validate', recommendations: [], report_id: null, passed: true };
   }
 
-  const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+  const result = await invokeLLM({
     prompt: `You are the FaultLine AI Mandatory QA Validator. Your job is to rigorously double-check a generated output BEFORE anyone — client, operator, or external party — sees the final product. Be critical and thorough. Assume there ARE issues until you've verified otherwise. This is a mandatory gate: if you find critical issues, the output will be blocked from delivery.
 
 TARGET TYPE: ${target_type || 'general'}

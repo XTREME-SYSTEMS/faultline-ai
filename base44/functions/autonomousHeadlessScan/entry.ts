@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Autonomous Headless Scanner — runs continuously via a scheduled workflow.
@@ -45,7 +46,7 @@ export default async function(req) {
       const batch = toTest.slice(i, i + BATCH);
       const batchResults = await Promise.all(batch.map(async (d) => {
         try {
-          const result = await base44.asServiceRole.integrations.Core.InvokeLLM({
+          const result = await invokeLLM({
             prompt: `You are the FaultLine AI Headless Test Engine. You simulate a client (the paying customer) interacting with a generated frontend + backend system from their perspective. Walk through the complete user journey step-by-step and report every place the system would fail, confuse, or frustrate the client.
 
 SYSTEM UNDER TEST: ${d.title || 'Generated system'} (${d.deliverable_type})

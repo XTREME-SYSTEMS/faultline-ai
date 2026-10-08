@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // The Wealth Discovery Engine — HONESTY PROTOCOL EDITION.
@@ -21,7 +22,7 @@ export default async function(req) {
 
     // 1. LLM + WEB SEARCH — the full HONESTY PROTOCOL prompt
     //    Generates 40 targets: 20 compounding assets + 20 billionaire targets.
-    const discoveryRes = await base44.integrations.Core.InvokeLLM({
+    const discoveryRes = await invokeLLM({
       prompt: `You are operating under a STRICT HONESTY PROTOCOL. Read these rules before generating any output:
 
 HONESTY PROTOCOL (non-negotiable):

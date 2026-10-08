@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // Clone Studio — Step 4b: Generate multiple options for each changeable part.
@@ -51,7 +52,7 @@ Return exactly 4 palettes.`;
       },
       required: ['palettes']
     };
-    const colorResult = await base44.integrations.Core.InvokeLLM({ prompt: colorPrompt, response_json_schema: colorSchema });
+    const colorResult = await invokeLLM({ prompt: colorPrompt, response_json_schema: colorSchema });
     const colorData = typeof colorResult === 'string' ? JSON.parse(colorResult) : colorResult;
     const palettes = (colorData.palettes || []).map((p, i) => ({ id: `palette_${i}`, ...p }));
 
@@ -96,7 +97,7 @@ Return exactly 3 alternatives.`;
       },
       required: ['alternatives']
     };
-    const trademarkResult = await base44.integrations.Core.InvokeLLM({ prompt: trademarkPrompt, response_json_schema: trademarkSchema });
+    const trademarkResult = await invokeLLM({ prompt: trademarkPrompt, response_json_schema: trademarkSchema });
     const trademarkData = typeof trademarkResult === 'string' ? JSON.parse(trademarkResult) : trademarkResult;
     const trademarks = (trademarkData.alternatives || []).map((t, i) => ({ id: `tm_${i}`, ...t }));
 

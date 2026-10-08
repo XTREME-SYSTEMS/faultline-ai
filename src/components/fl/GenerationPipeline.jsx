@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { invokeLLM } from '@/lib/gatewayLLM';
 import { base44 } from '@/api/base44Client';
 import {
   Search, Target, Copy, Palette, Layers, Layout, Globe, Rocket,
@@ -270,7 +271,7 @@ export default function GenerationPipeline() {
     setStepStates(s => ({ ...s, [stepId]: { ...s[stepId], guidanceLoading: true, showGuidance: true } }));
     try {
       const step = STEPS.find(st => st.id === stepId);
-      const res = await base44.integrations.Core.InvokeLLM({
+      const res = await invokeLLM({
         prompt: `You are the FaultLine AI Pipeline Coach. The operator is on step "${step.title}" of the generation pipeline${selectedPerformer ? ` for ${selectedPerformer.name} in the ${selectedPerformer.industry} industry` : ' for a new business'}.
 
 Previous results: ${JSON.stringify(stepStates[stepId]?.result || {}).slice(0, 500)}

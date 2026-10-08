@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 import { resolvePrompt } from '../../shared/promptLibrary.ts';
 
@@ -177,7 +178,7 @@ REQUIREMENTS — this must be an ULTRA-PREMIUM, production-grade application:
 
 Generate the COMPLETE application now. Start with <!DOCTYPE html> and end with </html>. Make it long, detailed, and fully functional. Every page must have real, working interactivity. Write actual JavaScript that makes the app work — not just static HTML.`);
 
-    const res = await base44.integrations.Core.InvokeLLM({ prompt, model: 'claude_opus_4_8' });
+    const res = await invokeLLM({ prompt, model: 'claude_opus_4_8' });
 
     let appHtml = typeof res === 'string' ? res : res?.content || res?.text || JSON.stringify(res);
     appHtml = appHtml.replace(/^```html\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/i, '').trim();

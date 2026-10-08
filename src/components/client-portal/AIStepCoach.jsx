@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
+import { invokeLLM } from '@/lib/gatewayLLM';
 import { base44 } from '@/api/base44Client';
 import { Send, Sparkles } from 'lucide-react';
 
@@ -46,7 +47,7 @@ Write a SHORT (2-3 sentences max) friendly greeting that:
 Be warm, concise, and specific. No markdown.`;
 
     try {
-      const res = await base44.integrations.Core.InvokeLLM({ prompt, model: 'gemini_3_flash' });
+      const res = await invokeLLM({ prompt, model: 'gemini_3_flash' });
       setMessages([{ role: 'coach', text: res }]);
     } catch {
       setMessages([{ role: 'coach', text: `Welcome to Step ${step}: ${ctx.title}. ${ctx.focus} Take your time — I'm here if you have questions.` }]);
@@ -71,7 +72,7 @@ The client asked: "${userMsg}"
 Answer helpfully and concisely (2-4 sentences). If they ask for a tagline or headline suggestion, provide 2-3 options. If they ask something unrelated to the onboarding, gently steer them back. No markdown.`;
 
     try {
-      const res = await base44.integrations.Core.InvokeLLM({ prompt, model: 'gemini_3_flash' });
+      const res = await invokeLLM({ prompt, model: 'gemini_3_flash' });
       setMessages(prev => [...prev, { role: 'coach', text: res }]);
     } catch {
       setMessages(prev => [...prev, { role: 'coach', text: "I'm having trouble right now, but you can continue with the step — I'll catch up shortly." }]);
@@ -88,7 +89,7 @@ Primary service: ${onboarding?.primary_service || 'epoxy flooring'}
 
 Return ONLY the 3 taglines, one per line. No numbering, no markdown.`;
     try {
-      const res = await base44.integrations.Core.InvokeLLM({ prompt, model: 'gemini_3_flash' });
+      const res = await invokeLLM({ prompt, model: 'gemini_3_flash' });
       const lines = res.split('\n').map(l => l.trim()).filter(Boolean).slice(0, 3);
       setMessages(prev => [...prev, { role: 'coach', text: `Here are 3 tagline options:\n\n${lines.map((l, i) => `${i + 1}. ${l}`).join('\n')}\n\nClick one to use it.` }]);
       if (onSuggest) onSuggest('taglines', lines);
@@ -115,7 +116,7 @@ Return as JSON with these fields:
 }`;
 
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
+      const res = await invokeLLM({
         prompt,
         model: 'gemini_3_flash',
         response_json_schema: {

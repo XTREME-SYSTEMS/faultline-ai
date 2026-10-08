@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // AI-powered business name + domain generator.
@@ -56,7 +57,7 @@ Return a JSON array of objects with "name" (business name) and "domain" (suggest
       required: ['suggestions']
     };
 
-    const result = await base44.integrations.Core.InvokeLLM({ prompt, response_json_schema: schema, model: 'gemini_3_flash', add_context_from_internet: true });
+    const result = await invokeLLM({ prompt, response_json_schema: schema, model: 'gemini_3_flash', add_context_from_internet: true });
     const data = typeof result === 'string' ? JSON.parse(result) : result;
     let suggestions = (data.suggestions || []).slice(0, 10);
 
@@ -67,7 +68,7 @@ Names to check: ${suggestions.map(s => s.name).join(', ')}
 Return ONLY the names that are already taken by existing real businesses or trademarks. Be thorough — search each name individually.`;
     const verifySchema = { type: 'object', properties: { conflicts: { type: 'array', items: { type: 'string' } } }, required: ['conflicts'] };
     try {
-      const verifyResult = await base44.integrations.Core.InvokeLLM({ prompt: verifyPrompt, response_json_schema: verifySchema, model: 'gemini_3_flash', add_context_from_internet: true });
+      const verifyResult = await invokeLLM({ prompt: verifyPrompt, response_json_schema: verifySchema, model: 'gemini_3_flash', add_context_from_internet: true });
       const verifyData = typeof verifyResult === 'string' ? JSON.parse(verifyResult) : verifyResult;
       const conflicts = new Set((verifyData.conflicts || []).map(n => n.toLowerCase().trim()));
       if (conflicts.size > 0) {

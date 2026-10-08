@@ -9,7 +9,7 @@ export default async function(req) {
     const base44 = createClientFromRequest(req);
     const user = await base44.auth.me();
     if (!user) return Response.json({error:'Unauthorized'}, {status:401});
-    const key = Deno.env.get('VERCEL_AI_GATEWAY_API_KEY');
+    const key = Deno.env.get('VERCEL_AI_GATEWAY_KEY');
     if (!key) return Response.json({ok:false,stage:'configuration',error:'Gateway credential unavailable in deployed runtime'}, {status:503});
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 12000);

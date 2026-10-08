@@ -1,3 +1,4 @@
+import { invokeLLM } from '../../shared/llm.ts';
 import { createClientFromRequest } from 'npm:@base44/sdk@0.8.40';
 
 // generateClientPacks — AI-driven pack generation from discovery questionnaire answers.
@@ -66,7 +67,7 @@ Also generate website copy:
 
 Return ONLY valid JSON matching the schema.`;
 
-    const llmRes = await base44.integrations.Core.InvokeLLM({
+    const llmRes = await invokeLLM({
       prompt: llmPrompt,
       response_json_schema: {
         type: 'object',

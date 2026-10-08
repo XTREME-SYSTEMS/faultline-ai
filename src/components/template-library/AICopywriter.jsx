@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { invokeLLM } from '@/lib/gatewayLLM';
 import { base44 } from '@/api/base44Client';
 import { Loader2, PenTool, RefreshCw, Check } from 'lucide-react';
 
@@ -15,7 +16,7 @@ export default function AICopywriter({ businessName, industry, onApply }) {
     setCopy(null);
     setApplied(false);
     try {
-      const res = await base44.integrations.Core.InvokeLLM({
+      const res = await invokeLLM({
         prompt: `You are a senior copywriter for a ${industry || 'general'} business called "${businessName}".
 Generate compelling website copy. Return JSON with:
 - headline: a powerful hero headline (max 10 words)

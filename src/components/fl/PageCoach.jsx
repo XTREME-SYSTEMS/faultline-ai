@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { invokeLLM } from '@/lib/gatewayLLM';
 import { base44 } from '@/api/base44Client';
 
 // Context-aware AI coach that can be dropped into any portal page.
@@ -81,7 +82,7 @@ Current page data:
 ${buildContext(contextRef.current)}
 
 Greet the user briefly, give a one-line insight about this page's data, and offer choices for what to explore. Keep it to 2-3 sentences.`;
-        const res = await base44.integrations.Core.InvokeLLM({ prompt });
+        const res = await invokeLLM({ prompt });
         const choices = extractChoices(res);
         setMessages([{ role: 'coach', text: cleanText(res), choices }]);
       } catch {
@@ -113,7 +114,7 @@ Conversation so far:
 ${conversation}
 
 Coach:`;
-      const res = await base44.integrations.Core.InvokeLLM({ prompt });
+      const res = await invokeLLM({ prompt });
       const choices = extractChoices(res);
       setMessages(prev => [...prev, { role: 'coach', text: cleanText(res), choices }]);
     } catch {
